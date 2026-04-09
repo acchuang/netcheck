@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetCheck — DNS & Ad Block Tester</title>
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span class="nav-title">NetCheck</span>
+      </div>
+      <div class="nav-links">
+        <a href="#dns" class="nav-link active" data-tab="dns">DNS Check</a>
+        <a href="#speed" class="nav-link" data-tab="speed">Speed Test</a>
+        <a href="#adblock" class="nav-link" data-tab="adblock">Ad Block Test</a>
+        <a href="#fingerprint" class="nav-link" data-tab="fingerprint">Fingerprint</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- DNS Check Section -->
+    <section id="dns" class="section active">
+      <div class="section-header">
+        <h1 class="display">DNS & Network Check</h1>
+        <p class="subtitle">Detect your IP, DNS resolvers, and network configuration</p>
+      </div>
+
+      <div class="cards-grid">
+        <!-- IP Info Card -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            </svg>
+            <h2 class="card-title">Your IP Address</h2>
+            <span class="status-badge" id="ip-status">detecting...</span>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label">IPv4</span>
+              <span class="info-value mono" id="ip-address">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Location</span>
+              <span class="info-value" id="ip-location">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">ISP / ASN</span>
+              <span class="info-value" id="ip-asn">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Timezone</span>
+              <span class="info-value" id="ip-timezone">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Cloudflare PoP</span>
+              <span class="info-value mono" id="ip-colo">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DNS Resolver Card -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <h2 class="card-title">DNS Resolver</h2>
+            <span class="status-badge" id="dns-resolver-status">detecting...</span>
+          </div>
+          <div class="card-body">
+            <div id="dns-resolver-results">
+              <p class="info-muted">Checking your DNS configuration...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DNS Security Card -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <h2 class="card-title">DNS Security</h2>
+            <span class="status-badge" id="dns-security-status">pending...</span>
+          </div>
+          <div class="card-body">
+            <div id="dns-security-results">
+              <p class="info-muted">Evaluating DNS security features...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DNS Lookup Tool -->
+      <div class="card card-wide">
+        <div class="card-header">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <h2 class="card-title">DNS Lookup</h2>
+        </div>
+        <div class="card-body">
+          <div class="lookup-form">
+            <input type="text" id="dns-lookup-domain" class="input" placeholder="example.com" value="example.com">
+            <select id="dns-lookup-type" class="input select">
+              <option value="A">A</option>
+              <option value="AAAA">AAAA</option>
+              <option value="MX">MX</option>
+              <option value="NS">NS</option>
+              <option value="TXT">TXT</option>
+              <option value="CNAME">CNAME</option>
+              <option value="SOA">SOA</option>
+              <option value="SRV">SRV</option>
+            </select>
+            <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
+          </div>
+          <div id="dns-lookup-results" class="lookup-results hidden">
+            <pre class="code-block"><code id="dns-lookup-output"></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Speed Test Section -->
+    <section id="speed" class="section">
+      <div class="section-header">
+        <h1 class="display">Speed Test</h1>
+        <p class="subtitle">Measure your connection speed via Cloudflare's global edge network</p>
+      </div>
+
+      <div class="speed-dashboard">
+        <div class="speed-gauge-row">
+          <div class="speed-gauge">
+            <div class="speed-gauge-label">Download</div>
+            <div class="speed-gauge-value" id="speed-download">—</div>
+            <div class="speed-gauge-unit">Mbps</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill download" id="speed-download-bar"></div>
+            </div>
+          </div>
+          <div class="speed-gauge">
+            <div class="speed-gauge-label">Upload</div>
+            <div class="speed-gauge-value" id="speed-upload">—</div>
+            <div class="speed-gauge-unit">Mbps</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill upload" id="speed-upload-bar"></div>
+            </div>
+          </div>
+          <div class="speed-gauge">
+            <div class="speed-gauge-label">Latency</div>
+            <div class="speed-gauge-value" id="speed-latency">—</div>
+            <div class="speed-gauge-unit">ms</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill latency" id="speed-latency-bar"></div>
+            </div>
+          </div>
+          <div class="speed-gauge">
+            <div class="speed-gauge-label">Jitter</div>
+            <div class="speed-gauge-value" id="speed-jitter">—</div>
+            <div class="speed-gauge-unit">ms</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="speed-status-row">
+          <div class="speed-grade" id="speed-grade">—</div>
+          <div class="speed-grade-info">
+            <p class="speed-grade-label" id="speed-grade-label">Waiting to start</p>
+            <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
+          </div>
+          <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ad Block Test Section -->
+    <section id="adblock" class="section">
+      <div class="section-header">
+        <h1 class="display">Ad Block Tester</h1>
+        <p class="subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
+      </div>
+
+      <div class="score-card">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="score-ring-bg" cx="60" cy="60" r="54" />
+            <circle class="score-ring-fill" id="score-ring-fill" cx="60" cy="60" r="54" />
+          </svg>
+          <div class="score-value">
+            <span class="score-number" id="score-number">—</span>
+            <span class="score-label">/ 100</span>
+          </div>
+        </div>
+        <div class="score-meta">
+          <p class="score-summary" id="score-summary">Running tests...</p>
+          <p class="score-detail" id="score-detail"></p>
+        </div>
+      </div>
+
+      <div class="test-categories" id="test-categories">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Filter List Detector -->
+      <div class="filter-list-section" id="filter-list-section">
+        <h2 class="suggestions-title">Detected Filter Lists</h2>
+        <p class="suggestions-subtitle" id="filter-list-subtitle">Identifying which filter lists your ad blocker uses...</p>
+        <div class="filter-list-grid" id="filter-list-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="suggestions-section" id="suggestions-section">
+        <h2 class="suggestions-title">Recommendations</h2>
+        <p class="suggestions-subtitle" id="suggestions-subtitle"></p>
+        <div class="suggestions-grid" id="suggestions-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Browser Fingerprint Section -->
+    <section id="fingerprint" class="section">
+      <div class="section-header">
+        <h1 class="display">Browser Fingerprint</h1>
+        <p class="subtitle">See how unique and trackable your browser is across the web</p>
+      </div>
+
+      <div class="fp-score-card" id="fp-score-card">
+        <div class="fp-score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="score-ring-bg" cx="60" cy="60" r="54" />
+            <circle class="score-ring-fill" id="fp-ring-fill" cx="60" cy="60" r="54" />
+          </svg>
+          <div class="score-value">
+            <span class="score-number" id="fp-score-number">—</span>
+            <span class="score-label">bits</span>
+          </div>
+        </div>
+        <div class="score-meta">
+          <p class="score-summary" id="fp-summary">Collecting fingerprint data...</p>
+          <p class="score-detail" id="fp-detail"></p>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Canvas & Audio -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <h2 class="card-title">Canvas & Audio</h2>
+          </div>
+          <div class="card-body" id="fp-canvas-body">
+            <p class="info-muted">Analyzing...</p>
+          </div>
+        </div>
+
+        <!-- WebGL -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
+              <line x1="12" y1="22" x2="12" y2="15.5"/><line x1="22" y1="8.5" x2="12" y2="15.5"/><line x1="2" y1="8.5" x2="12" y2="15.5"/>
+            </svg>
+            <h2 class="card-title">WebGL</h2>
+          </div>
+          <div class="card-body" id="fp-webgl-body">
+            <p class="info-muted">Analyzing...</p>
+          </div>
+        </div>
+
+        <!-- Screen & Hardware -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <h2 class="card-title">Screen & Hardware</h2>
+          </div>
+          <div class="card-body" id="fp-screen-body">
+            <p class="info-muted">Analyzing...</p>
+          </div>
+        </div>
+
+        <!-- Navigator -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+            <h2 class="card-title">Navigator & Locale</h2>
+          </div>
+          <div class="card-body" id="fp-navigator-body">
+            <p class="info-muted">Analyzing...</p>
+          </div>
+        </div>
+
+        <!-- Fonts -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
+            </svg>
+            <h2 class="card-title">Fonts</h2>
+          </div>
+          <div class="card-body" id="fp-fonts-body">
+            <p class="info-muted">Detecting fonts...</p>
+          </div>
+        </div>
+
+        <!-- APIs & Storage -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <h2 class="card-title">APIs & Storage</h2>
+          </div>
+          <div class="card-body" id="fp-storage-body">
+            <p class="info-muted">Analyzing...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-text">NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
+  </footer>
+
+  <script src="/js/dns-check.js"></script>
+  <script src="/js/adblock-test.js"></script>
+  <script src="/js/filter-lists.js"></script>
+  <script src="/js/speed-test.js"></script>
+  <script src="/js/fingerprint.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
