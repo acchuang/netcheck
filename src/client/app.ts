@@ -467,6 +467,34 @@ function createCategory(name: string, testCount: number): HTMLDivElement {
   return div;
 }
 
+// Cloudflare PoP codes → city names (common ones)
+const CF_POPS: Record<string, string> = {
+  SIN: "Singapore", NRT: "Tokyo", HKG: "Hong Kong", ICN: "Seoul",
+  TPE: "Taipei", BKK: "Bangkok", KUL: "Kuala Lumpur", MNL: "Manila",
+  CGK: "Jakarta", BOM: "Mumbai", DEL: "Delhi", SYD: "Sydney",
+  MEL: "Melbourne", AKL: "Auckland", LAX: "Los Angeles", SFO: "San Francisco",
+  SJC: "San Jose", SEA: "Seattle", PDX: "Portland", DEN: "Denver",
+  DFW: "Dallas", IAH: "Houston", ORD: "Chicago", ATL: "Atlanta",
+  MIA: "Miami", IAD: "Washington DC", EWR: "Newark", JFK: "New York",
+  BOS: "Boston", YYZ: "Toronto", YVR: "Vancouver", GRU: "São Paulo",
+  SCL: "Santiago", BOG: "Bogotá", LIM: "Lima", MEX: "Mexico City",
+  LHR: "London", AMS: "Amsterdam", FRA: "Frankfurt", CDG: "Paris",
+  MAD: "Madrid", MXP: "Milan", ZRH: "Zurich", VIE: "Vienna",
+  WAW: "Warsaw", ARN: "Stockholm", HEL: "Helsinki", CPH: "Copenhagen",
+  OSL: "Oslo", DUB: "Dublin", LIS: "Lisbon", PRG: "Prague",
+  BRU: "Brussels", MRS: "Marseille", HAM: "Hamburg", MUC: "Munich",
+  JNB: "Johannesburg", CPT: "Cape Town", NBO: "Nairobi", LOS: "Lagos",
+  CAI: "Cairo", DOH: "Doha", DXB: "Dubai", TLV: "Tel Aviv",
+  IST: "Istanbul", KIX: "Osaka", FUK: "Fukuoka", CKG: "Chongqing",
+  CTU: "Chengdu", PVG: "Shanghai", PEK: "Beijing", CMB: "Colombo",
+};
+
+function formatColo(colo: string | null): string {
+  if (!colo || colo === "unknown") return "—";
+  const city = CF_POPS[colo];
+  return city ? `${city} (${colo})` : colo;
+}
+
 // Speed test
 const speedGraphData: { download: { time: number; value: number }[]; upload: { time: number; value: number }[] } = {
   download: [],
@@ -571,6 +599,7 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = "—";
   document.getElementById("speed-latency")!.textContent = "—";
   document.getElementById("speed-jitter")!.textContent = "—";
+  document.getElementById("speed-server-value")!.textContent = "detecting...";
   (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
@@ -583,6 +612,7 @@ async function runSpeedTest(): Promise<void> {
     (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
 
     if (data) {
+      if (data.colo) document.getElementById("speed-server-value")!.textContent = formatColo(data.colo);
       if (data.latency !== null) document.getElementById("speed-latency")!.textContent = String(data.latency);
       if (data.jitter !== null) document.getElementById("speed-jitter")!.textContent = String(data.jitter);
       if (data.download !== null) {

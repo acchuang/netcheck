@@ -3,6 +3,7 @@ export interface SpeedTestResults {
   upload: number | null;
   latency: number | null;
   jitter: number | null;
+  colo: string | null;
 }
 
 export interface SpeedGrade {
@@ -24,10 +25,11 @@ export const SpeedTest = {
     upload: null,
     latency: null,
     jitter: null,
+    colo: null,
   } as SpeedTestResults,
 
   async run(onProgress?: ProgressCallback): Promise<SpeedTestResults> {
-    this.results = { download: null, upload: null, latency: null, jitter: null };
+    this.results = { download: null, upload: null, latency: null, jitter: null, colo: null };
     const cb: ProgressCallback = onProgress || (() => {});
 
     // Phase 1: Latency + jitter (10 pings)
@@ -36,11 +38,14 @@ export const SpeedTest = {
     for (let i = 0; i < 10; i++) {
       try {
         const start = performance.now();
-        await fetch(`/api/speedtest/ping?_=${Date.now()}`, {
+        const res = await fetch(`/api/speedtest/ping?_=${Date.now()}`, {
           cache: "no-store",
           signal: AbortSignal.timeout(4000),
         });
         pings.push(performance.now() - start);
+        if (i === 0) {
+          this.results.colo = res.headers.get("x-colo") || null;
+        }
       } catch {
         /* skip */
       }

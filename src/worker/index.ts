@@ -19,7 +19,10 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/ping") {
-      return new Response("pong", { headers: corsHeaders() });
+      const colo = request.headers.get("cf-ray")?.split("-")[1] || "unknown";
+      return new Response("pong", {
+        headers: { ...corsHeaders(), "x-colo": colo },
+      });
     }
 
     if (url.pathname === "/api/speedtest/down") {

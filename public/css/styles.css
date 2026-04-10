@@ -849,6 +849,39 @@ select option {
   height: 14px;
 }
 
+/* Speed Test — Server location */
+.speed-server-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.speed-server-location .server-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--brand);
+  flex-shrink: 0;
+}
+
+.speed-server-location .server-label {
+  color: var(--text-quaternary);
+  font-weight: 500;
+}
+
+.speed-server-location .server-value {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-family: "SF Mono", "Fira Code", monospace;
+  letter-spacing: 0.3px;
+}
+
 /* Speed Test */
 .speed-dashboard {
   display: flex;
