@@ -1,4 +1,44 @@
-const FilterListDetector = {
+interface ElementTest {
+  type: "element";
+  className?: string;
+  id?: string;
+  expectAllowed?: boolean;
+}
+
+interface ResourceTest {
+  type: "script" | "image" | "pixel";
+  url: string;
+  expectAllowed?: boolean;
+}
+
+type FilterTest = ElementTest | ResourceTest;
+
+type FilterTestResult = FilterTest & {
+  blocked: boolean;
+};
+
+interface FilterListDefinition {
+  name: string;
+  desc: string;
+  tests: FilterTest[];
+  special?: string;
+}
+
+interface FilterListResult {
+  name: string;
+  desc: string;
+  tests: FilterTestResult[];
+  detected: boolean;
+  special?: string;
+}
+
+interface FilterListSummary {
+  detected: FilterListResult[];
+  total: number;
+  acceptableAdsEnabled: boolean;
+}
+
+export const FilterListDetector = {
   lists: [
     {
       name: "EasyList",
@@ -90,23 +130,29 @@ const FilterListDetector = {
       ],
       special: "acceptableAds",
     },
-  ],
+  ] as FilterListDefinition[],
 
-  results: [],
+  results: [] as FilterListResult[],
 
-  async runAll() {
+  async runAll(): Promise<FilterListResult[]> {
     this.results = [];
-    const container = document.createElement("div");
+    const container: HTMLDivElement = document.createElement("div");
     container.id = "filter-list-test-container";
     container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
     document.body.appendChild(container);
 
     for (const list of this.lists) {
-      const listResult = { name: list.name, desc: list.desc, tests: [], detected: false, special: list.special };
+      const listResult: FilterListResult = {
+        name: list.name,
+        desc: list.desc,
+        tests: [],
+        detected: false,
+        special: list.special,
+      };
 
       for (const test of list.tests) {
         const result = await this.runTest(test, container);
-        listResult.tests.push({ ...test, ...result });
+        listResult.tests.push({ ...test, ...result } as FilterTestResult);
       }
 
       // A list is "detected" if most of its tests show blocking
@@ -127,13 +173,13 @@ const FilterListDetector = {
     return this.results;
   },
 
-  runTest(test, container) {
+  runTest(test: FilterTest, container: HTMLDivElement): Promise<{ blocked: boolean }> {
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve({ blocked: true }), 3000);
+      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true }), 3000);
 
       switch (test.type) {
         case "script": {
-          const el = document.createElement("script");
+          const el: HTMLScriptElement = document.createElement("script");
           el.src = test.url;
           el.onload = () => { clearTimeout(timeout); resolve({ blocked: false }); };
           el.onerror = () => { clearTimeout(timeout); resolve({ blocked: true }); };
@@ -142,7 +188,7 @@ const FilterListDetector = {
         }
         case "image":
         case "pixel": {
-          const el = document.createElement("img");
+          const el: HTMLImageElement = document.createElement("img");
           el.src = test.url;
           if (test.type === "pixel") { el.width = 1; el.height = 1; }
           el.onload = () => { clearTimeout(timeout); resolve({ blocked: false }); };
@@ -151,7 +197,7 @@ const FilterListDetector = {
           break;
         }
         case "element": {
-          const el = document.createElement("div");
+          const el: HTMLDivElement = document.createElement("div");
           if (test.className) el.className = test.className;
           if (test.id) el.id = test.id;
           el.style.cssText = "width:300px;height:250px;background:transparent;";
@@ -159,8 +205,8 @@ const FilterListDetector = {
           container.appendChild(el);
 
           requestAnimationFrame(() => {
-            const rect = el.getBoundingClientRect();
-            const hidden = rect.width === 0 || rect.height === 0 ||
+            const rect: DOMRect = el.getBoundingClientRect();
+            const hidden: boolean = rect.width === 0 || rect.height === 0 ||
               getComputedStyle(el).display === "none" ||
               getComputedStyle(el).visibility === "hidden";
             clearTimeout(timeout);
@@ -175,7 +221,7 @@ const FilterListDetector = {
     });
   },
 
-  getSummary() {
+  getSummary(): FilterListSummary {
     const detected = this.results.filter((r) => r.detected && r.special !== "acceptableAds");
     const acceptableAds = this.results.find((r) => r.special === "acceptableAds");
     return {

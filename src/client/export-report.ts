@@ -1,14 +1,83 @@
-const ReportExporter = {
-  collectData() {
-    const data = { timestamp: new Date().toISOString(), date: new Date().toLocaleString() };
+import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test";
+import { AdBlockTest } from "./adblock-test";
+import { FilterListDetector } from "./filter-lists";
 
-    // DNS
-    data.dns = {
-      ip: document.getElementById("ip-address")?.textContent || "—",
-      location: document.getElementById("ip-location")?.textContent || "—",
-      asn: document.getElementById("ip-asn")?.textContent || "—",
-      timezone: document.getElementById("ip-timezone")?.textContent || "—",
-      colo: document.getElementById("ip-colo")?.textContent || "—",
+interface AdBlockTestResult {
+  name: string;
+  url?: string;
+  type: string;
+  blocked: boolean;
+}
+
+interface AdBlockCategory {
+  name: string;
+  tests: AdBlockTestResult[];
+}
+
+interface AdBlockScore {
+  score: number;
+  total: number;
+  blocked: number;
+  passed: number;
+}
+
+interface FilterListResult {
+  name: string;
+  desc: string;
+  tests: Array<{ blocked: boolean }>;
+  detected: boolean;
+  special?: string;
+}
+
+type CheckStatus = "pass" | "fail" | "warn";
+
+interface DnsCheckItem {
+  label: string;
+  value: string;
+  status: CheckStatus;
+}
+
+interface DnsData {
+  ip: string;
+  location: string;
+  asn: string;
+  timezone: string;
+  colo: string;
+  resolvers: DnsCheckItem[];
+  security: DnsCheckItem[];
+}
+
+interface SpeedData {
+  download: number | null;
+  upload: number | null;
+  latency: number | null;
+  jitter: number | null;
+  grade: SpeedGrade | null;
+  tested: boolean;
+}
+
+interface AdBlockData {
+  score: AdBlockScore | null;
+  results: AdBlockCategory[];
+  filterLists: FilterListResult[];
+}
+
+interface ReportData {
+  timestamp: string;
+  date: string;
+  dns: DnsData;
+  speed: SpeedData;
+  adblock: AdBlockData;
+}
+
+export const ReportExporter = {
+  collectData(): ReportData {
+    const dns: DnsData = {
+      ip: document.getElementById("ip-address")?.textContent || "\u2014",
+      location: document.getElementById("ip-location")?.textContent || "\u2014",
+      asn: document.getElementById("ip-asn")?.textContent || "\u2014",
+      timezone: document.getElementById("ip-timezone")?.textContent || "\u2014",
+      colo: document.getElementById("ip-colo")?.textContent || "\u2014",
       resolvers: [],
       security: [],
     };
@@ -17,45 +86,51 @@ const ReportExporter = {
       const label = item.querySelector(".check-label")?.textContent?.trim() || "";
       const value = item.querySelector(".check-value")?.textContent?.trim() || "";
       const icon = item.querySelector(".check-icon");
-      const status = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
-      data.dns.resolvers.push({ label, value, status });
+      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
+      dns.resolvers.push({ label, value, status });
     });
 
     document.querySelectorAll("#dns-security-results .dns-check-item").forEach((item) => {
       const label = item.querySelector(".check-label")?.textContent?.trim() || "";
       const value = item.querySelector(".check-value")?.textContent?.trim() || "";
       const icon = item.querySelector(".check-icon");
-      const status = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
-      data.dns.security.push({ label, value, status });
+      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
+      dns.security.push({ label, value, status });
     });
 
     // Speed
-    const sr = typeof SpeedTest !== "undefined" ? SpeedTest.results : {};
-    data.speed = {
+    const sr: SpeedTestResults = SpeedTest.results;
+    const speed: SpeedData = {
       download: sr.download,
       upload: sr.upload,
       latency: sr.latency,
       jitter: sr.jitter,
-      grade: sr.download != null && typeof SpeedTest !== "undefined" ? SpeedTest.getGrade(sr.download) : null,
+      grade: sr.download != null ? SpeedTest.getGrade(sr.download) : null,
       tested: sr.download != null,
     };
 
     // Ad Block
-    data.adblock = { score: null, results: [], filterLists: [] };
-    if (typeof AdBlockTest !== "undefined" && AdBlockTest.results.length > 0) {
-      data.adblock.score = AdBlockTest.getScore();
-      data.adblock.results = AdBlockTest.results;
+    const adblock: AdBlockData = { score: null, results: [], filterLists: [] };
+    if (AdBlockTest.results.length > 0) {
+      adblock.score = AdBlockTest.getScore();
+      adblock.results = AdBlockTest.results;
     }
-    if (typeof FilterListDetector !== "undefined" && FilterListDetector.results.length > 0) {
-      data.adblock.filterLists = FilterListDetector.results;
+    if (FilterListDetector.results.length > 0) {
+      adblock.filterLists = FilterListDetector.results;
     }
 
-    return data;
+    return {
+      timestamp: new Date().toISOString(),
+      date: new Date().toLocaleString(),
+      dns,
+      speed,
+      adblock,
+    };
   },
 
-  generateMarkdown(data) {
-    const lines = [];
-    const ln = (s = "") => lines.push(s);
+  generateMarkdown(data: ReportData): string {
+    const lines: string[] = [];
+    const ln = (s: string = "") => lines.push(s);
 
     ln("# NetCheck Report");
     ln(`> Generated: ${data.date}`);
@@ -79,7 +154,7 @@ const ReportExporter = {
       ln("| Resolver | Latency | Status |");
       ln("|----------|---------|--------|");
       data.dns.resolvers.forEach((r) => {
-        const icon = r.status === "pass" ? "✅" : r.status === "fail" ? "❌" : "⚠️";
+        const icon = r.status === "pass" ? "\u2705" : r.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
         ln(`| ${r.label} | ${r.value} | ${icon} |`);
       });
       ln();
@@ -90,7 +165,7 @@ const ReportExporter = {
       ln("| Check | Detail | Status |");
       ln("|-------|--------|--------|");
       data.dns.security.forEach((s) => {
-        const icon = s.status === "pass" ? "✅" : s.status === "fail" ? "❌" : "⚠️";
+        const icon = s.status === "pass" ? "\u2705" : s.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
         ln(`| ${s.label} | ${s.value} | ${icon} |`);
       });
       ln();
@@ -102,12 +177,12 @@ const ReportExporter = {
     if (data.speed.tested) {
       ln("| Metric | Value |");
       ln("|--------|-------|");
-      ln(`| Download | ${data.speed.download?.toFixed(1) ?? "—"} Mbps |`);
-      ln(`| Upload | ${data.speed.upload?.toFixed(1) ?? "—"} Mbps |`);
-      ln(`| Latency | ${data.speed.latency ?? "—"} ms |`);
-      ln(`| Jitter | ${data.speed.jitter ?? "—"} ms |`);
+      ln(`| Download | ${data.speed.download?.toFixed(1) ?? "\u2014"} Mbps |`);
+      ln(`| Upload | ${data.speed.upload?.toFixed(1) ?? "\u2014"} Mbps |`);
+      ln(`| Latency | ${data.speed.latency ?? "\u2014"} ms |`);
+      ln(`| Jitter | ${data.speed.jitter ?? "\u2014"} ms |`);
       if (data.speed.grade) {
-        ln(`| Grade | **${data.speed.grade.grade}** — ${data.speed.grade.label} |`);
+        ln(`| Grade | **${data.speed.grade.grade}** \u2014 ${data.speed.grade.label} |`);
       }
     } else {
       ln("*Speed test was not run.*");
@@ -119,16 +194,16 @@ const ReportExporter = {
     ln();
     if (data.adblock.score) {
       const s = data.adblock.score;
-      ln(`**Score: ${s.score}/100** — ${s.blocked} of ${s.total} blocked`);
+      ln(`**Score: ${s.score}/100** \u2014 ${s.blocked} of ${s.total} blocked`);
       ln();
 
       data.adblock.results.forEach((cat) => {
         const blocked = cat.tests.filter((t) => t.blocked).length;
         ln(`### ${cat.name} (${blocked}/${cat.tests.length} blocked)`);
         cat.tests.forEach((t) => {
-          const icon = t.blocked ? "✅" : "❌";
+          const icon = t.blocked ? "\u2705" : "\u274C";
           const label = t.blocked ? "blocked" : "allowed";
-          ln(`- ${icon} ${t.name} — ${label}`);
+          ln(`- ${icon} ${t.name} \u2014 ${label}`);
         });
         ln();
       });
@@ -141,7 +216,7 @@ const ReportExporter = {
       ln("| Filter List | Status |");
       ln("|-------------|--------|");
       data.adblock.filterLists.forEach((fl) => {
-        const status = fl.detected ? "✅ Detected" : "— Not found";
+        const status = fl.detected ? "\u2705 Detected" : "\u2014 Not found";
         ln(`| ${fl.name} | ${status} |`);
       });
       ln();
@@ -153,7 +228,7 @@ const ReportExporter = {
     return lines.join("\n");
   },
 
-  generatePrintHtml(data) {
+  generatePrintHtml(data: ReportData): string {
     const md = this.generateMarkdown(data);
 
     // Convert markdown to basic HTML
@@ -170,11 +245,11 @@ const ReportExporter = {
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 
     // Convert tables
-    html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock) => {
+    html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock: string) => {
       const rows = tableBlock.trim().split("\n").filter((r) => !r.match(/^\|[\s-|]+\|$/));
       if (rows.length === 0) return "";
-      const toRow = (row, tag) =>
-        "<tr>" + row.split("|").filter((_, i, a) => i > 0 && i < a.length - 1).map((c) => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
+      const toRow = (row: string, tag: string): string =>
+        "<tr>" + row.split("|").filter((_: string, i: number, a: string[]) => i > 0 && i < a.length - 1).map((c: string) => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
       const header = toRow(rows[0], "th");
       const body = rows.slice(1).map((r) => toRow(r, "td")).join("");
       return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
@@ -187,7 +262,7 @@ const ReportExporter = {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NetCheck Report — ${data.date}</title>
+<title>NetCheck Report \u2014 ${data.date}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: "Inter", -apple-system, system-ui, sans-serif; font-size: 13px; line-height: 1.6; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px 24px; }
@@ -216,7 +291,7 @@ ${html}
 </html>`;
   },
 
-  downloadMarkdown() {
+  downloadMarkdown(): void {
     const data = this.collectData();
     const md = this.generateMarkdown(data);
     const dateStr = new Date().toISOString().slice(0, 10);
@@ -231,7 +306,7 @@ ${html}
     URL.revokeObjectURL(url);
   },
 
-  downloadPdf() {
+  downloadPdf(): void {
     const data = this.collectData();
     const html = this.generatePrintHtml(data);
     const win = window.open("", "_blank");
@@ -240,12 +315,12 @@ ${html}
     win.document.close();
   },
 
-  showExportMenu() {
+  showExportMenu(): void {
     const menu = document.getElementById("export-menu");
-    menu.classList.toggle("hidden");
+    menu?.classList.toggle("hidden");
   },
 
-  hideExportMenu() {
+  hideExportMenu(): void {
     document.getElementById("export-menu")?.classList.add("hidden");
   },
 };

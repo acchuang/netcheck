@@ -1183,6 +1183,27 @@ select option {
   color: var(--text-quaternary);
 }
 
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 510;
+  color: var(--text-quaternary);
+  text-decoration: none;
+  margin-top: 8px;
+  transition: color 0.15s;
+}
+
+.footer-link:hover {
+  color: var(--text-secondary);
+}
+
+.footer-gh-icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .display {

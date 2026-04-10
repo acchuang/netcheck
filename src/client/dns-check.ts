@@ -1,5 +1,51 @@
-const DnsCheck = {
-  async detectIp() {
+interface IpResult {
+  ip?: string;
+  error?: string;
+}
+
+interface DnsResult {
+  Answer?: DnsAnswer[];
+  Status?: number;
+  error?: string;
+}
+
+interface DnsAnswer {
+  name: string;
+  type: number;
+  TTL: number;
+  data: string;
+}
+
+interface ResolverInfo {
+  name: string;
+  host: string;
+  ip: string;
+  desc: string;
+}
+
+interface ResolverResult extends ResolverInfo {
+  reachable: boolean;
+  latency: number | null;
+  dnssec: boolean;
+  filtering: boolean;
+}
+
+type SecurityStatus = "pass" | "warn" | "fail";
+
+interface SecurityCheck {
+  name: string;
+  status: SecurityStatus;
+  detail: string;
+}
+
+interface DohResponse {
+  AD?: boolean;
+  Answer?: DnsAnswer[];
+  Status?: number;
+}
+
+export const DnsCheck = {
+  async detectIp(): Promise<IpResult> {
     try {
       const res = await fetch("/api/ip");
       return await res.json();
@@ -8,7 +54,7 @@ const DnsCheck = {
     }
   },
 
-  async lookupDns(domain, type) {
+  async lookupDns(domain: string, type: string): Promise<DnsResult> {
     try {
       const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`);
       return await res.json();
@@ -17,19 +63,19 @@ const DnsCheck = {
     }
   },
 
-  async detectResolver() {
+  async detectResolver(): Promise<ResolverResult[]> {
     try {
       const res = await fetch("/api/dns/check-resolvers");
       if (res.ok) return await res.json();
     } catch { /* fall through */ }
 
     // Fallback: direct DoH checks (may fail due to CORS)
-    const resolvers = [
+    const resolvers: ResolverInfo[] = [
       { name: "Cloudflare", host: "cloudflare-dns.com", ip: "1.1.1.1", desc: "Fast, privacy-focused" },
       { name: "Google", host: "dns.google", ip: "8.8.8.8", desc: "Reliable, global" },
       { name: "Quad9", host: "dns.quad9.net", ip: "9.9.9.9", desc: "Security-focused" },
     ];
-    const results = [];
+    const results: ResolverResult[] = [];
     for (const resolver of resolvers) {
       try {
         const start = performance.now();
@@ -45,8 +91,8 @@ const DnsCheck = {
     return results;
   },
 
-  async checkDnsSecurity() {
-    const checks = [];
+  async checkDnsSecurity(): Promise<SecurityCheck[]> {
+    const checks: SecurityCheck[] = [];
 
     // DNSSEC validation check — resolve a known DNSSEC-signed domain
     try {
@@ -54,7 +100,7 @@ const DnsCheck = {
         headers: { Accept: "application/dns-json" },
         signal: AbortSignal.timeout(3000),
       });
-      const data = await res.json();
+      const data: DohResponse = await res.json();
       checks.push({
         name: "DNSSEC Validation",
         status: data.AD ? "pass" : "warn",
@@ -85,7 +131,7 @@ const DnsCheck = {
         headers: { Accept: "application/dns-json" },
         signal: AbortSignal.timeout(3000),
       });
-      const data = await res.json();
+      const data: DohResponse = await res.json();
       const blocked = !data.Answer || data.Answer.length === 0 || data.Status === 3;
       checks.push({
         name: "Malware Domain Filtering",
@@ -111,17 +157,17 @@ const DnsCheck = {
     return checks;
   },
 
-  checkWebRtcLeak() {
+  checkWebRtcLeak(): Promise<string | null> {
     return new Promise((resolve) => {
       try {
         const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-        const ips = new Set();
+        const ips = new Set<string>();
         let resolved = false;
 
         pc.createDataChannel("");
         pc.createOffer().then((offer) => pc.setLocalDescription(offer));
 
-        pc.onicecandidate = (e) => {
+        pc.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
           if (resolved) return;
           if (!e.candidate) {
             pc.close();

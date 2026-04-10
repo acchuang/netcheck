@@ -1,28 +1,63 @@
-const SpeedTest = {
-  results: { download: null, upload: null, latency: null, jitter: null },
+export interface SpeedTestResults {
+  download: number | null;
+  upload: number | null;
+  latency: number | null;
+  jitter: number | null;
+}
 
-  async run(onProgress) {
+export interface SpeedGrade {
+  grade: string;
+  label: string;
+}
+
+export type SpeedTestPhase = "latency" | "download" | "upload";
+
+export type ProgressCallback = (
+  phase: SpeedTestPhase,
+  percent: number,
+  results: SpeedTestResults
+) => void;
+
+export const SpeedTest = {
+  results: {
+    download: null,
+    upload: null,
+    latency: null,
+    jitter: null,
+  } as SpeedTestResults,
+
+  async run(onProgress?: ProgressCallback): Promise<SpeedTestResults> {
     this.results = { download: null, upload: null, latency: null, jitter: null };
-    const cb = onProgress || (() => {});
+    const cb: ProgressCallback = onProgress || (() => {});
 
     // Phase 1: Latency + jitter (10 pings)
     cb("latency", 0, this.results);
-    const pings = [];
+    const pings: number[] = [];
     for (let i = 0; i < 10; i++) {
       try {
         const start = performance.now();
-        await fetch(`/api/speedtest/ping?_=${Date.now()}`, { cache: "no-store", signal: AbortSignal.timeout(4000) });
+        await fetch(`/api/speedtest/ping?_=${Date.now()}`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(4000),
+        });
         pings.push(performance.now() - start);
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
       cb("latency", Math.round(((i + 1) / 10) * 100), this.results);
     }
 
     if (pings.length > 0) {
       pings.sort((a, b) => a - b);
-      this.results.latency = Math.round(pings[Math.floor(pings.length / 2)] * 10) / 10;
+      this.results.latency =
+        Math.round(pings[Math.floor(pings.length / 2)] * 10) / 10;
       let jitterSum = 0;
-      for (let i = 1; i < pings.length; i++) jitterSum += Math.abs(pings[i] - pings[i - 1]);
-      this.results.jitter = pings.length > 1 ? Math.round((jitterSum / (pings.length - 1)) * 10) / 10 : 0;
+      for (let i = 1; i < pings.length; i++)
+        jitterSum += Math.abs(pings[i] - pings[i - 1]);
+      this.results.jitter =
+        pings.length > 1
+          ? Math.round((jitterSum / (pings.length - 1)) * 10) / 10
+          : 0;
     }
     cb("latency", 100, this.results);
 
@@ -35,7 +70,10 @@ const SpeedTest = {
     for (let i = 0; i < dlSizes.length; i++) {
       try {
         const url = `/api/speedtest/down?bytes=${dlSizes[i]}&_=${Date.now()}`;
-        const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(12000) });
+        const res = await fetch(url, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(12000),
+        });
 
         if (res.body) {
           const reader = res.body.getReader();
@@ -44,8 +82,13 @@ const SpeedTest = {
             if (done) break;
             dlTotalBytes += value.byteLength;
             const elapsed = (performance.now() - dlStart) / 1000;
-            this.results.download = Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-            cb("download", Math.round(((i + 0.5) / dlSizes.length) * 100), this.results);
+            this.results.download =
+              Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
+            cb(
+              "download",
+              Math.round(((i + 0.5) / dlSizes.length) * 100),
+              this.results
+            );
           }
         } else {
           const blob = await res.blob();
@@ -53,10 +96,17 @@ const SpeedTest = {
         }
 
         const elapsed = (performance.now() - dlStart) / 1000;
-        this.results.download = Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-        cb("download", Math.round(((i + 1) / dlSizes.length) * 100), this.results);
+        this.results.download =
+          Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
+        cb(
+          "download",
+          Math.round(((i + 1) / dlSizes.length) * 100),
+          this.results
+        );
         if (elapsed > 8) break;
-      } catch { break; }
+      } catch {
+        break;
+      }
     }
 
     const dlElapsed = (performance.now() - dlStart) / 1000;
@@ -71,16 +121,29 @@ const SpeedTest = {
 
     for (let i = 0; i < ulSizes.length; i++) {
       const data = new Uint8Array(ulSizes[i]);
-      for (let j = 0; j < ulSizes[i]; j += 4096) data[j] = (Math.random() * 256) | 0;
+      for (let j = 0; j < ulSizes[i]; j += 4096)
+        data[j] = (Math.random() * 256) | 0;
 
       try {
-        await fetch("/api/speedtest/up", { method: "POST", body: data, cache: "no-store", signal: AbortSignal.timeout(12000) });
+        await fetch("/api/speedtest/up", {
+          method: "POST",
+          body: data,
+          cache: "no-store",
+          signal: AbortSignal.timeout(12000),
+        });
         ulTotalBytes += ulSizes[i];
         const elapsed = (performance.now() - ulStart) / 1000;
-        this.results.upload = Math.round(((ulTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-        cb("upload", Math.round(((i + 1) / ulSizes.length) * 100), this.results);
+        this.results.upload =
+          Math.round(((ulTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
+        cb(
+          "upload",
+          Math.round(((i + 1) / ulSizes.length) * 100),
+          this.results
+        );
         if (elapsed > 8) break;
-      } catch { break; }
+      } catch {
+        break;
+      }
     }
 
     const ulElapsed = (performance.now() - ulStart) / 1000;
@@ -90,14 +153,14 @@ const SpeedTest = {
     return this.results;
   },
 
-  formatSpeed(mbps) {
+  formatSpeed(mbps: number | null): string {
     if (mbps === null) return "—";
     if (mbps >= 1000) return `${(mbps / 1000).toFixed(2)} Gbps`;
     if (mbps >= 1) return `${mbps.toFixed(2)} Mbps`;
     return `${(mbps * 1000).toFixed(0)} Kbps`;
   },
 
-  getGrade(downloadMbps) {
+  getGrade(downloadMbps: number | null): SpeedGrade {
     if (downloadMbps === null) return { grade: "—", label: "Unknown" };
     if (downloadMbps >= 500) return { grade: "A+", label: "Exceptional" };
     if (downloadMbps >= 200) return { grade: "A", label: "Excellent" };

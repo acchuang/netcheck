@@ -1,4 +1,62 @@
-const AdBlockTest = {
+interface ScriptTest {
+  name: string;
+  type: "script";
+  url: string;
+}
+
+interface ImageTest {
+  name: string;
+  type: "image";
+  url: string;
+}
+
+interface PixelTest {
+  name: string;
+  type: "pixel";
+  url: string;
+}
+
+interface IframeTest {
+  name: string;
+  type: "iframe";
+  width: number;
+  height: number;
+}
+
+interface ElementTest {
+  name: string;
+  type: "element";
+  className?: string;
+  id?: string;
+}
+
+type Test = ScriptTest | ImageTest | PixelTest | IframeTest | ElementTest;
+
+interface TestResult {
+  blocked: boolean;
+  uncertain?: boolean;
+}
+
+type TestWithResult = Test & TestResult;
+
+interface Category {
+  name: string;
+  tests: Test[];
+}
+
+interface CategoryResult {
+  name: string;
+  tests: TestWithResult[];
+}
+
+interface Score {
+  score: number;
+  total: number;
+  blocked: number;
+  passed: number;
+}
+
+export const AdBlockTest = {
   categories: [
     {
       name: "Contextual Advertising",
@@ -68,11 +126,11 @@ const AdBlockTest = {
         { name: "Survey widget", type: "element", id: "survey-widget" },
       ],
     },
-  ],
+  ] as Category[],
 
-  results: [],
+  results: [] as CategoryResult[],
 
-  async runAll() {
+  async runAll(): Promise<CategoryResult[]> {
     this.results = [];
     const container = document.createElement("div");
     container.id = "adblock-test-container";
@@ -80,11 +138,11 @@ const AdBlockTest = {
     document.body.appendChild(container);
 
     for (const category of this.categories) {
-      const catResults = { name: category.name, tests: [] };
+      const catResults: CategoryResult = { name: category.name, tests: [] };
 
       for (const test of category.tests) {
         const result = await this.runTest(test, container);
-        catResults.tests.push({ ...test, ...result });
+        catResults.tests.push({ ...test, ...result } as TestWithResult);
       }
 
       this.results.push(catResults);
@@ -94,9 +152,9 @@ const AdBlockTest = {
     return this.results;
   },
 
-  runTest(test, container) {
+  runTest(test: Test, container: HTMLDivElement): Promise<TestResult> {
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve({ blocked: true }), 3000);
+      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true }), 3000);
 
       switch (test.type) {
         case "script":
@@ -121,7 +179,7 @@ const AdBlockTest = {
     });
   },
 
-  testScript(url, container, timeout, resolve) {
+  testScript(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
     const script = document.createElement("script");
     script.src = url;
     script.onload = () => {
@@ -135,7 +193,7 @@ const AdBlockTest = {
     container.appendChild(script);
   },
 
-  testImage(url, container, timeout, resolve) {
+  testImage(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
     const img = document.createElement("img");
     img.src = url;
     img.onload = () => {
@@ -149,7 +207,7 @@ const AdBlockTest = {
     container.appendChild(img);
   },
 
-  testPixel(url, container, timeout, resolve) {
+  testPixel(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
     const img = document.createElement("img");
     img.src = url;
     img.width = 1;
@@ -165,10 +223,10 @@ const AdBlockTest = {
     container.appendChild(img);
   },
 
-  testIframe(test, container, timeout, resolve) {
+  testIframe(test: IframeTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
     const iframe = document.createElement("iframe");
-    iframe.width = test.width;
-    iframe.height = test.height;
+    iframe.width = String(test.width);
+    iframe.height = String(test.height);
     iframe.src = "about:blank";
     iframe.className = "ad_iframe";
     iframe.style.cssText = `width:${test.width}px;height:${test.height}px;`;
@@ -184,7 +242,7 @@ const AdBlockTest = {
     });
   },
 
-  testElement(test, container, timeout, resolve) {
+  testElement(test: ElementTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
     const div = document.createElement("div");
     if (test.className) div.className = test.className;
     if (test.id) div.id = test.id;
@@ -202,7 +260,7 @@ const AdBlockTest = {
     });
   },
 
-  getScore() {
+  getScore(): Score {
     let total = 0;
     let blocked = 0;
 

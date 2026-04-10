@@ -1,3 +1,9 @@
+import { DnsCheck } from "./dns-check";
+import { AdBlockTest } from "./adblock-test";
+import { FilterListDetector } from "./filter-lists";
+import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-test";
+import { ReportExporter } from "./export-report";
+
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   runDnsChecks();
@@ -7,33 +13,33 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Tab navigation
-function initTabs() {
-  const links = document.querySelectorAll(".nav-link[data-tab]");
+function initTabs(): void {
+  const links = document.querySelectorAll<HTMLAnchorElement>(".nav-link[data-tab]");
   links.forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
-      const tab = link.dataset.tab;
+      const tab = link.dataset.tab!;
 
       document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
       link.classList.add("active");
 
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
-      document.getElementById(tab).classList.add("active");
+      document.getElementById(tab)!.classList.add("active");
     });
   });
 
   // DNS Lookup form
-  document.getElementById("dns-lookup-btn").addEventListener("click", runDnsLookup);
-  document.getElementById("dns-lookup-domain").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") runDnsLookup();
+  document.getElementById("dns-lookup-btn")!.addEventListener("click", runDnsLookup);
+  document.getElementById("dns-lookup-domain")!.addEventListener("keydown", (e) => {
+    if ((e as KeyboardEvent).key === "Enter") runDnsLookup();
   });
 
   // Export button
-  document.getElementById("export-btn").addEventListener("click", (e) => {
+  document.getElementById("export-btn")!.addEventListener("click", (e) => {
     e.stopPropagation();
     ReportExporter.showExportMenu();
   });
-  document.querySelectorAll(".export-option").forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>(".export-option").forEach((btn) => {
     btn.addEventListener("click", () => {
       const format = btn.dataset.format;
       if (format === "markdown") ReportExporter.downloadMarkdown();
@@ -42,37 +48,64 @@ function initTabs() {
     });
   });
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".export-dropdown")) ReportExporter.hideExportMenu();
+    if (!(e.target as HTMLElement).closest(".export-dropdown")) ReportExporter.hideExportMenu();
   });
 }
 
 // DNS checks
-async function runDnsChecks() {
+interface IpData {
+  ip?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  asOrganization?: string;
+  asn?: string;
+  timezone?: string;
+  colo?: string;
+  error?: string;
+}
+
+interface ResolverResult {
+  name: string;
+  ip: string;
+  reachable: boolean;
+  latency: number | null;
+  dnssec: boolean;
+  filtering: boolean;
+}
+
+interface SecurityCheck {
+  name: string;
+  status: "pass" | "warn" | "fail";
+  detail: string;
+}
+
+async function runDnsChecks(): Promise<void> {
   // IP detection
-  const ipData = await DnsCheck.detectIp();
+  const ipData: IpData = await DnsCheck.detectIp();
   if (!ipData.error) {
-    document.getElementById("ip-address").textContent = ipData.ip;
-    document.getElementById("ip-location").textContent =
+    document.getElementById("ip-address")!.textContent = ipData.ip || "—";
+    document.getElementById("ip-location")!.textContent =
       [ipData.city, ipData.region, ipData.country].filter(Boolean).join(", ") || "—";
-    document.getElementById("ip-asn").textContent =
+    document.getElementById("ip-asn")!.textContent =
       ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
-    document.getElementById("ip-timezone").textContent = ipData.timezone || "—";
-    document.getElementById("ip-colo").textContent = ipData.colo || "—";
+    document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
+    document.getElementById("ip-colo")!.textContent = ipData.colo || "—";
     setBadge("ip-status", "done", "detected");
   } else {
     setBadge("ip-status", "error", "failed");
   }
 
   // DNS resolver detection
-  const resolvers = await DnsCheck.detectResolver();
-  const resolverContainer = document.getElementById("dns-resolver-results");
+  const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
+  const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
 
   const reachable = resolvers.filter((r) => r.reachable);
   if (reachable.length > 0) {
-    const fastest = reachable.reduce((a, b) => (a.latency < b.latency ? a : b));
+    const fastest = reachable.reduce((a, b) => ((a.latency ?? Infinity) < (b.latency ?? Infinity) ? a : b));
     reachable.forEach((r) => {
-      const badges = [];
+      const badges: string[] = [];
       if (r.dnssec) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
       if (r.filtering) badges.push('<span class="resolver-badge filter">Filtering</span>');
       const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
@@ -104,8 +137,8 @@ async function runDnsChecks() {
   }
 
   // DNS security checks
-  const securityChecks = await DnsCheck.checkDnsSecurity();
-  const securityContainer = document.getElementById("dns-security-results");
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity();
+  const securityContainer = document.getElementById("dns-security-results")!;
   securityContainer.innerHTML = "";
 
   const allPass = securityChecks.every((c) => c.status === "pass");
@@ -128,7 +161,26 @@ async function runDnsChecks() {
 }
 
 // DNS suggestions
-const dnsSuggestions = [
+interface DnsContext {
+  usingResolver: (name: string) => boolean;
+  slowestResolver: () => number;
+  fastestResolver: () => number;
+  hasSecurity: (name: string) => boolean;
+  hasWebRtcLeak: boolean;
+  reachableCount: number;
+}
+
+interface Suggestion {
+  name: string;
+  type: string;
+  icon: string;
+  desc: string;
+  tags: string[];
+  url: string | null;
+  when: (ctx: DnsContext) => boolean;
+}
+
+const dnsSuggestions: Suggestion[] = [
   {
     name: "1.1.1.1 (Cloudflare DNS)",
     type: "Public DNS Resolver",
@@ -221,23 +273,21 @@ const dnsSuggestions = [
   },
 ];
 
-function renderDnsSuggestions({ resolvers, securityChecks, reachable }) {
-  const section = document.getElementById("dns-suggestions-section");
-  const subtitle = document.getElementById("dns-suggestions-subtitle");
-  const grid = document.getElementById("dns-suggestions-grid");
+function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
+  const section = document.getElementById("dns-suggestions-section")!;
+  const subtitle = document.getElementById("dns-suggestions-subtitle")!;
+  const grid = document.getElementById("dns-suggestions-grid")!;
 
-  // Build context helpers
-  const ctx = {
-    usingResolver: (name) => reachable.some((r) => r.name === name && r.latency < 100),
-    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency)) : Infinity,
-    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency)) : Infinity,
+  const ctx: DnsContext = {
+    usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
+    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
+    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency ?? Infinity)) : Infinity,
     hasSecurity: (name) => securityChecks.some((c) => c.name === name && c.status === "pass"),
     hasWebRtcLeak: securityChecks.some((c) => c.name === "WebRTC IP Leak" && c.status === "fail"),
     reachableCount: reachable.length,
   };
 
-  // Identify issues
-  const issues = [];
+  const issues: string[] = [];
   if (!ctx.hasSecurity("DNSSEC Validation")) issues.push("DNSSEC not validated");
   if (!ctx.hasSecurity("DNS-over-HTTPS")) issues.push("DNS not encrypted");
   if (!ctx.hasSecurity("Malware Domain Filtering")) issues.push("no malware filtering");
@@ -251,7 +301,6 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }) {
     subtitle.textContent = `Issues found: ${issues.join(", ")}. These tools and settings can help:`;
   }
 
-  // Filter and rank
   const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
 
   const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
@@ -285,19 +334,19 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }) {
   section.classList.add("visible");
 }
 
-async function runDnsLookup() {
-  const domain = document.getElementById("dns-lookup-domain").value.trim();
-  const type = document.getElementById("dns-lookup-type").value;
+async function runDnsLookup(): Promise<void> {
+  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
+  const type = (document.getElementById("dns-lookup-type") as unknown as HTMLSelectElement).value;
   if (!domain) return;
 
-  const resultsEl = document.getElementById("dns-lookup-results");
-  const tableEl = document.getElementById("dns-lookup-table");
-  const outputEl = document.getElementById("dns-lookup-output");
+  const resultsEl = document.getElementById("dns-lookup-results")!;
+  const tableEl = document.getElementById("dns-lookup-table")!;
+  const outputEl = document.getElementById("dns-lookup-output")!;
   resultsEl.classList.remove("hidden");
   tableEl.innerHTML = '<p class="info-muted">Looking up...</p>';
   outputEl.textContent = "Loading...";
 
-  let allData;
+  let allData: Record<string, any>;
   if (type === "ALL") {
     const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
     const results = await Promise.all(types.map((t) => DnsCheck.lookupDns(domain, t)));
@@ -307,7 +356,6 @@ async function runDnsLookup() {
     allData = { [type]: await DnsCheck.lookupDns(domain, type) };
   }
 
-  // Render formatted table
   let html = '<table class="dns-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th></tr></thead><tbody>';
   let hasRecords = false;
 
@@ -332,20 +380,17 @@ async function runDnsLookup() {
 }
 
 // Ad block tests
-async function runAdBlockTests() {
-  const categoriesEl = document.getElementById("test-categories");
+async function runAdBlockTests(): Promise<void> {
+  const categoriesEl = document.getElementById("test-categories")!;
   categoriesEl.innerHTML = "";
 
-  // Create placeholder categories
   AdBlockTest.categories.forEach((cat) => {
     const catEl = createCategory(cat.name, cat.tests.length);
     categoriesEl.appendChild(catEl);
   });
 
-  // Run tests
   await AdBlockTest.runAll();
 
-  // Update UI with results
   categoriesEl.innerHTML = "";
   AdBlockTest.results.forEach((cat) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
@@ -353,42 +398,41 @@ async function runAdBlockTests() {
     categoriesEl.appendChild(catEl);
   });
 
-  // Update score
   const score = AdBlockTest.getScore();
-  document.getElementById("score-number").textContent = score.score;
+  document.getElementById("score-number")!.textContent = String(score.score);
 
-  const ring = document.getElementById("score-ring-fill");
+  const ring = document.getElementById("score-ring-fill") as unknown as SVGCircleElement;
   const circumference = 2 * Math.PI * 54;
-  ring.style.strokeDashoffset = circumference - (score.score / 100) * circumference;
+  ring.style.strokeDashoffset = String(circumference - (score.score / 100) * circumference);
 
   if (score.score >= 80) {
     ring.style.stroke = "var(--emerald)";
-    document.getElementById("score-summary").textContent = "Excellent protection";
+    document.getElementById("score-summary")!.textContent = "Excellent protection";
   } else if (score.score >= 50) {
     ring.style.stroke = "var(--accent)";
-    document.getElementById("score-summary").textContent = "Good protection";
+    document.getElementById("score-summary")!.textContent = "Good protection";
   } else if (score.score >= 20) {
     ring.style.stroke = "var(--amber)";
-    document.getElementById("score-summary").textContent = "Basic protection";
+    document.getElementById("score-summary")!.textContent = "Basic protection";
   } else {
     ring.style.stroke = "var(--red)";
-    document.getElementById("score-summary").textContent = "Minimal protection";
+    document.getElementById("score-summary")!.textContent = "Minimal protection";
   }
 
-  document.getElementById("score-detail").textContent =
+  document.getElementById("score-detail")!.textContent =
     `${score.blocked} of ${score.total} trackers/ads blocked across ${AdBlockTest.results.length} categories`;
 
   renderSuggestions(score, AdBlockTest.results);
 }
 
 // UI helpers
-function setBadge(id, status, text) {
-  const el = document.getElementById(id);
+function setBadge(id: string, status: string, text: string): void {
+  const el = document.getElementById(id)!;
   el.className = `status-badge ${status}`;
   el.textContent = text;
 }
 
-function createCheckItem(status, label, value) {
+function createCheckItem(status: string, label: string, value: string): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "dns-check-item";
 
@@ -407,7 +451,7 @@ function createCheckItem(status, label, value) {
   return div;
 }
 
-function createCategory(name, testCount) {
+function createCategory(name: string, testCount: number): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "test-category";
   div.innerHTML = `
@@ -424,16 +468,19 @@ function createCategory(name, testCount) {
 }
 
 // Speed test
-const speedGraphData = { download: [], upload: [] };
+const speedGraphData: { download: { time: number; value: number }[]; upload: { time: number; value: number }[] } = {
+  download: [],
+  upload: [],
+};
 
-function initSpeedTest() {
-  document.getElementById("speed-start-btn").addEventListener("click", runSpeedTest);
+function initSpeedTest(): void {
+  document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
 }
 
-function drawSpeedGraph() {
-  const canvas = document.getElementById("speed-graph");
+function drawSpeedGraph(): void {
+  const canvas = document.getElementById("speed-graph") as HTMLCanvasElement;
   if (!canvas) return;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d")!;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
@@ -468,12 +515,10 @@ function drawSpeedGraph() {
     ctx.fillText(`${Math.round((maxVal * i) / gridLines)}`, pad.left - 6, y + 4);
   }
 
-  // Draw line helper
-  function drawLine(points, color) {
+  function drawLine(points: { time: number; value: number }[], color: string): void {
     if (points.length < 2) return;
     const maxTime = Math.max(...speedGraphData.download.concat(speedGraphData.upload).map((p) => p.time), 1);
 
-    // Gradient fill
     const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
     grad.addColorStop(0, color.replace("1)", "0.15)"));
     grad.addColorStop(1, color.replace("1)", "0)"));
@@ -485,7 +530,6 @@ function drawSpeedGraph() {
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
-    // Fill under curve
     const lastX = pad.left + (points[points.length - 1].time / maxTime) * plotW;
     const firstX = pad.left + (points[0].time / maxTime) * plotW;
     ctx.lineTo(lastX, pad.top + plotH);
@@ -494,7 +538,6 @@ function drawSpeedGraph() {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Stroke line
     ctx.beginPath();
     points.forEach((p, i) => {
       const x = pad.left + (p.time / maxTime) * plotW;
@@ -510,14 +553,13 @@ function drawSpeedGraph() {
   drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
   drawLine(speedGraphData.upload, "rgba(52, 211, 153, 1)");
 
-  // X-axis label
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.textAlign = "center";
   ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
 }
 
-async function runSpeedTest() {
-  const btn = document.getElementById("speed-start-btn");
+async function runSpeedTest(): Promise<void> {
+  const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = "Running...";
 
@@ -525,48 +567,48 @@ async function runSpeedTest() {
   speedGraphData.upload = [];
   drawSpeedGraph();
 
-  document.getElementById("speed-download").textContent = "—";
-  document.getElementById("speed-upload").textContent = "—";
-  document.getElementById("speed-latency").textContent = "—";
-  document.getElementById("speed-jitter").textContent = "—";
-  ["download", "upload", "latency", "jitter"].forEach((k) => {
-    document.getElementById(`speed-${k}-bar`).style.width = "0%";
+  document.getElementById("speed-download")!.textContent = "—";
+  document.getElementById("speed-upload")!.textContent = "—";
+  document.getElementById("speed-latency")!.textContent = "—";
+  document.getElementById("speed-jitter")!.textContent = "—";
+  (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
+    (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
 
   const startTime = performance.now();
 
-  const results = await SpeedTest.run((phase, progress, data) => {
+  const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload";
-    document.getElementById("speed-phase").textContent = `${phaseLabel}... ${progress}%`;
-    document.getElementById(`speed-${phase}-bar`).style.width = `${progress}%`;
+    document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
+    (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
 
     if (data) {
-      if (data.latency !== null) document.getElementById("speed-latency").textContent = data.latency;
-      if (data.jitter !== null) document.getElementById("speed-jitter").textContent = data.jitter;
+      if (data.latency !== null) document.getElementById("speed-latency")!.textContent = String(data.latency);
+      if (data.jitter !== null) document.getElementById("speed-jitter")!.textContent = String(data.jitter);
       if (data.download !== null) {
-        document.getElementById("speed-download").textContent = data.download.toFixed(1);
+        document.getElementById("speed-download")!.textContent = data.download.toFixed(1);
         speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
         drawSpeedGraph();
       }
       if (data.upload !== null) {
-        document.getElementById("speed-upload").textContent = data.upload.toFixed(1);
+        document.getElementById("speed-upload")!.textContent = data.upload.toFixed(1);
         speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
         drawSpeedGraph();
       }
     }
   });
 
-  document.getElementById("speed-download").textContent = results.download !== null ? results.download.toFixed(1) : "—";
-  document.getElementById("speed-upload").textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
-  document.getElementById("speed-latency").textContent = results.latency !== null ? results.latency : "—";
-  document.getElementById("speed-jitter").textContent = results.jitter !== null ? results.jitter : "—";
+  document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";
+  document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
+  document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
+  document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
 
   const grade = SpeedTest.getGrade(results.download);
-  document.getElementById("speed-grade").textContent = grade.grade;
-  document.getElementById("speed-grade-label").textContent = grade.label;
+  document.getElementById("speed-grade")!.textContent = grade.grade;
+  document.getElementById("speed-grade-label")!.textContent = grade.label;
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
-  document.getElementById("speed-phase").textContent =
+  document.getElementById("speed-phase")!.textContent =
     `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms latency`;
 
   drawSpeedGraph();
@@ -576,7 +618,17 @@ async function runSpeedTest() {
 }
 
 // Speed suggestions
-const speedSuggestions = [
+interface SpeedSuggestion {
+  name: string;
+  type: string;
+  icon: string;
+  desc: string;
+  tags: string[];
+  url: string | null;
+  when: (r: { download: number; upload: number; latency: number; jitter: number }) => boolean;
+}
+
+const speedSuggestions: SpeedSuggestion[] = [
   {
     name: "1.1.1.1 (Cloudflare DNS)",
     type: "DNS Resolver",
@@ -651,18 +703,17 @@ const speedSuggestions = [
   },
 ];
 
-function renderSpeedSuggestions(results) {
-  const section = document.getElementById("speed-suggestions-section");
-  const subtitle = document.getElementById("speed-suggestions-subtitle");
-  const grid = document.getElementById("speed-suggestions-grid");
+function renderSpeedSuggestions(results: SpeedTestResults): void {
+  const section = document.getElementById("speed-suggestions-section")!;
+  const subtitle = document.getElementById("speed-suggestions-subtitle")!;
+  const grid = document.getElementById("speed-suggestions-grid")!;
 
   const dl = results.download || 0;
   const ul = results.upload || 0;
   const lat = results.latency || 0;
   const jit = results.jitter || 0;
 
-  // Identify issues
-  const issues = [];
+  const issues: string[] = [];
   if (dl < 25) issues.push("slow download");
   else if (dl < 100) issues.push("moderate download");
   if (ul < 10) issues.push("slow upload");
@@ -679,7 +730,6 @@ function renderSpeedSuggestions(results) {
     subtitle.textContent = `Issues detected: ${issues.join(", ")}. These tools and tips can help:`;
   }
 
-  // Filter and rank
   const r = { download: dl, upload: ul, latency: lat, jitter: jit };
   const relevant = speedSuggestions
     .filter((s) => s.when(r))
@@ -717,11 +767,11 @@ function renderSpeedSuggestions(results) {
 }
 
 // Filter list detection
-async function runFilterListDetection() {
+async function runFilterListDetection(): Promise<void> {
   await FilterListDetector.runAll();
   const summary = FilterListDetector.getSummary();
-  const grid = document.getElementById("filter-list-grid");
-  const subtitle = document.getElementById("filter-list-subtitle");
+  const grid = document.getElementById("filter-list-grid")!;
+  const subtitle = document.getElementById("filter-list-subtitle")!;
 
   if (summary.detected.length === 0) {
     subtitle.textContent = "No filter lists detected. You may not have an ad blocker installed.";
@@ -731,7 +781,7 @@ async function runFilterListDetection() {
 
   grid.innerHTML = FilterListDetector.results
     .map((list) => {
-      let dotClass, badgeClass, badgeText;
+      let dotClass: string, badgeClass: string, badgeText: string;
       if (list.special === "acceptableAds") {
         dotClass = list.detected ? "warning" : "active";
         badgeClass = list.detected ? "warning" : "active";
@@ -755,9 +805,19 @@ async function runFilterListDetection() {
     .join("");
 }
 
+// Adblock suggestions
+interface AdblockSuggestion {
+  name: string;
+  type: string;
+  icon: string;
+  desc: string;
+  tags: string[];
+  url: string;
+  covers: string[];
+  minScore: number;
+}
 
-// Suggestions
-const adblockSuggestions = [
+const adblockSuggestions: AdblockSuggestion[] = [
   {
     name: "uBlock Origin",
     type: "Browser Extension",
@@ -820,12 +880,23 @@ const adblockSuggestions = [
   },
 ];
 
-function renderSuggestions(score, results) {
-  const section = document.getElementById("suggestions-section");
-  const subtitle = document.getElementById("suggestions-subtitle");
-  const grid = document.getElementById("suggestions-grid");
+interface AdblockScore {
+  score: number;
+  total: number;
+  blocked: number;
+  passed: number;
+}
 
-  // Find which categories have gaps
+interface CategoryResult {
+  name: string;
+  tests: { blocked: boolean; [key: string]: any }[];
+}
+
+function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void {
+  const section = document.getElementById("suggestions-section")!;
+  const subtitle = document.getElementById("suggestions-subtitle")!;
+  const grid = document.getElementById("suggestions-grid")!;
+
   const weakCategories = results
     .filter((cat) => {
       const blockedRatio = cat.tests.filter((t) => t.blocked).length / cat.tests.length;
@@ -841,7 +912,6 @@ function renderSuggestions(score, results) {
     subtitle.textContent = "Your browser has limited protection. These tools will significantly improve your privacy:";
   }
 
-  // Rank suggestions: prioritize those covering weak categories
   const ranked = adblockSuggestions
     .map((s) => {
       const relevance = s.covers.filter((c) => weakCategories.includes(c)).length;
@@ -849,7 +919,6 @@ function renderSuggestions(score, results) {
     })
     .sort((a, b) => b.relevance - a.relevance);
 
-  // Mark top pick
   const topPick = ranked[0];
 
   grid.innerHTML = ranked
@@ -881,7 +950,7 @@ function renderSuggestions(score, results) {
   section.classList.add("visible");
 }
 
-function createCategoryWithResults(name, tests, blocked) {
+function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean }[], blocked: number): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "test-category";
 

@@ -1,6 +1,3 @@
 name = "netcheck-site"
 compatibility_date = "2025-04-01"
-main = "src/index.ts"
-
-[assets]
-directory = "./public"
+main = "src/worker/index.ts"
