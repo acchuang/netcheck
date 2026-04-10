@@ -143,6 +143,21 @@
       </div>
 
       <div class="speed-dashboard">
+        <!-- Server Selector -->
+        <div class="server-selector">
+          <div class="server-selector-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            <span class="server-selector-title">Test Server</span>
+            <span class="server-selector-status" id="server-status">probing servers...</span>
+          </div>
+          <div class="server-list" id="server-list">
+            <div class="server-list-loading">Detecting nearest servers...</div>
+          </div>
+        </div>
+
         <div class="speed-gauge-row">
           <div class="speed-gauge">
             <div class="speed-gauge-label">Download</div>

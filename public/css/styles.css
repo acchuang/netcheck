@@ -732,6 +732,143 @@ select option {
   height: 14px;
 }
 
+/* Server Selector */
+.server-selector {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.server-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.server-selector-title {
+  font-size: 14px;
+  font-weight: 510;
+  color: var(--text-primary);
+  letter-spacing: -0.182px;
+  flex: 1;
+}
+
+.server-selector-status {
+  font-size: 11px;
+  font-weight: 510;
+  color: var(--text-quaternary);
+}
+
+.server-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.server-list-loading {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-quaternary);
+}
+
+.server-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.server-item:last-child {
+  border-bottom: none;
+}
+
+.server-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.server-item.selected {
+  background: rgba(94, 106, 210, 0.08);
+}
+
+.server-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-solid);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+
+.server-item.selected .server-radio {
+  border-color: var(--accent);
+}
+
+.server-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.server-item.selected .server-radio-dot {
+  background: var(--accent);
+}
+
+.server-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.server-name {
+  font-size: 13px;
+  font-weight: 510;
+  color: var(--text-primary);
+}
+
+.server-location {
+  font-size: 11px;
+  color: var(--text-quaternary);
+}
+
+.server-latency {
+  font-size: 12px;
+  font-weight: 510;
+  font-family: "Berkeley Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.server-latency.fast {
+  color: var(--emerald);
+}
+
+.server-latency.medium {
+  color: var(--amber);
+}
+
+.server-latency.slow {
+  color: var(--red);
+}
+
+.server-no-upload {
+  font-size: 10px;
+  color: var(--text-quaternary);
+  padding: 1px 6px;
+  border: 1px solid var(--border-solid);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
 /* Speed Test */
 .speed-dashboard {
   display: flex;

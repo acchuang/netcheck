@@ -14,6 +14,18 @@ export default {
       return handleHeaders(request);
     }
 
+    if (url.pathname === "/api/speedtest/ping") {
+      return new Response("pong", { headers: corsHeaders() });
+    }
+
+    if (url.pathname === "/api/speedtest/down") {
+      return handleSpeedDown(url);
+    }
+
+    if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
+      return handleSpeedUp(request);
+    }
+
     // Static assets handled by wrangler assets binding
     return new Response("Not Found", { status: 404 });
   },
@@ -69,6 +81,31 @@ function handleHeaders(request: Request): Response {
     headers[key] = value;
   }
   return Response.json({ headers }, { headers: corsHeaders() });
+}
+
+function handleSpeedDown(url: URL): Response {
+  const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
+  if (bytes <= 0) {
+    return new Response("", { headers: corsHeaders() });
+  }
+  // Generate random-ish data to prevent compression
+  const data = new Uint8Array(bytes);
+  for (let i = 0; i < bytes; i += 1024) {
+    data[i] = (i * 7 + 13) & 0xff;
+  }
+  return new Response(data, {
+    headers: {
+      ...corsHeaders(),
+      "Content-Type": "application/octet-stream",
+      "Content-Length": String(bytes),
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+async function handleSpeedUp(request: Request): Promise<Response> {
+  const body = await request.arrayBuffer();
+  return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
 }
 
 function corsHeaders(): Record<string, string> {

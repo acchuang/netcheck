@@ -205,9 +205,55 @@ function createCategory(name, testCount) {
 }
 
 // Speed test
-function initSpeedTest() {
+async function initSpeedTest() {
   const btn = document.getElementById("speed-start-btn");
   btn.addEventListener("click", runSpeedTest);
+
+  // Probe servers
+  const nearest = await SpeedTest.probeServers();
+  renderServerList(nearest);
+}
+
+function renderServerList(probeResults) {
+  const list = document.getElementById("server-list");
+  const status = document.getElementById("server-status");
+
+  if (probeResults.length === 0) {
+    list.innerHTML = '<div class="server-list-loading">No servers reachable</div>';
+    status.textContent = "no servers found";
+    return;
+  }
+
+  status.textContent = `${probeResults.length} servers found`;
+
+  // Auto-select fastest
+  SpeedTest.selectServer(probeResults[0].server.id);
+
+  list.innerHTML = probeResults
+    .map((probe, i) => {
+      const s = probe.server;
+      const latencyClass = probe.latency < 50 ? "fast" : probe.latency < 150 ? "medium" : "slow";
+      const selected = i === 0 ? " selected" : "";
+      const noUpload = !s.up ? '<span class="server-no-upload">download only</span>' : "";
+
+      return `
+      <div class="server-item${selected}" data-server-id="${s.id}" onclick="selectServer(this, '${s.id}')">
+        <div class="server-radio"><div class="server-radio-dot"></div></div>
+        <div class="server-info">
+          <div class="server-name">${s.name}</div>
+          <div class="server-location">${s.location}</div>
+        </div>
+        ${noUpload}
+        <span class="server-latency ${latencyClass}">${probe.latency}ms</span>
+      </div>`;
+    })
+    .join("");
+}
+
+function selectServer(el, serverId) {
+  document.querySelectorAll(".server-item").forEach((item) => item.classList.remove("selected"));
+  el.classList.add("selected");
+  SpeedTest.selectServer(serverId);
 }
 
 async function runSpeedTest() {
@@ -219,10 +265,16 @@ async function runSpeedTest() {
   document.getElementById("speed-upload").textContent = "—";
   document.getElementById("speed-latency").textContent = "—";
   document.getElementById("speed-jitter").textContent = "—";
+  ["download", "upload", "latency", "jitter"].forEach((k) => {
+    document.getElementById(`speed-${k}-bar`).style.width = "0%";
+  });
+
+  const server = SpeedTest.selectedServer;
+  const serverLabel = server ? `${server.name} — ${server.location}` : "";
 
   const results = await SpeedTest.run((phase, progress, data) => {
-    document.getElementById("speed-phase").textContent =
-      `${phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload"}... ${progress}%`;
+    const phaseLabel = phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload";
+    document.getElementById("speed-phase").textContent = `${phaseLabel}... ${progress}% — ${serverLabel}`;
 
     document.getElementById(`speed-${phase}-bar`).style.width = `${progress}%`;
 
@@ -240,11 +292,19 @@ async function runSpeedTest() {
   document.getElementById("speed-latency").textContent = results.latency !== null ? results.latency : "—";
   document.getElementById("speed-jitter").textContent = results.jitter !== null ? results.jitter : "—";
 
+  // Upload bar — N/A for servers without upload
+  if (!server?.up) {
+    document.getElementById("speed-upload").textContent = "N/A";
+    document.getElementById("speed-upload-bar").style.width = "0%";
+  }
+
   const grade = SpeedTest.getGrade(results.download);
   document.getElementById("speed-grade").textContent = grade.grade;
   document.getElementById("speed-grade-label").textContent = grade.label;
+
+  const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
   document.getElementById("speed-phase").textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ↑ ${SpeedTest.formatSpeed(results.upload)} · ${results.latency}ms latency`;
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms latency — ${serverLabel}`;
 
   btn.disabled = false;
   btn.textContent = "Run Again";
