@@ -19,9 +19,14 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/ping") {
-      const colo = request.headers.get("cf-ray")?.split("-")[1] || "unknown";
+      const cf = (request as unknown as { cf?: { colo?: string } }).cf;
+      const colo = cf?.colo || "unknown";
       return new Response("pong", {
-        headers: { ...corsHeaders(), "x-colo": colo },
+        headers: {
+          ...corsHeaders(),
+          "x-colo": colo,
+          "Access-Control-Expose-Headers": "x-colo",
+        },
       });
     }
 
