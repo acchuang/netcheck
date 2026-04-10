@@ -49,6 +49,25 @@ const AdBlockTest = {
         { name: "TikTok Pixel", type: "pixel", url: "https://analytics.tiktok.com/i18n/pixel/events.js" },
       ],
     },
+    {
+      name: "Fingerprint Protection",
+      tests: [
+        { name: "Canvas fingerprint", type: "script", url: "https://cdn.jsdelivr.net/npm/fingerprintjs@0.5.3/fingerprint.min.js" },
+        { name: "WebGL fingerprint probe", type: "element", className: "fp-canvas-probe" },
+        { name: "AudioContext fingerprint", type: "element", id: "audio-fingerprint" },
+        { name: "ClientRects fingerprint", type: "element", className: "getClientRects-fingerprint" },
+      ],
+    },
+    {
+      name: "Cookie Consent & Annoyances",
+      tests: [
+        { name: "Cookie notice banner", type: "element", className: "cookie-notice" },
+        { name: "Cookie consent popup", type: "element", id: "cookie-consent-banner" },
+        { name: "Newsletter popup", type: "element", className: "newsletter-signup-popup" },
+        { name: "Push notification prompt", type: "element", className: "push-notification-prompt" },
+        { name: "Survey widget", type: "element", id: "survey-widget" },
+      ],
+    },
   ],
 
   results: [],

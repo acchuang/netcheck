@@ -14,6 +14,10 @@ export default {
       return handleHeaders(request);
     }
 
+    if (url.pathname === "/api/dns/check-resolvers") {
+      return handleResolverCheck();
+    }
+
     if (url.pathname === "/api/speedtest/ping") {
       return new Response("pong", { headers: corsHeaders() });
     }
@@ -24,14 +28,6 @@ export default {
 
     if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
       return handleSpeedUp(request);
-    }
-
-    if (url.pathname === "/api/speedtest/proxy") {
-      return handleSpeedProxy(url);
-    }
-
-    if (url.pathname === "/api/speedtest/proxy/ping") {
-      return handleProxyPing(url);
     }
 
     // Static assets handled by wrangler assets binding
@@ -116,134 +112,71 @@ async function handleSpeedUp(request: Request): Promise<Response> {
   return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
 }
 
-// Allowed hostnames for proxy speed test — prevents open-relay abuse
-const PROXY_ALLOWLIST = new Set([
-  // AWS S3 regions
-  "s3.amazonaws.com",
-  "s3.us-east-1.amazonaws.com",
-  "s3.us-west-2.amazonaws.com",
-  "s3.eu-west-1.amazonaws.com",
-  "s3.ap-southeast-1.amazonaws.com",
-  "s3.ap-northeast-1.amazonaws.com",
-  // GCP
-  "storage.googleapis.com",
-  // Azure
-  "azurespeed.azurewebsites.net",
-  // DigitalOcean
-  "speedtest-ams3.digitalocean.com",
-  "speedtest-sgp1.digitalocean.com",
-  "speedtest-nyc3.digitalocean.com",
-  "speedtest-sfo3.digitalocean.com",
-  "speedtest-lon1.digitalocean.com",
-  "speedtest-blr1.digitalocean.com",
-  "speedtest-syd1.digitalocean.com",
-  // Vultr
-  "fra-de-ping.vultr.com",
-  "sgp-ping.vultr.com",
-  "nrt-jp-ping.vultr.com",
-  "lax-us-ping.vultr.com",
-  "chi-us-ping.vultr.com",
-  "ewr-us-ping.vultr.com",
-  "syd-au-ping.vultr.com",
-  "lon-gb-ping.vultr.com",
-  // Hetzner
-  "speed.hetzner.de",
-  // OVH
-  "proof.ovh.net",
-  // Tele2
-  "speedtest.tele2.net",
-  // Linode/Akamai
-  "speedtest.singapore.linode.com",
-  "speedtest.tokyo2.linode.com",
-  "speedtest.london.linode.com",
-  "speedtest.newark.linode.com",
-  "speedtest.fremont.linode.com",
-  "speedtest.atlanta.linode.com",
-  // Scaleway
-  "ping.online.net",
-  // FDC
-  "lg.lax-us.fdcservers.net",
-  "lg.nyc-us.fdcservers.net",
-  "lg.chi-us.fdcservers.net",
-]);
+interface ResolverDef {
+  name: string;
+  host: string;
+  ip: string;
+  desc: string;
+}
 
-async function handleSpeedProxy(url: URL): Promise<Response> {
-  const target = url.searchParams.get("url");
-  if (!target) {
-    return Response.json({ error: "Missing url parameter" }, { status: 400, headers: corsHeaders() });
-  }
+const RESOLVERS: ResolverDef[] = [
+  { name: "Cloudflare", host: "cloudflare-dns.com", ip: "1.1.1.1", desc: "Fast, privacy-focused" },
+  { name: "Google", host: "dns.google", ip: "8.8.8.8", desc: "Reliable, global" },
+  { name: "Quad9", host: "dns.quad9.net", ip: "9.9.9.9", desc: "Security-focused, threat blocking" },
+  { name: "OpenDNS", host: "dns.opendns.com", ip: "208.67.222.222", desc: "Cisco Umbrella, filtering" },
+  { name: "AdGuard DNS", host: "dns.adguard-dns.com", ip: "94.140.14.14", desc: "Ad & tracker blocking" },
+  { name: "Cloudflare Families", host: "family.cloudflare-dns.com", ip: "1.1.1.3", desc: "Malware + adult content filter" },
+  { name: "NextDNS", host: "dns.nextdns.io", ip: "45.90.28.0", desc: "Customizable, analytics" },
+  { name: "Mullvad DNS", host: "dns.mullvad.net", ip: "194.242.2.2", desc: "Privacy, no logging" },
+];
 
-  let targetUrl: URL;
+async function testOneResolver(resolver: ResolverDef) {
+  const dohBase = `https://${resolver.host}/dns-query`;
+
   try {
-    targetUrl = new URL(target);
+    // Latency + basic resolution
+    const start = Date.now();
+    const res = await fetch(`${dohBase}?name=example.com&type=A`, {
+      headers: { Accept: "application/dns-json" },
+      signal: AbortSignal.timeout(4000),
+    });
+    const latency = Date.now() - start;
+    if (!res.ok) return { ...resolver, reachable: false, latency: null, dnssec: false, filtering: false };
+
+    // DNSSEC check (AD flag on a signed domain)
+    let dnssec = false;
+    try {
+      const dnssecRes = await fetch(`${dohBase}?name=cloudflare.com&type=A&do=1`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(3000),
+      });
+      const dnssecData = await dnssecRes.json() as { AD?: boolean };
+      dnssec = !!dnssecData.AD;
+    } catch { /* ignore */ }
+
+    // Filtering check — resolve a known ad/tracker domain and see if it's blocked
+    let filtering = false;
+    try {
+      const filterRes = await fetch(`${dohBase}?name=ads.google.com&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(3000),
+      });
+      const filterData = await filterRes.json() as { Answer?: { data: string }[]; Status?: number };
+      const blocked = !filterData.Answer || filterData.Answer.length === 0 ||
+        filterData.Answer.some((a: { data: string }) => a.data === "0.0.0.0" || a.data === "127.0.0.1") ||
+        filterData.Status === 3;
+      filtering = blocked;
+    } catch { /* ignore */ }
+
+    return { ...resolver, reachable: true, latency, dnssec, filtering };
   } catch {
-    return Response.json({ error: "Invalid url" }, { status: 400, headers: corsHeaders() });
-  }
-
-  if (!PROXY_ALLOWLIST.has(targetUrl.hostname)) {
-    return Response.json({ error: "Host not allowed" }, { status: 403, headers: corsHeaders() });
-  }
-
-  try {
-    const response = await fetch(target, {
-      signal: AbortSignal.timeout(30000),
-      headers: { "User-Agent": "NetCheck-SpeedTest/1.0" },
-    });
-
-    return new Response(response.body, {
-      status: response.status,
-      headers: {
-        ...corsHeaders(),
-        "Content-Type": response.headers.get("Content-Type") || "application/octet-stream",
-        "Content-Length": response.headers.get("Content-Length") || "",
-        "Cache-Control": "no-store",
-        "X-Proxy-Host": targetUrl.hostname,
-      },
-    });
-  } catch (err) {
-    return Response.json(
-      { error: "Proxy fetch failed", detail: String(err) },
-      { status: 502, headers: corsHeaders() }
-    );
+    return { ...resolver, reachable: false, latency: null, dnssec: false, filtering: false };
   }
 }
 
-async function handleProxyPing(url: URL): Promise<Response> {
-  const target = url.searchParams.get("url");
-  if (!target) {
-    return Response.json({ error: "Missing url parameter" }, { status: 400, headers: corsHeaders() });
-  }
-
-  let targetUrl: URL;
-  try {
-    targetUrl = new URL(target);
-  } catch {
-    return Response.json({ error: "Invalid url" }, { status: 400, headers: corsHeaders() });
-  }
-
-  if (!PROXY_ALLOWLIST.has(targetUrl.hostname)) {
-    return Response.json({ error: "Host not allowed" }, { status: 403, headers: corsHeaders() });
-  }
-
-  const start = Date.now();
-  try {
-    const response = await fetch(target, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-      headers: { "User-Agent": "NetCheck-SpeedTest/1.0" },
-    });
-    const elapsed = Date.now() - start;
-
-    return Response.json(
-      { latency: elapsed, status: response.status, host: targetUrl.hostname },
-      { headers: corsHeaders() }
-    );
-  } catch (err) {
-    return Response.json(
-      { error: "Ping failed", detail: String(err) },
-      { status: 502, headers: corsHeaders() }
-    );
-  }
+async function handleResolverCheck(): Promise<Response> {
+  const results = await Promise.all(RESOLVERS.map(testOneResolver));
+  return Response.json(results, { headers: corsHeaders() });
 }
 
 function corsHeaders(): Record<string, string> {

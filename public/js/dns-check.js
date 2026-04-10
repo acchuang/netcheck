@@ -18,16 +18,18 @@ const DnsCheck = {
   },
 
   async detectResolver() {
+    try {
+      const res = await fetch("/api/dns/check-resolvers");
+      if (res.ok) return await res.json();
+    } catch { /* fall through */ }
+
+    // Fallback: direct DoH checks (may fail due to CORS)
     const resolvers = [
-      { name: "Cloudflare", host: "cloudflare-dns.com", ip: "1.1.1.1" },
-      { name: "Google", host: "dns.google", ip: "8.8.8.8" },
-      { name: "Quad9", host: "dns.quad9.net", ip: "9.9.9.9" },
-      { name: "OpenDNS", host: "resolver1.opendns.com", ip: "208.67.222.222" },
-      { name: "AdGuard DNS", host: "dns.adguard-dns.com", ip: "94.140.14.14" },
+      { name: "Cloudflare", host: "cloudflare-dns.com", ip: "1.1.1.1", desc: "Fast, privacy-focused" },
+      { name: "Google", host: "dns.google", ip: "8.8.8.8", desc: "Reliable, global" },
+      { name: "Quad9", host: "dns.quad9.net", ip: "9.9.9.9", desc: "Security-focused" },
     ];
-
     const results = [];
-
     for (const resolver of resolvers) {
       try {
         const start = performance.now();
@@ -35,18 +37,11 @@ const DnsCheck = {
           headers: { Accept: "application/dns-json" },
           signal: AbortSignal.timeout(3000),
         });
-        const elapsed = Math.round(performance.now() - start);
-
-        if (res.ok) {
-          results.push({ ...resolver, reachable: true, latency: elapsed });
-        } else {
-          results.push({ ...resolver, reachable: false, latency: null });
-        }
+        results.push({ ...resolver, reachable: res.ok, latency: res.ok ? Math.round(performance.now() - start) : null, dnssec: false, filtering: false });
       } catch {
-        results.push({ ...resolver, reachable: false, latency: null });
+        results.push({ ...resolver, reachable: false, latency: null, dnssec: false, filtering: false });
       }
     }
-
     return results;
   },
 

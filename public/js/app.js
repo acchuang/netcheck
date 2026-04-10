@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
   runDnsChecks();
   runAdBlockTests();
   runFilterListDetection();
-  runFingerprintCheck();
   initSpeedTest();
 });
 
@@ -27,6 +26,23 @@ function initTabs() {
   document.getElementById("dns-lookup-btn").addEventListener("click", runDnsLookup);
   document.getElementById("dns-lookup-domain").addEventListener("keydown", (e) => {
     if (e.key === "Enter") runDnsLookup();
+  });
+
+  // Export button
+  document.getElementById("export-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    ReportExporter.showExportMenu();
+  });
+  document.querySelectorAll(".export-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const format = btn.dataset.format;
+      if (format === "markdown") ReportExporter.downloadMarkdown();
+      else if (format === "pdf") ReportExporter.downloadPdf();
+      ReportExporter.hideExportMenu();
+    });
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".export-dropdown")) ReportExporter.hideExportMenu();
   });
 }
 
@@ -56,12 +72,23 @@ async function runDnsChecks() {
   if (reachable.length > 0) {
     const fastest = reachable.reduce((a, b) => (a.latency < b.latency ? a : b));
     reachable.forEach((r) => {
-      const item = createCheckItem(
-        r.name === fastest.name ? "pass" : "warn",
-        `${r.name} (${r.ip})`,
-        `${r.latency}ms`
-      );
-      resolverContainer.appendChild(item);
+      const badges = [];
+      if (r.dnssec) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
+      if (r.filtering) badges.push('<span class="resolver-badge filter">Filtering</span>');
+      const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
+
+      const div = document.createElement("div");
+      div.className = "dns-check-item";
+      const status = r.name === fastest.name ? "pass" : "warn";
+      const iconSvg = status === "pass"
+        ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
+        : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+      div.innerHTML = `
+        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+        <span class="check-label">${r.name} <span class="resolver-ip">${r.ip}</span>${badgeHtml}</span>
+        <span class="check-value">${r.latency}ms</span>
+      `;
+      resolverContainer.appendChild(div);
     });
 
     const unreachable = resolvers.filter((r) => !r.reachable);
@@ -70,7 +97,7 @@ async function runDnsChecks() {
       resolverContainer.appendChild(item);
     });
 
-    setBadge("dns-resolver-status", "done", `${reachable.length} reachable`);
+    setBadge("dns-resolver-status", "done", `${reachable.length} of ${resolvers.length} reachable`);
   } else {
     resolverContainer.innerHTML = '<p class="info-muted">No resolvers detected</p>';
     setBadge("dns-resolver-status", "error", "none found");
@@ -96,6 +123,166 @@ async function runDnsChecks() {
   } else {
     setBadge("dns-security-status", "done", "partial");
   }
+
+  renderDnsSuggestions({ resolvers, securityChecks, reachable });
+}
+
+// DNS suggestions
+const dnsSuggestions = [
+  {
+    name: "1.1.1.1 (Cloudflare DNS)",
+    type: "Public DNS Resolver",
+    icon: "CF",
+    desc: "The fastest public DNS resolver with built-in privacy. Supports DNS-over-HTTPS and DNS-over-TLS. No logging of your queries.",
+    tags: ["fastest", "DoH", "DoT", "privacy"],
+    url: "https://1.1.1.1",
+    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100,
+  },
+  {
+    name: "1.1.1.1 for Families",
+    type: "Filtered DNS",
+    icon: "CF+",
+    desc: "Cloudflare's family-safe DNS that blocks malware (1.1.1.2) or malware + adult content (1.1.1.3). Same speed, added protection.",
+    tags: ["family safe", "malware blocking", "free"],
+    url: "https://one.one.one.one/family",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering"),
+  },
+  {
+    name: "Quad9",
+    type: "Security-Focused DNS",
+    icon: "Q9",
+    desc: "Non-profit DNS service that blocks malicious domains using threat intelligence from 25+ sources. Strong DNSSEC validation.",
+    tags: ["threat blocking", "non-profit", "DNSSEC"],
+    url: "https://quad9.net",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") || !ctx.hasSecurity("DNSSEC Validation"),
+  },
+  {
+    name: "NextDNS",
+    type: "Customizable DNS",
+    icon: "ND",
+    desc: "Highly configurable DNS with per-device policies, ad/tracker blocking, parental controls, and detailed analytics dashboard.",
+    tags: ["customizable", "analytics", "ad blocking"],
+    url: "https://nextdns.io",
+    when: () => true,
+  },
+  {
+    name: "Enable DNS-over-HTTPS",
+    type: "Browser Setting",
+    icon: "DoH",
+    desc: "Encrypt your DNS queries to prevent ISP snooping and man-in-the-middle attacks. Available in Firefox, Chrome, Edge, and Brave settings.",
+    tags: ["encryption", "privacy", "browser setting"],
+    url: "https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/",
+    when: (ctx) => !ctx.hasSecurity("DNS-over-HTTPS"),
+  },
+  {
+    name: "Enable DNSSEC",
+    type: "DNS Security",
+    icon: "SEC",
+    desc: "DNSSEC prevents DNS spoofing by cryptographically signing records. Switch to a resolver that validates DNSSEC (Cloudflare, Google, Quad9).",
+    tags: ["anti-spoofing", "cryptographic", "validation"],
+    url: "https://www.cloudflare.com/dns/dnssec/how-dnssec-works/",
+    when: (ctx) => !ctx.hasSecurity("DNSSEC Validation"),
+  },
+  {
+    name: "Pi-hole",
+    type: "Network-Level DNS",
+    icon: "Pi",
+    desc: "Self-hosted DNS sinkhole that blocks ads, trackers, and malware at the network level for every device on your network.",
+    tags: ["self-hosted", "network-wide", "open source"],
+    url: "https://pi-hole.net",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering"),
+  },
+  {
+    name: "Disable WebRTC Leak",
+    type: "Browser Fix",
+    icon: "RTC",
+    desc: "Your browser is leaking your local IP via WebRTC. Disable it in browser settings or use an extension like uBlock Origin.",
+    tags: ["privacy fix", "IP leak", "browser setting"],
+    url: null,
+    when: (ctx) => ctx.hasWebRtcLeak,
+  },
+  {
+    name: "AdGuard DNS",
+    type: "Ad-Blocking DNS",
+    icon: "AG",
+    desc: "DNS resolver that blocks ads and trackers at the DNS level. Works across all apps and devices without installing anything.",
+    tags: ["ad blocking", "no install", "cross-platform"],
+    url: "https://adguard-dns.io",
+    when: (ctx) => !ctx.usingResolver("AdGuard DNS"),
+  },
+  {
+    name: "Use Multiple DNS Providers",
+    type: "Reliability Tip",
+    icon: "2x",
+    desc: "Configure a secondary DNS resolver as fallback. If your primary goes down, your internet won't break. Most routers support primary + secondary.",
+    tags: ["reliability", "redundancy", "easy setup"],
+    url: null,
+    when: (ctx) => ctx.reachableCount < 3,
+  },
+];
+
+function renderDnsSuggestions({ resolvers, securityChecks, reachable }) {
+  const section = document.getElementById("dns-suggestions-section");
+  const subtitle = document.getElementById("dns-suggestions-subtitle");
+  const grid = document.getElementById("dns-suggestions-grid");
+
+  // Build context helpers
+  const ctx = {
+    usingResolver: (name) => reachable.some((r) => r.name === name && r.latency < 100),
+    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency)) : Infinity,
+    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency)) : Infinity,
+    hasSecurity: (name) => securityChecks.some((c) => c.name === name && c.status === "pass"),
+    hasWebRtcLeak: securityChecks.some((c) => c.name === "WebRTC IP Leak" && c.status === "fail"),
+    reachableCount: reachable.length,
+  };
+
+  // Identify issues
+  const issues = [];
+  if (!ctx.hasSecurity("DNSSEC Validation")) issues.push("DNSSEC not validated");
+  if (!ctx.hasSecurity("DNS-over-HTTPS")) issues.push("DNS not encrypted");
+  if (!ctx.hasSecurity("Malware Domain Filtering")) issues.push("no malware filtering");
+  if (ctx.hasWebRtcLeak) issues.push("WebRTC IP leak");
+  if (ctx.fastestResolver() > 80) issues.push("slow DNS resolvers");
+  if (ctx.reachableCount < 2) issues.push("limited resolver availability");
+
+  if (issues.length === 0) {
+    subtitle.textContent = "Your DNS configuration looks solid. Here are tools to further enhance it:";
+  } else {
+    subtitle.textContent = `Issues found: ${issues.join(", ")}. These tools and settings can help:`;
+  }
+
+  // Filter and rank
+  const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
+
+  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+
+  grid.innerHTML = relevant
+    .map((s, i) => {
+      const isTop = i === 0 && issues.length > 0;
+      const linkHtml = s.url
+        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">Learn more ${arrowSvg}</a>`
+        : `<span class="suggestion-link" style="color:var(--text-quaternary)">Check browser settings</span>`;
+
+      return `
+      <div class="suggestion-card${isTop ? " recommended" : ""}">
+        <div class="suggestion-top">
+          <div class="suggestion-icon">${s.icon}</div>
+          <div class="suggestion-info">
+            <div class="suggestion-name">${s.name}</div>
+            <div class="suggestion-type">${s.type}</div>
+          </div>
+          ${isTop ? '<span class="suggestion-badge">Top Fix</span>' : ""}
+        </div>
+        <div class="suggestion-desc">${s.desc}</div>
+        <div class="suggestion-tags">
+          ${s.tags.map((t) => `<span class="suggestion-tag">${t}</span>`).join("")}
+        </div>
+        ${linkHtml}
+      </div>`;
+    })
+    .join("");
+
+  section.classList.add("visible");
 }
 
 async function runDnsLookup() {
@@ -104,12 +291,44 @@ async function runDnsLookup() {
   if (!domain) return;
 
   const resultsEl = document.getElementById("dns-lookup-results");
+  const tableEl = document.getElementById("dns-lookup-table");
   const outputEl = document.getElementById("dns-lookup-output");
   resultsEl.classList.remove("hidden");
-  outputEl.textContent = "Looking up...";
+  tableEl.innerHTML = '<p class="info-muted">Looking up...</p>';
+  outputEl.textContent = "Loading...";
 
-  const data = await DnsCheck.lookupDns(domain, type);
-  outputEl.textContent = JSON.stringify(data, null, 2);
+  let allData;
+  if (type === "ALL") {
+    const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
+    const results = await Promise.all(types.map((t) => DnsCheck.lookupDns(domain, t)));
+    allData = {};
+    types.forEach((t, i) => { allData[t] = results[i]; });
+  } else {
+    allData = { [type]: await DnsCheck.lookupDns(domain, type) };
+  }
+
+  // Render formatted table
+  let html = '<table class="dns-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th></tr></thead><tbody>';
+  let hasRecords = false;
+
+  for (const [recType, data] of Object.entries(allData)) {
+    const answers = data?.Answer || [];
+    for (const rec of answers) {
+      hasRecords = true;
+      const typeName = rec.type === 1 ? "A" : rec.type === 28 ? "AAAA" : rec.type === 15 ? "MX"
+        : rec.type === 2 ? "NS" : rec.type === 16 ? "TXT" : rec.type === 5 ? "CNAME"
+        : rec.type === 6 ? "SOA" : rec.type === 33 ? "SRV" : rec.type === 12 ? "PTR" : recType;
+      html += `<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${rec.name || domain}</td><td class="mono">${rec.data}</td><td>${rec.TTL}s</td></tr>`;
+    }
+  }
+
+  if (!hasRecords) {
+    html += `<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">No records found</td></tr>`;
+  }
+
+  html += "</tbody></table>";
+  tableEl.innerHTML = html;
+  outputEl.textContent = JSON.stringify(allData, null, 2);
 }
 
 // Ad block tests
@@ -205,101 +424,106 @@ function createCategory(name, testCount) {
 }
 
 // Speed test
-let currentServerView = "nearest";
+const speedGraphData = { download: [], upload: [] };
 
-async function initSpeedTest() {
-  const btn = document.getElementById("speed-start-btn");
-  btn.addEventListener("click", runSpeedTest);
+function initSpeedTest() {
+  document.getElementById("speed-start-btn").addEventListener("click", runSpeedTest);
+}
 
-  // Probe all servers with progress
-  const probeBar = document.getElementById("server-probe-fill");
-  await SpeedTest.probeServers((done, total) => {
-    const pct = Math.round((done / total) * 100);
-    probeBar.style.width = `${pct}%`;
-    document.getElementById("server-status").textContent = `probing ${done}/${total}...`;
-  });
+function drawSpeedGraph() {
+  const canvas = document.getElementById("speed-graph");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
 
-  probeBar.parentElement.classList.add("done");
+  const w = rect.width;
+  const h = rect.height;
+  const pad = { top: 10, right: 16, bottom: 24, left: 48 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
 
-  const reachable = SpeedTest.probeResults;
-  document.getElementById("server-status").textContent = `${reachable.length} of ${SpeedTest.servers.length} servers reachable`;
+  ctx.clearRect(0, 0, w, h);
 
-  if (reachable.length > 0) {
-    SpeedTest.selectServer(reachable[0].server.id);
+  const allVals = [...speedGraphData.download, ...speedGraphData.upload].map((p) => p.value);
+  if (allVals.length === 0) return;
+  const maxVal = Math.max(...allVals, 1) * 1.15;
+
+  // Grid lines
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  const gridLines = 4;
+  ctx.font = "11px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.textAlign = "right";
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.top + plotH - (i / gridLines) * plotH;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+    ctx.fillText(`${Math.round((maxVal * i) / gridLines)}`, pad.left - 6, y + 4);
   }
 
-  renderServerView();
-}
+  // Draw line helper
+  function drawLine(points, color) {
+    if (points.length < 2) return;
+    const maxTime = Math.max(...speedGraphData.download.concat(speedGraphData.upload).map((p) => p.time), 1);
 
-function toggleServerView(view) {
-  currentServerView = view;
-  document.querySelectorAll(".server-toggle-btn").forEach((b) => b.classList.remove("active"));
-  document.getElementById(`toggle-${view}`).classList.add("active");
-  renderServerView();
-}
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+    grad.addColorStop(0, color.replace("1)", "0.15)"));
+    grad.addColorStop(1, color.replace("1)", "0)"));
 
-function renderServerView() {
-  const list = document.getElementById("server-list");
-  const results = SpeedTest.probeResults;
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const x = pad.left + (p.time / maxTime) * plotW;
+      const y = pad.top + plotH - (p.value / maxVal) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    // Fill under curve
+    const lastX = pad.left + (points[points.length - 1].time / maxTime) * plotW;
+    const firstX = pad.left + (points[0].time / maxTime) * plotW;
+    ctx.lineTo(lastX, pad.top + plotH);
+    ctx.lineTo(firstX, pad.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
 
-  if (results.length === 0) {
-    list.innerHTML = '<div class="server-list-loading">No servers reachable</div>';
-    return;
+    // Stroke line
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const x = pad.left + (p.time / maxTime) * plotW;
+      const y = pad.top + plotH - (p.value / maxVal) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
 
-  if (currentServerView === "nearest") {
-    list.innerHTML = renderServerItems(results.slice(0, 5));
-  } else if (currentServerView === "network") {
-    const networks = SpeedTest.getNetworks();
-    let html = "";
-    for (const [network, probes] of Object.entries(networks)) {
-      html += `<div class="server-network-header">${network} (${probes.length})</div>`;
-      html += renderServerItems(probes);
-    }
-    list.innerHTML = html;
-  } else {
-    list.innerHTML = renderServerItems(results);
-  }
-}
+  drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
+  drawLine(speedGraphData.upload, "rgba(52, 211, 153, 1)");
 
-function renderServerItems(probeResults) {
-  const selectedId = SpeedTest.selectedServer?.id;
-  return probeResults
-    .map((probe) => {
-      const s = probe.server;
-      const latencyClass = probe.latency < 80 ? "fast" : probe.latency < 200 ? "medium" : "slow";
-      const selected = s.id === selectedId ? " selected" : "";
-      const hasUpload = s.mode === "direct" && s.up;
-      const noUpload = !hasUpload ? '<span class="server-no-upload">download only</span>' : "";
-      const modeTag = s.mode === "direct"
-        ? '<span class="server-mode-tag direct">direct</span>'
-        : '<span class="server-mode-tag">proxy</span>';
-
-      return `
-      <div class="server-item${selected}" data-server-id="${s.id}" onclick="selectServer(this, '${s.id}')">
-        <div class="server-radio"><div class="server-radio-dot"></div></div>
-        <div class="server-info">
-          <div class="server-name">${s.name} <span style="color:var(--text-quaternary);font-weight:400">— ${s.location}</span></div>
-          <div class="server-location">${s.network}</div>
-        </div>
-        ${modeTag}
-        ${noUpload}
-        <span class="server-latency ${latencyClass}">${probe.latency}ms</span>
-      </div>`;
-    })
-    .join("");
-}
-
-function selectServer(el, serverId) {
-  document.querySelectorAll(".server-item").forEach((item) => item.classList.remove("selected"));
-  el.classList.add("selected");
-  SpeedTest.selectServer(serverId);
+  // X-axis label
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.textAlign = "center";
+  ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
 }
 
 async function runSpeedTest() {
   const btn = document.getElementById("speed-start-btn");
   btn.disabled = true;
   btn.textContent = "Running...";
+
+  speedGraphData.download = [];
+  speedGraphData.upload = [];
+  drawSpeedGraph();
 
   document.getElementById("speed-download").textContent = "—";
   document.getElementById("speed-upload").textContent = "—";
@@ -309,35 +533,33 @@ async function runSpeedTest() {
     document.getElementById(`speed-${k}-bar`).style.width = "0%";
   });
 
-  const server = SpeedTest.selectedServer;
-  const serverLabel = server ? `${server.network} — ${server.location}` : "";
+  const startTime = performance.now();
 
   const results = await SpeedTest.run((phase, progress, data) => {
     const phaseLabel = phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload";
-    document.getElementById("speed-phase").textContent = `${phaseLabel}... ${progress}% — ${serverLabel}`;
-
+    document.getElementById("speed-phase").textContent = `${phaseLabel}... ${progress}%`;
     document.getElementById(`speed-${phase}-bar`).style.width = `${progress}%`;
 
     if (data) {
       if (data.latency !== null) document.getElementById("speed-latency").textContent = data.latency;
       if (data.jitter !== null) document.getElementById("speed-jitter").textContent = data.jitter;
-      if (data.download !== null) document.getElementById("speed-download").textContent = data.download.toFixed(1);
-      if (data.upload !== null) document.getElementById("speed-upload").textContent = data.upload.toFixed(1);
+      if (data.download !== null) {
+        document.getElementById("speed-download").textContent = data.download.toFixed(1);
+        speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
+        drawSpeedGraph();
+      }
+      if (data.upload !== null) {
+        document.getElementById("speed-upload").textContent = data.upload.toFixed(1);
+        speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
+        drawSpeedGraph();
+      }
     }
   });
 
-  // Final values
   document.getElementById("speed-download").textContent = results.download !== null ? results.download.toFixed(1) : "—";
   document.getElementById("speed-upload").textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
   document.getElementById("speed-latency").textContent = results.latency !== null ? results.latency : "—";
   document.getElementById("speed-jitter").textContent = results.jitter !== null ? results.jitter : "—";
-
-  // Upload bar — N/A for proxy or servers without upload
-  const hasUpload = server?.mode === "direct" && server?.up;
-  if (!hasUpload) {
-    document.getElementById("speed-upload").textContent = "N/A";
-    document.getElementById("speed-upload-bar").style.width = "0%";
-  }
 
   const grade = SpeedTest.getGrade(results.download);
   document.getElementById("speed-grade").textContent = grade.grade;
@@ -345,10 +567,153 @@ async function runSpeedTest() {
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
   document.getElementById("speed-phase").textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms latency — ${serverLabel}`;
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms latency`;
 
+  drawSpeedGraph();
+  renderSpeedSuggestions(results);
   btn.disabled = false;
   btn.textContent = "Run Again";
+}
+
+// Speed suggestions
+const speedSuggestions = [
+  {
+    name: "1.1.1.1 (Cloudflare DNS)",
+    type: "DNS Resolver",
+    icon: "CF",
+    desc: "The fastest public DNS resolver. Switching from your ISP's default DNS can reduce lookup times and improve page load speed.",
+    tags: ["fastest DNS", "privacy-first", "free"],
+    url: "https://1.1.1.1",
+    when: (r) => r.latency > 15,
+  },
+  {
+    name: "Cloudflare WARP",
+    type: "VPN / Network Optimizer",
+    icon: "W+",
+    desc: "Routes your traffic through Cloudflare's network using WireGuard. Reduces latency, improves routing, and encrypts your connection.",
+    tags: ["WireGuard", "free tier", "mobile + desktop"],
+    url: "https://1.1.1.1",
+    when: (r) => r.latency > 30 || r.jitter > 10,
+  },
+  {
+    name: "Ethernet over Wi-Fi",
+    type: "Hardware Upgrade",
+    icon: "Eth",
+    desc: "A wired Ethernet connection eliminates Wi-Fi interference, reduces jitter, and typically doubles throughput compared to wireless.",
+    tags: ["zero cost", "lower latency", "stable"],
+    url: null,
+    when: (r) => r.jitter > 5 || r.download < 100,
+  },
+  {
+    name: "Wi-Fi 6E / Wi-Fi 7 Router",
+    type: "Hardware Upgrade",
+    icon: "6E",
+    desc: "Upgrading to Wi-Fi 6E or 7 provides wider channels, less congestion on the 6 GHz band, and dramatically lower latency.",
+    tags: ["6 GHz band", "lower latency", "more capacity"],
+    url: null,
+    when: (r) => r.download < 200 || r.jitter > 8,
+  },
+  {
+    name: "QoS / SQM (Smart Queue Management)",
+    type: "Router Configuration",
+    icon: "QoS",
+    desc: "Enable SQM or fq_codel on your router to eliminate bufferbloat. Keeps latency low even when your connection is fully loaded.",
+    tags: ["bufferbloat fix", "OpenWrt", "free"],
+    url: "https://openwrt.org/docs/guide-user/network/traffic-shaping/sqm",
+    when: (r) => r.jitter > 10 || r.latency > 40,
+  },
+  {
+    name: "Contact Your ISP",
+    type: "Service",
+    icon: "ISP",
+    desc: "If speeds are significantly below your plan, your ISP may need to check the line, replace equipment, or investigate congestion.",
+    tags: ["line check", "modem swap", "plan upgrade"],
+    url: null,
+    when: (r) => r.download < 25,
+  },
+  {
+    name: "Check for Background Usage",
+    type: "Software Fix",
+    icon: "BG",
+    desc: "Cloud backups, OS updates, and streaming on other devices can saturate your connection. Audit what's using bandwidth right now.",
+    tags: ["quick win", "free", "common cause"],
+    url: null,
+    when: (r) => r.upload < 10 || r.download < 50,
+  },
+  {
+    name: "NextDNS",
+    type: "DNS + Privacy",
+    icon: "ND",
+    desc: "Fast DNS with built-in ad/tracker blocking. Reduces unnecessary network requests which can improve perceived speed.",
+    tags: ["fast DNS", "ad blocking", "custom filters"],
+    url: "https://nextdns.io",
+    when: () => true,
+  },
+];
+
+function renderSpeedSuggestions(results) {
+  const section = document.getElementById("speed-suggestions-section");
+  const subtitle = document.getElementById("speed-suggestions-subtitle");
+  const grid = document.getElementById("speed-suggestions-grid");
+
+  const dl = results.download || 0;
+  const ul = results.upload || 0;
+  const lat = results.latency || 0;
+  const jit = results.jitter || 0;
+
+  // Identify issues
+  const issues = [];
+  if (dl < 25) issues.push("slow download");
+  else if (dl < 100) issues.push("moderate download");
+  if (ul < 10) issues.push("slow upload");
+  if (lat > 40) issues.push("high latency");
+  else if (lat > 20) issues.push("moderate latency");
+  if (jit > 10) issues.push("high jitter");
+  else if (jit > 5) issues.push("noticeable jitter");
+
+  if (issues.length === 0 && dl >= 100) {
+    subtitle.textContent = "Your connection looks great! Here are ways to keep it optimized:";
+  } else if (issues.length === 0) {
+    subtitle.textContent = "Decent connection. Here are some ways to improve further:";
+  } else {
+    subtitle.textContent = `Issues detected: ${issues.join(", ")}. These tools and tips can help:`;
+  }
+
+  // Filter and rank
+  const r = { download: dl, upload: ul, latency: lat, jitter: jit };
+  const relevant = speedSuggestions
+    .filter((s) => s.when(r))
+    .slice(0, 6);
+
+  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+
+  grid.innerHTML = relevant
+    .map((s, i) => {
+      const isTop = i === 0 && issues.length > 0;
+      const linkHtml = s.url
+        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">Learn more ${arrowSvg}</a>`
+        : `<span class="suggestion-link" style="color:var(--text-quaternary)">No setup required</span>`;
+
+      return `
+      <div class="suggestion-card${isTop ? " recommended" : ""}">
+        <div class="suggestion-top">
+          <div class="suggestion-icon">${s.icon}</div>
+          <div class="suggestion-info">
+            <div class="suggestion-name">${s.name}</div>
+            <div class="suggestion-type">${s.type}</div>
+          </div>
+          ${isTop ? '<span class="suggestion-badge">Top Fix</span>' : ""}
+        </div>
+        <div class="suggestion-desc">${s.desc}</div>
+        <div class="suggestion-tags">
+          ${s.tags.map((t) => `<span class="suggestion-tag">${t}</span>`).join("")}
+        </div>
+        ${linkHtml}
+      </div>`;
+    })
+    .join("");
+
+  section.classList.add("visible");
 }
 
 // Filter list detection
@@ -390,110 +755,6 @@ async function runFilterListDetection() {
     .join("");
 }
 
-// Fingerprint
-async function runFingerprintCheck() {
-  let data;
-  try {
-    data = await Fingerprint.collect();
-  } catch (err) {
-    console.error("Fingerprint collection failed:", err);
-    document.getElementById("fp-summary").textContent = "Fingerprint collection failed";
-    document.getElementById("fp-detail").textContent = String(err);
-    return;
-  }
-
-  // Score ring
-  const ring = document.getElementById("fp-ring-fill");
-  const circumference = 2 * Math.PI * 54;
-  const pct = data.uniquenessScore.percentage;
-  ring.style.strokeDashoffset = circumference - (pct / 100) * circumference;
-
-  if (pct >= 70) {
-    ring.style.stroke = "var(--red)";
-  } else if (pct >= 40) {
-    ring.style.stroke = "var(--amber)";
-  } else {
-    ring.style.stroke = "var(--emerald)";
-  }
-
-  document.getElementById("fp-score-number").textContent = data.uniquenessScore.bits;
-  document.getElementById("fp-summary").textContent = `${data.uniquenessScore.level} — ${pct}% trackability`;
-  document.getElementById("fp-detail").textContent =
-    pct >= 70
-      ? "Your browser has a highly unique fingerprint. Websites can likely track you without cookies."
-      : pct >= 40
-        ? "Your browser is moderately unique. Some cross-site tracking is possible."
-        : "Your browser fingerprint is relatively common. Fingerprint-based tracking is harder.";
-
-  // Canvas & Audio card
-  try {
-    document.getElementById("fp-canvas-body").innerHTML = `
-      <div class="info-row"><span class="info-label">Canvas</span><span class="info-value mono">${data.canvas.available ? data.canvas.hash : "blocked"}</span></div>
-      <div class="info-row"><span class="info-label">Audio</span><span class="info-value mono">${data.audioHash || "blocked"}</span></div>
-    `;
-  } catch (e) { console.error("fp canvas card:", e); }
-
-  // WebGL card
-  try {
-    if (data.webgl.available) {
-      document.getElementById("fp-webgl-body").innerHTML = `
-        <div class="info-row"><span class="info-label">Vendor</span><span class="info-value">${data.webgl.vendor}</span></div>
-        <div class="info-row"><span class="info-label">Renderer</span><span class="info-value">${data.webgl.renderer}</span></div>
-        <div class="info-row"><span class="info-label">Max Texture</span><span class="info-value mono">${data.webgl.maxTextureSize}px</span></div>
-        <div class="info-row"><span class="info-label">Extensions</span><span class="info-value mono">${data.webgl.extensions}</span></div>
-      `;
-    } else {
-      document.getElementById("fp-webgl-body").innerHTML = '<p class="info-muted">WebGL not available or blocked</p>';
-    }
-  } catch (e) { console.error("fp webgl card:", e); }
-
-  // Screen & Hardware card
-  try {
-    document.getElementById("fp-screen-body").innerHTML = `
-      <div class="info-row"><span class="info-label">Resolution</span><span class="info-value mono">${data.screen.width} x ${data.screen.height}</span></div>
-      <div class="info-row"><span class="info-label">Available</span><span class="info-value mono">${data.screen.availWidth} x ${data.screen.availHeight}</span></div>
-      <div class="info-row"><span class="info-label">Color Depth</span><span class="info-value mono">${data.screen.colorDepth}-bit</span></div>
-      <div class="info-row"><span class="info-label">Pixel Ratio</span><span class="info-value mono">${data.screen.pixelRatio}x</span></div>
-      <div class="info-row"><span class="info-label">CPU Cores</span><span class="info-value mono">${data.navigator.hardwareConcurrency}</span></div>
-      <div class="info-row"><span class="info-label">Touch Points</span><span class="info-value mono">${data.navigator.maxTouchPoints}</span></div>
-    `;
-  } catch (e) { console.error("fp screen card:", e); }
-
-  // Navigator card
-  try {
-    const tzOffset = data.timezone.offset;
-    const tzStr = `UTC${tzOffset > 0 ? "-" : "+"}${Math.abs(tzOffset / 60)}`;
-    document.getElementById("fp-navigator-body").innerHTML = `
-      <div class="info-row"><span class="info-label">Platform</span><span class="info-value">${data.navigator.platform}</span></div>
-      <div class="info-row"><span class="info-label">Language</span><span class="info-value">${data.navigator.language}</span></div>
-      <div class="info-row"><span class="info-label">Languages</span><span class="info-value">${data.navigator.languages.join(", ")}</span></div>
-      <div class="info-row"><span class="info-label">Timezone</span><span class="info-value">${data.timezone.name} (${tzStr})</span></div>
-      <div class="info-row"><span class="info-label">Do Not Track</span><span class="info-value">${data.navigator.doNotTrack === "1" ? "Enabled" : "Disabled"}</span></div>
-      <div class="info-row"><span class="info-label">Cookies</span><span class="info-value">${data.navigator.cookieEnabled ? "Enabled" : "Disabled"}</span></div>
-    `;
-  } catch (e) { console.error("fp navigator card:", e); }
-
-  // Fonts card
-  try {
-    const fonts = data.fonts.detected || [];
-    document.getElementById("fp-fonts-body").innerHTML = `
-      <div class="info-row" style="margin-bottom:8px"><span class="info-label">Detected</span><span class="info-value mono">${fonts.length} / ${data.fonts.total}</span></div>
-      <div class="fp-tag-row">
-        ${fonts.map((f) => `<span class="fp-tag">${f}</span>`).join("")}
-      </div>
-    `;
-  } catch (e) { console.error("fp fonts card:", e); }
-
-  // Storage card
-  try {
-    document.getElementById("fp-storage-body").innerHTML = `
-      <div class="info-row"><span class="info-label">localStorage</span><span class="info-value">${data.storage.localStorage ? "Available" : "Blocked"}</span></div>
-      <div class="info-row"><span class="info-label">sessionStorage</span><span class="info-value">${data.storage.sessionStorage ? "Available" : "Blocked"}</span></div>
-      <div class="info-row"><span class="info-label">IndexedDB</span><span class="info-value">${data.storage.indexedDB ? "Available" : "Blocked"}</span></div>
-      <div class="info-row"><span class="info-label">WebRTC</span><span class="info-value">${data.webrtc ? "Available" : "Blocked"}</span></div>
-    `;
-  } catch (e) { console.error("fp storage card:", e); }
-}
 
 // Suggestions
 const adblockSuggestions = [

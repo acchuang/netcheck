@@ -23,7 +23,28 @@
         <a href="#dns" class="nav-link active" data-tab="dns">DNS Check</a>
         <a href="#speed" class="nav-link" data-tab="speed">Speed Test</a>
         <a href="#adblock" class="nav-link" data-tab="adblock">Ad Block Test</a>
-        <a href="#fingerprint" class="nav-link" data-tab="fingerprint">Fingerprint</a>
+      </div>
+      <div class="nav-actions">
+        <div class="export-dropdown">
+          <button class="btn-export" id="export-btn" title="Export Report">
+            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span class="export-btn-text">Export</span>
+          </button>
+          <div class="export-menu hidden" id="export-menu">
+            <button class="export-option" data-format="markdown">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Download Markdown
+            </button>
+            <button class="export-option" data-format="pdf">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              Save as PDF
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -115,7 +136,7 @@
         </div>
         <div class="card-body">
           <div class="lookup-form">
-            <input type="text" id="dns-lookup-domain" class="input" placeholder="example.com" value="example.com">
+            <input type="text" id="dns-lookup-domain" class="input input-wide" placeholder="example.com" value="example.com">
             <select id="dns-lookup-type" class="input select">
               <option value="A">A</option>
               <option value="AAAA">AAAA</option>
@@ -125,13 +146,26 @@
               <option value="CNAME">CNAME</option>
               <option value="SOA">SOA</option>
               <option value="SRV">SRV</option>
+              <option value="PTR">PTR (Reverse)</option>
+              <option value="ALL">All Records</option>
             </select>
             <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
           </div>
           <div id="dns-lookup-results" class="lookup-results hidden">
-            <pre class="code-block"><code id="dns-lookup-output"></code></pre>
+            <div id="dns-lookup-table"></div>
+            <details class="raw-toggle">
+              <summary class="raw-toggle-summary">Raw JSON</summary>
+              <pre class="code-block"><code id="dns-lookup-output"></code></pre>
+            </details>
           </div>
         </div>
+      </div>
+
+      <!-- DNS Suggestions -->
+      <div class="suggestions-section" id="dns-suggestions-section">
+        <h2 class="suggestions-title">Recommendations</h2>
+        <p class="suggestions-subtitle" id="dns-suggestions-subtitle"></p>
+        <div class="suggestions-grid" id="dns-suggestions-grid"></div>
       </div>
     </section>
 
@@ -143,29 +177,6 @@
       </div>
 
       <div class="speed-dashboard">
-        <!-- Server Selector -->
-        <div class="server-selector">
-          <div class="server-selector-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-              <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
-            </svg>
-            <span class="server-selector-title">Test Server</span>
-            <span class="server-selector-status" id="server-status">probing servers...</span>
-          </div>
-          <div class="server-probe-bar">
-            <div class="server-probe-fill" id="server-probe-fill"></div>
-          </div>
-          <div class="server-view-toggle">
-            <button class="server-toggle-btn active" id="toggle-nearest" onclick="toggleServerView('nearest')">5 Nearest</button>
-            <button class="server-toggle-btn" id="toggle-network" onclick="toggleServerView('network')">By Network</button>
-            <button class="server-toggle-btn" id="toggle-all" onclick="toggleServerView('all')">All Servers</button>
-          </div>
-          <div class="server-list" id="server-list">
-            <div class="server-list-loading">Detecting nearest servers...</div>
-          </div>
-        </div>
-
         <div class="speed-gauge-row">
           <div class="speed-gauge">
             <div class="speed-gauge-label">Download</div>
@@ -208,6 +219,24 @@
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>
           <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
+        </div>
+        <!-- Speed Graph -->
+        <div class="speed-graph-card">
+          <div class="speed-graph-header">
+            <span class="speed-graph-title">Speed Over Time</span>
+            <div class="speed-graph-legend">
+              <span class="legend-item"><span class="legend-dot download"></span>Download</span>
+              <span class="legend-item"><span class="legend-dot upload"></span>Upload</span>
+            </div>
+          </div>
+          <canvas id="speed-graph" width="1100" height="200"></canvas>
+        </div>
+
+        <!-- Speed Suggestions -->
+        <div class="suggestions-section" id="speed-suggestions-section">
+          <h2 class="suggestions-title">Recommendations</h2>
+          <p class="suggestions-subtitle" id="speed-suggestions-subtitle"></p>
+          <div class="suggestions-grid" id="speed-suggestions-grid"></div>
         </div>
       </div>
     </section>
@@ -259,112 +288,6 @@
       </div>
     </section>
 
-    <!-- Browser Fingerprint Section -->
-    <section id="fingerprint" class="section">
-      <div class="section-header">
-        <h1 class="display">Browser Fingerprint</h1>
-        <p class="subtitle">See how unique and trackable your browser is across the web</p>
-      </div>
-
-      <div class="fp-score-card" id="fp-score-card">
-        <div class="fp-score-ring">
-          <svg viewBox="0 0 120 120">
-            <circle class="score-ring-bg" cx="60" cy="60" r="54" />
-            <circle class="score-ring-fill" id="fp-ring-fill" cx="60" cy="60" r="54" />
-          </svg>
-          <div class="score-value">
-            <span class="score-number" id="fp-score-number">—</span>
-            <span class="score-label">bits</span>
-          </div>
-        </div>
-        <div class="score-meta">
-          <p class="score-summary" id="fp-summary">Collecting fingerprint data...</p>
-          <p class="score-detail" id="fp-detail"></p>
-        </div>
-      </div>
-
-      <div class="cards-grid">
-        <!-- Canvas & Audio -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <h2 class="card-title">Canvas & Audio</h2>
-          </div>
-          <div class="card-body" id="fp-canvas-body">
-            <p class="info-muted">Analyzing...</p>
-          </div>
-        </div>
-
-        <!-- WebGL -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
-              <line x1="12" y1="22" x2="12" y2="15.5"/><line x1="22" y1="8.5" x2="12" y2="15.5"/><line x1="2" y1="8.5" x2="12" y2="15.5"/>
-            </svg>
-            <h2 class="card-title">WebGL</h2>
-          </div>
-          <div class="card-body" id="fp-webgl-body">
-            <p class="info-muted">Analyzing...</p>
-          </div>
-        </div>
-
-        <!-- Screen & Hardware -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-            <h2 class="card-title">Screen & Hardware</h2>
-          </div>
-          <div class="card-body" id="fp-screen-body">
-            <p class="info-muted">Analyzing...</p>
-          </div>
-        </div>
-
-        <!-- Navigator -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-            </svg>
-            <h2 class="card-title">Navigator & Locale</h2>
-          </div>
-          <div class="card-body" id="fp-navigator-body">
-            <p class="info-muted">Analyzing...</p>
-          </div>
-        </div>
-
-        <!-- Fonts -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
-            </svg>
-            <h2 class="card-title">Fonts</h2>
-          </div>
-          <div class="card-body" id="fp-fonts-body">
-            <p class="info-muted">Detecting fonts...</p>
-          </div>
-        </div>
-
-        <!-- APIs & Storage -->
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-            </svg>
-            <h2 class="card-title">APIs & Storage</h2>
-          </div>
-          <div class="card-body" id="fp-storage-body">
-            <p class="info-muted">Analyzing...</p>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer class="footer">
@@ -375,7 +298,7 @@
   <script src="/js/adblock-test.js"></script>
   <script src="/js/filter-lists.js"></script>
   <script src="/js/speed-test.js"></script>
-  <script src="/js/fingerprint.js"></script>
+  <script src="/js/export-report.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>
