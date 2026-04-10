@@ -153,6 +153,14 @@
             <span class="server-selector-title">Test Server</span>
             <span class="server-selector-status" id="server-status">probing servers...</span>
           </div>
+          <div class="server-probe-bar">
+            <div class="server-probe-fill" id="server-probe-fill"></div>
+          </div>
+          <div class="server-view-toggle">
+            <button class="server-toggle-btn active" id="toggle-nearest" onclick="toggleServerView('nearest')">5 Nearest</button>
+            <button class="server-toggle-btn" id="toggle-network" onclick="toggleServerView('network')">By Network</button>
+            <button class="server-toggle-btn" id="toggle-all" onclick="toggleServerView('all')">All Servers</button>
+          </div>
           <div class="server-list" id="server-list">
             <div class="server-list-loading">Detecting nearest servers...</div>
           </div>

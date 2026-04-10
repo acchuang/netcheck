@@ -205,44 +205,84 @@ function createCategory(name, testCount) {
 }
 
 // Speed test
+let currentServerView = "nearest";
+
 async function initSpeedTest() {
   const btn = document.getElementById("speed-start-btn");
   btn.addEventListener("click", runSpeedTest);
 
-  // Probe servers
-  const nearest = await SpeedTest.probeServers();
-  renderServerList(nearest);
+  // Probe all servers with progress
+  const probeBar = document.getElementById("server-probe-fill");
+  await SpeedTest.probeServers((done, total) => {
+    const pct = Math.round((done / total) * 100);
+    probeBar.style.width = `${pct}%`;
+    document.getElementById("server-status").textContent = `probing ${done}/${total}...`;
+  });
+
+  probeBar.parentElement.classList.add("done");
+
+  const reachable = SpeedTest.probeResults;
+  document.getElementById("server-status").textContent = `${reachable.length} of ${SpeedTest.servers.length} servers reachable`;
+
+  if (reachable.length > 0) {
+    SpeedTest.selectServer(reachable[0].server.id);
+  }
+
+  renderServerView();
 }
 
-function renderServerList(probeResults) {
-  const list = document.getElementById("server-list");
-  const status = document.getElementById("server-status");
+function toggleServerView(view) {
+  currentServerView = view;
+  document.querySelectorAll(".server-toggle-btn").forEach((b) => b.classList.remove("active"));
+  document.getElementById(`toggle-${view}`).classList.add("active");
+  renderServerView();
+}
 
-  if (probeResults.length === 0) {
+function renderServerView() {
+  const list = document.getElementById("server-list");
+  const results = SpeedTest.probeResults;
+
+  if (results.length === 0) {
     list.innerHTML = '<div class="server-list-loading">No servers reachable</div>';
-    status.textContent = "no servers found";
     return;
   }
 
-  status.textContent = `${probeResults.length} servers found`;
+  if (currentServerView === "nearest") {
+    list.innerHTML = renderServerItems(results.slice(0, 5));
+  } else if (currentServerView === "network") {
+    const networks = SpeedTest.getNetworks();
+    let html = "";
+    for (const [network, probes] of Object.entries(networks)) {
+      html += `<div class="server-network-header">${network} (${probes.length})</div>`;
+      html += renderServerItems(probes);
+    }
+    list.innerHTML = html;
+  } else {
+    list.innerHTML = renderServerItems(results);
+  }
+}
 
-  // Auto-select fastest
-  SpeedTest.selectServer(probeResults[0].server.id);
-
-  list.innerHTML = probeResults
-    .map((probe, i) => {
+function renderServerItems(probeResults) {
+  const selectedId = SpeedTest.selectedServer?.id;
+  return probeResults
+    .map((probe) => {
       const s = probe.server;
-      const latencyClass = probe.latency < 50 ? "fast" : probe.latency < 150 ? "medium" : "slow";
-      const selected = i === 0 ? " selected" : "";
-      const noUpload = !s.up ? '<span class="server-no-upload">download only</span>' : "";
+      const latencyClass = probe.latency < 80 ? "fast" : probe.latency < 200 ? "medium" : "slow";
+      const selected = s.id === selectedId ? " selected" : "";
+      const hasUpload = s.mode === "direct" && s.up;
+      const noUpload = !hasUpload ? '<span class="server-no-upload">download only</span>' : "";
+      const modeTag = s.mode === "direct"
+        ? '<span class="server-mode-tag direct">direct</span>'
+        : '<span class="server-mode-tag">proxy</span>';
 
       return `
       <div class="server-item${selected}" data-server-id="${s.id}" onclick="selectServer(this, '${s.id}')">
         <div class="server-radio"><div class="server-radio-dot"></div></div>
         <div class="server-info">
-          <div class="server-name">${s.name}</div>
-          <div class="server-location">${s.location}</div>
+          <div class="server-name">${s.name} <span style="color:var(--text-quaternary);font-weight:400">— ${s.location}</span></div>
+          <div class="server-location">${s.network}</div>
         </div>
+        ${modeTag}
         ${noUpload}
         <span class="server-latency ${latencyClass}">${probe.latency}ms</span>
       </div>`;
@@ -270,7 +310,7 @@ async function runSpeedTest() {
   });
 
   const server = SpeedTest.selectedServer;
-  const serverLabel = server ? `${server.name} — ${server.location}` : "";
+  const serverLabel = server ? `${server.network} — ${server.location}` : "";
 
   const results = await SpeedTest.run((phase, progress, data) => {
     const phaseLabel = phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload";
@@ -292,8 +332,9 @@ async function runSpeedTest() {
   document.getElementById("speed-latency").textContent = results.latency !== null ? results.latency : "—";
   document.getElementById("speed-jitter").textContent = results.jitter !== null ? results.jitter : "—";
 
-  // Upload bar — N/A for servers without upload
-  if (!server?.up) {
+  // Upload bar — N/A for proxy or servers without upload
+  const hasUpload = server?.mode === "direct" && server?.up;
+  if (!hasUpload) {
     document.getElementById("speed-upload").textContent = "N/A";
     document.getElementById("speed-upload-bar").style.width = "0%";
   }

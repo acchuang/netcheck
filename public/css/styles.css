@@ -762,9 +762,69 @@ select option {
   color: var(--text-quaternary);
 }
 
+.server-probe-bar {
+  height: 2px;
+  background: var(--border-solid);
+  overflow: hidden;
+}
+
+.server-probe-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease-out;
+}
+
+.server-probe-bar.done {
+  display: none;
+}
+
+.server-view-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.server-toggle-btn {
+  font-family: inherit;
+  font-feature-settings: "cv01", "ss03";
+  font-size: 12px;
+  font-weight: 510;
+  color: var(--text-quaternary);
+  background: transparent;
+  border: 1px solid var(--border-solid);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.server-toggle-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.server-toggle-btn.active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .server-list {
   display: flex;
   flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.server-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.server-list::-webkit-scrollbar-thumb {
+  background: var(--border-solid);
+  border-radius: 2px;
 }
 
 .server-list-loading {
@@ -858,6 +918,34 @@ select option {
 
 .server-latency.slow {
   color: var(--red);
+}
+
+.server-network-header {
+  font-size: 11px;
+  font-weight: 510;
+  color: var(--text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 20px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.server-mode-tag {
+  font-size: 9px;
+  font-weight: 510;
+  color: var(--text-quaternary);
+  padding: 1px 5px;
+  border: 1px solid var(--border-solid);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.server-mode-tag.direct {
+  color: var(--emerald);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .server-no-upload {

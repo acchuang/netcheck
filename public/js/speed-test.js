@@ -3,171 +3,231 @@ const SpeedTest = {
   onProgress: null,
   selectedServer: null,
 
+  // mode: "direct" = browser fetches directly, "proxy" = browser fetches via worker proxy
   servers: [
+    // --- Cloudflare ---
     {
-      id: "cf-edge",
-      name: "Cloudflare",
-      location: "Nearest Edge",
+      id: "cf-edge", network: "Cloudflare", name: "Cloudflare", location: "Nearest Edge", mode: "direct",
       ping: "https://speed.cloudflare.com/__down?bytes=0",
       down: "https://speed.cloudflare.com/__down",
       up: "https://speed.cloudflare.com/__up",
     },
     {
-      id: "worker",
-      name: "NetCheck Worker",
-      location: "Cloudflare Edge",
+      id: "worker", network: "Cloudflare", name: "NetCheck Worker", location: "Nearest Edge", mode: "direct",
       ping: "/api/speedtest/ping",
       down: "/api/speedtest/down",
       up: "/api/speedtest/up",
     },
+
+    // --- DigitalOcean ---
     {
-      id: "hetzner-de",
-      name: "Hetzner",
-      location: "Falkenstein, DE",
-      ping: "https://speed.hetzner.de/1kB.bin",
-      down: "https://speed.hetzner.de",
-      up: null,
-      downSizes: [
-        { url: "https://speed.hetzner.de/100MB.bin", bytes: 104857600 },
-        { url: "https://speed.hetzner.de/10GB.bin", bytes: 10737418240 },
-      ],
+      id: "do-nyc3", network: "DigitalOcean", name: "DigitalOcean", location: "New York, US", mode: "proxy",
+      testFile: "https://speedtest-nyc3.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-nyc3.digitalocean.com/10mb.test",
     },
     {
-      id: "ovh-fr",
-      name: "OVH",
-      location: "Gravelines, FR",
-      ping: "https://proof.ovh.net/files/1Mb.dat",
-      down: "https://proof.ovh.net/files",
-      up: null,
-      downSizes: [
-        { url: "https://proof.ovh.net/files/1Mb.dat", bytes: 1048576 },
-        { url: "https://proof.ovh.net/files/10Mb.dat", bytes: 10485760 },
-        { url: "https://proof.ovh.net/files/100Mb.dat", bytes: 104857600 },
-      ],
+      id: "do-sfo3", network: "DigitalOcean", name: "DigitalOcean", location: "San Francisco, US", mode: "proxy",
+      testFile: "https://speedtest-sfo3.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-sfo3.digitalocean.com/10mb.test",
     },
     {
-      id: "tele2-se",
-      name: "Tele2",
-      location: "Stockholm, SE",
-      ping: "https://speedtest.tele2.net/1KB.zip",
-      down: "https://speedtest.tele2.net",
-      up: null,
-      downSizes: [
-        { url: "https://speedtest.tele2.net/1MB.zip", bytes: 1048576 },
-        { url: "https://speedtest.tele2.net/10MB.zip", bytes: 10485760 },
-        { url: "https://speedtest.tele2.net/100MB.zip", bytes: 104857600 },
-      ],
+      id: "do-ams3", network: "DigitalOcean", name: "DigitalOcean", location: "Amsterdam, NL", mode: "proxy",
+      testFile: "https://speedtest-ams3.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-ams3.digitalocean.com/10mb.test",
     },
     {
-      id: "scaleway-fr",
-      name: "Scaleway",
-      location: "Paris, FR",
-      ping: "https://ping.online.net/1kb",
-      down: "https://ping.online.net",
-      up: null,
-      downSizes: [
-        { url: "https://ping.online.net/1000Mo.dat", bytes: 1048576000 },
-        { url: "https://ping.online.net/100Mo.dat", bytes: 104857600 },
-        { url: "https://ping.online.net/10Mo.dat", bytes: 10485760 },
-      ],
+      id: "do-sgp1", network: "DigitalOcean", name: "DigitalOcean", location: "Singapore, SG", mode: "proxy",
+      testFile: "https://speedtest-sgp1.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-sgp1.digitalocean.com/10mb.test",
     },
     {
-      id: "fdc-la",
-      name: "FDC Servers",
-      location: "Los Angeles, US",
-      ping: "https://lg.lax-us.fdcservers.net/1KB.test",
-      down: "https://lg.lax-us.fdcservers.net",
-      up: null,
-      downSizes: [
-        { url: "https://lg.lax-us.fdcservers.net/10MBtest.zip", bytes: 10485760 },
-        { url: "https://lg.lax-us.fdcservers.net/100MBtest.zip", bytes: 104857600 },
-      ],
+      id: "do-lon1", network: "DigitalOcean", name: "DigitalOcean", location: "London, UK", mode: "proxy",
+      testFile: "https://speedtest-lon1.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-lon1.digitalocean.com/10mb.test",
     },
     {
-      id: "fdc-ny",
-      name: "FDC Servers",
-      location: "New York, US",
-      ping: "https://lg.nyc-us.fdcservers.net/1KB.test",
-      down: "https://lg.nyc-us.fdcservers.net",
-      up: null,
-      downSizes: [
-        { url: "https://lg.nyc-us.fdcservers.net/10MBtest.zip", bytes: 10485760 },
-        { url: "https://lg.nyc-us.fdcservers.net/100MBtest.zip", bytes: 104857600 },
-      ],
+      id: "do-blr1", network: "DigitalOcean", name: "DigitalOcean", location: "Bangalore, IN", mode: "proxy",
+      testFile: "https://speedtest-blr1.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-blr1.digitalocean.com/10mb.test",
     },
     {
-      id: "fdc-chi",
-      name: "FDC Servers",
-      location: "Chicago, US",
-      ping: "https://lg.chi-us.fdcservers.net/1KB.test",
-      down: "https://lg.chi-us.fdcservers.net",
-      up: null,
-      downSizes: [
-        { url: "https://lg.chi-us.fdcservers.net/10MBtest.zip", bytes: 10485760 },
-        { url: "https://lg.chi-us.fdcservers.net/100MBtest.zip", bytes: 104857600 },
-      ],
+      id: "do-syd1", network: "DigitalOcean", name: "DigitalOcean", location: "Sydney, AU", mode: "proxy",
+      testFile: "https://speedtest-syd1.digitalocean.com/10mb.test",
+      pingFile: "https://speedtest-syd1.digitalocean.com/10mb.test",
+    },
+
+    // --- Vultr ---
+    {
+      id: "vultr-lax", network: "Vultr", name: "Vultr", location: "Los Angeles, US", mode: "proxy",
+      testFile: "https://lax-us-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://lax-us-ping.vultr.com/vultr.com.100MB.bin",
     },
     {
-      id: "linode-sg",
-      name: "Akamai",
-      location: "Singapore, SG",
-      ping: "https://speedtest.singapore.linode.com/garbage?r=0&ckSize=0",
-      down: "https://speedtest.singapore.linode.com/garbage",
-      up: null,
-      downSizes: [
-        { url: "https://speedtest.singapore.linode.com/100MB-singapore.bin", bytes: 104857600 },
-      ],
+      id: "vultr-ewr", network: "Vultr", name: "Vultr", location: "New Jersey, US", mode: "proxy",
+      testFile: "https://ewr-us-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://ewr-us-ping.vultr.com/vultr.com.100MB.bin",
     },
     {
-      id: "linode-jp",
-      name: "Akamai",
-      location: "Tokyo, JP",
-      ping: "https://speedtest.tokyo2.linode.com/garbage?r=0&ckSize=0",
-      down: "https://speedtest.tokyo2.linode.com/garbage",
-      up: null,
-      downSizes: [
-        { url: "https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin", bytes: 104857600 },
-      ],
+      id: "vultr-fra", network: "Vultr", name: "Vultr", location: "Frankfurt, DE", mode: "proxy",
+      testFile: "https://fra-de-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://fra-de-ping.vultr.com/vultr.com.100MB.bin",
     },
     {
-      id: "linode-uk",
-      name: "Akamai",
-      location: "London, UK",
-      ping: "https://speedtest.london.linode.com/garbage?r=0&ckSize=0",
-      down: "https://speedtest.london.linode.com/garbage",
-      up: null,
-      downSizes: [
-        { url: "https://speedtest.london.linode.com/100MB-london.bin", bytes: 104857600 },
-      ],
+      id: "vultr-sgp", network: "Vultr", name: "Vultr", location: "Singapore, SG", mode: "proxy",
+      testFile: "https://sgp-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://sgp-ping.vultr.com/vultr.com.100MB.bin",
+    },
+    {
+      id: "vultr-nrt", network: "Vultr", name: "Vultr", location: "Tokyo, JP", mode: "proxy",
+      testFile: "https://nrt-jp-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://nrt-jp-ping.vultr.com/vultr.com.100MB.bin",
+    },
+    {
+      id: "vultr-syd", network: "Vultr", name: "Vultr", location: "Sydney, AU", mode: "proxy",
+      testFile: "https://syd-au-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://syd-au-ping.vultr.com/vultr.com.100MB.bin",
+    },
+    {
+      id: "vultr-lon", network: "Vultr", name: "Vultr", location: "London, UK", mode: "proxy",
+      testFile: "https://lon-gb-ping.vultr.com/vultr.com.100MB.bin",
+      pingFile: "https://lon-gb-ping.vultr.com/vultr.com.100MB.bin",
+    },
+
+    // --- Akamai / Linode ---
+    {
+      id: "linode-newark", network: "Akamai", name: "Akamai/Linode", location: "Newark, US", mode: "proxy",
+      testFile: "https://speedtest.newark.linode.com/100MB-newark.bin",
+      pingFile: "https://speedtest.newark.linode.com/100MB-newark.bin",
+    },
+    {
+      id: "linode-fremont", network: "Akamai", name: "Akamai/Linode", location: "Fremont, US", mode: "proxy",
+      testFile: "https://speedtest.fremont.linode.com/100MB-fremont.bin",
+      pingFile: "https://speedtest.fremont.linode.com/100MB-fremont.bin",
+    },
+    {
+      id: "linode-atlanta", network: "Akamai", name: "Akamai/Linode", location: "Atlanta, US", mode: "proxy",
+      testFile: "https://speedtest.atlanta.linode.com/100MB-atlanta.bin",
+      pingFile: "https://speedtest.atlanta.linode.com/100MB-atlanta.bin",
+    },
+    {
+      id: "linode-lon", network: "Akamai", name: "Akamai/Linode", location: "London, UK", mode: "proxy",
+      testFile: "https://speedtest.london.linode.com/100MB-london.bin",
+      pingFile: "https://speedtest.london.linode.com/100MB-london.bin",
+    },
+    {
+      id: "linode-sgp", network: "Akamai", name: "Akamai/Linode", location: "Singapore, SG", mode: "proxy",
+      testFile: "https://speedtest.singapore.linode.com/100MB-singapore.bin",
+      pingFile: "https://speedtest.singapore.linode.com/100MB-singapore.bin",
+    },
+    {
+      id: "linode-tok", network: "Akamai", name: "Akamai/Linode", location: "Tokyo, JP", mode: "proxy",
+      testFile: "https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin",
+      pingFile: "https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin",
+    },
+
+    // --- Hetzner ---
+    {
+      id: "hetzner-de", network: "Hetzner", name: "Hetzner", location: "Falkenstein, DE", mode: "proxy",
+      testFile: "https://speed.hetzner.de/100MB.bin",
+      pingFile: "https://speed.hetzner.de/100MB.bin",
+    },
+
+    // --- OVH ---
+    {
+      id: "ovh-fr", network: "OVH", name: "OVHcloud", location: "Gravelines, FR", mode: "proxy",
+      testFile: "https://proof.ovh.net/files/10Mb.dat",
+      pingFile: "https://proof.ovh.net/files/1Mb.dat",
+    },
+
+    // --- Tele2 ---
+    {
+      id: "tele2-se", network: "Tele2", name: "Tele2", location: "Stockholm, SE", mode: "proxy",
+      testFile: "https://speedtest.tele2.net/10MB.zip",
+      pingFile: "https://speedtest.tele2.net/1KB.zip",
+    },
+
+    // --- Scaleway ---
+    {
+      id: "scaleway-fr", network: "Scaleway", name: "Scaleway", location: "Paris, FR", mode: "proxy",
+      testFile: "https://ping.online.net/10Mo.dat",
+      pingFile: "https://ping.online.net/1kb",
     },
   ],
 
   probeResults: [],
 
-  async probeServers() {
+  async probeServers(onProgress) {
     this.probeResults = [];
+    const total = this.servers.length;
+    let done = 0;
 
-    const probes = this.servers.map(async (server) => {
-      try {
-        const start = performance.now();
-        await fetch(server.ping, {
-          mode: "cors",
-          cache: "no-store",
-          signal: AbortSignal.timeout(4000),
-        });
-        const latency = Math.round(performance.now() - start);
-        return { server, latency, reachable: true };
-      } catch {
-        return { server, latency: Infinity, reachable: false };
-      }
-    });
+    // Probe in batches of 6 to avoid overwhelming the network
+    const batchSize = 6;
+    const allResults = [];
 
-    const results = await Promise.all(probes);
-    this.probeResults = results
+    for (let i = 0; i < this.servers.length; i += batchSize) {
+      const batch = this.servers.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (server) => {
+          const result = await this.probeOne(server);
+          done++;
+          if (onProgress) onProgress(done, total);
+          return result;
+        })
+      );
+      allResults.push(...batchResults);
+    }
+
+    this.probeResults = allResults
       .filter((r) => r.reachable)
       .sort((a, b) => a.latency - b.latency);
 
-    return this.probeResults.slice(0, 5);
+    return this.probeResults;
+  },
+
+  async probeOne(server) {
+    try {
+      if (server.mode === "proxy") {
+        // Ping via worker proxy
+        const proxyUrl = `/api/speedtest/proxy/ping?url=${encodeURIComponent(server.pingFile)}`;
+        const start = performance.now();
+        const res = await fetch(proxyUrl, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+        const totalRtt = performance.now() - start;
+
+        if (!res.ok) return { server, latency: Infinity, reachable: false };
+
+        const data = await res.json();
+        // data.latency = worker→origin latency, totalRtt = user→worker→origin round trip
+        return {
+          server,
+          latency: Math.round(totalRtt),
+          originLatency: data.latency || null,
+          reachable: true,
+        };
+      } else {
+        // Direct ping
+        const start = performance.now();
+        await fetch(server.ping, { mode: "cors", cache: "no-store", signal: AbortSignal.timeout(4000) });
+        const latency = Math.round(performance.now() - start);
+        return { server, latency, originLatency: null, reachable: true };
+      }
+    } catch {
+      return { server, latency: Infinity, reachable: false };
+    }
+  },
+
+  getNearest(count) {
+    return this.probeResults.slice(0, count || 5);
+  },
+
+  getNetworks() {
+    const networks = {};
+    for (const probe of this.probeResults) {
+      const net = probe.server.network;
+      if (!networks[net]) networks[net] = [];
+      networks[net].push(probe);
+    }
+    return networks;
   },
 
   selectServer(serverId) {
@@ -178,7 +238,6 @@ const SpeedTest = {
   async run(onProgress) {
     this.onProgress = onProgress || (() => {});
     this.results = { download: null, upload: null, latency: null, jitter: null };
-
     const server = this.selectedServer || this.servers[0];
 
     // Latency + jitter
@@ -195,7 +254,8 @@ const SpeedTest = {
 
     // Upload
     this.onProgress("upload", 0);
-    if (server.up) {
+    const hasUpload = server.mode === "direct" && server.up;
+    if (hasUpload) {
       this.results.upload = await this.measureUpload(server);
     } else {
       this.results.upload = null;
@@ -208,17 +268,23 @@ const SpeedTest = {
   async measureLatency(server) {
     const pings = [];
     const rounds = 20;
-    const pingUrl = server.ping;
 
     for (let i = 0; i < rounds; i++) {
       const start = performance.now();
       try {
-        await fetch(`${pingUrl}${pingUrl.includes("?") ? "&" : "?"}_=${Date.now()}`, {
-          cache: "no-store",
-          signal: AbortSignal.timeout(5000),
-        });
-        const elapsed = performance.now() - start;
-        pings.push(elapsed);
+        if (server.mode === "proxy") {
+          await fetch(`/api/speedtest/proxy/ping?url=${encodeURIComponent(server.pingFile)}&_=${Date.now()}`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000),
+          });
+        } else {
+          const pingUrl = server.ping;
+          await fetch(`${pingUrl}${pingUrl.includes("?") ? "&" : "?"}_=${Date.now()}`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000),
+          });
+        }
+        pings.push(performance.now() - start);
       } catch {
         // skip
       }
@@ -240,25 +306,22 @@ const SpeedTest = {
   },
 
   async measureDownload(server) {
-    // Use fixed-URL download files if the server provides them
-    if (server.downSizes) {
-      return this.measureDownloadFixed(server);
+    if (server.mode === "proxy") {
+      return this.measureDownloadProxy(server);
     }
+    return this.measureDownloadDirect(server);
+  },
 
-    // Use dynamic byte-size endpoint (Cloudflare / Worker)
+  async measureDownloadDirect(server) {
     const sizes = [100000, 500000, 1000000, 5000000, 10000000, 25000000];
     let totalBytes = 0;
     let totalTime = 0;
 
     for (let i = 0; i < sizes.length; i++) {
-      const size = sizes[i];
       try {
-        const url = `${server.down}${server.down.includes("?") ? "&" : "?"}bytes=${size}`;
+        const url = `${server.down}${server.down.includes("?") ? "&" : "?"}bytes=${sizes[i]}`;
         const start = performance.now();
-        const res = await fetch(url, {
-          cache: "no-store",
-          signal: AbortSignal.timeout(10000),
-        });
+        const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10000) });
         const blob = await res.blob();
         const elapsed = (performance.now() - start) / 1000;
 
@@ -276,28 +339,25 @@ const SpeedTest = {
     return Math.round(((totalBytes * 8) / (totalTime * 1000000)) * 100) / 100;
   },
 
-  async measureDownloadFixed(server) {
+  async measureDownloadProxy(server) {
+    // Download via worker proxy in increasing rounds
+    const rounds = 5;
     let totalBytes = 0;
     let totalTime = 0;
-    const files = server.downSizes;
 
-    for (let i = 0; i < files.length; i++) {
+    for (let i = 0; i < rounds; i++) {
       try {
-        const url = `${files[i].url}${files[i].url.includes("?") ? "&" : "?"}_=${Date.now()}`;
+        const proxyUrl = `/api/speedtest/proxy?url=${encodeURIComponent(server.testFile)}&_=${Date.now()}-${i}`;
         const start = performance.now();
-        const res = await fetch(url, {
-          cache: "no-store",
-          signal: AbortSignal.timeout(15000),
-        });
+        const res = await fetch(proxyUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
         const blob = await res.blob();
         const elapsed = (performance.now() - start) / 1000;
 
         totalBytes += blob.size;
         totalTime += elapsed;
 
-        this.onProgress("download", Math.round(((i + 1) / files.length) * 100));
-        // If we've collected enough data (>3s of transfer), stop
-        if (totalTime > 3 || elapsed > 10) break;
+        this.onProgress("download", Math.round(((i + 1) / rounds) * 100));
+        if (totalTime > 5 || elapsed > 10) break;
       } catch {
         break;
       }
@@ -315,23 +375,17 @@ const SpeedTest = {
     let totalTime = 0;
 
     for (let i = 0; i < sizes.length; i++) {
-      const size = sizes[i];
-      const data = new Uint8Array(size);
-      for (let j = 0; j < size; j += 4096) {
+      const data = new Uint8Array(sizes[i]);
+      for (let j = 0; j < sizes[i]; j += 4096) {
         data[j] = Math.random() * 256;
       }
 
       try {
         const start = performance.now();
-        await fetch(server.up, {
-          method: "POST",
-          body: data,
-          cache: "no-store",
-          signal: AbortSignal.timeout(10000),
-        });
+        await fetch(server.up, { method: "POST", body: data, cache: "no-store", signal: AbortSignal.timeout(10000) });
         const elapsed = (performance.now() - start) / 1000;
 
-        totalBytes += size;
+        totalBytes += sizes[i];
         totalTime += elapsed;
 
         this.onProgress("upload", Math.round(((i + 1) / sizes.length) * 100));
