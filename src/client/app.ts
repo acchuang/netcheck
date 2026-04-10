@@ -3,6 +3,7 @@ import { AdBlockTest } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-test";
 import { ReportExporter } from "./export-report";
+import { t } from "./i18n";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -91,9 +92,9 @@ async function runDnsChecks(): Promise<void> {
       ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
     document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
     document.getElementById("ip-colo")!.textContent = ipData.colo || "—";
-    setBadge("ip-status", "done", "detected");
+    setBadge("ip-status", "done", t("dns.detected"));
   } else {
-    setBadge("ip-status", "error", "failed");
+    setBadge("ip-status", "error", t("dns.failed"));
   }
 
   // DNS resolver detection
@@ -126,14 +127,14 @@ async function runDnsChecks(): Promise<void> {
 
     const unreachable = resolvers.filter((r) => !r.reachable);
     unreachable.forEach((r) => {
-      const item = createCheckItem("fail", `${r.name} (${r.ip})`, "unreachable");
+      const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
       resolverContainer.appendChild(item);
     });
 
-    setBadge("dns-resolver-status", "done", `${reachable.length} of ${resolvers.length} reachable`);
+    setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachable.length, resolvers.length));
   } else {
-    resolverContainer.innerHTML = '<p class="info-muted">No resolvers detected</p>';
-    setBadge("dns-resolver-status", "error", "none found");
+    resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
+    setBadge("dns-resolver-status", "error", t("dns.nonefound"));
   }
 
   // DNS security checks
@@ -150,11 +151,11 @@ async function runDnsChecks(): Promise<void> {
   });
 
   if (allPass) {
-    setBadge("dns-security-status", "done", "secure");
+    setBadge("dns-security-status", "done", t("dns.secure"));
   } else if (anyFail) {
-    setBadge("dns-security-status", "error", "issues found");
+    setBadge("dns-security-status", "error", t("dns.issuesFound"));
   } else {
-    setBadge("dns-security-status", "done", "partial");
+    setBadge("dns-security-status", "done", t("dns.partial"));
   }
 
   renderDnsSuggestions({ resolvers, securityChecks, reachable });
@@ -171,106 +172,34 @@ interface DnsContext {
 }
 
 interface Suggestion {
-  name: string;
-  type: string;
+  name: string; // i18n key prefix, e.g. "dns.sug.cf"
   icon: string;
-  desc: string;
   tags: string[];
   url: string | null;
   when: (ctx: DnsContext) => boolean;
 }
 
 const dnsSuggestions: Suggestion[] = [
-  {
-    name: "1.1.1.1 (Cloudflare DNS)",
-    type: "Public DNS Resolver",
-    icon: "CF",
-    desc: "The fastest public DNS resolver with built-in privacy. Supports DNS-over-HTTPS and DNS-over-TLS. No logging of your queries.",
-    tags: ["fastest", "DoH", "DoT", "privacy"],
-    url: "https://1.1.1.1",
-    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100,
-  },
-  {
-    name: "1.1.1.1 for Families",
-    type: "Filtered DNS",
-    icon: "CF+",
-    desc: "Cloudflare's family-safe DNS that blocks malware (1.1.1.2) or malware + adult content (1.1.1.3). Same speed, added protection.",
-    tags: ["family safe", "malware blocking", "free"],
-    url: "https://one.one.one.one/family",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering"),
-  },
-  {
-    name: "Quad9",
-    type: "Security-Focused DNS",
-    icon: "Q9",
-    desc: "Non-profit DNS service that blocks malicious domains using threat intelligence from 25+ sources. Strong DNSSEC validation.",
-    tags: ["threat blocking", "non-profit", "DNSSEC"],
-    url: "https://quad9.net",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") || !ctx.hasSecurity("DNSSEC Validation"),
-  },
-  {
-    name: "NextDNS",
-    type: "Customizable DNS",
-    icon: "ND",
-    desc: "Highly configurable DNS with per-device policies, ad/tracker blocking, parental controls, and detailed analytics dashboard.",
-    tags: ["customizable", "analytics", "ad blocking"],
-    url: "https://nextdns.io",
-    when: () => true,
-  },
-  {
-    name: "Enable DNS-over-HTTPS",
-    type: "Browser Setting",
-    icon: "DoH",
-    desc: "Encrypt your DNS queries to prevent ISP snooping and man-in-the-middle attacks. Available in Firefox, Chrome, Edge, and Brave settings.",
-    tags: ["encryption", "privacy", "browser setting"],
-    url: "https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/",
-    when: (ctx) => !ctx.hasSecurity("DNS-over-HTTPS"),
-  },
-  {
-    name: "Enable DNSSEC",
-    type: "DNS Security",
-    icon: "SEC",
-    desc: "DNSSEC prevents DNS spoofing by cryptographically signing records. Switch to a resolver that validates DNSSEC (Cloudflare, Google, Quad9).",
-    tags: ["anti-spoofing", "cryptographic", "validation"],
-    url: "https://www.cloudflare.com/dns/dnssec/how-dnssec-works/",
-    when: (ctx) => !ctx.hasSecurity("DNSSEC Validation"),
-  },
-  {
-    name: "Pi-hole",
-    type: "Network-Level DNS",
-    icon: "Pi",
-    desc: "Self-hosted DNS sinkhole that blocks ads, trackers, and malware at the network level for every device on your network.",
-    tags: ["self-hosted", "network-wide", "open source"],
-    url: "https://pi-hole.net",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering"),
-  },
-  {
-    name: "Disable WebRTC Leak",
-    type: "Browser Fix",
-    icon: "RTC",
-    desc: "Your browser is leaking your local IP via WebRTC. Disable it in browser settings or use an extension like uBlock Origin.",
-    tags: ["privacy fix", "IP leak", "browser setting"],
-    url: null,
-    when: (ctx) => ctx.hasWebRtcLeak,
-  },
-  {
-    name: "AdGuard DNS",
-    type: "Ad-Blocking DNS",
-    icon: "AG",
-    desc: "DNS resolver that blocks ads and trackers at the DNS level. Works across all apps and devices without installing anything.",
-    tags: ["ad blocking", "no install", "cross-platform"],
-    url: "https://adguard-dns.io",
-    when: (ctx) => !ctx.usingResolver("AdGuard DNS"),
-  },
-  {
-    name: "Use Multiple DNS Providers",
-    type: "Reliability Tip",
-    icon: "2x",
-    desc: "Configure a secondary DNS resolver as fallback. If your primary goes down, your internet won't break. Most routers support primary + secondary.",
-    tags: ["reliability", "redundancy", "easy setup"],
-    url: null,
-    when: (ctx) => ctx.reachableCount < 3,
-  },
+  { name: "dns.sug.cf", icon: "CF", tags: ["fastest", "DoH", "DoT", "privacy"], url: "https://1.1.1.1",
+    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100 },
+  { name: "dns.sug.cfFamily", icon: "CF+", tags: ["family safe", "malware blocking", "free"], url: "https://one.one.one.one/family",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") },
+  { name: "dns.sug.quad9", icon: "Q9", tags: ["threat blocking", "non-profit", "DNSSEC"], url: "https://quad9.net",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") || !ctx.hasSecurity("DNSSEC Validation") },
+  { name: "dns.sug.nextdns", icon: "ND", tags: ["customizable", "analytics", "ad blocking"], url: "https://nextdns.io",
+    when: () => true },
+  { name: "dns.sug.doh", icon: "DoH", tags: ["encryption", "privacy", "browser setting"], url: "https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/",
+    when: (ctx) => !ctx.hasSecurity("DNS-over-HTTPS") },
+  { name: "dns.sug.dnssec", icon: "SEC", tags: ["anti-spoofing", "cryptographic", "validation"], url: "https://www.cloudflare.com/dns/dnssec/how-dnssec-works/",
+    when: (ctx) => !ctx.hasSecurity("DNSSEC Validation") },
+  { name: "dns.sug.pihole", icon: "Pi", tags: ["self-hosted", "network-wide", "open source"], url: "https://pi-hole.net",
+    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") },
+  { name: "dns.sug.webrtc", icon: "RTC", tags: ["privacy fix", "IP leak", "browser setting"], url: null,
+    when: (ctx) => ctx.hasWebRtcLeak },
+  { name: "dns.sug.adguard", icon: "AG", tags: ["ad blocking", "no install", "cross-platform"], url: "https://adguard-dns.io",
+    when: (ctx) => !ctx.usingResolver("AdGuard DNS") },
+  { name: "dns.sug.multi", icon: "2x", tags: ["reliability", "redundancy", "easy setup"], url: null,
+    when: (ctx) => ctx.reachableCount < 3 },
 ];
 
 function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
@@ -288,17 +217,17 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
   };
 
   const issues: string[] = [];
-  if (!ctx.hasSecurity("DNSSEC Validation")) issues.push("DNSSEC not validated");
-  if (!ctx.hasSecurity("DNS-over-HTTPS")) issues.push("DNS not encrypted");
-  if (!ctx.hasSecurity("Malware Domain Filtering")) issues.push("no malware filtering");
-  if (ctx.hasWebRtcLeak) issues.push("WebRTC IP leak");
-  if (ctx.fastestResolver() > 80) issues.push("slow DNS resolvers");
-  if (ctx.reachableCount < 2) issues.push("limited resolver availability");
+  if (!ctx.hasSecurity("DNSSEC Validation")) issues.push(t("dns.issueDnssec"));
+  if (!ctx.hasSecurity("DNS-over-HTTPS")) issues.push(t("dns.issueDoh"));
+  if (!ctx.hasSecurity("Malware Domain Filtering")) issues.push(t("dns.issueMalware"));
+  if (ctx.hasWebRtcLeak) issues.push(t("dns.issueWebrtc"));
+  if (ctx.fastestResolver() > 80) issues.push(t("dns.issueSlow"));
+  if (ctx.reachableCount < 2) issues.push(t("dns.issueLimited"));
 
   if (issues.length === 0) {
-    subtitle.textContent = "Your DNS configuration looks solid. Here are tools to further enhance it:";
+    subtitle.textContent = t("dns.suggestGood");
   } else {
-    subtitle.textContent = `Issues found: ${issues.join(", ")}. These tools and settings can help:`;
+    subtitle.textContent = t("dns.suggestIssues", issues.join(", "));
   }
 
   const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
@@ -309,22 +238,22 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
     .map((s, i) => {
       const isTop = i === 0 && issues.length > 0;
       const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">Learn more ${arrowSvg}</a>`
-        : `<span class="suggestion-link" style="color:var(--text-quaternary)">Check browser settings</span>`;
+        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
+        : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("dns.checkBrowser")}</span>`;
 
       return `
       <div class="suggestion-card${isTop ? " recommended" : ""}">
         <div class="suggestion-top">
           <div class="suggestion-icon">${s.icon}</div>
           <div class="suggestion-info">
-            <div class="suggestion-name">${s.name}</div>
-            <div class="suggestion-type">${s.type}</div>
+            <div class="suggestion-name">${t(s.name + ".name")}</div>
+            <div class="suggestion-type">${t(s.name + ".type")}</div>
           </div>
-          ${isTop ? '<span class="suggestion-badge">Top Fix</span>' : ""}
+          ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
         </div>
-        <div class="suggestion-desc">${s.desc}</div>
+        <div class="suggestion-desc">${t(s.name + ".desc")}</div>
         <div class="suggestion-tags">
-          ${s.tags.map((t) => `<span class="suggestion-tag">${t}</span>`).join("")}
+          ${s.tags.map((tag) => `<span class="suggestion-tag">${tag}</span>`).join("")}
         </div>
         ${linkHtml}
       </div>`;
@@ -343,20 +272,20 @@ async function runDnsLookup(): Promise<void> {
   const tableEl = document.getElementById("dns-lookup-table")!;
   const outputEl = document.getElementById("dns-lookup-output")!;
   resultsEl.classList.remove("hidden");
-  tableEl.innerHTML = '<p class="info-muted">Looking up...</p>';
-  outputEl.textContent = "Loading...";
+  tableEl.innerHTML = `<p class="info-muted">${t("dns.lookupLoading")}</p>`;
+  outputEl.textContent = "...";
 
   let allData: Record<string, any>;
   if (type === "ALL") {
     const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
-    const results = await Promise.all(types.map((t) => DnsCheck.lookupDns(domain, t)));
+    const results = await Promise.all(types.map((rt) => DnsCheck.lookupDns(domain, rt)));
     allData = {};
-    types.forEach((t, i) => { allData[t] = results[i]; });
+    types.forEach((rt, i) => { allData[rt] = results[i]; });
   } else {
     allData = { [type]: await DnsCheck.lookupDns(domain, type) };
   }
 
-  let html = '<table class="dns-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th></tr></thead><tbody>';
+  let html = `<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>`;
   let hasRecords = false;
 
   for (const [recType, data] of Object.entries(allData)) {
@@ -371,7 +300,7 @@ async function runDnsLookup(): Promise<void> {
   }
 
   if (!hasRecords) {
-    html += `<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">No records found</td></tr>`;
+    html += `<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">${t("dns.noRecords")}</td></tr>`;
   }
 
   html += "</tbody></table>";
@@ -407,20 +336,20 @@ async function runAdBlockTests(): Promise<void> {
 
   if (score.score >= 80) {
     ring.style.stroke = "var(--emerald)";
-    document.getElementById("score-summary")!.textContent = "Excellent protection";
+    document.getElementById("score-summary")!.textContent = t("adblock.excellent");
   } else if (score.score >= 50) {
     ring.style.stroke = "var(--accent)";
-    document.getElementById("score-summary")!.textContent = "Good protection";
+    document.getElementById("score-summary")!.textContent = t("adblock.good");
   } else if (score.score >= 20) {
     ring.style.stroke = "var(--amber)";
-    document.getElementById("score-summary")!.textContent = "Basic protection";
+    document.getElementById("score-summary")!.textContent = t("adblock.basic");
   } else {
     ring.style.stroke = "var(--red)";
-    document.getElementById("score-summary")!.textContent = "Minimal protection";
+    document.getElementById("score-summary")!.textContent = t("adblock.minimal");
   }
 
   document.getElementById("score-detail")!.textContent =
-    `${score.blocked} of ${score.total} trackers/ads blocked across ${AdBlockTest.results.length} categories`;
+    t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
   renderSuggestions(score, AdBlockTest.results);
 }
@@ -458,41 +387,85 @@ function createCategory(name: string, testCount: number): HTMLDivElement {
     <div class="test-category-header">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
-      <span class="test-category-score">testing ${testCount} items...</span>
+      <span class="test-category-score">${t("adblock.testing", testCount)}</span>
     </div>
     <div class="test-category-body">
-      <p class="info-muted">Running tests...</p>
+      <p class="info-muted">${t("adblock.running")}</p>
     </div>
   `;
   return div;
 }
 
-// Cloudflare PoP codes → city names (common ones)
-const CF_POPS: Record<string, string> = {
-  SIN: "Singapore", NRT: "Tokyo", HKG: "Hong Kong", ICN: "Seoul",
-  TPE: "Taipei", BKK: "Bangkok", KUL: "Kuala Lumpur", MNL: "Manila",
-  CGK: "Jakarta", BOM: "Mumbai", DEL: "Delhi", SYD: "Sydney",
-  MEL: "Melbourne", AKL: "Auckland", LAX: "Los Angeles", SFO: "San Francisco",
-  SJC: "San Jose", SEA: "Seattle", PDX: "Portland", DEN: "Denver",
-  DFW: "Dallas", IAH: "Houston", ORD: "Chicago", ATL: "Atlanta",
-  MIA: "Miami", IAD: "Washington DC", EWR: "Newark", JFK: "New York",
-  BOS: "Boston", YYZ: "Toronto", YVR: "Vancouver", GRU: "São Paulo",
-  SCL: "Santiago", BOG: "Bogotá", LIM: "Lima", MEX: "Mexico City",
-  LHR: "London", AMS: "Amsterdam", FRA: "Frankfurt", CDG: "Paris",
-  MAD: "Madrid", MXP: "Milan", ZRH: "Zurich", VIE: "Vienna",
-  WAW: "Warsaw", ARN: "Stockholm", HEL: "Helsinki", CPH: "Copenhagen",
-  OSL: "Oslo", DUB: "Dublin", LIS: "Lisbon", PRG: "Prague",
-  BRU: "Brussels", MRS: "Marseille", HAM: "Hamburg", MUC: "Munich",
-  JNB: "Johannesburg", CPT: "Cape Town", NBO: "Nairobi", LOS: "Lagos",
-  CAI: "Cairo", DOH: "Doha", DXB: "Dubai", TLV: "Tel Aviv",
-  IST: "Istanbul", KIX: "Osaka", FUK: "Fukuoka", CKG: "Chongqing",
-  CTU: "Chengdu", PVG: "Shanghai", PEK: "Beijing", CMB: "Colombo",
+// Cloudflare PoP codes → [city, lat, lng]
+const CF_POPS: Record<string, [string, number, number]> = {
+  SIN: ["Singapore", 1.35, 103.82], NRT: ["Tokyo", 35.76, 140.39], HKG: ["Hong Kong", 22.31, 113.91],
+  ICN: ["Seoul", 37.46, 126.44], TPE: ["Taipei", 25.08, 121.23], BKK: ["Bangkok", 13.69, 100.75],
+  KUL: ["Kuala Lumpur", 2.75, 101.71], MNL: ["Manila", 14.51, 121.02], CGK: ["Jakarta", -6.13, 106.66],
+  BOM: ["Mumbai", 19.09, 72.87], DEL: ["Delhi", 28.57, 77.10], SYD: ["Sydney", -33.95, 151.18],
+  MEL: ["Melbourne", -37.67, 144.84], AKL: ["Auckland", -37.01, 174.78], PER: ["Perth", -31.94, 115.97],
+  BNE: ["Brisbane", -27.38, 153.12], ADL: ["Adelaide", -34.94, 138.53],
+  LAX: ["Los Angeles", 33.94, -118.41], SFO: ["San Francisco", 37.62, -122.38],
+  SJC: ["San Jose", 37.36, -121.93], SEA: ["Seattle", 47.45, -122.31], PDX: ["Portland", 45.59, -122.60],
+  DEN: ["Denver", 39.86, -104.67], DFW: ["Dallas", 32.90, -97.04], IAH: ["Houston", 29.98, -95.34],
+  ORD: ["Chicago", 41.97, -87.91], ATL: ["Atlanta", 33.64, -84.43], MIA: ["Miami", 25.80, -80.29],
+  IAD: ["Washington DC", 38.95, -77.46], EWR: ["Newark", 40.69, -74.17], JFK: ["New York", 40.64, -73.78],
+  BOS: ["Boston", 42.37, -71.02], YYZ: ["Toronto", 43.68, -79.63], YVR: ["Vancouver", 49.20, -123.18],
+  GRU: ["São Paulo", -23.43, -46.47], SCL: ["Santiago", -33.39, -70.79], BOG: ["Bogotá", 4.70, -74.15],
+  LIM: ["Lima", -12.02, -77.11], MEX: ["Mexico City", 19.44, -99.07],
+  LHR: ["London", 51.47, -0.46], AMS: ["Amsterdam", 52.31, 4.76], FRA: ["Frankfurt", 50.03, 8.57],
+  CDG: ["Paris", 49.01, 2.55], MAD: ["Madrid", 40.47, -3.56], MXP: ["Milan", 45.63, 8.72],
+  ZRH: ["Zurich", 47.46, 8.55], VIE: ["Vienna", 48.11, 16.57], WAW: ["Warsaw", 52.17, 20.97],
+  ARN: ["Stockholm", 59.65, 17.94], HEL: ["Helsinki", 60.32, 24.95], CPH: ["Copenhagen", 55.62, 12.66],
+  OSL: ["Oslo", 60.19, 11.10], DUB: ["Dublin", 53.43, -6.27], LIS: ["Lisbon", 38.77, -9.13],
+  PRG: ["Prague", 50.10, 14.26], BRU: ["Brussels", 50.90, 4.48], MRS: ["Marseille", 43.44, 5.22],
+  HAM: ["Hamburg", 53.63, 9.99], MUC: ["Munich", 48.35, 11.79],
+  JNB: ["Johannesburg", -26.14, 28.25], CPT: ["Cape Town", -33.97, 18.60], NBO: ["Nairobi", -1.32, 36.93],
+  LOS: ["Lagos", 6.58, 3.32], CAI: ["Cairo", 30.12, 31.41],
+  DOH: ["Doha", 25.26, 51.57], DXB: ["Dubai", 25.25, 55.36], TLV: ["Tel Aviv", 32.01, 34.89],
+  IST: ["Istanbul", 41.26, 28.74], KIX: ["Osaka", 34.43, 135.23], FUK: ["Fukuoka", 33.59, 130.45],
+  CKG: ["Chongqing", 29.72, 106.64], CTU: ["Chengdu", 30.58, 103.95],
+  PVG: ["Shanghai", 31.14, 121.81], PEK: ["Beijing", 40.08, 116.58], CMB: ["Colombo", 7.18, 79.88],
 };
 
-function formatColo(colo: string | null): string {
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatColo(colo: string | null, userLat?: number | null, userLon?: number | null): string {
   if (!colo || colo === "unknown") return "—";
-  const city = CF_POPS[colo];
-  return city ? `${city} (${colo})` : colo;
+  const pop = CF_POPS[colo];
+  if (!pop) return colo;
+  const [city, popLat, popLon] = pop;
+  let dist = "";
+  if (userLat != null && userLon != null) {
+    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
+    dist = ` · ${km.toLocaleString()} km`;
+  }
+  return `${city} (${colo})${dist}`;
+}
+
+function updateServerBadge(colo: string, userLat?: number | null, userLon?: number | null): void {
+  const pop = CF_POPS[colo];
+  const cityName = pop ? pop[0] : colo;
+  const badge = document.getElementById("speed-server-badge")!;
+  badge.classList.add("active");
+
+  document.getElementById("speed-server-value")!.textContent = `${cityName} (${colo})`;
+
+  if (pop && userLat != null && userLon != null) {
+    const [, popLat, popLon] = pop;
+    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
+    const detail = document.getElementById("speed-server-detail")!;
+    detail.classList.remove("hidden");
+    document.getElementById("speed-server-dist")!.textContent = `${km.toLocaleString()} km`;
+    document.getElementById("speed-server-colo")!.textContent = `${cityName}`;
+  }
 }
 
 // Speed test
@@ -589,7 +562,7 @@ function drawSpeedGraph(): void {
 async function runSpeedTest(): Promise<void> {
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = "Running...";
+  btn.textContent = t("speed.running");
 
   speedGraphData.download = [];
   speedGraphData.upload = [];
@@ -599,7 +572,7 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = "—";
   document.getElementById("speed-latency")!.textContent = "—";
   document.getElementById("speed-jitter")!.textContent = "—";
-  document.getElementById("speed-server-value")!.textContent = "detecting...";
+  document.getElementById("speed-server-value")!.textContent = t("speed.detecting");
   (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
@@ -607,12 +580,12 @@ async function runSpeedTest(): Promise<void> {
   const startTime = performance.now();
 
   const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
-    const phaseLabel = phase === "latency" ? "Measuring latency" : phase === "download" ? "Testing download" : "Testing upload";
+    const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
     document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
     (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
 
     if (data) {
-      if (data.colo) document.getElementById("speed-server-value")!.textContent = formatColo(data.colo);
+      if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
       if (data.latency !== null) document.getElementById("speed-latency")!.textContent = String(data.latency);
       if (data.jitter !== null) document.getElementById("speed-jitter")!.textContent = String(data.jitter);
       if (data.download !== null) {
@@ -635,102 +608,51 @@ async function runSpeedTest(): Promise<void> {
 
   const grade = SpeedTest.getGrade(results.download);
   document.getElementById("speed-grade")!.textContent = grade.grade;
-  document.getElementById("speed-grade-label")!.textContent = grade.label;
+  const gradeKeys: Record<string, string> = {
+    "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
+    "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
+    "Average": "speed.grade.average", "Below Average": "speed.grade.belowAvg",
+    "Slow": "speed.grade.slow", "Unknown": "speed.grade.unknown",
+  };
+  document.getElementById("speed-grade-label")!.textContent = t(gradeKeys[grade.label] || grade.label);
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
   document.getElementById("speed-phase")!.textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms latency`;
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}`;
 
   drawSpeedGraph();
   renderSpeedSuggestions(results);
   btn.disabled = false;
-  btn.textContent = "Run Again";
+  btn.textContent = t("speed.runAgain");
 }
 
 // Speed suggestions
 interface SpeedSuggestion {
-  name: string;
-  type: string;
+  name: string; // i18n key prefix
   icon: string;
-  desc: string;
   tags: string[];
   url: string | null;
   when: (r: { download: number; upload: number; latency: number; jitter: number }) => boolean;
 }
 
 const speedSuggestions: SpeedSuggestion[] = [
-  {
-    name: "1.1.1.1 (Cloudflare DNS)",
-    type: "DNS Resolver",
-    icon: "CF",
-    desc: "The fastest public DNS resolver. Switching from your ISP's default DNS can reduce lookup times and improve page load speed.",
-    tags: ["fastest DNS", "privacy-first", "free"],
-    url: "https://1.1.1.1",
-    when: (r) => r.latency > 15,
-  },
-  {
-    name: "Cloudflare WARP",
-    type: "VPN / Network Optimizer",
-    icon: "W+",
-    desc: "Routes your traffic through Cloudflare's network using WireGuard. Reduces latency, improves routing, and encrypts your connection.",
-    tags: ["WireGuard", "free tier", "mobile + desktop"],
-    url: "https://1.1.1.1",
-    when: (r) => r.latency > 30 || r.jitter > 10,
-  },
-  {
-    name: "Ethernet over Wi-Fi",
-    type: "Hardware Upgrade",
-    icon: "Eth",
-    desc: "A wired Ethernet connection eliminates Wi-Fi interference, reduces jitter, and typically doubles throughput compared to wireless.",
-    tags: ["zero cost", "lower latency", "stable"],
-    url: null,
-    when: (r) => r.jitter > 5 || r.download < 100,
-  },
-  {
-    name: "Wi-Fi 6E / Wi-Fi 7 Router",
-    type: "Hardware Upgrade",
-    icon: "6E",
-    desc: "Upgrading to Wi-Fi 6E or 7 provides wider channels, less congestion on the 6 GHz band, and dramatically lower latency.",
-    tags: ["6 GHz band", "lower latency", "more capacity"],
-    url: null,
-    when: (r) => r.download < 200 || r.jitter > 8,
-  },
-  {
-    name: "QoS / SQM (Smart Queue Management)",
-    type: "Router Configuration",
-    icon: "QoS",
-    desc: "Enable SQM or fq_codel on your router to eliminate bufferbloat. Keeps latency low even when your connection is fully loaded.",
-    tags: ["bufferbloat fix", "OpenWrt", "free"],
+  { name: "speed.sug.cf", icon: "CF", tags: ["fastest DNS", "privacy-first", "free"], url: "https://1.1.1.1",
+    when: (r) => r.latency > 15 },
+  { name: "speed.sug.warp", icon: "W+", tags: ["WireGuard", "free tier", "mobile + desktop"], url: "https://1.1.1.1",
+    when: (r) => r.latency > 30 || r.jitter > 10 },
+  { name: "speed.sug.ethernet", icon: "Eth", tags: ["zero cost", "lower latency", "stable"], url: null,
+    when: (r) => r.jitter > 5 || r.download < 100 },
+  { name: "speed.sug.wifi6e", icon: "6E", tags: ["6 GHz band", "lower latency", "more capacity"], url: null,
+    when: (r) => r.download < 200 || r.jitter > 8 },
+  { name: "speed.sug.qos", icon: "QoS", tags: ["bufferbloat fix", "OpenWrt", "free"],
     url: "https://openwrt.org/docs/guide-user/network/traffic-shaping/sqm",
-    when: (r) => r.jitter > 10 || r.latency > 40,
-  },
-  {
-    name: "Contact Your ISP",
-    type: "Service",
-    icon: "ISP",
-    desc: "If speeds are significantly below your plan, your ISP may need to check the line, replace equipment, or investigate congestion.",
-    tags: ["line check", "modem swap", "plan upgrade"],
-    url: null,
-    when: (r) => r.download < 25,
-  },
-  {
-    name: "Check for Background Usage",
-    type: "Software Fix",
-    icon: "BG",
-    desc: "Cloud backups, OS updates, and streaming on other devices can saturate your connection. Audit what's using bandwidth right now.",
-    tags: ["quick win", "free", "common cause"],
-    url: null,
-    when: (r) => r.upload < 10 || r.download < 50,
-  },
-  {
-    name: "NextDNS",
-    type: "DNS + Privacy",
-    icon: "ND",
-    desc: "Fast DNS with built-in ad/tracker blocking. Reduces unnecessary network requests which can improve perceived speed.",
-    tags: ["fast DNS", "ad blocking", "custom filters"],
-    url: "https://nextdns.io",
-    when: () => true,
-  },
+    when: (r) => r.jitter > 10 || r.latency > 40 },
+  { name: "speed.sug.isp", icon: "ISP", tags: ["line check", "modem swap", "plan upgrade"], url: null,
+    when: (r) => r.download < 25 },
+  { name: "speed.sug.bg", icon: "BG", tags: ["quick win", "free", "common cause"], url: null,
+    when: (r) => r.upload < 10 || r.download < 50 },
+  { name: "speed.sug.nextdns", icon: "ND", tags: ["fast DNS", "ad blocking", "custom filters"], url: "https://nextdns.io",
+    when: () => true },
 ];
 
 function renderSpeedSuggestions(results: SpeedTestResults): void {
@@ -744,20 +666,20 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
   const jit = results.jitter || 0;
 
   const issues: string[] = [];
-  if (dl < 25) issues.push("slow download");
-  else if (dl < 100) issues.push("moderate download");
-  if (ul < 10) issues.push("slow upload");
-  if (lat > 40) issues.push("high latency");
-  else if (lat > 20) issues.push("moderate latency");
-  if (jit > 10) issues.push("high jitter");
-  else if (jit > 5) issues.push("noticeable jitter");
+  if (dl < 25) issues.push(t("speed.issueSlowDl"));
+  else if (dl < 100) issues.push(t("speed.issueModDl"));
+  if (ul < 10) issues.push(t("speed.issueSlowUl"));
+  if (lat > 40) issues.push(t("speed.issueHighLat"));
+  else if (lat > 20) issues.push(t("speed.issueModLat"));
+  if (jit > 10) issues.push(t("speed.issueHighJit"));
+  else if (jit > 5) issues.push(t("speed.issueModJit"));
 
   if (issues.length === 0 && dl >= 100) {
-    subtitle.textContent = "Your connection looks great! Here are ways to keep it optimized:";
+    subtitle.textContent = t("speed.suggestGreat");
   } else if (issues.length === 0) {
-    subtitle.textContent = "Decent connection. Here are some ways to improve further:";
+    subtitle.textContent = t("speed.suggestDecent");
   } else {
-    subtitle.textContent = `Issues detected: ${issues.join(", ")}. These tools and tips can help:`;
+    subtitle.textContent = t("speed.suggestIssues", issues.join(", "));
   }
 
   const r = { download: dl, upload: ul, latency: lat, jitter: jit };
@@ -771,22 +693,22 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
     .map((s, i) => {
       const isTop = i === 0 && issues.length > 0;
       const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">Learn more ${arrowSvg}</a>`
-        : `<span class="suggestion-link" style="color:var(--text-quaternary)">No setup required</span>`;
+        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
+        : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
 
       return `
       <div class="suggestion-card${isTop ? " recommended" : ""}">
         <div class="suggestion-top">
           <div class="suggestion-icon">${s.icon}</div>
           <div class="suggestion-info">
-            <div class="suggestion-name">${s.name}</div>
-            <div class="suggestion-type">${s.type}</div>
+            <div class="suggestion-name">${t(s.name + ".name")}</div>
+            <div class="suggestion-type">${t(s.name + ".type")}</div>
           </div>
-          ${isTop ? '<span class="suggestion-badge">Top Fix</span>' : ""}
+          ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
         </div>
-        <div class="suggestion-desc">${s.desc}</div>
+        <div class="suggestion-desc">${t(s.name + ".desc")}</div>
         <div class="suggestion-tags">
-          ${s.tags.map((t) => `<span class="suggestion-tag">${t}</span>`).join("")}
+          ${s.tags.map((tag) => `<span class="suggestion-tag">${tag}</span>`).join("")}
         </div>
         ${linkHtml}
       </div>`;
@@ -804,9 +726,9 @@ async function runFilterListDetection(): Promise<void> {
   const subtitle = document.getElementById("filter-list-subtitle")!;
 
   if (summary.detected.length === 0) {
-    subtitle.textContent = "No filter lists detected. You may not have an ad blocker installed.";
+    subtitle.textContent = t("filter.noneDetected");
   } else {
-    subtitle.textContent = `${summary.detected.length} of ${summary.total} filter lists detected.${summary.acceptableAdsEnabled ? " Acceptable Ads is enabled." : ""}`;
+    subtitle.textContent = t("filter.detected", summary.detected.length, summary.total) + (summary.acceptableAdsEnabled ? t("filter.acceptableAds") : "");
   }
 
   grid.innerHTML = FilterListDetector.results
@@ -815,11 +737,11 @@ async function runFilterListDetection(): Promise<void> {
       if (list.special === "acceptableAds") {
         dotClass = list.detected ? "warning" : "active";
         badgeClass = list.detected ? "warning" : "active";
-        badgeText = list.detected ? "enabled" : "disabled";
+        badgeText = list.detected ? t("filter.enabled") : t("filter.disabled");
       } else {
         dotClass = list.detected ? "active" : "inactive";
         badgeClass = list.detected ? "active" : "inactive";
-        badgeText = list.detected ? "detected" : "not found";
+        badgeText = list.detected ? t("filter.found") : t("filter.notFound");
       }
 
       return `
@@ -835,80 +757,51 @@ async function runFilterListDetection(): Promise<void> {
     .join("");
 }
 
-// Adblock suggestions
-interface AdblockSuggestion {
-  name: string;
-  type: string;
+// Per-category adblock suggestions
+interface CategoryAdviceDef {
   icon: string;
-  desc: string;
-  tags: string[];
-  url: string;
-  covers: string[];
-  minScore: number;
+  i18nKey: string; // e.g. "contextual" → resolves "adblock.advice.contextual.title"
+  fixCount: number;
+  fixUrls: (string | undefined)[];
 }
 
-const adblockSuggestions: AdblockSuggestion[] = [
-  {
-    name: "uBlock Origin",
-    type: "Browser Extension",
-    icon: "uB",
-    desc: "The gold standard. Open-source, lightweight, and blocks ads, trackers, and malware domains with advanced filter lists.",
-    tags: ["open-source", "lightweight", "advanced filters"],
-    url: "https://ublockorigin.com",
-    covers: ["Contextual Advertising", "Analytics & Tracking", "Banner & Display Ads", "Social Media Trackers"],
-    minScore: 0,
+const CATEGORY_ADVICE: Record<string, CategoryAdviceDef> = {
+  "Contextual Advertising": {
+    icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/>',
+    i18nKey: "contextual", fixCount: 3,
+    fixUrls: ["https://ublockorigin.com", undefined, "https://nextdns.io"],
   },
-  {
-    name: "AdGuard",
-    type: "Browser Extension / App",
-    icon: "AG",
-    desc: "Cross-platform ad blocker with browser extension and system-wide apps for macOS, Windows, iOS, and Android.",
-    tags: ["cross-platform", "system-wide", "HTTPS filtering"],
-    url: "https://adguard.com",
-    covers: ["Contextual Advertising", "Analytics & Tracking", "Banner & Display Ads", "Social Media Trackers"],
-    minScore: 0,
+  "Analytics & Tracking": {
+    icon: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    i18nKey: "analytics", fixCount: 4,
+    fixUrls: [undefined, "https://privacybadger.org", undefined, undefined],
   },
-  {
-    name: "Pi-hole",
-    type: "Network-Level DNS",
-    icon: "Pi",
-    desc: "Self-hosted DNS sinkhole that blocks ads and trackers at the network level for all devices on your network.",
-    tags: ["self-hosted", "network-wide", "DNS-level"],
-    url: "https://pi-hole.net",
-    covers: ["Contextual Advertising", "Analytics & Tracking", "Social Media Trackers"],
-    minScore: 0,
+  "Banner & Display Ads": {
+    icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+    i18nKey: "banner", fixCount: 3,
+    fixUrls: [undefined, undefined, undefined],
   },
-  {
-    name: "NextDNS",
-    type: "Cloud DNS",
-    icon: "ND",
-    desc: "Privacy-focused cloud DNS service with customizable blocklists, analytics, and per-device policies.",
-    tags: ["cloud DNS", "no setup", "customizable"],
-    url: "https://nextdns.io",
-    covers: ["Contextual Advertising", "Analytics & Tracking", "Social Media Trackers"],
-    minScore: 0,
+  "Error Monitoring & Dev Tools": {
+    icon: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+    i18nKey: "devtools", fixCount: 3,
+    fixUrls: [undefined, undefined, undefined],
   },
-  {
-    name: "Privacy Badger",
-    type: "Browser Extension",
-    icon: "PB",
-    desc: "EFF's tracker blocker that learns to block invisible trackers. Complements ad blockers by catching what filter lists miss.",
-    tags: ["EFF", "learning-based", "tracker focus"],
-    url: "https://privacybadger.org",
-    covers: ["Analytics & Tracking", "Social Media Trackers"],
-    minScore: 0,
+  "Social Media Trackers": {
+    icon: '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>',
+    i18nKey: "social", fixCount: 4,
+    fixUrls: [undefined, undefined, "https://addons.mozilla.org/firefox/addon/facebook-container/", undefined],
   },
-  {
-    name: "Brave Browser",
-    type: "Browser",
-    icon: "Br",
-    desc: "Chromium-based browser with built-in ad and tracker blocking, fingerprint protection, and Tor integration.",
-    tags: ["built-in blocking", "Chromium", "fingerprint protection"],
-    url: "https://brave.com",
-    covers: ["Contextual Advertising", "Analytics & Tracking", "Banner & Display Ads", "Social Media Trackers"],
-    minScore: 0,
+  "Fingerprint Protection": {
+    icon: '<path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.656-1.94 1.018-4.09 1.018-6.53 0-1.678-.345-3.276-.966-4.73m10.58 1.29a12 12 0 0 1 .549 3.44c0 4.418-1.507 8.49-4.03 11.72M7.5 8.5a4.5 4.5 0 1 1 9 0c0 3.047-.987 5.865-2.66 8.15M2 12c0-2.13.476-4.15 1.327-5.96M12 3.5a9 9 0 0 1 9 9c0 3.73-1.135 7.19-3.078 10.06"/>',
+    i18nKey: "fingerprint", fixCount: 4,
+    fixUrls: ["https://brave.com", undefined, "https://addons.mozilla.org/firefox/addon/canvasblocker/", undefined],
   },
-];
+  "Cookie Consent & Annoyances": {
+    icon: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+    i18nKey: "annoyances", fixCount: 4,
+    fixUrls: [undefined, undefined, "https://www.i-dont-care-about-cookies.eu", undefined],
+  },
+};
 
 interface AdblockScore {
   score: number;
@@ -927,52 +820,53 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
   const subtitle = document.getElementById("suggestions-subtitle")!;
   const grid = document.getElementById("suggestions-grid")!;
 
-  const weakCategories = results
-    .filter((cat) => {
-      const blockedRatio = cat.tests.filter((t) => t.blocked).length / cat.tests.length;
-      return blockedRatio < 0.8;
-    })
-    .map((cat) => cat.name);
+  const weakCategories = results.filter((cat) => {
+    const blockedRatio = cat.tests.filter((ct) => ct.blocked).length / cat.tests.length;
+    return blockedRatio < 0.8;
+  });
 
-  if (score.score >= 95) {
-    subtitle.textContent = "Your ad blocker is performing excellently. Here are tools to maintain your protection:";
-  } else if (score.score >= 50) {
-    subtitle.textContent = `Your protection has gaps in: ${weakCategories.join(", ")}. Consider these tools:`;
-  } else {
-    subtitle.textContent = "Your browser has limited protection. These tools will significantly improve your privacy:";
+  if (weakCategories.length === 0) {
+    subtitle.textContent = t("adblock.suggestPerfect");
+    grid.innerHTML = "";
+    section.classList.add("visible");
+    return;
   }
 
-  const ranked = adblockSuggestions
-    .map((s) => {
-      const relevance = s.covers.filter((c) => weakCategories.includes(c)).length;
-      return { ...s, relevance };
-    })
-    .sort((a, b) => b.relevance - a.relevance);
+  subtitle.textContent = t("adblock.suggestGaps", weakCategories.length, results.length);
 
-  const topPick = ranked[0];
+  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
 
-  grid.innerHTML = ranked
-    .map((s) => {
-      const isTop = s === topPick && score.score < 90;
-      const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+  grid.innerHTML = weakCategories
+    .map((cat) => {
+      const advice = CATEGORY_ADVICE[cat.name];
+      if (!advice) return "";
+      const blocked = cat.tests.filter((ct) => ct.blocked).length;
+      const total = cat.tests.length;
+      const pct = Math.round((blocked / total) * 100);
+      const key = `adblock.advice.${advice.i18nKey}`;
+
+      const fixesHtml = Array.from({ length: advice.fixCount }, (_, i) => {
+        const label = t(`${key}.fix${i + 1}`);
+        const url = advice.fixUrls[i];
+        return url
+          ? `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${arrowSvg}</a></li>`
+          : `<li>${label}</li>`;
+      }).join("");
 
       return `
-      <div class="suggestion-card${isTop ? " recommended" : ""}">
+      <div class="suggestion-card category-advice">
         <div class="suggestion-top">
-          <div class="suggestion-icon">${s.icon}</div>
-          <div class="suggestion-info">
-            <div class="suggestion-name">${s.name}</div>
-            <div class="suggestion-type">${s.type}</div>
+          <div class="suggestion-icon-svg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>
           </div>
-          ${isTop ? '<span class="suggestion-badge">Recommended</span>' : ""}
+          <div class="suggestion-info">
+            <div class="suggestion-name">${t(key + ".title")}</div>
+            <div class="suggestion-type">${cat.name}</div>
+          </div>
+          <span class="suggestion-score ${pct >= 50 ? "partial" : "low"}">${t("adblock.blockedOf", blocked, total)}</span>
         </div>
-        <div class="suggestion-desc">${s.desc}</div>
-        <div class="suggestion-tags">
-          ${s.tags.map((t) => `<span class="suggestion-tag">${t}</span>`).join("")}
-        </div>
-        <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">
-          Visit site ${arrowSvg}
-        </a>
+        <div class="suggestion-desc">${t(key + ".desc")}</div>
+        <ul class="suggestion-fixes">${fixesHtml}</ul>
       </div>`;
     })
     .join("");
@@ -985,10 +879,10 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
   div.className = "test-category";
 
   const testsHtml = tests
-    .map((t) => {
-      const status = t.uncertain ? "uncertain" : t.blocked ? "blocked" : "not-blocked";
-      const label = t.uncertain ? "uncertain" : t.blocked ? "blocked" : "allowed";
-      const iconSvg = t.blocked
+    .map((tt) => {
+      const status = tt.uncertain ? "uncertain" : tt.blocked ? "blocked" : "not-blocked";
+      const label = tt.uncertain ? t("adblock.uncertain") : tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
+      const iconSvg = tt.blocked
         ? '<polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
 
@@ -997,7 +891,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
         <svg class="test-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>${iconSvg}
         </svg>
-        <span class="test-name">${t.name}</span>
+        <span class="test-name">${tt.name}</span>
         <span class="test-result ${status}">${label}</span>
       </div>`;
     })
@@ -1007,7 +901,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
     <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
-      <span class="test-category-score">${blocked}/${tests.length} blocked</span>
+      <span class="test-category-score">${t("adblock.blockedOf", blocked, tests.length)}</span>
     </div>
     <div class="test-category-body">${testsHtml}</div>
   `;

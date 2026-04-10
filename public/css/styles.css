@@ -1,4 +1,13 @@
 :root {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+}
+
+/* Dark theme (default) */
+[data-theme="dark"] {
   --bg-black: #08090a;
   --bg-panel: #0f1011;
   --bg-surface: #191a1b;
@@ -22,11 +31,45 @@
   --border-standard: rgba(255, 255, 255, 0.08);
   --border-solid: #23252a;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-pill: 9999px;
+  --hover-bg: rgba(255, 255, 255, 0.04);
+  --active-bg: rgba(255, 255, 255, 0.06);
+  --hover-border: rgba(255, 255, 255, 0.12);
+  --card-bg: rgba(255, 255, 255, 0.02);
+  --icon-bg: rgba(255, 255, 255, 0.05);
+  color-scheme: dark;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-black: #f8f9fa;
+  --bg-panel: #ffffff;
+  --bg-surface: #f0f1f3;
+  --bg-elevated: #e4e5e9;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #3a3a4a;
+  --text-tertiary: #6b7280;
+  --text-quaternary: #9ca3af;
+
+  --brand: #4f5bc7;
+  --accent: #5e5eff;
+  --accent-hover: #4a4aee;
+
+  --green: #16a34a;
+  --emerald: #059669;
+  --red: #dc2626;
+  --amber: #d97706;
+
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-standard: rgba(0, 0, 0, 0.08);
+  --border-solid: #d1d5db;
+
+  --hover-bg: rgba(0, 0, 0, 0.03);
+  --active-bg: rgba(0, 0, 0, 0.05);
+  --hover-border: rgba(0, 0, 0, 0.15);
+  --card-bg: rgba(0, 0, 0, 0.02);
+  --icon-bg: rgba(0, 0, 0, 0.05);
+  color-scheme: light;
 }
 
 *,
@@ -109,19 +152,53 @@ body {
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--hover-bg);
 }
 
 .nav-link.active {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--active-bg);
 }
 
-/* Export Button */
+/* Nav actions */
 .nav-actions {
   display: flex;
   align-items: center;
+  gap: 4px;
   margin-left: 8px;
+}
+
+.btn-nav-action {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-feature-settings: "cv01", "ss03";
+  font-size: 12px;
+  font-weight: 510;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-nav-action:hover {
+  color: var(--text-primary);
+  background: var(--hover-bg);
+}
+
+.nav-action-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.lang-label {
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .export-dropdown {
@@ -147,8 +224,8 @@ body {
 
 .btn-export:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--hover-bg);
+  border-color: var(--hover-border);
 }
 
 .export-icon {
@@ -195,7 +272,7 @@ body {
 
 .export-option:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--active-bg);
 }
 
 .export-option svg {
@@ -251,7 +328,7 @@ body {
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -431,7 +508,7 @@ body {
   font-size: 14px;
   font-weight: 400;
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-md);
   padding: 8px 14px;
@@ -511,7 +588,7 @@ select option {
   display: flex;
   align-items: center;
   gap: 32px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   padding: 32px;
@@ -593,7 +670,7 @@ select option {
 }
 
 .test-category {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -739,7 +816,7 @@ select option {
 }
 
 .suggestion-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -750,8 +827,8 @@ select option {
 }
 
 .suggestion-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--hover-bg);
+  border-color: var(--hover-border);
 }
 
 .suggestion-card.recommended {
@@ -768,7 +845,7 @@ select option {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--icon-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -849,37 +926,198 @@ select option {
   height: 14px;
 }
 
-/* Speed Test — Server location */
-.speed-server-location {
-  display: inline-flex;
+/* Per-category advice cards */
+.suggestion-icon-svg {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--icon-bg);
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 6px 14px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-pill);
-  font-size: 13px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suggestion-icon-svg svg {
+  width: 18px;
+  height: 18px;
   color: var(--text-tertiary);
 }
 
-.speed-server-location .server-icon {
-  width: 14px;
-  height: 14px;
+.suggestion-score {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.suggestion-score.partial {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.suggestion-score.low {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.suggestion-fixes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion-fixes li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 18px;
+  position: relative;
+}
+
+.suggestion-fixes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  opacity: 0.6;
+}
+
+.suggestion-fixes a {
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s;
+}
+
+.suggestion-fixes a:hover {
+  color: var(--accent-hover);
+}
+
+.suggestion-fixes a svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.suggestions-grid .category-advice {
+  grid-column: span 1;
+}
+
+/* Speed Test — Server badge */
+.speed-server-badge {
+  display: inline-flex;
+  flex-direction: column;
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.speed-server-badge.active {
+  border-color: var(--brand);
+}
+
+.server-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.server-badge-icon {
+  width: 18px;
+  height: 18px;
   color: var(--brand);
   flex-shrink: 0;
 }
 
-.speed-server-location .server-label {
-  color: var(--text-quaternary);
-  font-weight: 500;
+.server-badge-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.speed-server-location .server-value {
+.server-badge-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.server-badge-value {
   color: var(--text-secondary);
   font-weight: 500;
   font-family: "SF Mono", "Fira Code", monospace;
   letter-spacing: 0.3px;
+}
+
+.server-badge-detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-standard);
+}
+
+.server-badge-route {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 12px;
+}
+
+.route-you,
+.route-server {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.route-you {
+  background: rgba(94, 106, 210, 0.15);
+  color: var(--brand);
+}
+
+.route-server {
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+}
+
+.route-line {
+  flex: 1;
+  height: 1px;
+  min-width: 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--text-quaternary) 0,
+    var(--text-quaternary) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.route-dist {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: "SF Mono", "Fira Code", monospace;
+  white-space: nowrap;
 }
 
 /* Speed Test */
@@ -896,7 +1134,7 @@ select option {
 }
 
 .speed-gauge {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -954,7 +1192,7 @@ select option {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   padding: 20px 24px;
@@ -1011,7 +1249,7 @@ select option {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-md);
   transition: border-color 0.15s;
@@ -1150,7 +1388,7 @@ select option {
 
 /* Speed Graph */
 .speed-graph-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   padding: 20px;

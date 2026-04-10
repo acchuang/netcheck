@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,6 +25,19 @@
         <a href="#adblock" class="nav-link" data-tab="adblock">Ad Block Test</a>
       </div>
       <div class="nav-actions">
+        <button class="btn-nav-action" id="lang-toggle" title="Language">
+          <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span class="lang-label">中文</span>
+        </button>
+        <button class="btn-nav-action" id="theme-toggle" title="Theme: dark">
+          <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <div class="export-dropdown">
           <button class="btn-export" id="export-btn" title="Export Report">
             <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -32,7 +45,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span class="export-btn-text">Export</span>
+            <span class="export-btn-text" id="export-btn-text">Export</span>
           </button>
           <div class="export-menu hidden" id="export-menu">
             <button class="export-option" data-format="markdown">
@@ -53,8 +66,8 @@
     <!-- DNS Check Section -->
     <section id="dns" class="section active">
       <div class="section-header">
-        <h1 class="display">DNS & Network Check</h1>
-        <p class="subtitle">Detect your IP, DNS resolvers, and network configuration</p>
+        <h1 class="display" id="dns-title">DNS & Network Check</h1>
+        <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
       </div>
 
       <div class="cards-grid">
@@ -65,28 +78,28 @@
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
               <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
             </svg>
-            <h2 class="card-title">Your IP Address</h2>
+            <h2 class="card-title" id="dns-ip-title">Your IP Address</h2>
             <span class="status-badge" id="ip-status">detecting...</span>
           </div>
           <div class="card-body">
             <div class="info-row">
-              <span class="info-label">IPv4</span>
+              <span class="info-label" id="dns-ipv4-label">IPv4</span>
               <span class="info-value mono" id="ip-address">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Location</span>
+              <span class="info-label" id="dns-location-label">Location</span>
               <span class="info-value" id="ip-location">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label">ISP / ASN</span>
+              <span class="info-label" id="dns-isp-label">ISP / ASN</span>
               <span class="info-value" id="ip-asn">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Timezone</span>
+              <span class="info-label" id="dns-timezone-label">Timezone</span>
               <span class="info-value" id="ip-timezone">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Cloudflare PoP</span>
+              <span class="info-label" id="dns-colo-label">Cloudflare PoP</span>
               <span class="info-value mono" id="ip-colo">—</span>
             </div>
           </div>
@@ -98,7 +111,7 @@
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
-            <h2 class="card-title">DNS Resolver</h2>
+            <h2 class="card-title" id="dns-resolver-title">DNS Resolver</h2>
             <span class="status-badge" id="dns-resolver-status">detecting...</span>
           </div>
           <div class="card-body">
@@ -114,7 +127,7 @@
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
-            <h2 class="card-title">DNS Security</h2>
+            <h2 class="card-title" id="dns-security-title">DNS Security</h2>
             <span class="status-badge" id="dns-security-status">pending...</span>
           </div>
           <div class="card-body">
@@ -132,7 +145,7 @@
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <h2 class="card-title">DNS Lookup</h2>
+          <h2 class="card-title" id="dns-lookup-title">DNS Lookup</h2>
         </div>
         <div class="card-body">
           <div class="lookup-form">
@@ -146,15 +159,15 @@
               <option value="CNAME">CNAME</option>
               <option value="SOA">SOA</option>
               <option value="SRV">SRV</option>
-              <option value="PTR">PTR (Reverse)</option>
-              <option value="ALL">All Records</option>
+              <option value="PTR" id="dns-ptr-option">PTR (Reverse)</option>
+              <option value="ALL" id="dns-all-option">All Records</option>
             </select>
             <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
           </div>
           <div id="dns-lookup-results" class="lookup-results hidden">
             <div id="dns-lookup-table"></div>
             <details class="raw-toggle">
-              <summary class="raw-toggle-summary">Raw JSON</summary>
+              <summary class="raw-toggle-summary" id="dns-raw-json-summary">Raw JSON</summary>
               <pre class="code-block"><code id="dns-lookup-output"></code></pre>
             </details>
           </div>
@@ -163,7 +176,7 @@
 
       <!-- DNS Suggestions -->
       <div class="suggestions-section" id="dns-suggestions-section">
-        <h2 class="suggestions-title">Recommendations</h2>
+        <h2 class="suggestions-title" id="dns-suggestions-title">Recommendations</h2>
         <p class="suggestions-subtitle" id="dns-suggestions-subtitle"></p>
         <div class="suggestions-grid" id="dns-suggestions-grid"></div>
       </div>
@@ -172,22 +185,35 @@
     <!-- Speed Test Section -->
     <section id="speed" class="section">
       <div class="section-header">
-        <h1 class="display">Speed Test</h1>
-        <p class="subtitle">Measure your connection speed via Cloudflare's global edge network</p>
-        <div class="speed-server-location" id="speed-server-location">
-          <svg class="server-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-          <span class="server-label">Server:</span>
-          <span class="server-value" id="speed-server-value">—</span>
+        <h1 class="display" id="speed-title">Speed Test</h1>
+        <p class="subtitle" id="speed-subtitle">Measure your connection speed via Cloudflare's global edge network</p>
+        <div class="speed-server-badge" id="speed-server-badge">
+          <div class="server-badge-row">
+            <svg class="server-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <div class="server-badge-info">
+              <span class="server-badge-label" id="speed-server-label">Test Server</span>
+              <span class="server-badge-value" id="speed-server-value">Automatic — nearest edge</span>
+            </div>
+          </div>
+          <div class="server-badge-detail hidden" id="speed-server-detail">
+            <div class="server-badge-route">
+              <span class="route-you" id="speed-route-you">You</span>
+              <span class="route-line"></span>
+              <span class="route-dist" id="speed-server-dist"></span>
+              <span class="route-line"></span>
+              <span class="route-server" id="speed-server-colo"></span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="speed-dashboard">
         <div class="speed-gauge-row">
           <div class="speed-gauge">
-            <div class="speed-gauge-label">Download</div>
+            <div class="speed-gauge-label" id="speed-download-label">Download</div>
             <div class="speed-gauge-value" id="speed-download">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
@@ -195,7 +221,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label">Upload</div>
+            <div class="speed-gauge-label" id="speed-upload-label">Upload</div>
             <div class="speed-gauge-value" id="speed-upload">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
@@ -203,7 +229,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label">Latency</div>
+            <div class="speed-gauge-label" id="speed-latency-label">Latency</div>
             <div class="speed-gauge-value" id="speed-latency">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
@@ -211,7 +237,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label">Jitter</div>
+            <div class="speed-gauge-label" id="speed-jitter-label">Jitter</div>
             <div class="speed-gauge-value" id="speed-jitter">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
@@ -231,10 +257,10 @@
         <!-- Speed Graph -->
         <div class="speed-graph-card">
           <div class="speed-graph-header">
-            <span class="speed-graph-title">Speed Over Time</span>
+            <span class="speed-graph-title" id="speed-graph-title-text">Speed Over Time</span>
             <div class="speed-graph-legend">
-              <span class="legend-item"><span class="legend-dot download"></span>Download</span>
-              <span class="legend-item"><span class="legend-dot upload"></span>Upload</span>
+              <span class="legend-item"><span class="legend-dot download"></span><span id="speed-dl-legend">Download</span></span>
+              <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend">Upload</span></span>
             </div>
           </div>
           <canvas id="speed-graph" width="1100" height="200"></canvas>
@@ -242,7 +268,7 @@
 
         <!-- Speed Suggestions -->
         <div class="suggestions-section" id="speed-suggestions-section">
-          <h2 class="suggestions-title">Recommendations</h2>
+          <h2 class="suggestions-title" id="speed-suggestions-title">Recommendations</h2>
           <p class="suggestions-subtitle" id="speed-suggestions-subtitle"></p>
           <div class="suggestions-grid" id="speed-suggestions-grid"></div>
         </div>
@@ -252,8 +278,8 @@
     <!-- Ad Block Test Section -->
     <section id="adblock" class="section">
       <div class="section-header">
-        <h1 class="display">Ad Block Tester</h1>
-        <p class="subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
+        <h1 class="display" id="adblock-title">Ad Block Tester</h1>
+        <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
       </div>
 
       <div class="score-card">
@@ -279,7 +305,7 @@
 
       <!-- Filter List Detector -->
       <div class="filter-list-section" id="filter-list-section">
-        <h2 class="suggestions-title">Detected Filter Lists</h2>
+        <h2 class="suggestions-title" id="filter-list-title">Detected Filter Lists</h2>
         <p class="suggestions-subtitle" id="filter-list-subtitle">Identifying which filter lists your ad blocker uses...</p>
         <div class="filter-list-grid" id="filter-list-grid">
           <!-- Populated by JS -->
@@ -288,7 +314,7 @@
 
       <!-- Suggestions -->
       <div class="suggestions-section" id="suggestions-section">
-        <h2 class="suggestions-title">Recommendations</h2>
+        <h2 class="suggestions-title" id="adblock-suggestions-title">Recommendations</h2>
         <p class="suggestions-subtitle" id="suggestions-subtitle"></p>
         <div class="suggestions-grid" id="suggestions-grid">
           <!-- Populated by JS -->
@@ -299,7 +325,7 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-text">NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
+    <p class="footer-text" id="footer-text">NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
     <a href="https://github.com/acchuang/netcheck" target="_blank" rel="noopener noreferrer" class="footer-link">
       <svg class="footer-gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       GitHub

@@ -19,13 +19,15 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/ping") {
-      const cf = (request as unknown as { cf?: { colo?: string } }).cf;
+      const cf = (request as unknown as { cf?: { colo?: string; latitude?: string; longitude?: string } }).cf;
       const colo = cf?.colo || "unknown";
       return new Response("pong", {
         headers: {
           ...corsHeaders(),
           "x-colo": colo,
-          "Access-Control-Expose-Headers": "x-colo",
+          "x-lat": cf?.latitude || "",
+          "x-lon": cf?.longitude || "",
+          "Access-Control-Expose-Headers": "x-colo, x-lat, x-lon",
         },
       });
     }
