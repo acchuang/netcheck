@@ -392,7 +392,15 @@ async function runFilterListDetection() {
 
 // Fingerprint
 async function runFingerprintCheck() {
-  const data = await Fingerprint.collect();
+  let data;
+  try {
+    data = await Fingerprint.collect();
+  } catch (err) {
+    console.error("Fingerprint collection failed:", err);
+    document.getElementById("fp-summary").textContent = "Fingerprint collection failed";
+    document.getElementById("fp-detail").textContent = String(err);
+    return;
+  }
 
   // Score ring
   const ring = document.getElementById("fp-ring-fill");
@@ -418,58 +426,73 @@ async function runFingerprintCheck() {
         : "Your browser fingerprint is relatively common. Fingerprint-based tracking is harder.";
 
   // Canvas & Audio card
-  document.getElementById("fp-canvas-body").innerHTML = `
-    <div class="info-row"><span class="info-label">Canvas</span><span class="info-value mono">${data.canvas.available ? data.canvas.hash : "blocked"}</span></div>
-    <div class="info-row"><span class="info-label">Audio</span><span class="info-value mono">${data.audioHash || "blocked"}</span></div>
-  `;
+  try {
+    document.getElementById("fp-canvas-body").innerHTML = `
+      <div class="info-row"><span class="info-label">Canvas</span><span class="info-value mono">${data.canvas.available ? data.canvas.hash : "blocked"}</span></div>
+      <div class="info-row"><span class="info-label">Audio</span><span class="info-value mono">${data.audioHash || "blocked"}</span></div>
+    `;
+  } catch (e) { console.error("fp canvas card:", e); }
 
   // WebGL card
-  if (data.webgl.available) {
-    document.getElementById("fp-webgl-body").innerHTML = `
-      <div class="info-row"><span class="info-label">Vendor</span><span class="info-value">${data.webgl.vendor}</span></div>
-      <div class="info-row"><span class="info-label">Renderer</span><span class="info-value">${data.webgl.renderer}</span></div>
-      <div class="info-row"><span class="info-label">Max Texture</span><span class="info-value mono">${data.webgl.maxTextureSize}px</span></div>
-      <div class="info-row"><span class="info-label">Extensions</span><span class="info-value mono">${data.webgl.extensions}</span></div>
-    `;
-  } else {
-    document.getElementById("fp-webgl-body").innerHTML = '<p class="info-muted">WebGL not available or blocked</p>';
-  }
+  try {
+    if (data.webgl.available) {
+      document.getElementById("fp-webgl-body").innerHTML = `
+        <div class="info-row"><span class="info-label">Vendor</span><span class="info-value">${data.webgl.vendor}</span></div>
+        <div class="info-row"><span class="info-label">Renderer</span><span class="info-value">${data.webgl.renderer}</span></div>
+        <div class="info-row"><span class="info-label">Max Texture</span><span class="info-value mono">${data.webgl.maxTextureSize}px</span></div>
+        <div class="info-row"><span class="info-label">Extensions</span><span class="info-value mono">${data.webgl.extensions}</span></div>
+      `;
+    } else {
+      document.getElementById("fp-webgl-body").innerHTML = '<p class="info-muted">WebGL not available or blocked</p>';
+    }
+  } catch (e) { console.error("fp webgl card:", e); }
 
   // Screen & Hardware card
-  document.getElementById("fp-screen-body").innerHTML = `
-    <div class="info-row"><span class="info-label">Resolution</span><span class="info-value mono">${data.screen.width} x ${data.screen.height}</span></div>
-    <div class="info-row"><span class="info-label">Available</span><span class="info-value mono">${data.screen.availWidth} x ${data.screen.availHeight}</span></div>
-    <div class="info-row"><span class="info-label">Color Depth</span><span class="info-value mono">${data.screen.colorDepth}-bit</span></div>
-    <div class="info-row"><span class="info-label">Pixel Ratio</span><span class="info-value mono">${data.screen.pixelRatio}x</span></div>
-    <div class="info-row"><span class="info-label">CPU Cores</span><span class="info-value mono">${data.navigator.hardwareConcurrency}</span></div>
-    <div class="info-row"><span class="info-label">Touch Points</span><span class="info-value mono">${data.navigator.maxTouchPoints}</span></div>
-  `;
+  try {
+    document.getElementById("fp-screen-body").innerHTML = `
+      <div class="info-row"><span class="info-label">Resolution</span><span class="info-value mono">${data.screen.width} x ${data.screen.height}</span></div>
+      <div class="info-row"><span class="info-label">Available</span><span class="info-value mono">${data.screen.availWidth} x ${data.screen.availHeight}</span></div>
+      <div class="info-row"><span class="info-label">Color Depth</span><span class="info-value mono">${data.screen.colorDepth}-bit</span></div>
+      <div class="info-row"><span class="info-label">Pixel Ratio</span><span class="info-value mono">${data.screen.pixelRatio}x</span></div>
+      <div class="info-row"><span class="info-label">CPU Cores</span><span class="info-value mono">${data.navigator.hardwareConcurrency}</span></div>
+      <div class="info-row"><span class="info-label">Touch Points</span><span class="info-value mono">${data.navigator.maxTouchPoints}</span></div>
+    `;
+  } catch (e) { console.error("fp screen card:", e); }
 
   // Navigator card
-  document.getElementById("fp-navigator-body").innerHTML = `
-    <div class="info-row"><span class="info-label">Platform</span><span class="info-value">${data.navigator.platform}</span></div>
-    <div class="info-row"><span class="info-label">Language</span><span class="info-value">${data.navigator.language}</span></div>
-    <div class="info-row"><span class="info-label">Languages</span><span class="info-value">${data.navigator.languages.join(", ")}</span></div>
-    <div class="info-row"><span class="info-label">Timezone</span><span class="info-value">${data.timezone.name} (UTC${data.timezone.offset > 0 ? "-" : "+"}${Math.abs(data.timezone.offset / 60)})</span></div>
-    <div class="info-row"><span class="info-label">Do Not Track</span><span class="info-value">${data.navigator.doNotTrack === "1" ? "Enabled" : "Disabled"}</span></div>
-    <div class="info-row"><span class="info-label">Cookies</span><span class="info-value">${data.navigator.cookieEnabled ? "Enabled" : "Disabled"}</span></div>
-  `;
+  try {
+    const tzOffset = data.timezone.offset;
+    const tzStr = `UTC${tzOffset > 0 ? "-" : "+"}${Math.abs(tzOffset / 60)}`;
+    document.getElementById("fp-navigator-body").innerHTML = `
+      <div class="info-row"><span class="info-label">Platform</span><span class="info-value">${data.navigator.platform}</span></div>
+      <div class="info-row"><span class="info-label">Language</span><span class="info-value">${data.navigator.language}</span></div>
+      <div class="info-row"><span class="info-label">Languages</span><span class="info-value">${data.navigator.languages.join(", ")}</span></div>
+      <div class="info-row"><span class="info-label">Timezone</span><span class="info-value">${data.timezone.name} (${tzStr})</span></div>
+      <div class="info-row"><span class="info-label">Do Not Track</span><span class="info-value">${data.navigator.doNotTrack === "1" ? "Enabled" : "Disabled"}</span></div>
+      <div class="info-row"><span class="info-label">Cookies</span><span class="info-value">${data.navigator.cookieEnabled ? "Enabled" : "Disabled"}</span></div>
+    `;
+  } catch (e) { console.error("fp navigator card:", e); }
 
   // Fonts card
-  document.getElementById("fp-fonts-body").innerHTML = `
-    <div class="info-row" style="margin-bottom:8px"><span class="info-label">Detected</span><span class="info-value mono">${data.fonts.detected.length} / ${data.fonts.total}</span></div>
-    <div class="fp-tag-row">
-      ${data.fonts.detected.map((f) => `<span class="fp-tag">${f}</span>`).join("")}
-    </div>
-  `;
+  try {
+    const fonts = data.fonts.detected || [];
+    document.getElementById("fp-fonts-body").innerHTML = `
+      <div class="info-row" style="margin-bottom:8px"><span class="info-label">Detected</span><span class="info-value mono">${fonts.length} / ${data.fonts.total}</span></div>
+      <div class="fp-tag-row">
+        ${fonts.map((f) => `<span class="fp-tag">${f}</span>`).join("")}
+      </div>
+    `;
+  } catch (e) { console.error("fp fonts card:", e); }
 
   // Storage card
-  document.getElementById("fp-storage-body").innerHTML = `
-    <div class="info-row"><span class="info-label">localStorage</span><span class="info-value">${data.storage.localStorage ? "Available" : "Blocked"}</span></div>
-    <div class="info-row"><span class="info-label">sessionStorage</span><span class="info-value">${data.storage.sessionStorage ? "Available" : "Blocked"}</span></div>
-    <div class="info-row"><span class="info-label">IndexedDB</span><span class="info-value">${data.storage.indexedDB ? "Available" : "Blocked"}</span></div>
-    <div class="info-row"><span class="info-label">WebRTC</span><span class="info-value">${data.webrtc ? "Available" : "Blocked"}</span></div>
-  `;
+  try {
+    document.getElementById("fp-storage-body").innerHTML = `
+      <div class="info-row"><span class="info-label">localStorage</span><span class="info-value">${data.storage.localStorage ? "Available" : "Blocked"}</span></div>
+      <div class="info-row"><span class="info-label">sessionStorage</span><span class="info-value">${data.storage.sessionStorage ? "Available" : "Blocked"}</span></div>
+      <div class="info-row"><span class="info-label">IndexedDB</span><span class="info-value">${data.storage.indexedDB ? "Available" : "Blocked"}</span></div>
+      <div class="info-row"><span class="info-label">WebRTC</span><span class="info-value">${data.webrtc ? "Available" : "Blocked"}</span></div>
+    `;
+  } catch (e) { console.error("fp storage card:", e); }
 }
 
 // Suggestions
