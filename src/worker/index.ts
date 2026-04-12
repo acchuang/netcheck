@@ -14,13 +14,17 @@ export default {
       return handleHeaders(request);
     }
 
+    if (url.pathname === "/api/headers/check") {
+      return handleHeadersCheck(request);
+    }
+
     if (url.pathname === "/api/dns/check-resolvers") {
       return handleResolverCheck();
     }
 
     if (url.pathname === "/api/speedtest/ping") {
-      const cf = (request as unknown as { cf?: { colo?: string; latitude?: string; longitude?: string } }).cf;
-      const colo = cf?.colo || "unknown";
+      const cf = getCf(request);
+      const colo = cf.colo || "unknown";
       return new Response("pong", {
         headers: {
           ...corsHeaders(),
@@ -45,25 +49,43 @@ export default {
   },
 };
 
+interface CfProperties {
+  colo?: string;
+  asn?: number;
+  asOrganization?: string;
+  city?: string;
+  region?: string;
+  timezone?: string;
+  latitude?: string;
+  longitude?: string;
+  httpProtocol?: string;
+  tlsVersion?: string;
+  tlsCipher?: string;
+  clientTcpRtt?: number;
+}
+
+function getCf(request: Request): CfProperties {
+  return (request as unknown as { cf?: CfProperties }).cf || {};
+}
+
 function handleIpCheck(request: Request): Response {
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
   const country = request.headers.get("cf-ipcountry") || "unknown";
-  const colo = request.headers.get("cf-ray")?.split("-")[1] || "unknown";
-  const asn = (request as unknown as { cf?: { asn?: number; asOrganization?: string; city?: string; region?: string; timezone?: string } }).cf?.asn || null;
-  const asOrg = (request as unknown as { cf?: { asn?: number; asOrganization?: string; city?: string; region?: string; timezone?: string } }).cf?.asOrganization || null;
-  const city = (request as unknown as { cf?: { asn?: number; asOrganization?: string; city?: string; region?: string; timezone?: string } }).cf?.city || null;
-  const region = (request as unknown as { cf?: { asn?: number; asOrganization?: string; city?: string; region?: string; timezone?: string } }).cf?.region || null;
-  const timezone = (request as unknown as { cf?: { asn?: number; asOrganization?: string; city?: string; region?: string; timezone?: string } }).cf?.timezone || null;
+  const cf = getCf(request);
 
   return Response.json({
     ip,
     country,
-    colo,
-    asn,
-    asOrganization: asOrg,
-    city,
-    region,
-    timezone,
+    colo: cf.colo || "unknown",
+    asn: cf.asn || null,
+    asOrganization: cf.asOrganization || null,
+    city: cf.city || null,
+    region: cf.region || null,
+    timezone: cf.timezone || null,
+    httpProtocol: cf.httpProtocol || null,
+    tlsVersion: cf.tlsVersion || null,
+    tlsCipher: cf.tlsCipher || null,
+    clientTcpRtt: cf.clientTcpRtt || null,
   }, { headers: corsHeaders() });
 }
 
@@ -187,6 +209,80 @@ async function testOneResolver(resolver: ResolverDef) {
 async function handleResolverCheck(): Promise<Response> {
   const results = await Promise.all(RESOLVERS.map(testOneResolver));
   return Response.json(results, { headers: corsHeaders() });
+}
+
+const SECURITY_HEADERS = [
+  { key: "strict-transport-security", name: "Strict-Transport-Security (HSTS)", desc: "Forces HTTPS connections, preventing downgrade attacks" },
+  { key: "content-security-policy", name: "Content-Security-Policy (CSP)", desc: "Controls which resources the browser can load, mitigating XSS" },
+  { key: "x-content-type-options", name: "X-Content-Type-Options", desc: "Prevents MIME type sniffing attacks", expected: "nosniff" },
+  { key: "x-frame-options", name: "X-Frame-Options", desc: "Prevents clickjacking by controlling iframe embedding" },
+  { key: "referrer-policy", name: "Referrer-Policy", desc: "Controls how much referrer information is sent with requests" },
+  { key: "permissions-policy", name: "Permissions-Policy", desc: "Controls which browser features the page can use" },
+  { key: "x-xss-protection", name: "X-XSS-Protection", desc: "Legacy XSS filter (mostly superseded by CSP)" },
+  { key: "cross-origin-opener-policy", name: "Cross-Origin-Opener-Policy (COOP)", desc: "Isolates browsing context from cross-origin popups" },
+  { key: "cross-origin-embedder-policy", name: "Cross-Origin-Embedder-Policy (COEP)", desc: "Requires CORS/CORP for all cross-origin resources" },
+  { key: "cross-origin-resource-policy", name: "Cross-Origin-Resource-Policy (CORP)", desc: "Controls which origins can embed this resource" },
+];
+
+async function handleHeadersCheck(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const target = url.searchParams.get("url");
+
+  if (!target) {
+    return Response.json({ error: "Missing ?url= parameter" }, { status: 400, headers: corsHeaders() });
+  }
+
+  let targetUrl: string;
+  try {
+    const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
+    targetUrl = parsed.href;
+  } catch {
+    return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders() });
+  }
+
+  try {
+    const res = await fetch(targetUrl, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "NetCheck Security Scanner/1.0" },
+    });
+
+    const headers: Record<string, string> = {};
+    for (const [key, value] of res.headers) {
+      headers[key.toLowerCase()] = value;
+    }
+
+    const checks = SECURITY_HEADERS.map((h) => {
+      const value = headers[h.key] || null;
+      return {
+        name: h.name,
+        key: h.key,
+        desc: h.desc,
+        value,
+        present: !!value,
+      };
+    });
+
+    const present = checks.filter((c) => c.present).length;
+    const total = checks.length;
+    const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
+
+    return Response.json({
+      url: targetUrl,
+      statusCode: res.status,
+      grade,
+      score: { present, total },
+      checks,
+      server: headers["server"] || null,
+      poweredBy: headers["x-powered-by"] || null,
+    }, { headers: corsHeaders() });
+  } catch (err) {
+    return Response.json(
+      { error: "Failed to fetch URL", detail: String(err) },
+      { status: 500, headers: corsHeaders() }
+    );
+  }
 }
 
 function corsHeaders(): Record<string, string> {

@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   runAdBlockTests();
   runFilterListDetection();
   initSpeedTest();
+  initHeadersCheck();
 });
 
 function renderSkeletonRows(container: HTMLElement, count: number): void {
@@ -138,6 +139,10 @@ interface IpData {
   asn?: string;
   timezone?: string;
   colo?: string;
+  httpProtocol?: string;
+  tlsVersion?: string;
+  tlsCipher?: string;
+  clientTcpRtt?: number;
   error?: string;
 }
 
@@ -166,7 +171,14 @@ async function runDnsChecks(): Promise<void> {
     document.getElementById("ip-asn")!.textContent =
       ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
     document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
-    document.getElementById("ip-colo")!.textContent = ipData.colo || "—";
+    // Format PoP with city name from CF_POPS map
+    const coloCode = ipData.colo;
+    const popInfo = coloCode ? CF_POPS[coloCode] : null;
+    document.getElementById("ip-colo")!.textContent = popInfo
+      ? `${popInfo[0]} (${coloCode})`
+      : coloCode || "—";
+    document.getElementById("ip-http")!.textContent = ipData.httpProtocol || "—";
+    document.getElementById("ip-tls")!.textContent = ipData.tlsVersion || "—";
     setBadge("ip-status", "done", t("dns.detected"));
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
@@ -994,6 +1006,114 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
     .join("");
 
   section.classList.add("visible");
+}
+
+// Security Headers Check
+interface HeaderCheckResult {
+  name: string;
+  key: string;
+  desc: string;
+  value: string | null;
+  present: boolean;
+}
+
+interface HeadersResponse {
+  url: string;
+  statusCode: number;
+  grade: string;
+  score: { present: number; total: number };
+  checks: HeaderCheckResult[];
+  server: string | null;
+  poweredBy: string | null;
+  error?: string;
+}
+
+function initHeadersCheck(): void {
+  const btn = document.getElementById("headers-check-btn")!;
+  const input = document.getElementById("headers-url-input") as HTMLInputElement;
+
+  btn.addEventListener("click", runHeadersCheck);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") runHeadersCheck();
+  });
+}
+
+async function runHeadersCheck(): Promise<void> {
+  const input = document.getElementById("headers-url-input") as HTMLInputElement;
+  const url = input.value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById("headers-check-btn") as HTMLButtonElement;
+  btn.disabled = true;
+  btn.textContent = t("headers.scanning");
+
+  const resultsContainer = document.getElementById("headers-results")!;
+  resultsContainer.classList.remove("hidden");
+
+  const checkResults = document.getElementById("headers-check-results")!;
+  renderSkeletonRows(checkResults, 10);
+
+  try {
+    const res = await fetch(`/api/headers/check?url=${encodeURIComponent(url)}`);
+    const data: HeadersResponse = await res.json();
+
+    if (data.error) {
+      checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}: ${data.error}</p>`;
+      btn.disabled = false;
+      btn.textContent = t("headers.scan");
+      return;
+    }
+
+    // Update grade
+    const gradeEl = document.getElementById("headers-grade")!;
+    gradeEl.textContent = data.grade;
+    gradeEl.className = "speed-grade";
+
+    const gradeColors: Record<string, string> = { A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
+    gradeEl.style.color = gradeColors[data.grade] || "var(--text-primary)";
+
+    document.getElementById("headers-score")!.textContent =
+      t("headers.scoreOf", data.score.present, data.score.total);
+
+    const serverParts: string[] = [];
+    if (data.server) serverParts.push(`Server: ${data.server}`);
+    if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
+    serverParts.push(`HTTP ${data.statusCode}`);
+    document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
+
+    setBadge("headers-status", data.grade === "A" || data.grade === "B" ? "done" : data.grade === "C" ? "done" : "error",
+      data.grade === "A" ? t("headers.excellent") : data.grade === "B" ? t("headers.good") : data.grade === "C" ? t("headers.fair") : t("headers.poor"));
+
+    // Render header checks
+    checkResults.innerHTML = "";
+    data.checks.forEach((check) => {
+      const div = document.createElement("div");
+      div.className = "dns-check-item fade-in";
+      const status = check.present ? "pass" : "fail";
+      const iconSvg = check.present
+        ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
+        : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+
+      const valueHtml = check.present
+        ? `<span class="header-value-truncate" data-tooltip="${check.value}">${check.value}</span>`
+        : `<span class="check-value" style="color:var(--red)">${t("headers.missing")}</span>`;
+
+      div.innerHTML = `
+        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+        <div class="check-label-block">
+          <span class="check-label">${check.name}</span>
+          <span class="check-sublabel">${check.desc}</span>
+        </div>
+        ${valueHtml}
+      `;
+      checkResults.appendChild(div);
+    });
+  } catch {
+    checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}</p>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = t("headers.scan");
 }
 
 function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean }[], blocked: number): HTMLDivElement {

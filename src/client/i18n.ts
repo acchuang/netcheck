@@ -259,6 +259,29 @@ const en = {
   "dns.table.value": "Value",
   "dns.table.ttl": "TTL",
 
+  // Connection info
+  "dns.http": "HTTP Protocol",
+  "dns.tls": "TLS Version",
+
+  // Headers section
+  "nav.headers": "Headers",
+  "headers.title": "Security Headers",
+  "headers.subtitle": "Analyze HTTP security headers of any website",
+  "headers.checkTitle": "Check URL",
+  "headers.scan": "Scan",
+  "headers.scanning": "Scanning...",
+  "headers.gradeTitle": "Security Grade",
+  "headers.infoTitle": "About Security Headers",
+  "headers.infoDesc": "Security headers protect against common web attacks like XSS, clickjacking, and MIME sniffing. A higher score means better protection for visitors.",
+  "headers.detailTitle": "Header Analysis",
+  "headers.scoreOf": "{0} of {1} security headers present",
+  "headers.missing": "missing",
+  "headers.excellent": "excellent",
+  "headers.good": "good",
+  "headers.fair": "fair",
+  "headers.poor": "poor",
+  "headers.error": "Failed to scan URL",
+
   // Footer
   "footer.text": "NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.",
 } as const;
@@ -518,6 +541,29 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.table.value": "值",
   "dns.table.ttl": "TTL",
 
+  // Connection info
+  "dns.http": "HTTP 協議",
+  "dns.tls": "TLS 版本",
+
+  // Headers section
+  "nav.headers": "安全標頭",
+  "headers.title": "安全標頭檢測",
+  "headers.subtitle": "分析任何網站的 HTTP 安全標頭",
+  "headers.checkTitle": "檢查 URL",
+  "headers.scan": "掃描",
+  "headers.scanning": "掃描中...",
+  "headers.gradeTitle": "安全等級",
+  "headers.infoTitle": "關於安全標頭",
+  "headers.infoDesc": "安全標頭可防護常見的 Web 攻擊，如 XSS、點擊劫持和 MIME 嗅探。分數越高代表對訪客的保護越好。",
+  "headers.detailTitle": "標頭分析",
+  "headers.scoreOf": "{1} 個安全標頭中有 {0} 個存在",
+  "headers.missing": "缺失",
+  "headers.excellent": "優秀",
+  "headers.good": "良好",
+  "headers.fair": "一般",
+  "headers.poor": "不佳",
+  "headers.error": "掃描 URL 失敗",
+
   // Footer
   "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
 };
@@ -579,6 +625,7 @@ function applyStaticTranslations(): void {
     if (tab === "dns") target.textContent = t("nav.dns");
     else if (tab === "speed") target.textContent = t("nav.speed");
     else if (tab === "adblock") target.textContent = t("nav.adblock");
+    else if (tab === "headers") target.textContent = t("nav.headers");
   });
 
   s("export-btn-text", "nav.export");
@@ -625,6 +672,20 @@ function applyStaticTranslations(): void {
   s("adblock-subtitle", "adblock.subtitle");
   s("filter-list-title", "filter.title");
   s("adblock-suggestions-title", "adblock.recommendations");
+
+  // DNS connection info
+  s("dns-http-label", "dns.http");
+  s("dns-tls-label", "dns.tls");
+
+  // Headers section
+  s("headers-title", "headers.title");
+  s("headers-subtitle", "headers.subtitle");
+  s("headers-check-title", "headers.checkTitle");
+  s("headers-check-btn", "headers.scan");
+  s("headers-grade-title", "headers.gradeTitle");
+  s("headers-info-title", "headers.infoTitle");
+  s("headers-info-desc", "headers.infoDesc");
+  s("headers-detail-title", "headers.detailTitle");
 
   // Footer
   s("footer-text", "footer.text");
