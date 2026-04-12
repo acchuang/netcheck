@@ -104,6 +104,10 @@ const en = {
   "speed.upload": "Upload",
   "speed.latency": "Latency",
   "speed.jitter": "Jitter",
+  "speed.tip.download": "Maximum download speed measured via progressive file transfers",
+  "speed.tip.upload": "Maximum upload speed measured via progressive data transfers",
+  "speed.tip.latency": "Round-trip time to the nearest Cloudflare edge server (median of 10 pings)",
+  "speed.tip.jitter": "Variation in latency — lower is better for gaming and video calls",
   "speed.waiting": "Waiting to start",
   "speed.clickBegin": "Click the button below to begin",
   "speed.runBtn": "Run Speed Test",
@@ -359,6 +363,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.upload": "上傳",
   "speed.latency": "延遲",
   "speed.jitter": "抖動",
+  "speed.tip.download": "透過漸進式檔案傳輸測量的最大下載速度",
+  "speed.tip.upload": "透過漸進式資料傳輸測量的最大上傳速度",
+  "speed.tip.latency": "到最近 Cloudflare 邊緣伺服器的往返時間（10 次 ping 的中位數）",
+  "speed.tip.jitter": "延遲的變化量 — 越低越好，適用於遊戲和視訊通話",
   "speed.waiting": "等待開始",
   "speed.clickBegin": "按下方按鈕開始測試",
   "speed.runBtn": "開始測速",
@@ -566,9 +574,11 @@ function applyStaticTranslations(): void {
   // Nav
   document.querySelectorAll<HTMLAnchorElement>(".nav-link[data-tab]").forEach((link) => {
     const tab = link.dataset.tab;
-    if (tab === "dns") link.textContent = t("nav.dns");
-    else if (tab === "speed") link.textContent = t("nav.speed");
-    else if (tab === "adblock") link.textContent = t("nav.adblock");
+    const textEl = link.querySelector(".nav-link-text");
+    const target = textEl || link;
+    if (tab === "dns") target.textContent = t("nav.dns");
+    else if (tab === "speed") target.textContent = t("nav.speed");
+    else if (tab === "adblock") target.textContent = t("nav.adblock");
   });
 
   s("export-btn-text", "nav.export");
@@ -601,6 +611,10 @@ function applyStaticTranslations(): void {
   s("speed-latency-label", "speed.latency");
   s("speed-jitter-label", "speed.jitter");
   s("speed-graph-title-text", "speed.graphTitle");
+  sa("speed-download-label", "speed.tip.download", "data-tooltip");
+  sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
+  sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
+  sa("speed-jitter-label", "speed.tip.jitter", "data-tooltip");
   s("speed-dl-legend", "speed.download");
   s("speed-ul-legend", "speed.upload");
   s("speed-suggestions-title", "speed.recommendations");

@@ -5,13 +5,88 @@ import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-t
 import { ReportExporter } from "./export-report";
 import { t } from "./i18n";
 
+function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
+  const start = performance.now();
+  const diff = to - from;
+  if (Math.abs(diff) < 0.1) {
+    el.textContent = formatter(to);
+    return;
+  }
+  function tick(now: number): void {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - (1 - progress) * (1 - progress); // ease-out quad
+    el.textContent = formatter(from + diff * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function setActiveGauge(phase: string): void {
+  document.querySelectorAll(".speed-gauge").forEach((g, i) => {
+    const phases = ["download", "upload", "latency", "jitter"];
+    g.classList.toggle("active", phases[i] === phase);
+  });
+}
+
+function pulseValue(el: HTMLElement): void {
+  el.classList.add("updating");
+  setTimeout(() => el.classList.remove("updating"), 150);
+}
+
+function initTooltips(): void {
+  const tip = document.createElement("div");
+  tip.className = "tooltip";
+  document.body.appendChild(tip);
+
+  document.addEventListener("mouseenter", (e) => {
+    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
+    if (!target) return;
+    tip.textContent = target.dataset.tooltip!;
+    tip.classList.add("visible");
+
+    const rect = target.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+    tip.style.left = `${left}px`;
+    tip.style.top = `${rect.top - tipRect.height - 6}px`;
+  }, true);
+
+  document.addEventListener("mouseleave", (e) => {
+    if ((e.target as HTMLElement).closest("[data-tooltip]")) {
+      tip.classList.remove("visible");
+    }
+  }, true);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
+  initTooltips();
+  renderInitialSkeletons();
   runDnsChecks();
   runAdBlockTests();
   runFilterListDetection();
   initSpeedTest();
 });
+
+function renderSkeletonRows(container: HTMLElement, count: number): void {
+  container.innerHTML = Array.from({ length: count }, () =>
+    `<div class="skeleton-row">
+      <div class="skeleton skeleton-circle"></div>
+      <div class="skeleton skeleton-text" style="flex:1"></div>
+      <div class="skeleton skeleton-value"></div>
+    </div>`
+  ).join("");
+}
+
+function renderInitialSkeletons(): void {
+  const resolverEl = document.getElementById("dns-resolver-results");
+  if (resolverEl) renderSkeletonRows(resolverEl, 3);
+
+  const securityEl = document.getElementById("dns-security-results");
+  if (securityEl) renderSkeletonRows(securityEl, 4);
+}
 
 // Tab navigation
 function initTabs(): void {
@@ -112,7 +187,7 @@ async function runDnsChecks(): Promise<void> {
       const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
 
       const div = document.createElement("div");
-      div.className = "dns-check-item";
+      div.className = "dns-check-item fade-in";
       const status = r.name === fastest.name ? "pass" : "warn";
       const iconSvg = status === "pass"
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
@@ -242,7 +317,7 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
         : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("dns.checkBrowser")}</span>`;
 
       return `
-      <div class="suggestion-card${isTop ? " recommended" : ""}">
+      <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
         <div class="suggestion-top">
           <div class="suggestion-icon">${s.icon}</div>
           <div class="suggestion-info">
@@ -309,14 +384,34 @@ async function runDnsLookup(): Promise<void> {
 }
 
 // Ad block tests
+function renderCategorySkeletons(container: HTMLElement, count: number): void {
+  container.innerHTML = Array.from({ length: count }, () =>
+    `<div class="test-category" style="pointer-events:none">
+      <div class="test-category-header">
+        <div class="skeleton skeleton-circle" style="width:16px;height:16px"></div>
+        <div class="skeleton skeleton-text" style="flex:1;width:auto"></div>
+        <div class="skeleton skeleton-value" style="width:48px"></div>
+      </div>
+    </div>`
+  ).join("");
+}
+
+function renderFilterListSkeletons(container: HTMLElement, count: number): void {
+  container.innerHTML = Array.from({ length: count }, () =>
+    `<div class="filter-list-item" style="opacity:0.6">
+      <div class="skeleton skeleton-circle" style="width:8px;height:8px"></div>
+      <div class="filter-list-info">
+        <div class="skeleton skeleton-text" style="width:70%;margin-bottom:4px"></div>
+        <div class="skeleton skeleton-text-short" style="height:11px;width:50%"></div>
+      </div>
+      <div class="skeleton skeleton-value" style="width:48px;height:16px"></div>
+    </div>`
+  ).join("");
+}
+
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
-  categoriesEl.innerHTML = "";
-
-  AdBlockTest.categories.forEach((cat) => {
-    const catEl = createCategory(cat.name, cat.tests.length);
-    categoriesEl.appendChild(catEl);
-  });
+  renderCategorySkeletons(categoriesEl, 7);
 
   await AdBlockTest.runAll();
 
@@ -324,6 +419,7 @@ async function runAdBlockTests(): Promise<void> {
   AdBlockTest.results.forEach((cat) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
     const catEl = createCategoryWithResults(cat.name, cat.tests, blocked);
+    catEl.classList.add("stagger-item");
     categoriesEl.appendChild(catEl);
   });
 
@@ -363,7 +459,7 @@ function setBadge(id: string, status: string, text: string): void {
 
 function createCheckItem(status: string, label: string, value: string): HTMLDivElement {
   const div = document.createElement("div");
-  div.className = "dns-check-item";
+  div.className = "dns-check-item fade-in";
 
   const iconSvg =
     status === "pass"
@@ -579,35 +675,58 @@ async function runSpeedTest(): Promise<void> {
 
   const startTime = performance.now();
 
+  const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0 };
+
   const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
     document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
     (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
+    setActiveGauge(phase);
 
     if (data) {
       if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
-      if (data.latency !== null) document.getElementById("speed-latency")!.textContent = String(data.latency);
-      if (data.jitter !== null) document.getElementById("speed-jitter")!.textContent = String(data.jitter);
+      if (data.latency !== null) {
+        const el = document.getElementById("speed-latency")!;
+        animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
+        pulseValue(el);
+        prevValues.latency = data.latency;
+      }
+      if (data.jitter !== null) {
+        const el = document.getElementById("speed-jitter")!;
+        animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
+        pulseValue(el);
+        prevValues.jitter = data.jitter;
+      }
       if (data.download !== null) {
-        document.getElementById("speed-download")!.textContent = data.download.toFixed(1);
+        const el = document.getElementById("speed-download")!;
+        animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
+        pulseValue(el);
+        prevValues.download = data.download;
         speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
         drawSpeedGraph();
       }
       if (data.upload !== null) {
-        document.getElementById("speed-upload")!.textContent = data.upload.toFixed(1);
+        const el = document.getElementById("speed-upload")!;
+        animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
+        pulseValue(el);
+        prevValues.upload = data.upload;
         speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
         drawSpeedGraph();
       }
     }
   });
 
+  setActiveGauge(""); // clear active state
   document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";
   document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
   document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
   document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
 
   const grade = SpeedTest.getGrade(results.download);
-  document.getElementById("speed-grade")!.textContent = grade.grade;
+  const gradeEl = document.getElementById("speed-grade")!;
+  gradeEl.textContent = grade.grade;
+  gradeEl.classList.add("grade-reveal");
+  setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
   const gradeKeys: Record<string, string> = {
     "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
     "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
@@ -697,7 +816,7 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
         : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
 
       return `
-      <div class="suggestion-card${isTop ? " recommended" : ""}">
+      <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
         <div class="suggestion-top">
           <div class="suggestion-icon">${s.icon}</div>
           <div class="suggestion-info">
@@ -720,6 +839,9 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
 
 // Filter list detection
 async function runFilterListDetection(): Promise<void> {
+  const filterGrid = document.getElementById("filter-list-grid")!;
+  renderFilterListSkeletons(filterGrid, 10);
+
   await FilterListDetector.runAll();
   const summary = FilterListDetector.getSummary();
   const grid = document.getElementById("filter-list-grid")!;
@@ -745,7 +867,7 @@ async function runFilterListDetection(): Promise<void> {
       }
 
       return `
-      <div class="filter-list-item ${list.detected && list.special !== "acceptableAds" ? "detected" : "not-detected"}">
+      <div class="filter-list-item stagger-item ${list.detected && list.special !== "acceptableAds" ? "detected" : "not-detected"}">
         <div class="filter-list-dot ${dotClass}"></div>
         <div class="filter-list-info">
           <div class="filter-list-name">${list.name}</div>
@@ -854,7 +976,7 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
       }).join("");
 
       return `
-      <div class="suggestion-card category-advice">
+      <div class="suggestion-card category-advice stagger-item">
         <div class="suggestion-top">
           <div class="suggestion-icon-svg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>

@@ -19,7 +19,16 @@ function resolvedTheme(): "dark" | "light" {
   return current;
 }
 
-function apply(): void {
+function enableThemeTransition(): void {
+  const style = document.createElement("style");
+  style.id = "theme-transition";
+  style.textContent = "*, *::before, *::after { transition: background-color 0.3s, color 0.3s, border-color 0.3s !important; }";
+  document.head.appendChild(style);
+  setTimeout(() => style.remove(), 350);
+}
+
+function apply(animate = false): void {
+  if (animate) enableThemeTransition();
   document.documentElement.setAttribute("data-theme", resolvedTheme());
   const btn = document.getElementById("theme-toggle");
   if (btn) {
@@ -42,6 +51,6 @@ export function initTheme(): void {
     const idx = CYCLE.indexOf(current);
     current = CYCLE[(idx + 1) % CYCLE.length];
     localStorage.setItem(STORAGE_KEY, current);
-    apply();
+    apply(true);
   });
 }

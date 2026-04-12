@@ -317,10 +317,11 @@ ${html}
 
   showExportMenu(): void {
     const menu = document.getElementById("export-menu");
-    menu?.classList.toggle("hidden");
+    if (!menu) return;
+    menu.classList.toggle("open");
   },
 
   hideExportMenu(): void {
-    document.getElementById("export-menu")?.classList.add("hidden");
+    document.getElementById("export-menu")?.classList.remove("open");
   },
 };
