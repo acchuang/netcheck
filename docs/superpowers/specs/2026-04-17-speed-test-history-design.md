@@ -20,6 +20,8 @@ interface SpeedTestHistoryEntry {
   latency: number | null;
   jitter: number | null;
   colo: string | null;
+  userLat: number | null;
+  userLon: number | null;
   timestamp: number; // Date.now() epoch ms
 }
 ```
@@ -31,8 +33,8 @@ interface SpeedTestHistoryEntry {
 
 ## New File: `src/client/history.ts`
 
-`SpeedTestHistory` module:
-- `save(result: SpeedTestResults): void` — prepend entry, cap at 2, write to localStorage
+`SpeedTestHistory` module (exported as `export const SpeedTestHistory = { save, load, clear }`, matching the object-literal module pattern used by `SpeedTest` and `DnsCheck`):
+- `save(result: SpeedTestResults): void` — constructs `SpeedTestHistoryEntry` from `SpeedTestResults` (maps all fields including `userLat`/`userLon`), prepends entry, caps at 2, writes to localStorage
 - `load(): SpeedTestHistoryEntry[]` — read and parse from localStorage
 - `clear(): void` — remove localStorage key
 
@@ -41,21 +43,26 @@ Imports `SpeedTestResults` type from `./speed-test`.
 ## Changes to `src/client/app.ts`
 
 - Import `SpeedTestHistory` from `./history`
+- Import `SpeedTest` (already imported) — used for `SpeedTest.getGrade()` and `SpeedTest.formatSpeed()` in history rendering
 - In `runSpeedTest()`: after results finalize (~line 751), call `SpeedTestHistory.save(results)`
 - Call `renderSpeedHistory()` in `initSpeedTest()` (on page load) and at the end of `runSpeedTest()`
-- New function `renderSpeedHistory()`: reads history, renders cards into `#speed-history` container, toggles `.hidden` class
+- Add `renderSpeedHistory()` call to `applyStaticTranslations()` (or add `s("speed-history-title", "speed.history.title")` and `s("speed-history-empty", "speed.history.empty")` to the existing `applyStaticTranslations()` list) so locale switching re-renders history text
+- New function `renderSpeedHistory()`: reads history, renders cards into `#speed-history` container
 
 ### renderSpeedHistory() behavior
 
 - If 0 entries: container stays hidden (`.hidden`)
-- If 1–2 entries: show container, render cards
+- If 1–2 entries: remove `.hidden`, add `.visible` class (matching the suggestions-section fade-in pattern)
 - Each card shows: timestamp (relative for <1hr, else absolute), 4 metrics (↓ upload ↓ latency ↓ jitter), grade badge
-- Relative time: "just now", "<X> min ago", "<X> hr ago"
+- Grade badge: computed via `SpeedTest.getGrade(entry.download)`, label looked up via the existing `gradeKeys` map in `runSpeedTest()`
+- Server/PoP info shown below metrics: computed via `formatColo(entry.colo, entry.userLat, entry.userLon)`
+- Relative time: "just now", "<X> min ago", "<X> hr ago" via i18n keys
 - Absolute time: locale-formatted date+time (e.g. "Apr 17, 14:32")
+- Each card element gets `stagger-item` class for entrance animation
 
 ## Changes to `index.html`
 
-Insert between the speed graph card (line 308) and suggestions section (line 311):
+Insert between the speed graph card (line 308) and suggestions section (line 311), **inside** `.speed-dashboard`:
 
 ```html
 <div id="speed-history" class="speed-history hidden">
@@ -87,7 +94,8 @@ Add keys (both `en` and `zh-TW`):
   - `.speed-history-card-header` — timestamp + grade badge (right-aligned, small)
   - `.speed-history-card-metrics` — 4-column flex row: ↓ ↓ lat jit with labels
   - `.speed-history-card-metric` — value + small label underneath
-- `.speed-history-card.col-1` / `.col-2` — optional nth-child styling for visual distinction
+- `.speed-history-card:nth-child(...)` — optional subtle visual distinction per card
+- Use `.visible` class (not `.hidden` toggle) for show/hide, matching `.suggestions-section` pattern
 - Responsive: `@media (max-width: 640px)` — cards stack vertically
 
 ## Rendering Sketch
@@ -97,6 +105,7 @@ Add keys (both `en` and `zh-TW`):
 │                                                       │
 │  ┌──────────────────────┐  ┌──────────────────────┐  │
 │  │ 5 min ago        B+ │  │ 1 hr ago          A  │  │
+│  │  Singapore (SIN)    │  │  Tokyo (NRT)          │  │
 │  │                      │  │                      │  │
 │  │ ↓  87.3   ↑  24.1   │  │ ↓ 203.5   ↑  45.2   │  │
 │  │  Mbps      Mbps      │  │  Mbps      Mbps      │  │
