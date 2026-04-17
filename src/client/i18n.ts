@@ -42,6 +42,7 @@ const en = {
   "dns.detected": "detected",
   "dns.failed": "failed",
   "dns.unreachable": "unreachable",
+  "dns.moreUnreachable": "{0} more unreachable",
   "dns.nonefound": "none found",
   "dns.secure": "secure",
   "dns.issuesFound": "issues found",
@@ -168,6 +169,13 @@ const en = {
   "speed.grade.slow": "Slow",
   "speed.grade.unknown": "Unknown",
 
+  // Speed history
+  "speed.history.title": "History",
+  "speed.history.empty": "No previous tests recorded",
+  "speed.history.justNow": "just now",
+  "speed.history.minAgo": "{0} min ago",
+  "speed.history.hrAgo": "{0} hr ago",
+
   // Ad block section
   "adblock.title": "Ad Block Tester",
   "adblock.subtitle": "Test the effectiveness of your ad blocker across multiple categories",
@@ -281,9 +289,31 @@ const en = {
   "headers.fair": "fair",
   "headers.poor": "poor",
   "headers.error": "Failed to scan URL",
+  "headers.hsts": "Strict-Transport-Security (HSTS)",
+  "headers.hsts.desc": "Forces HTTPS connections, preventing downgrade attacks",
+  "headers.csp": "Content-Security-Policy (CSP)",
+  "headers.csp.desc": "Controls which resources the browser can load, mitigating XSS",
+  "headers.xcto": "X-Content-Type-Options",
+  "headers.xcto.desc": "Prevents MIME type sniffing attacks",
+  "headers.xfo": "X-Frame-Options",
+  "headers.xfo.desc": "Prevents clickjacking by controlling iframe embedding",
+  "headers.rp": "Referrer-Policy",
+  "headers.rp.desc": "Controls how much referrer information is sent with requests",
+  "headers.pp": "Permissions-Policy",
+  "headers.pp.desc": "Controls which browser features the page can use",
+  "headers.xxss": "X-XSS-Protection",
+  "headers.xxss.desc": "Legacy XSS filter (mostly superseded by CSP)",
+  "headers.coop": "Cross-Origin-Opener-Policy (COOP)",
+  "headers.coop.desc": "Isolates browsing context from cross-origin popups",
+  "headers.coep": "Cross-Origin-Embedder-Policy (COEP)",
+  "headers.coep.desc": "Requires CORS/CORP for all cross-origin resources",
+  "headers.corp": "Cross-Origin-Resource-Policy (CORP)",
+  "headers.corp.desc": "Controls which origins can embed this resource",
 
   // Footer
   "footer.text": "NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.",
+  "footer.privacy": "Privacy",
+  "footer.privacyBadge": "100% client-side — no data leaves your browser",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
@@ -324,6 +354,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.detected": "已偵測",
   "dns.failed": "失敗",
   "dns.unreachable": "無法連線",
+  "dns.moreUnreachable": "另外 {0} 個無法連線",
   "dns.nonefound": "未找到",
   "dns.secure": "安全",
   "dns.issuesFound": "發現問題",
@@ -450,6 +481,12 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.grade.slow": "緩慢",
   "speed.grade.unknown": "未知",
 
+  "speed.history.title": "歷史記錄",
+  "speed.history.empty": "尚無歷史記錄",
+  "speed.history.justNow": "剛才",
+  "speed.history.minAgo": "{0} 分鐘前",
+  "speed.history.hrAgo": "{0} 小時前",
+
   // Ad block section
   "adblock.title": "廣告攔截測試",
   "adblock.subtitle": "測試您的廣告攔截器在多個類別的效果",
@@ -563,9 +600,31 @@ const zhTW: Record<keyof typeof en, string> = {
   "headers.fair": "一般",
   "headers.poor": "不佳",
   "headers.error": "掃描 URL 失敗",
+  "headers.hsts": "Strict-Transport-Security (HSTS)",
+  "headers.hsts.desc": "強制使用 HTTPS 連線，防止降級攻擊",
+  "headers.csp": "Content-Security-Policy (CSP)",
+  "headers.csp.desc": "控制瀏覽器可載入的資源，減輕 XSS 攻擊",
+  "headers.xcto": "X-Content-Type-Options",
+  "headers.xcto.desc": "防止 MIME 類型嗅探攻擊",
+  "headers.xfo": "X-Frame-Options",
+  "headers.xfo.desc": "透過控制 iframe 嵌入防止點擊劫持",
+  "headers.rp": "Referrer-Policy",
+  "headers.rp.desc": "控制請求中傳送的來源資訊量",
+  "headers.pp": "Permissions-Policy",
+  "headers.pp.desc": "控制頁面可使用的瀏覽器功能",
+  "headers.xxss": "X-XSS-Protection",
+  "headers.xxss.desc": "舊版 XSS 過濾器（多已被 CSP 取代）",
+  "headers.coop": "Cross-Origin-Opener-Policy (COOP)",
+  "headers.coop.desc": "隔離瀏覽上下文與跨來源彈出視窗",
+  "headers.coep": "Cross-Origin-Embedder-Policy (COEP)",
+  "headers.coep.desc": "要求所有跨來源資源須有 CORS/CORP",
+  "headers.corp": "Cross-Origin-Resource-Policy (CORP)",
+  "headers.corp.desc": "控制哪些來源可嵌入此資源",
 
   // Footer
   "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
+  "footer.privacy": "隱私",
+  "footer.privacyBadge": "100% 客戶端 — 無資料離開您的瀏覽器",
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
@@ -689,6 +748,7 @@ function applyStaticTranslations(): void {
 
   // Footer
   s("footer-text", "footer.text");
+  s("privacy-badge", "footer.privacyBadge");
 
   // Page title
   document.title = current === "zh-TW" ? "NetCheck — DNS 與廣告攔截測試" : "NetCheck — DNS & Ad Block Tester";
