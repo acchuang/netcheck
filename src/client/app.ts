@@ -2,6 +2,7 @@ import { DnsCheck } from "./dns-check";
 import { AdBlockTest } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-test";
+import { SpeedTestHistory } from "./history";
 import { ReportExporter } from "./export-report";
 import { t } from "./i18n";
 
@@ -213,10 +214,30 @@ async function runDnsChecks(): Promise<void> {
     });
 
     const unreachable = resolvers.filter((r) => !r.reachable);
-    unreachable.forEach((r) => {
-      const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
-      resolverContainer.appendChild(item);
-    });
+    if (unreachable.length > 0) {
+      if (unreachable.length <= 2) {
+        unreachable.forEach((r) => {
+          const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
+          resolverContainer.appendChild(item);
+        });
+      } else {
+        unreachable.slice(0, 1).forEach((r) => {
+          const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
+          resolverContainer.appendChild(item);
+        });
+        const details = document.createElement("details");
+        details.className = "unreachable-details";
+        const summary = document.createElement("summary");
+        summary.className = "unreachable-summary";
+        summary.textContent = t("dns.moreUnreachable", unreachable.length - 1);
+        details.appendChild(summary);
+        unreachable.slice(1).forEach((r) => {
+          const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
+          details.appendChild(item);
+        });
+        resolverContainer.appendChild(details);
+      }
+    }
 
     setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachable.length, resolvers.length));
   } else {
@@ -582,8 +603,16 @@ const speedGraphData: { download: { time: number; value: number }[]; upload: { t
   upload: [],
 };
 
+const gradeKeys: Record<string, string> = {
+  "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
+  "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
+  "Average": "speed.grade.average", "Below Average": "speed.grade.belowAvg",
+  "Slow": "speed.grade.slow", "Unknown": "speed.grade.unknown",
+};
+
 function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
+  renderSpeedHistory();
 }
 
 function drawSpeedGraph(): void {
@@ -667,6 +696,67 @@ function drawSpeedGraph(): void {
   ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
 }
 
+function formatHistoryTimestamp(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  if (minutes < 1) return t("speed.history.justNow");
+  if (minutes < 60) return t("speed.history.minAgo").replace("{0}", String(minutes));
+  if (hours < 24) return t("speed.history.hrAgo").replace("{0}", String(hours));
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function renderSpeedHistory(): void {
+  const container = document.getElementById("speed-history")!;
+  const cardsEl = document.getElementById("speed-history-cards")!;
+  const entries = SpeedTestHistory.load();
+
+  if (entries.length === 0) {
+    container.classList.remove("visible");
+    cardsEl.innerHTML = "";
+    return;
+  }
+
+  container.classList.add("visible");
+
+  cardsEl.innerHTML = entries.map((entry) => {
+    const grade = SpeedTest.getGrade(entry.download);
+    const gradeLabel = t(gradeKeys[grade.label] || grade.label);
+    const server = formatColo(entry.colo, entry.userLat, entry.userLon);
+    const time = formatHistoryTimestamp(entry.timestamp);
+
+    return `
+    <div class="speed-history-card stagger-item">
+      <div class="speed-history-card-header">
+        <span class="speed-history-card-time">${time}</span>
+        <span class="speed-history-card-grade">${grade.grade} · ${gradeLabel}</span>
+      </div>
+      <span class="speed-history-card-server">${server}</span>
+      <div class="speed-history-card-metrics">
+        <div class="speed-history-card-metric download">
+          <div class="speed-history-card-metric-value">${SpeedTest.formatSpeed(entry.download)}</div>
+          <div class="speed-history-card-metric-label">↓</div>
+        </div>
+        <div class="speed-history-card-metric upload">
+          <div class="speed-history-card-metric-value">${SpeedTest.formatSpeed(entry.upload)}</div>
+          <div class="speed-history-card-metric-label">↑</div>
+        </div>
+        <div class="speed-history-card-metric latency">
+          <div class="speed-history-card-metric-value">${entry.latency !== null ? String(Math.round(entry.latency)) : "—"}</div>
+          <div class="speed-history-card-metric-label">ms</div>
+        </div>
+        <div class="speed-history-card-metric jitter">
+          <div class="speed-history-card-metric-value">${entry.jitter !== null ? String(Math.round(entry.jitter)) : "—"}</div>
+          <div class="speed-history-card-metric-label">ms</div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+(window as any).renderSpeedHistory = renderSpeedHistory;
+
 async function runSpeedTest(): Promise<void> {
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
@@ -739,12 +829,6 @@ async function runSpeedTest(): Promise<void> {
   gradeEl.textContent = grade.grade;
   gradeEl.classList.add("grade-reveal");
   setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
-  const gradeKeys: Record<string, string> = {
-    "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
-    "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
-    "Average": "speed.grade.average", "Below Average": "speed.grade.belowAvg",
-    "Slow": "speed.grade.slow", "Unknown": "speed.grade.unknown",
-  };
   document.getElementById("speed-grade-label")!.textContent = t(gradeKeys[grade.label] || grade.label);
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
@@ -753,6 +837,8 @@ async function runSpeedTest(): Promise<void> {
 
   drawSpeedGraph();
   renderSpeedSuggestions(results);
+  SpeedTestHistory.save(results);
+  renderSpeedHistory();
   btn.disabled = false;
   btn.textContent = t("speed.runAgain");
 }
@@ -1101,8 +1187,8 @@ async function runHeadersCheck(): Promise<void> {
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
-          <span class="check-label">${check.name}</span>
-          <span class="check-sublabel">${check.desc}</span>
+          <span class="check-label">${t(check.name)}</span>
+          <span class="check-sublabel">${t(check.desc)}</span>
         </div>
         ${valueHtml}
       `;

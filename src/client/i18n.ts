@@ -725,6 +725,8 @@ function applyStaticTranslations(): void {
   s("speed-ul-legend", "speed.upload");
   s("speed-suggestions-title", "speed.recommendations");
   s("speed-route-you", "speed.you");
+  s("speed-history-title", "speed.history.title");
+  s("speed-history-empty", "speed.history.empty");
 
   // Ad block section
   s("adblock-title", "adblock.title");
@@ -752,4 +754,7 @@ function applyStaticTranslations(): void {
 
   // Page title
   document.title = current === "zh-TW" ? "NetCheck — DNS 與廣告攔截測試" : "NetCheck — DNS & Ad Block Tester";
+
+  // Re-render dynamic history cards with new locale
+  if ((window as any).renderSpeedHistory) (window as any).renderSpeedHistory();
 }
