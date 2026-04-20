@@ -327,6 +327,51 @@ const en = {
   "footer.text": "NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.",
   "footer.privacy": "Privacy",
   "footer.privacyBadge": "100% client-side — no data leaves your browser",
+
+  // Fingerprint
+  "nav.fingerprint": "Fingerprint",
+  "fp.title": "Browser Fingerprint",
+  "fp.subtitle": "See what your browser reveals about you. No data leaves your device.",
+  "fp.scan": "Run Fingerprint Scan",
+  "fp.scanning": "Scanning\u2026",
+  "fp.uniqueness": "Uniqueness",
+  "fp.lowUniqueness": "Low uniqueness — hard to track",
+  "fp.mediumUniqueness": "Moderate uniqueness — partially identifiable",
+  "fp.highUniqueness": "High uniqueness — easily trackable",
+  "fp.signals": "{0} signals detected",
+  "fp.protection": "Protection Tips",
+  "fp.canvas": "Canvas",
+  "fp.canvasHash": "Canvas Hash",
+  "fp.webgl": "WebGL",
+  "fp.webglSupport": "WebGL Support",
+  "fp.webglRenderer": "Renderer",
+  "fp.webglVendor": "Vendor",
+  "fp.webglVersion": "Version",
+  "fp.audio": "Audio",
+  "fp.audioHash": "Audio Hash",
+  "fp.fonts": "Fonts",
+  "fp.fontItem": "Font",
+  "fp.screen": "Screen",
+  "fp.screenRes": "Resolution",
+  "fp.colorDepth": "Color Depth",
+  "fp.pixelRatio": "Pixel Ratio",
+  "fp.timezone": "Timezone",
+  "fp.navigator": "Navigator",
+  "fp.userAgent": "User Agent",
+  "fp.platform": "Platform",
+  "fp.language": "Language",
+  "fp.cores": "Cores",
+  "fp.memory": "Memory",
+  "fp.touch": "Touch",
+  "fp.tip.brave.name": "Brave Browser",
+  "fp.tip.brave.type": "Privacy Browser",
+  "fp.tip.brave.desc": "Built-in fingerprint randomization per session. Each site sees a different fingerprint.",
+  "fp.tip.fpp.name": "Firefox + Privacy Possum",
+  "fp.tip.fpp.type": "Browser Extension",
+  "fp.tip.fpp.desc": "Randomizes browser fingerprint data to confuse trackers without breaking sites.",
+  "fp.tip.canvas.name": "Canvas Blocker",
+  "fp.tip.canvas.type": "Browser Extension",
+  "fp.tip.canvas.desc": "Adds noise to canvas fingerprinting, making your browser harder to identify.",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
@@ -649,6 +694,51 @@ const zhTW: Record<keyof typeof en, string> = {
   "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
   "footer.privacy": "隱私",
   "footer.privacyBadge": "100% 客戶端 — 無資料離開您的瀏覽器",
+
+  // Fingerprint
+  "nav.fingerprint": "指紋",
+  "fp.title": "瀏覽器指紋",
+  "fp.subtitle": "查看您的瀏覽器透露了哪些資訊。無資料離開您的裝置。",
+  "fp.scan": "執行指紋掃描",
+  "fp.scanning": "掃描中\u2026",
+  "fp.uniqueness": "唯一性",
+  "fp.lowUniqueness": "低唯一性 — 難以追蹤",
+  "fp.mediumUniqueness": "中等唯一性 — 部分可辨識",
+  "fp.highUniqueness": "高唯一性 — 容易追蹤",
+  "fp.signals": "偵測到 {0} 個信號",
+  "fp.protection": "防護建議",
+  "fp.canvas": "Canvas",
+  "fp.canvasHash": "Canvas 雜湊",
+  "fp.webgl": "WebGL",
+  "fp.webglSupport": "WebGL 支援",
+  "fp.webglRenderer": "渲染器",
+  "fp.webglVendor": "廠商",
+  "fp.webglVersion": "版本",
+  "fp.audio": "音訊",
+  "fp.audioHash": "音訊雜湊",
+  "fp.fonts": "字體",
+  "fp.fontItem": "字體",
+  "fp.screen": "螢幕",
+  "fp.screenRes": "解析度",
+  "fp.colorDepth": "色彩深度",
+  "fp.pixelRatio": "像素比",
+  "fp.timezone": "時區",
+  "fp.navigator": "導航器",
+  "fp.userAgent": "使用者代理",
+  "fp.platform": "平台",
+  "fp.language": "語言",
+  "fp.cores": "核心",
+  "fp.memory": "記憶體",
+  "fp.touch": "觸控",
+  "fp.tip.brave.name": "Brave 瀏覽器",
+  "fp.tip.brave.type": "隱私瀏覽器",
+  "fp.tip.brave.desc": "內建每次工作階段的指紋隨機化。每個網站看到不同的指紋。",
+  "fp.tip.fpp.name": "Firefox + Privacy Possum",
+  "fp.tip.fpp.type": "瀏覽器擴充功能",
+  "fp.tip.fpp.desc": "隨機化瀏覽器指紋資料，在不破壞網站的情況下混淆追蹤器。",
+  "fp.tip.canvas.name": "Canvas Blocker",
+  "fp.tip.canvas.type": "瀏覽器擴充功能",
+  "fp.tip.canvas.desc": "為 Canvas 指紋加入雜訊，使您的瀏覽器更難被辨識。",
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
@@ -773,6 +863,13 @@ function applyStaticTranslations(): void {
   s("headers-info-title", "headers.infoTitle");
   s("headers-info-desc", "headers.infoDesc");
   s("headers-detail-title", "headers.detailTitle");
+
+  // Fingerprint
+  s("fp-title", "fp.title");
+  s("fp-subtitle", "fp.subtitle");
+  s("fp-start-btn", "fp.scan");
+  s("fp-uniqueness-label", "fp.uniqueness");
+  s("fp-protection-title", "fp.protection");
 
   // Footer
   s("footer-text", "footer.text");

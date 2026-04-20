@@ -2111,6 +2111,65 @@ select option {
   flex-shrink: 0;
 }
 
+/* Fingerprint */
+.fp-score-card {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.fp-category-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fp-category-item:last-child {
+  border-bottom: none;
+}
+
+.fp-item-entropy {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fp-item-entropy.high { background: var(--red); }
+.fp-item-entropy.medium { background: var(--amber); }
+.fp-item-entropy.low { background: var(--emerald); }
+
+.fp-item-label {
+  font-size: 13px;
+  font-weight: 510;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.fp-item-value {
+  font-size: 12px;
+  font-family: "Berkeley Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--text-tertiary);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .fp-score-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
