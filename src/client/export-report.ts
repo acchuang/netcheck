@@ -105,7 +105,7 @@ export const ReportExporter = {
       upload: sr.upload,
       latency: sr.latency,
       jitter: sr.jitter,
-      grade: sr.download != null ? SpeedTest.getGrade(sr.download) : null,
+      grade: sr.download != null ? SpeedTest.getGrade(sr.download, sr.upload, sr.latency, sr.jitter, sr.bufferbloat) : null,
       tested: sr.download != null,
     };
 

@@ -105,10 +105,21 @@ const en = {
   "speed.upload": "Upload",
   "speed.latency": "Latency",
   "speed.jitter": "Jitter",
+  "speed.bufferbloat": "Bufferbloat",
+  "speed.bufferbloat.good": "Low — your router handles congestion well",
+  "speed.bufferbloat.moderate": "Moderate — latency increases under load",
+  "speed.bufferbloat.severe": "Severe — latency spikes significantly under load",
+  "speed.latencyUnderLoad": "Under Load",
+  "speed.factor.download": "Download",
+  "speed.factor.upload": "Upload",
+  "speed.factor.latency": "Latency",
+  "speed.factor.jitter": "Jitter",
+  "speed.factor.bufferbloat": "Bufferbloat",
   "speed.tip.download": "Maximum download speed measured via progressive file transfers",
   "speed.tip.upload": "Maximum upload speed measured via progressive data transfers",
-  "speed.tip.latency": "Round-trip time to the nearest Cloudflare edge server (median of 10 pings)",
+  "speed.tip.latency": "Round-trip time to the nearest Cloudflare edge server (median of 20 pings)",
   "speed.tip.jitter": "Variation in latency — lower is better for gaming and video calls",
+  "speed.tip.bufferbloat": "How much latency increases when the connection is under load",
   "speed.waiting": "Waiting to start",
   "speed.clickBegin": "Click the button below to begin",
   "speed.runBtn": "Run Speed Test",
@@ -417,10 +428,21 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.upload": "上傳",
   "speed.latency": "延遲",
   "speed.jitter": "抖動",
+  "speed.bufferbloat": "緩衝膨脹",
+  "speed.bufferbloat.good": "低 — 您的路由器能妥善處理壅塞",
+  "speed.bufferbloat.moderate": "中等 — 負載下延遲增加",
+  "speed.bufferbloat.severe": "嚴重 — 負載下延遲大幅飆升",
+  "speed.latencyUnderLoad": "負載下",
+  "speed.factor.download": "下載",
+  "speed.factor.upload": "上傳",
+  "speed.factor.latency": "延遲",
+  "speed.factor.jitter": "抖動",
+  "speed.factor.bufferbloat": "緩衝膨脹",
   "speed.tip.download": "透過漸進式檔案傳輸測量的最大下載速度",
   "speed.tip.upload": "透過漸進式資料傳輸測量的最大上傳速度",
-  "speed.tip.latency": "到最近 Cloudflare 邊緣伺服器的往返時間（10 次 ping 的中位數）",
+  "speed.tip.latency": "到最近 Cloudflare 邊緣伺服器的往返時間（20 次 ping 的中位數）",
   "speed.tip.jitter": "延遲的變化量 — 越低越好，適用於遊戲和視訊通話",
+  "speed.tip.bufferbloat": "連線負載時延遲增加的程度",
   "speed.waiting": "等待開始",
   "speed.clickBegin": "按下方按鈕開始測試",
   "speed.runBtn": "開始測速",
@@ -716,11 +738,13 @@ function applyStaticTranslations(): void {
   s("speed-upload-label", "speed.upload");
   s("speed-latency-label", "speed.latency");
   s("speed-jitter-label", "speed.jitter");
+  s("speed-bufferbloat-label", "speed.bufferbloat");
   s("speed-graph-title-text", "speed.graphTitle");
   sa("speed-download-label", "speed.tip.download", "data-tooltip");
   sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
   sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
   sa("speed-jitter-label", "speed.tip.jitter", "data-tooltip");
+  sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
   s("speed-dl-legend", "speed.download");
   s("speed-ul-legend", "speed.upload");
   s("speed-suggestions-title", "speed.recommendations");

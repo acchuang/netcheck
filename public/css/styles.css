@@ -1302,7 +1302,7 @@ select option {
 
 .speed-gauge-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 
@@ -1381,6 +1381,7 @@ select option {
 .speed-progress-fill.upload { background: var(--emerald); }
 .speed-progress-fill.latency { background: var(--amber); }
 .speed-progress-fill.jitter { background: var(--text-tertiary); }
+.speed-progress-fill.bufferbloat { background: var(--brand); }
 
 .speed-status-row {
   display: flex;
@@ -1416,6 +1417,30 @@ select option {
   font-size: 13px;
   color: var(--text-tertiary);
 }
+
+.grade-factors {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.grade-factor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.grade-factor-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.grade-factor-dot.pass { background: var(--emerald); }
+.grade-factor-dot.warn { background: var(--amber); }
+.grade-factor-dot.fail { background: var(--red); }
 
 .btn-large {
   padding: 12px 28px;
@@ -1829,7 +1854,7 @@ select option {
   }
 
   .speed-gauge-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .speed-status-row {

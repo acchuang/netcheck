@@ -285,6 +285,14 @@
               <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
             </div>
           </div>
+          <div class="speed-gauge">
+            <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="How much latency increases when the connection is under load">Bufferbloat</div>
+            <div class="speed-gauge-value" id="speed-bufferbloat">—</div>
+            <div class="speed-gauge-unit">ms</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill bufferbloat" id="speed-bufferbloat-bar"></div>
+            </div>
+          </div>
         </div>
 
         <div class="speed-status-row">
@@ -292,6 +300,8 @@
           <div class="speed-grade-info">
             <p class="speed-grade-label" id="speed-grade-label">Waiting to start</p>
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
+            <div class="grade-factors" id="grade-factors"></div>
+          </div>
           </div>
           <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
         </div>

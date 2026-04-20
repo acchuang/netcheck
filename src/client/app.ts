@@ -25,7 +25,7 @@ function animateNumber(el: HTMLElement, from: number, to: number, duration: numb
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll(".speed-gauge").forEach((g, i) => {
-    const phases = ["download", "upload", "latency", "jitter"];
+    const phases = ["download", "upload", "latency", "jitter", "bufferbloat"];
     g.classList.toggle("active", phases[i] === phase);
   });
 }
@@ -721,7 +721,13 @@ function renderSpeedHistory(): void {
   container.classList.add("visible");
 
   cardsEl.innerHTML = entries.map((entry) => {
-    const grade = SpeedTest.getGrade(entry.download);
+    const grade = SpeedTest.getGrade(
+      entry.download,
+      entry.upload,
+      entry.latency,
+      entry.jitter,
+      null // bufferbloat not stored in history
+    );
     const gradeLabel = t(gradeKeys[grade.label] || grade.label);
     const server = formatColo(entry.colo, entry.userLat, entry.userLon);
     const time = formatHistoryTimestamp(entry.timestamp);
@@ -770,14 +776,15 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = "—";
   document.getElementById("speed-latency")!.textContent = "—";
   document.getElementById("speed-jitter")!.textContent = "—";
+  document.getElementById("speed-bufferbloat")!.textContent = "—";
   document.getElementById("speed-server-value")!.textContent = t("speed.detecting");
-  (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
+  (["download", "upload", "latency", "jitter", "bufferbloat"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
 
   const startTime = performance.now();
 
-  const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0 };
+  const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0, bufferbloat: 0 };
 
   const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
@@ -798,6 +805,12 @@ async function runSpeedTest(): Promise<void> {
         animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
         pulseValue(el);
         prevValues.jitter = data.jitter;
+      }
+      if (data.bufferbloat !== null) {
+        const el = document.getElementById("speed-bufferbloat")!;
+        animateNumber(el, prevValues.bufferbloat ?? 0, data.bufferbloat, 200, (v) => String(Math.round(v)));
+        pulseValue(el);
+        prevValues.bufferbloat = data.bufferbloat;
       }
       if (data.download !== null) {
         const el = document.getElementById("speed-download")!;
@@ -823,13 +836,34 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
   document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
   document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
+  document.getElementById("speed-bufferbloat")!.textContent = results.bufferbloat !== null ? String(Math.round(results.bufferbloat)) : "—";
 
-  const grade = SpeedTest.getGrade(results.download);
+  if (results.bufferbloat !== null) {
+    const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
+    const bbPct = Math.min(100, (results.bufferbloat / 100) * 100);
+    bbBar.style.width = `${bbPct}%`;
+  }
+
+  const grade = SpeedTest.getGrade(results.download, results.upload, results.latency, results.jitter, results.bufferbloat);
   const gradeEl = document.getElementById("speed-grade")!;
   gradeEl.textContent = grade.grade;
   gradeEl.classList.add("grade-reveal");
   setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
   document.getElementById("speed-grade-label")!.textContent = t(gradeKeys[grade.label] || grade.label);
+
+  // Render grade factors
+  const factorsEl = document.getElementById("grade-factors")!;
+  const factorKeys: { key: keyof typeof grade.factors; label: string }[] = [
+    { key: "download", label: t("speed.factor.download") },
+    { key: "upload", label: t("speed.factor.upload") },
+    { key: "latency", label: t("speed.factor.latency") },
+    { key: "jitter", label: t("speed.factor.jitter") },
+    { key: "bufferbloat", label: t("speed.factor.bufferbloat") },
+  ];
+  factorsEl.innerHTML = factorKeys.map((f) => {
+    const status = grade.factors[f.key];
+    return `<span class="grade-factor"><span class="grade-factor-dot ${status}"></span>${f.label}</span>`;
+  }).join("");
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
   document.getElementById("speed-phase")!.textContent =
@@ -881,6 +915,7 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
   const ul = results.upload || 0;
   const lat = results.latency || 0;
   const jit = results.jitter || 0;
+  const bb = results.bufferbloat || 0;
 
   const issues: string[] = [];
   if (dl < 25) issues.push(t("speed.issueSlowDl"));
@@ -890,6 +925,8 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
   else if (lat > 20) issues.push(t("speed.issueModLat"));
   if (jit > 10) issues.push(t("speed.issueHighJit"));
   else if (jit > 5) issues.push(t("speed.issueModJit"));
+  if (bb > 30) issues.push(t("speed.bufferbloat.severe"));
+  else if (bb > 15) issues.push(t("speed.bufferbloat.moderate"));
 
   if (issues.length === 0 && dl >= 100) {
     subtitle.textContent = t("speed.suggestGreat");
