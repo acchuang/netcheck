@@ -119,18 +119,26 @@ function handleHeaders(request: Request): Response {
   return Response.json({ headers }, { headers: corsHeaders() });
 }
 
-const RANDOM_BLOCK = new Uint8Array(65536);
-crypto.getRandomValues(RANDOM_BLOCK);
+let RANDOM_BLOCK: Uint8Array | null = null;
+
+function getRandomBlock(): Uint8Array {
+  if (!RANDOM_BLOCK) {
+    RANDOM_BLOCK = new Uint8Array(65536);
+    crypto.getRandomValues(RANDOM_BLOCK);
+  }
+  return RANDOM_BLOCK;
+}
 
 function handleSpeedDown(url: URL): Response {
   const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
   }
+  const block = getRandomBlock();
   const data = new Uint8Array(bytes);
-  for (let offset = 0; offset < bytes; offset += RANDOM_BLOCK.length) {
-    const chunkSize = Math.min(RANDOM_BLOCK.length, bytes - offset);
-    data.set(RANDOM_BLOCK.subarray(0, chunkSize), offset);
+  for (let offset = 0; offset < bytes; offset += block.length) {
+    const chunkSize = Math.min(block.length, bytes - offset);
+    data.set(block.subarray(0, chunkSize), offset);
   }
   return new Response(data, {
     headers: {
