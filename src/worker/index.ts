@@ -119,15 +119,18 @@ function handleHeaders(request: Request): Response {
   return Response.json({ headers }, { headers: corsHeaders() });
 }
 
+const RANDOM_BLOCK = new Uint8Array(65536);
+crypto.getRandomValues(RANDOM_BLOCK);
+
 function handleSpeedDown(url: URL): Response {
   const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
   }
-  // Generate random-ish data to prevent compression
   const data = new Uint8Array(bytes);
-  for (let i = 0; i < bytes; i += 1024) {
-    data[i] = (i * 7 + 13) & 0xff;
+  for (let offset = 0; offset < bytes; offset += RANDOM_BLOCK.length) {
+    const chunkSize = Math.min(RANDOM_BLOCK.length, bytes - offset);
+    data.set(RANDOM_BLOCK.subarray(0, chunkSize), offset);
   }
   return new Response(data, {
     headers: {
@@ -212,16 +215,16 @@ async function handleResolverCheck(): Promise<Response> {
 }
 
 const SECURITY_HEADERS = [
-  { key: "strict-transport-security", name: "Strict-Transport-Security (HSTS)", desc: "Forces HTTPS connections, preventing downgrade attacks" },
-  { key: "content-security-policy", name: "Content-Security-Policy (CSP)", desc: "Controls which resources the browser can load, mitigating XSS" },
-  { key: "x-content-type-options", name: "X-Content-Type-Options", desc: "Prevents MIME type sniffing attacks", expected: "nosniff" },
-  { key: "x-frame-options", name: "X-Frame-Options", desc: "Prevents clickjacking by controlling iframe embedding" },
-  { key: "referrer-policy", name: "Referrer-Policy", desc: "Controls how much referrer information is sent with requests" },
-  { key: "permissions-policy", name: "Permissions-Policy", desc: "Controls which browser features the page can use" },
-  { key: "x-xss-protection", name: "X-XSS-Protection", desc: "Legacy XSS filter (mostly superseded by CSP)" },
-  { key: "cross-origin-opener-policy", name: "Cross-Origin-Opener-Policy (COOP)", desc: "Isolates browsing context from cross-origin popups" },
-  { key: "cross-origin-embedder-policy", name: "Cross-Origin-Embedder-Policy (COEP)", desc: "Requires CORS/CORP for all cross-origin resources" },
-  { key: "cross-origin-resource-policy", name: "Cross-Origin-Resource-Policy (CORP)", desc: "Controls which origins can embed this resource" },
+  { key: "strict-transport-security", name: "headers.hsts", desc: "headers.hsts.desc" },
+  { key: "content-security-policy", name: "headers.csp", desc: "headers.csp.desc" },
+  { key: "x-content-type-options", name: "headers.xcto", desc: "headers.xcto.desc" },
+  { key: "x-frame-options", name: "headers.xfo", desc: "headers.xfo.desc" },
+  { key: "referrer-policy", name: "headers.rp", desc: "headers.rp.desc" },
+  { key: "permissions-policy", name: "headers.pp", desc: "headers.pp.desc" },
+  { key: "x-xss-protection", name: "headers.xxss", desc: "headers.xxss.desc" },
+  { key: "cross-origin-opener-policy", name: "headers.coop", desc: "headers.coop.desc" },
+  { key: "cross-origin-embedder-policy", name: "headers.coep", desc: "headers.coep.desc" },
+  { key: "cross-origin-resource-policy", name: "headers.corp", desc: "headers.corp.desc" },
 ];
 
 async function handleHeadersCheck(request: Request): Promise<Response> {
