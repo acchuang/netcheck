@@ -5,6 +5,11 @@ import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-t
 import { SpeedTestHistory } from "./history";
 import { ReportExporter } from "./export-report";
 import { t } from "./i18n";
+import { CF_POPS, formatColo, haversineKm } from "./cf-pops";
+import { speedGraphData, addGraphPoint, clearGraph, drawSpeedGraph } from "./speed-graph";
+import { gradeKeys, renderSpeedSuggestions, updateServerBadge } from "./speed-suggestions";
+import { initHeadersCheck } from "./headers-ui";
+import { onLocaleChange } from "./locale-events";
 
 function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
   const start = performance.now();
@@ -525,175 +530,10 @@ function createCategory(name: string, testCount: number): HTMLDivElement {
   return div;
 }
 
-// Cloudflare PoP codes → [city, lat, lng]
-const CF_POPS: Record<string, [string, number, number]> = {
-  SIN: ["Singapore", 1.35, 103.82], NRT: ["Tokyo", 35.76, 140.39], HKG: ["Hong Kong", 22.31, 113.91],
-  ICN: ["Seoul", 37.46, 126.44], TPE: ["Taipei", 25.08, 121.23], BKK: ["Bangkok", 13.69, 100.75],
-  KUL: ["Kuala Lumpur", 2.75, 101.71], MNL: ["Manila", 14.51, 121.02], CGK: ["Jakarta", -6.13, 106.66],
-  BOM: ["Mumbai", 19.09, 72.87], DEL: ["Delhi", 28.57, 77.10], SYD: ["Sydney", -33.95, 151.18],
-  MEL: ["Melbourne", -37.67, 144.84], AKL: ["Auckland", -37.01, 174.78], PER: ["Perth", -31.94, 115.97],
-  BNE: ["Brisbane", -27.38, 153.12], ADL: ["Adelaide", -34.94, 138.53],
-  LAX: ["Los Angeles", 33.94, -118.41], SFO: ["San Francisco", 37.62, -122.38],
-  SJC: ["San Jose", 37.36, -121.93], SEA: ["Seattle", 47.45, -122.31], PDX: ["Portland", 45.59, -122.60],
-  DEN: ["Denver", 39.86, -104.67], DFW: ["Dallas", 32.90, -97.04], IAH: ["Houston", 29.98, -95.34],
-  ORD: ["Chicago", 41.97, -87.91], ATL: ["Atlanta", 33.64, -84.43], MIA: ["Miami", 25.80, -80.29],
-  IAD: ["Washington DC", 38.95, -77.46], EWR: ["Newark", 40.69, -74.17], JFK: ["New York", 40.64, -73.78],
-  BOS: ["Boston", 42.37, -71.02], YYZ: ["Toronto", 43.68, -79.63], YVR: ["Vancouver", 49.20, -123.18],
-  GRU: ["São Paulo", -23.43, -46.47], SCL: ["Santiago", -33.39, -70.79], BOG: ["Bogotá", 4.70, -74.15],
-  LIM: ["Lima", -12.02, -77.11], MEX: ["Mexico City", 19.44, -99.07],
-  LHR: ["London", 51.47, -0.46], AMS: ["Amsterdam", 52.31, 4.76], FRA: ["Frankfurt", 50.03, 8.57],
-  CDG: ["Paris", 49.01, 2.55], MAD: ["Madrid", 40.47, -3.56], MXP: ["Milan", 45.63, 8.72],
-  ZRH: ["Zurich", 47.46, 8.55], VIE: ["Vienna", 48.11, 16.57], WAW: ["Warsaw", 52.17, 20.97],
-  ARN: ["Stockholm", 59.65, 17.94], HEL: ["Helsinki", 60.32, 24.95], CPH: ["Copenhagen", 55.62, 12.66],
-  OSL: ["Oslo", 60.19, 11.10], DUB: ["Dublin", 53.43, -6.27], LIS: ["Lisbon", 38.77, -9.13],
-  PRG: ["Prague", 50.10, 14.26], BRU: ["Brussels", 50.90, 4.48], MRS: ["Marseille", 43.44, 5.22],
-  HAM: ["Hamburg", 53.63, 9.99], MUC: ["Munich", 48.35, 11.79],
-  JNB: ["Johannesburg", -26.14, 28.25], CPT: ["Cape Town", -33.97, 18.60], NBO: ["Nairobi", -1.32, 36.93],
-  LOS: ["Lagos", 6.58, 3.32], CAI: ["Cairo", 30.12, 31.41],
-  DOH: ["Doha", 25.26, 51.57], DXB: ["Dubai", 25.25, 55.36], TLV: ["Tel Aviv", 32.01, 34.89],
-  IST: ["Istanbul", 41.26, 28.74], KIX: ["Osaka", 34.43, 135.23], FUK: ["Fukuoka", 33.59, 130.45],
-  CKG: ["Chongqing", 29.72, 106.64], CTU: ["Chengdu", 30.58, 103.95],
-  PVG: ["Shanghai", 31.14, 121.81], PEK: ["Beijing", 40.08, 116.58], CMB: ["Colombo", 7.18, 79.88],
-};
-
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatColo(colo: string | null, userLat?: number | null, userLon?: number | null): string {
-  if (!colo || colo === "unknown") return "—";
-  const pop = CF_POPS[colo];
-  if (!pop) return colo;
-  const [city, popLat, popLon] = pop;
-  let dist = "";
-  if (userLat != null && userLon != null) {
-    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
-    dist = ` · ${km.toLocaleString()} km`;
-  }
-  return `${city} (${colo})${dist}`;
-}
-
-function updateServerBadge(colo: string, userLat?: number | null, userLon?: number | null): void {
-  const pop = CF_POPS[colo];
-  const cityName = pop ? pop[0] : colo;
-  const badge = document.getElementById("speed-server-badge")!;
-  badge.classList.add("active");
-
-  document.getElementById("speed-server-value")!.textContent = `${cityName} (${colo})`;
-
-  if (pop && userLat != null && userLon != null) {
-    const [, popLat, popLon] = pop;
-    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
-    const detail = document.getElementById("speed-server-detail")!;
-    detail.classList.remove("hidden");
-    document.getElementById("speed-server-dist")!.textContent = `${km.toLocaleString()} km`;
-    document.getElementById("speed-server-colo")!.textContent = `${cityName}`;
-  }
-}
-
 // Speed test
-const speedGraphData: { download: { time: number; value: number }[]; upload: { time: number; value: number }[] } = {
-  download: [],
-  upload: [],
-};
-
-const gradeKeys: Record<string, string> = {
-  "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
-  "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
-  "Average": "speed.grade.average", "Below Average": "speed.grade.belowAvg",
-  "Slow": "speed.grade.slow", "Unknown": "speed.grade.unknown",
-};
-
 function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
   renderSpeedHistory();
-}
-
-function drawSpeedGraph(): void {
-  const canvas = document.getElementById("speed-graph") as HTMLCanvasElement;
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d")!;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-
-  const w = rect.width;
-  const h = rect.height;
-  const pad = { top: 10, right: 16, bottom: 24, left: 48 };
-  const plotW = w - pad.left - pad.right;
-  const plotH = h - pad.top - pad.bottom;
-
-  ctx.clearRect(0, 0, w, h);
-
-  const allVals = [...speedGraphData.download, ...speedGraphData.upload].map((p) => p.value);
-  if (allVals.length === 0) return;
-  const maxVal = Math.max(...allVals, 1) * 1.15;
-
-  // Grid lines
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  ctx.lineWidth = 1;
-  const gridLines = 4;
-  ctx.font = "11px Inter, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.textAlign = "right";
-  for (let i = 0; i <= gridLines; i++) {
-    const y = pad.top + plotH - (i / gridLines) * plotH;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(w - pad.right, y);
-    ctx.stroke();
-    ctx.fillText(`${Math.round((maxVal * i) / gridLines)}`, pad.left - 6, y + 4);
-  }
-
-  function drawLine(points: { time: number; value: number }[], color: string): void {
-    if (points.length < 2) return;
-    const maxTime = Math.max(...speedGraphData.download.concat(speedGraphData.upload).map((p) => p.time), 1);
-
-    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    grad.addColorStop(0, color.replace("1)", "0.15)"));
-    grad.addColorStop(1, color.replace("1)", "0)"));
-
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = pad.left + (p.time / maxTime) * plotW;
-      const y = pad.top + plotH - (p.value / maxVal) * plotH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    const lastX = pad.left + (points[points.length - 1].time / maxTime) * plotW;
-    const firstX = pad.left + (points[0].time / maxTime) * plotW;
-    ctx.lineTo(lastX, pad.top + plotH);
-    ctx.lineTo(firstX, pad.top + plotH);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = pad.left + (p.time / maxTime) * plotW;
-      const y = pad.top + plotH - (p.value / maxVal) * plotH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-
-  drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
-  drawLine(speedGraphData.upload, "rgba(52, 211, 153, 1)");
-
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.textAlign = "center";
-  ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
 }
 
 function formatHistoryTimestamp(ts: number): string {
@@ -761,15 +601,14 @@ function renderSpeedHistory(): void {
   }).join("");
 }
 
-(window as any).renderSpeedHistory = renderSpeedHistory;
+onLocaleChange(renderSpeedHistory);
 
 async function runSpeedTest(): Promise<void> {
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = t("speed.running");
 
-  speedGraphData.download = [];
-  speedGraphData.upload = [];
+  clearGraph();
   drawSpeedGraph();
 
   document.getElementById("speed-download")!.textContent = "—";
@@ -817,7 +656,7 @@ async function runSpeedTest(): Promise<void> {
         animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
         pulseValue(el);
         prevValues.download = data.download;
-        speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
+        addGraphPoint("download", (performance.now() - startTime) / 1000, data.download);
         drawSpeedGraph();
       }
       if (data.upload !== null) {
@@ -825,7 +664,7 @@ async function runSpeedTest(): Promise<void> {
         animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
         pulseValue(el);
         prevValues.upload = data.upload;
-        speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
+        addGraphPoint("upload", (performance.now() - startTime) / 1000, data.upload);
         drawSpeedGraph();
       }
     }
@@ -875,101 +714,6 @@ async function runSpeedTest(): Promise<void> {
   renderSpeedHistory();
   btn.disabled = false;
   btn.textContent = t("speed.runAgain");
-}
-
-// Speed suggestions
-interface SpeedSuggestion {
-  name: string; // i18n key prefix
-  icon: string;
-  tags: string[];
-  url: string | null;
-  when: (r: { download: number; upload: number; latency: number; jitter: number }) => boolean;
-}
-
-const speedSuggestions: SpeedSuggestion[] = [
-  { name: "speed.sug.cf", icon: "CF", tags: ["fastest DNS", "privacy-first", "free"], url: "https://1.1.1.1",
-    when: (r) => r.latency > 15 },
-  { name: "speed.sug.warp", icon: "W+", tags: ["WireGuard", "free tier", "mobile + desktop"], url: "https://1.1.1.1",
-    when: (r) => r.latency > 30 || r.jitter > 10 },
-  { name: "speed.sug.ethernet", icon: "Eth", tags: ["zero cost", "lower latency", "stable"], url: null,
-    when: (r) => r.jitter > 5 || r.download < 100 },
-  { name: "speed.sug.wifi6e", icon: "6E", tags: ["6 GHz band", "lower latency", "more capacity"], url: null,
-    when: (r) => r.download < 200 || r.jitter > 8 },
-  { name: "speed.sug.qos", icon: "QoS", tags: ["bufferbloat fix", "OpenWrt", "free"],
-    url: "https://openwrt.org/docs/guide-user/network/traffic-shaping/sqm",
-    when: (r) => r.jitter > 10 || r.latency > 40 },
-  { name: "speed.sug.isp", icon: "ISP", tags: ["line check", "modem swap", "plan upgrade"], url: null,
-    when: (r) => r.download < 25 },
-  { name: "speed.sug.bg", icon: "BG", tags: ["quick win", "free", "common cause"], url: null,
-    when: (r) => r.upload < 10 || r.download < 50 },
-  { name: "speed.sug.nextdns", icon: "ND", tags: ["fast DNS", "ad blocking", "custom filters"], url: "https://nextdns.io",
-    when: () => true },
-];
-
-function renderSpeedSuggestions(results: SpeedTestResults): void {
-  const section = document.getElementById("speed-suggestions-section")!;
-  const subtitle = document.getElementById("speed-suggestions-subtitle")!;
-  const grid = document.getElementById("speed-suggestions-grid")!;
-
-  const dl = results.download || 0;
-  const ul = results.upload || 0;
-  const lat = results.latency || 0;
-  const jit = results.jitter || 0;
-  const bb = results.bufferbloat || 0;
-
-  const issues: string[] = [];
-  if (dl < 25) issues.push(t("speed.issueSlowDl"));
-  else if (dl < 100) issues.push(t("speed.issueModDl"));
-  if (ul < 10) issues.push(t("speed.issueSlowUl"));
-  if (lat > 40) issues.push(t("speed.issueHighLat"));
-  else if (lat > 20) issues.push(t("speed.issueModLat"));
-  if (jit > 10) issues.push(t("speed.issueHighJit"));
-  else if (jit > 5) issues.push(t("speed.issueModJit"));
-  if (bb > 30) issues.push(t("speed.bufferbloat.severe"));
-  else if (bb > 15) issues.push(t("speed.bufferbloat.moderate"));
-
-  if (issues.length === 0 && dl >= 100) {
-    subtitle.textContent = t("speed.suggestGreat");
-  } else if (issues.length === 0) {
-    subtitle.textContent = t("speed.suggestDecent");
-  } else {
-    subtitle.textContent = t("speed.suggestIssues", issues.join(", "));
-  }
-
-  const r = { download: dl, upload: ul, latency: lat, jitter: jit };
-  const relevant = speedSuggestions
-    .filter((s) => s.when(r))
-    .slice(0, 6);
-
-  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-
-  grid.innerHTML = relevant
-    .map((s, i) => {
-      const isTop = i === 0 && issues.length > 0;
-      const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
-        : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
-
-      return `
-      <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
-        <div class="suggestion-top">
-          <div class="suggestion-icon">${s.icon}</div>
-          <div class="suggestion-info">
-            <div class="suggestion-name">${t(s.name + ".name")}</div>
-            <div class="suggestion-type">${t(s.name + ".type")}</div>
-          </div>
-          ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
-        </div>
-        <div class="suggestion-desc">${t(s.name + ".desc")}</div>
-        <div class="suggestion-tags">
-          ${s.tags.map((tag) => `<span class="suggestion-tag">${tag}</span>`).join("")}
-        </div>
-        ${linkHtml}
-      </div>`;
-    })
-    .join("");
-
-  section.classList.add("visible");
 }
 
 // Filter list detection
@@ -1129,114 +873,6 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
     .join("");
 
   section.classList.add("visible");
-}
-
-// Security Headers Check
-interface HeaderCheckResult {
-  name: string;
-  key: string;
-  desc: string;
-  value: string | null;
-  present: boolean;
-}
-
-interface HeadersResponse {
-  url: string;
-  statusCode: number;
-  grade: string;
-  score: { present: number; total: number };
-  checks: HeaderCheckResult[];
-  server: string | null;
-  poweredBy: string | null;
-  error?: string;
-}
-
-function initHeadersCheck(): void {
-  const btn = document.getElementById("headers-check-btn")!;
-  const input = document.getElementById("headers-url-input") as HTMLInputElement;
-
-  btn.addEventListener("click", runHeadersCheck);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") runHeadersCheck();
-  });
-}
-
-async function runHeadersCheck(): Promise<void> {
-  const input = document.getElementById("headers-url-input") as HTMLInputElement;
-  const url = input.value.trim();
-  if (!url) return;
-
-  const btn = document.getElementById("headers-check-btn") as HTMLButtonElement;
-  btn.disabled = true;
-  btn.textContent = t("headers.scanning");
-
-  const resultsContainer = document.getElementById("headers-results")!;
-  resultsContainer.classList.remove("hidden");
-
-  const checkResults = document.getElementById("headers-check-results")!;
-  renderSkeletonRows(checkResults, 10);
-
-  try {
-    const res = await fetch(`/api/headers/check?url=${encodeURIComponent(url)}`);
-    const data: HeadersResponse = await res.json();
-
-    if (data.error) {
-      checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}: ${data.error}</p>`;
-      btn.disabled = false;
-      btn.textContent = t("headers.scan");
-      return;
-    }
-
-    // Update grade
-    const gradeEl = document.getElementById("headers-grade")!;
-    gradeEl.textContent = data.grade;
-    gradeEl.className = "speed-grade";
-
-    const gradeColors: Record<string, string> = { A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
-    gradeEl.style.color = gradeColors[data.grade] || "var(--text-primary)";
-
-    document.getElementById("headers-score")!.textContent =
-      t("headers.scoreOf", data.score.present, data.score.total);
-
-    const serverParts: string[] = [];
-    if (data.server) serverParts.push(`Server: ${data.server}`);
-    if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
-    serverParts.push(`HTTP ${data.statusCode}`);
-    document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
-
-    setBadge("headers-status", data.grade === "A" || data.grade === "B" ? "done" : data.grade === "C" ? "done" : "error",
-      data.grade === "A" ? t("headers.excellent") : data.grade === "B" ? t("headers.good") : data.grade === "C" ? t("headers.fair") : t("headers.poor"));
-
-    // Render header checks
-    checkResults.innerHTML = "";
-    data.checks.forEach((check) => {
-      const div = document.createElement("div");
-      div.className = "dns-check-item fade-in";
-      const status = check.present ? "pass" : "fail";
-      const iconSvg = check.present
-        ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-
-      const valueHtml = check.present
-        ? `<span class="header-value-truncate" data-tooltip="${check.value}">${check.value}</span>`
-        : `<span class="check-value" style="color:var(--red)">${t("headers.missing")}</span>`;
-
-      div.innerHTML = `
-        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
-        <div class="check-label-block">
-          <span class="check-label">${t(check.name)}</span>
-          <span class="check-sublabel">${t(check.desc)}</span>
-        </div>
-        ${valueHtml}
-      `;
-      checkResults.appendChild(div);
-    });
-  } catch {
-    checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}</p>`;
-  }
-
-  btn.disabled = false;
-  btn.textContent = t("headers.scan");
 }
 
 function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean }[], blocked: number): HTMLDivElement {

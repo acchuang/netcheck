@@ -1,3 +1,5 @@
+import { notifyLocaleChange } from "./locale-events";
+
 export type Locale = "en" | "zh-TW";
 
 const STORAGE_KEY = "netcheck-locale";
@@ -779,6 +781,6 @@ function applyStaticTranslations(): void {
   // Page title
   document.title = current === "zh-TW" ? "NetCheck — DNS 與廣告攔截測試" : "NetCheck — DNS & Ad Block Tester";
 
-  // Re-render dynamic history cards with new locale
-  if ((window as any).renderSpeedHistory) (window as any).renderSpeedHistory();
+  // Re-render dynamic sections with new locale
+  notifyLocaleChange();
 }
