@@ -4,3 +4,7 @@ import "./app";
 
 initTheme();
 initI18n();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/public/sw.js").catch(() => {});
+}
