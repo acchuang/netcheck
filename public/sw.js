@@ -1,8 +1,7 @@
-const CACHE_NAME = "netcheck-v1";
+const CACHE_NAME = "netcheck-v2";
 const STATIC_ASSETS = [
   "/",
-  "/public/css/styles.css",
-  "/src/client/main.ts",
+  "/css/styles.css",
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,12 +30,14 @@ self.addEventListener("fetch", (event) => {
   }
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const fetched = fetch(event.request).then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok && url.protocol === "https:") {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
       });
-      return cached || fetched;
     })
   );
 });

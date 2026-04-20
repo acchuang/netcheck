@@ -5,6 +5,7 @@ export interface SpeedTestHistoryEntry {
   upload: number | null;
   latency: number | null;
   jitter: number | null;
+  bufferbloat: number | null;
   colo: string | null;
   userLat: number | null;
   userLon: number | null;
@@ -12,7 +13,7 @@ export interface SpeedTestHistoryEntry {
 }
 
 const STORAGE_KEY = "netcheck-speed-history";
-const MAX_ENTRIES = 2;
+const MAX_ENTRIES = 10;
 
 export const SpeedTestHistory = {
   save(result: SpeedTestResults): void {
@@ -21,6 +22,7 @@ export const SpeedTestHistory = {
       upload: result.upload,
       latency: result.latency,
       jitter: result.jitter,
+      bufferbloat: result.bufferbloat,
       colo: result.colo,
       userLat: result.userLat,
       userLon: result.userLon,

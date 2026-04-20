@@ -101,7 +101,7 @@
 
   <main class="main">
     <!-- DNS Check Section -->
-    <section id="dns" class="section active">
+    <section id="dns" class="section active" role="region" aria-label="DNS Check">
       <div class="section-header">
         <h1 class="display" id="dns-title">DNS & Network Check</h1>
         <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
@@ -228,7 +228,7 @@
     </section>
 
     <!-- Speed Test Section -->
-    <section id="speed" class="section">
+    <section id="speed" class="section" role="region" aria-label="Speed Test">
       <div class="section-header">
         <h1 class="display" id="speed-title">Speed Test</h1>
         <p class="subtitle" id="speed-subtitle">Measure your connection speed via Cloudflare's global edge network</p>
@@ -324,6 +324,7 @@
         <!-- Speed History -->
         <div id="speed-history" class="speed-history">
           <h2 class="speed-history-title" id="speed-history-title">History</h2>
+          <button class="btn-nav-action" id="speed-history-clear" style="display:none" title="Clear history">\u2715</button>
           <p class="speed-history-empty" id="speed-history-empty">No previous tests recorded</p>
           <div class="speed-history-cards" id="speed-history-cards"></div>
         </div>
@@ -338,7 +339,7 @@
     </section>
 
     <!-- Ad Block Test Section -->
-    <section id="adblock" class="section">
+    <section id="adblock" class="section" role="region" aria-label="Ad Block Test">
       <div class="section-header">
         <h1 class="display" id="adblock-title">Ad Block Tester</h1>
         <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
@@ -385,7 +386,7 @@
     </section>
 
     <!-- Security Headers Section -->
-    <section id="headers" class="section">
+    <section id="headers" class="section" role="region" aria-label="Security Headers">
       <div class="section-header">
         <h1 class="display" id="headers-title">Security Headers</h1>
         <p class="subtitle" id="headers-subtitle">Analyze HTTP security headers of any website</p>

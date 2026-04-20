@@ -62,12 +62,28 @@ interface AdBlockData {
   filterLists: FilterListResult[];
 }
 
+interface HeaderCheckItem {
+  label: string;
+  desc: string;
+  present: boolean;
+  value: string | null;
+}
+
+interface HeadersData {
+  url: string;
+  grade: string;
+  score: string;
+  scanned: boolean;
+  checks: HeaderCheckItem[];
+}
+
 interface ReportData {
   timestamp: string;
   date: string;
   dns: DnsData;
   speed: SpeedData;
   adblock: AdBlockData;
+  headers: HeadersData;
 }
 
 export const ReportExporter = {
@@ -119,12 +135,32 @@ export const ReportExporter = {
       adblock.filterLists = FilterListDetector.results;
     }
 
+    // Headers
+    const headers: HeadersData = { url: "", grade: "", score: "", scanned: false, checks: [] };
+    const headersUrl = (document.getElementById("headers-url-input") as HTMLInputElement)?.value;
+    if (headersUrl) {
+      headers.url = headersUrl;
+      headers.scanned = true;
+      headers.grade = document.getElementById("headers-grade")?.textContent || "";
+      headers.score = document.getElementById("headers-score")?.textContent || "";
+      document.querySelectorAll("#headers-check-results .dns-check-item").forEach((item) => {
+        const label = item.querySelector(".check-label")?.textContent?.trim() || "";
+        const desc = item.querySelector(".check-sublabel")?.textContent?.trim() || "";
+        const icon = item.querySelector(".check-icon");
+        const present = icon?.classList.contains("pass") ?? false;
+        const value = item.querySelector(".header-value-truncate")?.textContent ||
+                     item.querySelector(".check-value")?.textContent || null;
+        headers.checks.push({ label, desc, present, value });
+      });
+    }
+
     return {
       timestamp: new Date().toISOString(),
       date: new Date().toLocaleString(),
       dns,
       speed,
       adblock,
+      headers,
     };
   },
 
@@ -218,6 +254,22 @@ export const ReportExporter = {
       data.adblock.filterLists.forEach((fl) => {
         const status = fl.detected ? "\u2705 Detected" : "\u2014 Not found";
         ln(`| ${fl.name} | ${status} |`);
+      });
+      ln();
+    }
+
+    // Headers
+    if (data.headers.scanned) {
+      ln("## Security Headers");
+      ln();
+      ln(`**URL:** \`${data.headers.url}\``);
+      ln(`**Grade:** ${data.headers.grade} \u2014 ${data.headers.score}`);
+      ln();
+      ln("| Header | Status | Value |");
+      ln("|--------|--------|-------|");
+      data.headers.checks.forEach((h) => {
+        const icon = h.present ? "\u2705" : "\u274C";
+        ln(`| ${h.label} | ${icon} | ${h.value || "\u2014"} |`);
       });
       ln();
     }

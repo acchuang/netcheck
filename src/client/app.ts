@@ -105,8 +105,12 @@ function initTabs(): void {
       e.preventDefault();
       const tab = link.dataset.tab!;
 
-      document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
+      document.querySelectorAll(".nav-link").forEach((l) => {
+        l.classList.remove("active");
+        l.removeAttribute("aria-current");
+      });
       link.classList.add("active");
+      link.setAttribute("aria-current", "page");
 
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       document.getElementById(tab)!.classList.add("active");
@@ -562,13 +566,21 @@ function renderSpeedHistory(): void {
 
   container.classList.add("visible");
 
+  const clearBtn = document.getElementById("speed-history-clear") as HTMLButtonElement;
+  if (entries.length > 0) {
+    clearBtn.style.display = "inline-flex";
+    clearBtn.onclick = () => { SpeedTestHistory.clear(); renderSpeedHistory(); };
+  } else {
+    clearBtn.style.display = "none";
+  }
+
   cardsEl.innerHTML = entries.map((entry) => {
     const grade = SpeedTest.getGrade(
       entry.download,
       entry.upload,
       entry.latency,
       entry.jitter,
-      null // bufferbloat not stored in history
+      entry.bufferbloat ?? null
     );
     const gradeLabel = t(gradeKeys[grade.label] || grade.label);
     const server = formatColo(entry.colo, entry.userLat, entry.userLon);
