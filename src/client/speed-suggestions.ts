@@ -1,6 +1,7 @@
 import { SpeedTest, type SpeedTestResults } from "./speed-test";
 import { t } from "./i18n";
 import { formatColo, CF_POPS, haversineKm } from "./cf-pops";
+import { affiliate } from "./affiliates";
 
 export const gradeKeys: Record<string, string> = {
   "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
@@ -76,8 +77,9 @@ export function renderSpeedSuggestions(results: SpeedTestResults): void {
   grid.innerHTML = relevant
     .map((s, i) => {
       const isTop = i === 0 && issues.length > 0;
-      const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
+      const linkUrl = affiliate(s.url);
+      const linkHtml = linkUrl
+        ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
         : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
 
       return `

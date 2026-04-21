@@ -2,6 +2,7 @@ import { DnsCheck } from "./dns-check";
 import { t } from "./i18n";
 import { CF_POPS } from "./cf-pops";
 import { setBadge, createCheckItem } from "./ui-utils";
+import { affiliate } from "./affiliates";
 
 interface IpData {
   ip?: string;
@@ -212,8 +213,9 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
   grid.innerHTML = relevant
     .map((s, i) => {
       const isTop = i === 0 && issues.length > 0;
-      const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
+      const linkUrl = affiliate(s.url);
+      const linkHtml = linkUrl
+        ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
         : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("dns.checkBrowser")}</span>`;
 
       return `

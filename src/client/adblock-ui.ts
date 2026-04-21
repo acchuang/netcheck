@@ -1,6 +1,7 @@
 import { AdBlockTest } from "./adblock-test";
 import { t } from "./i18n";
 import { setBadge, renderSkeletonRows } from "./ui-utils";
+import { affiliate } from "./affiliates";
 
 interface AdblockScore {
   score: number;
@@ -178,7 +179,7 @@ function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]
 
       const fixesHtml = Array.from({ length: advice.fixCount }, (_, i) => {
         const label = t(`${key}.fix${i + 1}`);
-        const url = advice.fixUrls[i];
+        const url = affiliate(advice.fixUrls[i]);
         return url
           ? `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${arrowSvg}</a></li>`
           : `<li>${label}</li>`;

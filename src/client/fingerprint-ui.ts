@@ -1,5 +1,6 @@
 import { FingerprintDetector } from "./fingerprint";
 import { t } from "./i18n";
+import { affiliate } from "./affiliates";
 
 export function initFingerprint(): void {
   document.getElementById("fp-start-btn")?.addEventListener("click", runFingerprintScan);
@@ -74,8 +75,9 @@ async function runFingerprintScan(): Promise<void> {
     ];
     grid.innerHTML = tips.map((tip, i) => {
       const isTop = i === 0 && result.uniquenessScore >= 70;
-      const linkHtml = tip.url
-        ? `<a href="${tip.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
+      const linkUrl = affiliate(tip.url);
+      const linkHtml = linkUrl
+        ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
         : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
       return `
         <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
