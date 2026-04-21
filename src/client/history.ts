@@ -13,7 +13,7 @@ export interface SpeedTestHistoryEntry {
 }
 
 const STORAGE_KEY = "netcheck-speed-history";
-const MAX_ENTRIES = 10;
+const MAX_ENTRIES = 3;
 
 export const SpeedTestHistory = {
   save(result: SpeedTestResults): void {

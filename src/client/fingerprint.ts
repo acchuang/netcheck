@@ -48,12 +48,17 @@ export const FingerprintDetector = {
 
     let totalBits = 0;
     categories.forEach((cat) => {
-      cat.items.forEach((item) => {
+      const nonFontItems = cat.items.filter((item) => item.i18nKey !== "fp.fontItem");
+      nonFontItems.forEach((item) => {
         totalBits += item.entropy === "high" ? 8 : item.entropy === "medium" ? 4 : 1;
       });
+      const fontItems = cat.items.filter((item) => item.i18nKey === "fp.fontItem");
+      if (fontItems.length > 0) {
+        totalBits += fontItems.length >= 10 ? 8 : fontItems.length >= 5 ? 4 : 1;
+      }
     });
 
-    const uniquenessScore = Math.min(100, Math.round((totalBits / 64) * 100));
+    const uniquenessScore = Math.min(100, Math.round((totalBits / 50) * 100));
 
     return { categories, totalEntropy: totalBits, uniquenessScore };
   },

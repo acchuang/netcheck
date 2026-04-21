@@ -47,14 +47,22 @@ function nextChunkSize(currentSize: number, throughputMbps: number): number {
   return currentSize;
 }
 
-const RANDOM_BLOCK = new Uint8Array(65536);
-crypto.getRandomValues(RANDOM_BLOCK);
+let _randomBlock: Uint8Array | null = null;
+
+function getRandomBlock(): Uint8Array {
+  if (!_randomBlock) {
+    _randomBlock = new Uint8Array(65536);
+    crypto.getRandomValues(_randomBlock);
+  }
+  return _randomBlock;
+}
 
 function fillIncompressible(size: number): Uint8Array {
+  const block = getRandomBlock();
   const data = new Uint8Array(size);
-  for (let offset = 0; offset < size; offset += RANDOM_BLOCK.length) {
-    const chunkSize = Math.min(RANDOM_BLOCK.length, size - offset);
-    data.set(RANDOM_BLOCK.subarray(0, chunkSize), offset);
+  for (let offset = 0; offset < size; offset += block.length) {
+    const chunkSize = Math.min(block.length, size - offset);
+    data.set(block.subarray(0, chunkSize), offset);
   }
   return data;
 }
@@ -127,6 +135,12 @@ function medianOf(sorted: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+function nextUploadSize(currentSize: number, throughputMbps: number): number {
+  if (throughputMbps > 50) return Math.min(currentSize * 2, 20000000);
+  if (throughputMbps > 10) return currentSize;
+  return Math.max(Math.floor(currentSize / 2), 100000);
+}
+
 export const SpeedTest = {
   results: {
     download: null,
@@ -149,7 +163,6 @@ export const SpeedTest = {
     };
     const cb: ProgressCallback = onProgress || (() => {});
 
-    // Phase 1: Latency + jitter (20 pings, trim best/worst 2)
     cb("latency", 0, this.results);
     const pings: number[] = [];
     for (let i = 0; i < PING_COUNT; i++) {
@@ -199,14 +212,11 @@ export const SpeedTest = {
     }
     cb("latency", 100, this.results);
 
-    // Warm-up
     await warmUp();
 
-    // Start bufferbloat measurement in background
-    const blController = new AbortController();
-    const dlLoadedPingsPromise = measureLoadedLatency(blController.signal);
+    const dlLoadedController = new AbortController();
+    const dlLoadedPingsPromise = measureLoadedLatency(dlLoadedController.signal);
 
-    // Phase 2: Download — adaptive sizing, multi-connection, EWMA
     cb("download", 0, this.results);
     let chunkSize = INITIAL_CHUNK;
     let dlTotalBytes = 0;
@@ -241,20 +251,23 @@ export const SpeedTest = {
     }
     cb("download", 100, this.results);
 
-    // Measure download loaded latency
-    const ulLoadedPingsPromise = measureLoadedLatency(blController.signal);
+    dlLoadedController.abort();
+    const dlLoadedPings = await dlLoadedPingsPromise;
 
-    // Phase 3: Upload — adaptive sizing, EWMA
+    const ulLoadedController = new AbortController();
+    const ulLoadedPingsPromise = measureLoadedLatency(ulLoadedController.signal);
+
     cb("upload", 0, this.results);
-    let ulChunkSize = INITIAL_CHUNK;
+    let ulChunkSize = INITIAL_CHUNK / 2;
     let ulTotalBytes = 0;
     const ulStart = performance.now();
     const ulEWMA = new EWMA(0.3);
-    const ulSizes = [100000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000];
-    let ulIdx = 0;
+    let ulIterations = 0;
+    const UL_MAX_ITERATIONS = 10;
+    const UL_MAX_DURATION = 10000;
 
-    while (performance.now() - ulStart < DL_MAX_DURATION && ulIdx < ulSizes.length) {
-      const raw = fillIncompressible(ulSizes[ulIdx]);
+    while (performance.now() - ulStart < UL_MAX_DURATION && ulIterations < UL_MAX_ITERATIONS) {
+      const raw = fillIncompressible(ulChunkSize);
       const body = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer;
       try {
         await fetch("/api/speedtest/up", {
@@ -263,13 +276,14 @@ export const SpeedTest = {
           cache: "no-store",
           signal: AbortSignal.timeout(15000),
         });
-        ulTotalBytes += ulSizes[ulIdx];
+        ulTotalBytes += ulChunkSize;
         const elapsed = (performance.now() - ulStart) / 1000;
         const instantMbps = (ulTotalBytes * 8) / (elapsed * 1e6);
         const smoothed = ulEWMA.update(instantMbps);
         this.results.upload = Math.round(smoothed * 100) / 100;
-        cb("upload", Math.min(95, Math.round(((ulIdx + 1) / ulSizes.length) * 100)), this.results);
-        ulIdx++;
+        cb("upload", Math.min(95, Math.round(((ulIterations + 1) / UL_MAX_ITERATIONS) * 100)), this.results);
+        ulChunkSize = nextUploadSize(ulChunkSize, smoothed);
+        ulIterations++;
       } catch {
         break;
       }
@@ -283,9 +297,7 @@ export const SpeedTest = {
     }
     cb("upload", 100, this.results);
 
-    // Stop bufferbloat measurement
-    blController.abort();
-    const dlLoadedPings = await dlLoadedPingsPromise;
+    ulLoadedController.abort();
     const ulLoadedPings = await ulLoadedPingsPromise;
 
     if (dlLoadedPings.length > 0) {

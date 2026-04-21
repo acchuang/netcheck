@@ -1,4 +1,5 @@
 import { t } from "./i18n";
+import { setBadge, renderSkeletonRows } from "./ui-utils";
 
 interface HeaderCheckResult {
   name: string;
@@ -29,22 +30,6 @@ export function initHeadersCheck(): void {
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") runHeadersCheck();
   });
-}
-
-function renderSkeletonRows(container: HTMLElement, count: number): void {
-  container.innerHTML = Array.from({ length: count }, () =>
-    `<div class="skeleton-row">
-      <div class="skeleton skeleton-circle"></div>
-      <div class="skeleton skeleton-text" style="flex:1"></div>
-      <div class="skeleton skeleton-value"></div>
-    </div>`
-  ).join("");
-}
-
-function setBadge(id: string, status: string, text: string): void {
-  const el = document.getElementById(id)!;
-  el.className = `status-badge ${status}`;
-  el.textContent = text;
 }
 
 async function runHeadersCheck(): Promise<void> {

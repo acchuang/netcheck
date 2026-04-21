@@ -3,6 +3,9 @@ export const speedGraphData: { download: { time: number; value: number }[]; uplo
   upload: [],
 };
 
+let cachedW = 0;
+let cachedH = 0;
+
 export function addGraphPoint(phase: "download" | "upload", time: number, value: number): void {
   speedGraphData[phase].push({ time, value });
 }
@@ -10,6 +13,8 @@ export function addGraphPoint(phase: "download" | "upload", time: number, value:
 export function clearGraph(): void {
   speedGraphData.download = [];
   speedGraphData.upload = [];
+  cachedW = 0;
+  cachedH = 0;
 }
 
 export function drawSpeedGraph(): void {
@@ -19,20 +24,29 @@ export function drawSpeedGraph(): void {
   const style = getComputedStyle(document.documentElement);
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
 
-  const w = rect.width;
-  const h = rect.height;
+  if (rect.width !== cachedW || rect.height !== cachedH) {
+    cachedW = rect.width;
+    cachedH = rect.height;
+    canvas.width = cachedW * dpr;
+    canvas.height = cachedH * dpr;
+    ctx.scale(dpr, dpr);
+  }
+
+  const w = cachedW;
+  const h = cachedH;
+  if (w === 0 || h === 0) return;
   const pad = { top: 10, right: 16, bottom: 24, left: 48 };
   const plotW = w - pad.left - pad.right;
   const plotH = h - pad.top - pad.bottom;
 
-  ctx.clearRect(0, 0, w, h);
+  ctx.clearRect(0, 0, w * dpr, h * dpr);
+  ctx.save();
+  ctx.scale(1 / dpr, 1 / dpr);
+  ctx.scale(dpr, dpr);
 
   const allVals = [...speedGraphData.download, ...speedGraphData.upload].map((p) => p.value);
-  if (allVals.length === 0) return;
+  if (allVals.length === 0) { ctx.restore(); return; }
   const maxVal = Math.max(...allVals, 1) * 1.15;
 
   const gridColor = style.getPropertyValue("--border-solid").trim() || "rgba(255,255,255,0.06)";
@@ -97,4 +111,5 @@ export function drawSpeedGraph(): void {
   ctx.fillStyle = labelColor;
   ctx.textAlign = "center";
   ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
+  ctx.restore();
 }

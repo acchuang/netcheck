@@ -1,5 +1,9 @@
 export default {
   async fetch(request: Request, env: Record<string, unknown>): Promise<Response> {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders() });
+    }
+
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ip") {
@@ -37,15 +41,14 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/down") {
-      return handleSpeedDown(url);
+      return handleSpeedDown(url, request);
     }
 
     if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
       return handleSpeedUp(request);
     }
 
-    // Static assets handled by wrangler assets binding
-    return new Response("Not Found", { status: 404 });
+    return Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders() });
   },
 };
 
@@ -66,6 +69,40 @@ interface CfProperties {
 
 function getCf(request: Request): CfProperties {
   return (request as unknown as { cf?: CfProperties }).cf || {};
+}
+
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const RATE_LIMIT_WINDOW = 60_000;
+const RATE_LIMIT_MAX = 30;
+
+function checkRateLimit(request: Request): Response | null {
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    return null;
+  }
+
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return Response.json(
+      { error: "Rate limit exceeded", retryAfter: Math.ceil((RATE_LIMIT_WINDOW - (now - entry.windowStart)) / 1000) },
+      { status: 429, headers: { ...corsHeaders(), "Retry-After": "60" } }
+    );
+  }
+
+  return null;
+}
+
+function isPrivateHostname(hostname: string): boolean {
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) return true;
+  if (hostname.endsWith(".internal") || hostname.endsWith(".test") || hostname.endsWith(".example")) return true;
+  const parts = hostname.split(".");
+  if (parts.length <= 1) return true;
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.)/.test(hostname)) return true;
+  return false;
 }
 
 function handleIpCheck(request: Request): Response {
@@ -94,7 +131,6 @@ async function handleDnsCheck(request: Request): Promise<Response> {
   const domain = url.searchParams.get("domain") || "example.com";
   const type = url.searchParams.get("type") || "A";
 
-  // Use Cloudflare DoH to perform DNS lookups
   const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`;
 
   try {
@@ -129,7 +165,10 @@ function getRandomBlock(): Uint8Array {
   return RANDOM_BLOCK;
 }
 
-function handleSpeedDown(url: URL): Response {
+function handleSpeedDown(url: URL, request: Request): Response {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
@@ -151,6 +190,9 @@ function handleSpeedDown(url: URL): Response {
 }
 
 async function handleSpeedUp(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const body = await request.arrayBuffer();
   return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
 }
@@ -177,7 +219,6 @@ async function testOneResolver(resolver: ResolverDef) {
   const dohBase = `https://${resolver.host}/dns-query`;
 
   try {
-    // Latency + basic resolution
     const start = Date.now();
     const res = await fetch(`${dohBase}?name=example.com&type=A`, {
       headers: { Accept: "application/dns-json" },
@@ -186,7 +227,6 @@ async function testOneResolver(resolver: ResolverDef) {
     const latency = Date.now() - start;
     if (!res.ok) return { ...resolver, reachable: false, latency: null, dnssec: false, filtering: false };
 
-    // DNSSEC check (AD flag on a signed domain)
     let dnssec = false;
     try {
       const dnssecRes = await fetch(`${dohBase}?name=cloudflare.com&type=A&do=1`, {
@@ -197,7 +237,6 @@ async function testOneResolver(resolver: ResolverDef) {
       dnssec = !!dnssecData.AD;
     } catch { /* ignore */ }
 
-    // Filtering check — resolve a known ad/tracker domain and see if it's blocked
     let filtering = false;
     try {
       const filterRes = await fetch(`${dohBase}?name=ads.google.com&type=A`, {
@@ -236,6 +275,9 @@ const SECURITY_HEADERS = [
 ];
 
 async function handleHeadersCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const target = url.searchParams.get("url");
 
@@ -246,6 +288,12 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
   let targetUrl: string;
   try {
     const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return Response.json({ error: "Only HTTP/HTTPS URLs are allowed" }, { status: 400, headers: corsHeaders() });
+    }
+    if (isPrivateHostname(parsed.hostname)) {
+      return Response.json({ error: "Private/internal hostnames are not allowed" }, { status: 400, headers: corsHeaders() });
+    }
     targetUrl = parsed.href;
   } catch {
     return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders() });
@@ -299,7 +347,7 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 function corsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Content-Type": "application/json",
   };
 }

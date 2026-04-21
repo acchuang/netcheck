@@ -141,24 +141,18 @@ export const FilterListDetector = {
     container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
     document.body.appendChild(container);
 
-    for (const list of this.lists) {
+    const listPromises = this.lists.map(async (list) => {
+      const testPromises = list.tests.map((test) => this.runTest(test, container));
+      const testResults = await Promise.all(testPromises);
       const listResult: FilterListResult = {
         name: list.name,
         desc: list.desc,
-        tests: [],
+        tests: list.tests.map((test, i) => ({ ...test, ...testResults[i] } as FilterTestResult)),
         detected: false,
         special: list.special,
       };
 
-      for (const test of list.tests) {
-        const result = await this.runTest(test, container);
-        listResult.tests.push({ ...test, ...result } as FilterTestResult);
-      }
-
-      // A list is "detected" if most of its tests show blocking
       if (list.special === "acceptableAds") {
-        // Acceptable Ads is detected if acceptable-ad elements are NOT hidden
-        // while regular ads ARE hidden (need general ad blocking context)
         const allowed = listResult.tests.filter((t) => !t.blocked).length;
         listResult.detected = allowed > 0;
       } else {
@@ -166,8 +160,10 @@ export const FilterListDetector = {
         listResult.detected = blocked >= Math.ceil(list.tests.length * 0.5);
       }
 
-      this.results.push(listResult);
-    }
+      return listResult;
+    });
+
+    this.results = await Promise.all(listPromises);
 
     container.remove();
     return this.results;

@@ -137,16 +137,17 @@ export const AdBlockTest = {
     container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
     document.body.appendChild(container);
 
-    for (const category of this.categories) {
-      const catResults: CategoryResult = { name: category.name, tests: [] };
+    const categoryPromises = this.categories.map(async (category) => {
+      const testPromises = category.tests.map((test) => this.runTest(test, container));
+      const testResults = await Promise.all(testPromises);
+      const catResults: CategoryResult = {
+        name: category.name,
+        tests: category.tests.map((test, i) => ({ ...test, ...testResults[i] } as TestWithResult)),
+      };
+      return catResults;
+    });
 
-      for (const test of category.tests) {
-        const result = await this.runTest(test, container);
-        catResults.tests.push({ ...test, ...result } as TestWithResult);
-      }
-
-      this.results.push(catResults);
-    }
+    this.results = await Promise.all(categoryPromises);
 
     container.remove();
     return this.results;

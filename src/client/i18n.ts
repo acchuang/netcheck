@@ -799,6 +799,7 @@ function applyStaticTranslations(): void {
     else if (tab === "speed") target.textContent = t("nav.speed");
     else if (tab === "adblock") target.textContent = t("nav.adblock");
     else if (tab === "headers") target.textContent = t("nav.headers");
+    else if (tab === "fingerprint") target.textContent = t("nav.fingerprint");
   });
 
   s("export-btn-text", "nav.export");
