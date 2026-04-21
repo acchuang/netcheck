@@ -39,12 +39,18 @@ const INITIAL_CHUNK = 524288;
 const MIN_CHUNK = 262144;
 const MAX_CHUNK = 268435456;
 const DL_MAX_DURATION = 10000;
+const DL_MIN_BYTES = 50000;
 
 function nextChunkSize(currentSize: number, throughputMbps: number): number {
   if (throughputMbps > 100) return Math.min(currentSize * 2, MAX_CHUNK);
   if (throughputMbps > 30) return currentSize;
   if (throughputMbps < 10) return Math.max(currentSize / 2, MIN_CHUNK);
   return currentSize;
+}
+
+function computeMbps(bytes: number, elapsedSec: number): number {
+  if (elapsedSec <= 0) return 0;
+  return (bytes * 8) / (elapsedSec * 1e6);
 }
 
 let _randomBlock: Uint8Array | null = null;
@@ -88,11 +94,15 @@ async function warmUp(): Promise<void> {
 async function downloadParallel(
   chunkSize: number,
   onBytesDelta: (delta: number) => void
-): Promise<number> {
+): Promise<{ bytes: number; ok: boolean }> {
   const promises = Array.from({ length: DL_CONNECTIONS }, async () => {
     let connBytes = 0;
     const url = `/api/speedtest/down?bytes=${chunkSize}&_=${Date.now()}_${Math.random()}`;
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+
+    if (!res.ok) {
+      return { bytes: 0, ok: false };
+    }
 
     if (res.body) {
       const reader = res.body.getReader();
@@ -107,11 +117,13 @@ async function downloadParallel(
       connBytes = blob.size;
       onBytesDelta(blob.size);
     }
-    return connBytes;
+    return { bytes: connBytes, ok: true };
   });
 
   const results = await Promise.all(promises);
-  return results.reduce((a, b) => a + b, 0);
+  const totalBytes = results.reduce((a, b) => a + b.bytes, 0);
+  const allOk = results.every((r) => r.ok);
+  return { bytes: totalBytes, ok: allOk };
 }
 
 async function measureLoadedLatency(signal: AbortSignal): Promise<number[]> {
@@ -223,29 +235,46 @@ export const SpeedTest = {
     const dlStart = performance.now();
     const dlEWMA = new EWMA(0.3);
     let dlIterations = 0;
+    let dlFailedCount = 0;
 
-    while (performance.now() - dlStart < DL_MAX_DURATION && dlIterations < 12) {
+    while (performance.now() - dlStart < DL_MAX_DURATION && dlIterations < 12 && dlFailedCount < 2) {
       try {
-        const chunkBytes = await downloadParallel(chunkSize, (delta) => {
-          dlTotalBytes += delta;
-          const elapsed = (performance.now() - dlStart) / 1000;
-          const instantMbps = (dlTotalBytes * 8) / (elapsed * 1e6);
-          const smoothed = dlEWMA.update(instantMbps);
-          this.results.download = Math.round(smoothed * 100) / 100;
-          cb("download", Math.min(95, Math.round((elapsed / DL_MAX_DURATION) * 100)), this.results);
+        const iterStart = performance.now();
+        let iterBytes = 0;
+        const result = await downloadParallel(chunkSize, (delta) => {
+          iterBytes += delta;
         });
-        const elapsed = (performance.now() - dlStart) / 1000;
-        const throughput = (chunkBytes * 8) / (elapsed * 1e6);
-        chunkSize = nextChunkSize(chunkSize, throughput);
+
+        if (!result.ok) {
+          dlFailedCount++;
+          if (dlFailedCount >= 2) break;
+          continue;
+        }
+
+        dlTotalBytes += iterBytes;
         dlIterations++;
+
+        const iterElapsed = (performance.now() - iterStart) / 1000;
+        if (iterElapsed > 0 && iterBytes > 0) {
+          const iterMbps = computeMbps(iterBytes, iterElapsed);
+          chunkSize = nextChunkSize(chunkSize, iterMbps);
+        }
+
+        const totalElapsed = (performance.now() - dlStart) / 1000;
+        if (totalElapsed > 0.1 && dlTotalBytes > 0) {
+          const smoothed = dlEWMA.update(computeMbps(dlTotalBytes, totalElapsed));
+          this.results.download = Math.max(0.01, Math.round(smoothed * 100) / 100);
+        }
+        cb("download", Math.min(95, Math.round(((performance.now() - dlStart) / DL_MAX_DURATION) * 100)), this.results);
       } catch {
-        break;
+        dlFailedCount++;
+        if (dlFailedCount >= 2) break;
       }
     }
 
     const dlElapsed = (performance.now() - dlStart) / 1000;
-    if (dlElapsed > 0 && dlTotalBytes > 0) {
-      this.results.download = Math.round(((dlTotalBytes * 8) / (dlElapsed * 1e6)) * 100) / 100;
+    if (dlElapsed > 0 && dlTotalBytes > DL_MIN_BYTES) {
+      this.results.download = Math.max(0.01, Math.round(computeMbps(dlTotalBytes, dlElapsed) * 100) / 100);
     } else {
       this.results.download = null;
     }
@@ -270,12 +299,13 @@ export const SpeedTest = {
       const raw = fillIncompressible(ulChunkSize);
       const body = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer;
       try {
-        await fetch("/api/speedtest/up", {
+        const res = await fetch("/api/speedtest/up", {
           method: "POST",
           body,
           cache: "no-store",
           signal: AbortSignal.timeout(15000),
         });
+        if (!res.ok) break;
         ulTotalBytes += ulChunkSize;
         const elapsed = (performance.now() - ulStart) / 1000;
         const instantMbps = (ulTotalBytes * 8) / (elapsed * 1e6);
@@ -290,8 +320,8 @@ export const SpeedTest = {
     }
 
     const ulElapsed = (performance.now() - ulStart) / 1000;
-    if (ulElapsed > 0 && ulTotalBytes > 0) {
-      this.results.upload = Math.round(((ulTotalBytes * 8) / (ulElapsed * 1e6)) * 100) / 100;
+    if (ulElapsed > 0 && ulTotalBytes > 50000) {
+      this.results.upload = Math.max(0.01, Math.round(computeMbps(ulTotalBytes, ulElapsed) * 100) / 100);
     } else {
       this.results.upload = null;
     }

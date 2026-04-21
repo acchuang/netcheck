@@ -73,20 +73,25 @@ function getCf(request: Request): CfProperties {
 
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_MAX = 120;
+const RATE_LIMIT_SPEED_BURST = 60;
 
 function checkRateLimit(request: Request): Response | null {
+  const url = new URL(request.url);
+  const isSpeedTest = url.pathname.startsWith("/api/speedtest/");
+  const maxRequests = isSpeedTest ? RATE_LIMIT_SPEED_BURST : RATE_LIMIT_MAX;
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  const key = isSpeedTest ? `speed:${ip}` : `gen:${ip}`;
+  const entry = rateLimitMap.get(key);
 
   if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW) {
-    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    rateLimitMap.set(key, { count: 1, windowStart: now });
     return null;
   }
 
   entry.count++;
-  if (entry.count > RATE_LIMIT_MAX) {
+  if (entry.count > maxRequests) {
     return Response.json(
       { error: "Rate limit exceeded", retryAfter: Math.ceil((RATE_LIMIT_WINDOW - (now - entry.windowStart)) / 1000) },
       { status: 429, headers: { ...corsHeaders(), "Retry-After": "60" } }
