@@ -14,6 +14,7 @@ import { runAdBlockTests } from "./adblock-ui";
 import { initSpeedTest } from "./speed-ui";
 import { runFilterListDetection } from "./filter-ui";
 import { initFingerprint } from "./fingerprint-ui";
+import { initAnalytics } from "./analytics";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initSpeedTest();
   initHeadersCheck();
   initFingerprint();
+  initAnalytics();
 });
 
 function renderInitialSkeletons(): void {

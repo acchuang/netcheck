@@ -1,3 +1,7 @@
 name = "netcheck-site"
 compatibility_date = "2025-04-01"
 main = "src/worker/index.ts"
+
+[[kv_namespaces]]
+binding = "ANALYTICS"
+id = "c8d691f38f32437db35f62b5111d6c3b"

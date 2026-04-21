@@ -1,5 +1,9 @@
+interface Env {
+  ANALYTICS: KVNamespace;
+}
+
 export default {
-  async fetch(request: Request, env: Record<string, unknown>): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
@@ -7,6 +11,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ip") {
+      trackVisitor(request, env).catch(() => {});
       return handleIpCheck(request);
     }
 
@@ -24,6 +29,10 @@ export default {
 
     if (url.pathname === "/api/dns/check-resolvers") {
       return handleResolverCheck();
+    }
+
+    if (url.pathname === "/api/analytics") {
+      return handleAnalytics(env);
     }
 
     if (url.pathname === "/api/speedtest/ping") {
@@ -108,6 +117,75 @@ function isPrivateHostname(hostname: string): boolean {
   if (parts.length <= 1) return true;
   if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.)/.test(hostname)) return true;
   return false;
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const data = new TextEncoder().encode(ip + "_netcheck_v1");
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer)).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function trackVisitor(request: Request, env: Env): Promise<void> {
+  try {
+    const ip = request.headers.get("cf-connecting-ip") || "unknown";
+    const fingerprint = await hashIp(ip);
+    const now = Date.now();
+    const minuteKey = `active:${Math.floor(now / 60000)}`;
+    const dayKey = `unique:${new Date(now).toISOString().slice(0, 10)}`;
+
+    const [minuteData, dayData] = await Promise.all([
+      env.ANALYTICS.get(minuteKey, "json") as Promise<Record<string, number> | null>,
+      env.ANALYTICS.get(dayKey, "json") as Promise<Record<string, number> | null>,
+    ]);
+
+    const minuteMap = minuteData || {};
+    const dayMap = dayData || {};
+
+    const isNewMinute = !(fingerprint in minuteMap);
+    const isNewDay = !(fingerprint in dayMap);
+
+    if (isNewMinute || isNewDay) {
+      const writes: Promise<void>[] = [];
+      if (isNewMinute) {
+        minuteMap[fingerprint] = now;
+        writes.push(env.ANALYTICS.put(minuteKey, JSON.stringify(minuteMap), { expirationTtl: 300 }));
+      }
+      if (isNewDay) {
+        dayMap[fingerprint] = now;
+        writes.push(env.ANALYTICS.put(dayKey, JSON.stringify(dayMap), { expirationTtl: 86400 * 2 }));
+      }
+      await Promise.all(writes);
+    }
+  } catch {
+    // KV not available, skip tracking
+  }
+}
+
+async function handleAnalytics(env: Env): Promise<Response> {
+  try {
+    const now = Date.now();
+    const currentMinute = Math.floor(now / 60000);
+    const prevMinute = currentMinute - 1;
+    const today = new Date(now).toISOString().slice(0, 10);
+
+    const [currentData, prevData, todayData] = await Promise.all([
+      env.ANALYTICS.get(`active:${currentMinute}`, "json") as Promise<Record<string, number> | null>,
+      env.ANALYTICS.get(`active:${prevMinute}`, "json") as Promise<Record<string, number> | null>,
+      env.ANALYTICS.get(`unique:${today}`, "json") as Promise<Record<string, number> | null>,
+    ]);
+
+    const currentActive = currentData ? Object.keys(currentData).length : 0;
+    const prevActive = prevData ? Object.keys(prevData).length : 0;
+    const activeNow = currentActive + prevActive;
+    const uniqueToday = todayData ? Object.keys(todayData).length : 0;
+
+    return Response.json({
+      activeNow,
+      uniqueToday,
+    }, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=30" } });
+  } catch {
+    return Response.json({ activeNow: 0, uniqueToday: 0 }, { headers: corsHeaders() });
+  }
 }
 
 function handleIpCheck(request: Request): Response {

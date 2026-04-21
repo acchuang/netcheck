@@ -328,6 +328,10 @@ const en = {
   "footer.privacy": "Privacy",
   "footer.privacyBadge": "100% client-side — no data leaves your browser",
 
+  // Analytics
+  "analytics.activeNow": "online",
+  "analytics.uniqueToday": "visitors today",
+
   // Fingerprint
   "nav.fingerprint": "Fingerprint",
   "fp.title": "Browser Fingerprint",
@@ -694,6 +698,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
   "footer.privacy": "隱私",
   "footer.privacyBadge": "100% 客戶端 — 無資料離開您的瀏覽器",
+
+  // Analytics
+  "analytics.activeNow": "在線",
+  "analytics.uniqueToday": "今日訪客",
 
   // Fingerprint
   "nav.fingerprint": "指紋",
