@@ -32,7 +32,8 @@ export default {
     }
 
     if (url.pathname === "/api/analytics") {
-      return handleAnalytics(env);
+      trackVisitor(request, env).catch(() => {});
+      return handleAnalytics(env, request);
     }
 
     if (url.pathname === "/api/speedtest/ping") {
@@ -161,7 +162,7 @@ async function trackVisitor(request: Request, env: Env): Promise<void> {
   }
 }
 
-async function handleAnalytics(env: Env): Promise<Response> {
+async function handleAnalytics(env: Env, request: Request): Promise<Response> {
   try {
     const now = Date.now();
     const currentMinute = Math.floor(now / 60000);
@@ -174,17 +175,25 @@ async function handleAnalytics(env: Env): Promise<Response> {
       env.ANALYTICS.get(`unique:${today}`, "json") as Promise<Record<string, number> | null>,
     ]);
 
-    const currentActive = currentData ? Object.keys(currentData).length : 0;
+    const currentMap = currentData || {};
     const prevActive = prevData ? Object.keys(prevData).length : 0;
-    const activeNow = currentActive + prevActive;
-    const uniqueToday = todayData ? Object.keys(todayData).length : 0;
+
+    const requesterFp = await hashIp(request.headers.get("cf-connecting-ip") || "unknown");
+    if (!(requesterFp in currentMap)) {
+      currentMap[requesterFp] = now;
+    }
+
+    const activeNow = Object.keys(currentMap).length + prevActive;
+
+    const todayMap = todayData || {};
+    const uniqueToday = Object.keys(todayMap).length || 1;
 
     return Response.json({
       activeNow,
       uniqueToday,
     }, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=30" } });
   } catch {
-    return Response.json({ activeNow: 0, uniqueToday: 0 }, { headers: corsHeaders() });
+    return Response.json({ activeNow: 1, uniqueToday: 1 }, { headers: corsHeaders() });
   }
 }
 
