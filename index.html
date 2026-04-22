@@ -16,6 +16,7 @@
   <meta property="og:description" content="Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netcheck-site.oilygold.workers.dev">
+  <meta property="og:image" content="https://netcheck-site.oilygold.workers.dev/public/og-image.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
@@ -30,6 +31,7 @@
   <link rel="stylesheet" href="/public/css/styles.css">
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to content</a>
   <nav class="nav">
     <div class="nav-inner">
       <div class="nav-brand">
@@ -99,7 +101,7 @@
     </div>
   </nav>
 
-  <main class="main">
+  <main id="main" class="main">
     <!-- DNS Check Section -->
     <section id="dns" class="section active" role="region" aria-label="DNS Check">
       <div class="section-header">
@@ -116,7 +118,7 @@
               <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
             </svg>
             <h2 class="card-title" id="dns-ip-title">Your IP Address</h2>
-            <span class="status-badge" id="ip-status">detecting...</span>
+            <span class="status-badge detecting" id="ip-status">detecting...</span>
           </div>
           <div class="card-body">
             <div class="info-row">
@@ -157,7 +159,7 @@
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             <h2 class="card-title" id="dns-resolver-title">DNS Resolver</h2>
-            <span class="status-badge" id="dns-resolver-status">detecting...</span>
+            <span class="status-badge detecting" id="dns-resolver-status">detecting...</span>
           </div>
           <div class="card-body">
             <div id="dns-resolver-results">
@@ -173,7 +175,7 @@
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
             <h2 class="card-title" id="dns-security-title">DNS Security</h2>
-            <span class="status-badge" id="dns-security-status">pending...</span>
+            <span class="status-badge detecting" id="dns-security-status">pending...</span>
           </div>
           <div class="card-body">
             <div id="dns-security-results">
