@@ -15,6 +15,7 @@ import { initSpeedTest } from "./speed-ui";
 import { runFilterListDetection } from "./filter-ui";
 import { initFingerprint } from "./fingerprint-ui";
 import { initAnalytics } from "./analytics";
+import { initOnboarding } from "./onboarding";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -27,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initHeadersCheck();
   initFingerprint();
   initAnalytics();
+  initOnboarding();
 });
 
 function renderInitialSkeletons(): void {

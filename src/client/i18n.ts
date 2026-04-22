@@ -16,6 +16,9 @@ const en = {
   "nav.downloadMd": "Download Markdown",
   "nav.savePdf": "Save as PDF",
 
+  // Onboarding
+  "onboarding.text": "Test your DNS, ad blocker, speed, and security headers. Pick a tab above to get started.",
+
   // DNS section
   "dns.title": "DNS & Network Check",
   "dns.subtitle": "Detect your IP, DNS resolvers, and network configuration",
@@ -387,6 +390,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "nav.exportReport": "匯出報告",
   "nav.downloadMd": "下載 Markdown",
   "nav.savePdf": "儲存為 PDF",
+
+  // Onboarding
+  "onboarding.text": "測試您的 DNS、廣告攔截、網速與安全標頭。點擊上方分頁開始使用。",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",
