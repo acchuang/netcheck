@@ -104,6 +104,10 @@ async function runSpeedTest(): Promise<void> {
   (["download", "upload", "latency", "jitter", "bufferbloat"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
+  // Hide new containers at start
+  (document.getElementById("speed-timing-breakdown") as HTMLElement)?.classList.add("hidden");
+  (document.getElementById("speed-connection-badge") as HTMLElement)?.classList.remove("active");
+  (document.getElementById("speed-stability-readout") as HTMLElement)?.classList.add("hidden");
 
   const startTime = performance.now();
 
@@ -191,10 +195,74 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-phase")!.textContent =
     `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}`;
 
+  // --- RENDER NEW FEATURES ---
+  renderTimingBreakdown(results.timing);
+  renderConnectionBadge(results.connectionInfo);
+  renderStabilityReadout(results.avgRtt, results.pingJitter);
+
   drawSpeedGraph();
   renderSpeedSuggestions(results);
   SpeedTestHistory.save(results);
   renderSpeedHistory();
   btn.disabled = false;
   btn.textContent = t("speed.runAgain");
+}
+
+function renderTimingBreakdown(timing: import("./speed-test").SpeedTestResults["timing"]): void {
+  const el = document.getElementById("speed-timing-breakdown");
+  if (!el) return;
+  if (!timing || timing.total === 0) {
+    el.classList.add("hidden");
+    return;
+  }
+  const phases = [
+    { key: "dns", label: "DNS", value: timing.dns, color: "var(--brand)" },
+    { key: "tcp", label: "TCP", value: timing.tcp, color: "var(--emerald)" },
+    { key: "tls", label: "TLS", value: timing.tls, color: "var(--accent)" },
+    { key: "ttfb", label: "TTFB", value: timing.ttfb, color: "var(--amber)" },
+    { key: "download", label: "Download", value: timing.download, color: "var(--text-tertiary)" },
+  ];
+  const total = timing.total;
+  el.innerHTML = phases.map((p) => {
+    const pct = total > 0 ? Math.max(2, (p.value / total) * 100) : 0;
+    return `
+      <div class="timing-row">
+        <span class="timing-label">${p.label}</span>
+        <div class="timing-bar-container">
+          <div class="timing-bar" style="width:${pct}%;background:${p.color}"></div>
+        </div>
+        <span class="timing-value mono">${p.value}ms</span>
+      </div>`;
+  }).join("");
+  el.classList.remove("hidden");
+}
+
+function renderConnectionBadge(info: import("./speed-test").SpeedTestResults["connectionInfo"]): void {
+  const badge = document.getElementById("speed-connection-badge");
+  const valueEl = document.getElementById("speed-connection-value");
+  if (!badge || !valueEl) return;
+  if (!info) {
+    badge.classList.remove("active");
+    return;
+  }
+  const parts: string[] = [];
+  if (info.effectiveType) parts.push(info.effectiveType.toUpperCase());
+  if (info.downlinkMbps != null) parts.push(`${info.downlinkMbps} Mbps`);
+  if (info.dataSaver) parts.push("Data Saver");
+  valueEl.textContent = parts.join(" · ") || "—";
+  badge.classList.add("active");
+}
+
+function renderStabilityReadout(avgRtt: number | null, pingJitter: number | null): void {
+  const el = document.getElementById("speed-stability-readout");
+  if (!el) return;
+  if (avgRtt == null && pingJitter == null) {
+    el.classList.add("hidden");
+    return;
+  }
+  const avgText = avgRtt != null ? `Avg RTT: ${avgRtt.toFixed(1)}ms` : "";
+  const jitterText = pingJitter != null ? `Jitter: ${pingJitter.toFixed(1)}ms` : "";
+  const text = [avgText, jitterText].filter(Boolean).join(" · ");
+  el.textContent = text;
+  el.classList.remove("hidden");
 }

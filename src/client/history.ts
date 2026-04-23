@@ -10,6 +10,10 @@ export interface SpeedTestHistoryEntry {
   userLat: number | null;
   userLon: number | null;
   timestamp: number;
+  timing: import("./speed-test").SpeedTestResults["timing"];
+  connectionInfo: import("./speed-test").SpeedTestResults["connectionInfo"];
+  avgRtt: number | null;
+  pingJitter: number | null;
 }
 
 const STORAGE_KEY = "netcheck-speed-history";
@@ -27,6 +31,10 @@ export const SpeedTestHistory = {
       userLat: result.userLat,
       userLon: result.userLon,
       timestamp: Date.now(),
+      timing: result.timing,
+      connectionInfo: result.connectionInfo,
+      avgRtt: result.avgRtt,
+      pingJitter: result.pingJitter,
     };
     const entries = this.load();
     entries.unshift(entry);

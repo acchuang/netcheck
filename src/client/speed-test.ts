@@ -1,3 +1,5 @@
+import { ConnectionQuality, type ConnectionInfo, type ResourceTimingBreakdown } from "./connection-quality";
+
 export interface SpeedTestResults {
   download: number | null;
   upload: number | null;
@@ -9,6 +11,10 @@ export interface SpeedTestResults {
   downloadLoadedLatency: number | null;
   uploadLoadedLatency: number | null;
   bufferbloat: number | null;
+  timing: ResourceTimingBreakdown | null;
+  connectionInfo: ConnectionInfo | null;
+  avgRtt: number | null;
+  pingJitter: number | null;
 }
 
 export interface SpeedGrade {
@@ -153,6 +159,33 @@ function nextUploadSize(currentSize: number, throughputMbps: number): number {
   return Math.max(Math.floor(currentSize / 2), 100000);
 }
 
+function collectSpeedTiming(): ResourceTimingBreakdown | null {
+  try {
+    const entries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+    const speedEntries = entries.filter((e) =>
+      e.name.includes("/api/speedtest/down") || e.name.includes("/api/speedtest/up")
+    );
+    if (speedEntries.length === 0) return null;
+
+    const entry = speedEntries.reduce((a, b) =>
+      (a.responseEnd - a.responseStart) >= (b.responseEnd - b.responseStart) ? a : b
+    );
+
+    const dns = Math.round(Math.max(0, entry.domainLookupEnd - entry.domainLookupStart));
+    const tcp = Math.round(Math.max(0, entry.connectEnd - entry.connectStart));
+    const tls = entry.secureConnectionStart > 0
+      ? Math.round(Math.max(0, entry.connectEnd - entry.secureConnectionStart))
+      : 0;
+    const ttfb = Math.round(Math.max(0, entry.responseStart - entry.requestStart));
+    const download = Math.round(Math.max(0, entry.responseEnd - entry.responseStart));
+    const total = Math.round(Math.max(0, entry.responseEnd - entry.startTime));
+
+    return { dns, tcp, tls, ttfb, download, total };
+  } catch {
+    return null;
+  }
+}
+
 export const SpeedTest = {
   results: {
     download: null,
@@ -165,6 +198,10 @@ export const SpeedTest = {
     downloadLoadedLatency: null,
     uploadLoadedLatency: null,
     bufferbloat: null,
+    timing: null,
+    connectionInfo: null,
+    avgRtt: null,
+    pingJitter: null,
   } as SpeedTestResults,
 
   async run(onProgress?: ProgressCallback): Promise<SpeedTestResults> {
@@ -172,8 +209,11 @@ export const SpeedTest = {
       download: null, upload: null, latency: null, jitter: null,
       colo: null, userLat: null, userLon: null,
       downloadLoadedLatency: null, uploadLoadedLatency: null, bufferbloat: null,
+      timing: null, connectionInfo: null, avgRtt: null, pingJitter: null,
     };
     const cb: ProgressCallback = onProgress || (() => {});
+
+    this.results.connectionInfo = ConnectionQuality.getConnectionInfo();
 
     cb("latency", 0, this.results);
     const pings: number[] = [];
@@ -198,6 +238,18 @@ export const SpeedTest = {
         /* skip */
       }
       cb("latency", Math.round(((i + 1) / PING_COUNT) * 100), this.results);
+    }
+
+    if (pings.length > 0) {
+      const rawAvg = pings.reduce((a, b) => a + b, 0) / pings.length;
+      this.results.avgRtt = Math.round(rawAvg * 10) / 10;
+      if (pings.length > 1) {
+        let jitterSum = 0;
+        for (let i = 1; i < pings.length; i++) {
+          jitterSum += Math.abs(pings[i] - pings[i - 1]);
+        }
+        this.results.pingJitter = Math.round((jitterSum / (pings.length - 1)) * 10) / 10;
+      }
     }
 
     if (pings.length > TRIM_COUNT * 2) {
@@ -347,6 +399,8 @@ export const SpeedTest = {
     this.results.bufferbloat = idleRtt !== null
       ? Math.round(Math.max(0, maxLoadedRtt - idleRtt) * 10) / 10
       : null;
+
+    this.results.timing = collectSpeedTiming();
 
     return this.results;
   },

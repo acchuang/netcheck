@@ -36,6 +36,18 @@ export default {
       return handleAnalytics(env, request);
     }
 
+    if (url.pathname === "/api/map/probes") {
+      trackVisitor(request, env).catch(() => {});
+      return handleMapProbes(request);
+    }
+
+    if (url.pathname === "/api/map/ping") {
+      const cf = getCf(request);
+      return new Response("pong", {
+        headers: { ...corsHeaders(), "x-colo": cf.colo || "unknown" },
+      });
+    }
+
     if (url.pathname === "/api/speedtest/ping") {
       const cf = getCf(request);
       const colo = cf.colo || "unknown";
@@ -434,6 +446,43 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       { status: 500, headers: corsHeaders() }
     );
   }
+}
+
+const PROBES = [
+  { id: "cf-na", name: "Cloudflare NA", url: "https://1.1.1.1/cdn-cgi/trace", region: "North America", city: "Multiple" },
+  { id: "cf-eu", name: "Cloudflare EU", url: "https://1.0.0.1/cdn-cgi/trace", region: "Europe", city: "Multiple" },
+  { id: "google", name: "Google DNS", url: "https://dns.google/resolve", region: "Global", city: "Multiple" },
+  { id: "quad9", name: "Quad9", url: "https://www.quad9.net", region: "Europe", city: "Zurich" },
+  { id: "adguard", name: "AdGuard", url: "https://dns.adguard-dns.com/resolve", region: "Global", city: "Multiple" },
+];
+
+async function handleMapProbes(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
+  const cf = getCf(request);
+  const userColo = cf.colo || "unknown";
+  const userLat = cf.latitude ? parseFloat(cf.latitude) : null;
+  const userLon = cf.longitude ? parseFloat(cf.longitude) : null;
+
+  const relayLatencies: Record<string, number | null> = {};
+  await Promise.all(PROBES.map(async (probe) => {
+    try {
+      const start = Date.now();
+      await fetch(probe.url, { method: "GET", signal: AbortSignal.timeout(5000) });
+      relayLatencies[probe.id] = Date.now() - start;
+    } catch {
+      relayLatencies[probe.id] = null;
+    }
+  }));
+
+  return Response.json({
+    userColo,
+    userLat,
+    userLon,
+    probes: PROBES.map((p) => ({ id: p.id, name: p.name, region: p.region, city: p.city })),
+    relayLatencies,
+  }, { headers: corsHeaders() });
 }
 
 function corsHeaders(): Record<string, string> {
