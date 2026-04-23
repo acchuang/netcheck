@@ -19,6 +19,7 @@ import { initOnboarding } from "./onboarding";
 import { initConnectionQuality } from "./connection-quality-ui";
 import { initNetworkMap } from "./network-map-ui";
 import { initKeyboardShortcuts } from "./a11y";
+import { initShare } from "./share";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -35,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initConnectionQuality();
   initNetworkMap();
   initKeyboardShortcuts();
+  initShare();
 });
 
 function renderInitialSkeletons(): void {
