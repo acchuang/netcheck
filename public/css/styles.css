@@ -2548,3 +2548,98 @@ select option {
     font-size: 12px;
   }
 }
+
+/* Region cards (Network Map) */
+.region-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.region-card {
+  background: var(--surface-gradient);
+  border: var(--surface-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--surface-shadow);
+  transition: border-color 0.2s, box-shadow 0.25s, transform 0.25s;
+}
+
+.region-card:hover {
+  border-color: var(--hover-border);
+  box-shadow: var(--surface-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.region-card.active {
+  border-color: var(--brand);
+  box-shadow: var(--surface-shadow), 0 0 20px var(--accent-glow);
+}
+
+.region-name {
+  font-size: 14px;
+  font-weight: 580;
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+
+.region-city {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.region-latency {
+  font-size: 36px;
+  font-weight: 620;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.region-unit {
+  font-size: 14px;
+  font-weight: 510;
+  color: var(--text-tertiary);
+}
+
+.region-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.region-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+}
+
+.region-dot.active {
+  background: currentColor;
+}
+
+/* Shimmer skeleton */
+.shimmer {
+  animation: fade-in 0.3s ease-out;
+}
+
+@media (max-width: 768px) {
+  .region-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .region-latency {
+    font-size: 28px;
+  }
+  .region-card {
+    padding: 16px;
+  }
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}

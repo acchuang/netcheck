@@ -66,6 +66,10 @@
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
           <span class="nav-link-text" id="nav-quality-text">Quality</span>
         </a>
+        <a href="#network" class="nav-link" data-tab="network">
+          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="nav-link-text" id="nav-network-text">Network</span>
+        </a>
       </div>
       <div class="nav-actions">
         <button class="btn-nav-action" id="lang-toggle" title="Language">
@@ -605,6 +609,22 @@
       <div style="text-align: center; margin-bottom: 24px;">
         <button class="btn btn-primary btn-large" id="quality-run-btn">Run Test</button>
       </div>
+    </section>
+
+    <!-- Network Map Section -->
+    <section id="network" class="section" role="region" aria-label="Network Map">
+      <div class="section-header">
+        <h1 class="display" id="network-title">Network Map</h1>
+        <p class="subtitle" id="network-subtitle">Measure latency to global regions</p>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 24px;">
+        <button class="btn btn-primary btn-large" id="network-run-btn">Run Test</button>
+      </div>
+
+      <p class="subtitle" id="network-info" style="text-align: center; font-size: 13px; color: var(--text-tertiary);"></p>
+
+      <div class="region-grid hidden" id="network-results"></div>
     </section>
 
   </main>

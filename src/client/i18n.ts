@@ -73,6 +73,15 @@ const en = {
   "quality.grade.Unknown": "Unknown",
   "nav.quality": "Quality",
   "nav.network": "Network",
+  "network.title": "Network Map",
+  "network.subtitle": "Measure latency to global regions",
+  "network.runTest": "Run Test",
+  "network.running": "Testing...",
+  "network.runAgain": "Run Again",
+  "network.closestRegion": "Closest: {0} ({1})",
+  "network.noResults": "No results",
+  "network.error": "Failed to load probes",
+  "network.relayLatency": "relay {0}ms",
 
   // DNS section
   "dns.title": "DNS & Network Check",
@@ -503,6 +512,15 @@ const zhTW: Record<keyof typeof en, string> = {
   "quality.grade.Unknown": "未知",
   "nav.quality": "品質",
   "nav.network": "網路",
+  "network.title": "網路地圖",
+  "network.subtitle": "測量到全球各地的延遲",
+  "network.runTest": "執行測試",
+  "network.running": "測試中...",
+  "network.runAgain": "重新測試",
+  "network.closestRegion": "最接近: {0} ({1})",
+  "network.noResults": "尚無結果",
+  "network.error": "無法載入探測點",
+  "network.relayLatency": "轉發 {0}ms",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",
@@ -925,6 +943,7 @@ function applyStaticTranslations(): void {
     else if (tab === "headers") target.textContent = t("nav.headers");
     else if (tab === "fingerprint") target.textContent = t("nav.fingerprint");
     else if (tab === "quality") target.textContent = t("nav.quality");
+    else if (tab === "network") target.textContent = t("nav.network");
   });
 
   s("export-btn-text", "nav.export");

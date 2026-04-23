@@ -17,6 +17,7 @@ import { initFingerprint } from "./fingerprint-ui";
 import { initAnalytics } from "./analytics";
 import { initOnboarding } from "./onboarding";
 import { initConnectionQuality } from "./connection-quality-ui";
+import { initNetworkMap } from "./network-map-ui";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -31,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAnalytics();
   initOnboarding();
   initConnectionQuality();
+  initNetworkMap();
 });
 
 function renderInitialSkeletons(): void {
