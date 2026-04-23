@@ -3,6 +3,8 @@ export interface ProbeDef {
   name: string;
   region: string;
   city: string;
+  lat: number;
+  lon: number;
 }
 
 export interface ProbeResult {
@@ -10,6 +12,8 @@ export interface ProbeResult {
   name: string;
   region: string;
   city: string;
+  lat: number;
+  lon: number;
   latency: number | null;
   relayLatency: number | null;
   colo: string | null;

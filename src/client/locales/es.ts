@@ -428,4 +428,6 @@ export const es = {
   "share.metric.label": "Etiqueta",
   "share.metric.summary": "Resumen",
   "share.metric.results": "Resultados",
+  "network.yourLocation": "Tu ubicación",
+  "network.closest": "Más cercano",
 } as const;

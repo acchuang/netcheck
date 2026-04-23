@@ -428,4 +428,6 @@ export const zhCN = {
   "share.metric.label": "标签",
   "share.metric.summary": "摘要",
   "share.metric.results": "结果",
+  "network.yourLocation": "Tu ubicación",
+  "network.closest": "Más cercano",
 } as const;

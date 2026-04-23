@@ -449,11 +449,11 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 }
 
 const PROBES = [
-  { id: "cf-na", name: "Cloudflare NA", url: "https://1.1.1.1/cdn-cgi/trace", region: "North America", city: "Multiple" },
-  { id: "cf-eu", name: "Cloudflare EU", url: "https://1.0.0.1/cdn-cgi/trace", region: "Europe", city: "Multiple" },
-  { id: "google", name: "Google DNS", url: "https://dns.google/resolve", region: "Global", city: "Multiple" },
-  { id: "quad9", name: "Quad9", url: "https://www.quad9.net", region: "Europe", city: "Zurich" },
-  { id: "adguard", name: "AdGuard", url: "https://dns.adguard-dns.com/resolve", region: "Global", city: "Multiple" },
+  { id: "cf-na", name: "Cloudflare NA", url: "https://1.1.1.1/cdn-cgi/trace", region: "North America", city: "Multiple", lat: 39.0, lon: -98.0 },
+  { id: "cf-eu", name: "Cloudflare EU", url: "https://1.0.0.1/cdn-cgi/trace", region: "Europe", city: "Multiple", lat: 50.0, lon: 5.0 },
+  { id: "google", name: "Google DNS", url: "https://dns.google/resolve", region: "Global", city: "Multiple", lat: 37.4, lon: -122.1 },
+  { id: "quad9", name: "Quad9", url: "https://www.quad9.net", region: "Europe", city: "Zurich", lat: 47.46, lon: 8.55 },
+  { id: "adguard", name: "AdGuard", url: "https://dns.adguard-dns.com/resolve", region: "Global", city: "Multiple", lat: 50.0, lon: 5.0 },
 ];
 
 async function handleMapProbes(request: Request): Promise<Response> {
@@ -480,7 +480,7 @@ async function handleMapProbes(request: Request): Promise<Response> {
     userColo,
     userLat,
     userLon,
-    probes: PROBES.map((p) => ({ id: p.id, name: p.name, region: p.region, city: p.city })),
+    probes: PROBES.map((p) => ({ id: p.id, name: p.name, region: p.region, city: p.city, lat: p.lat, lon: p.lon })),
     relayLatencies,
   }, { headers: corsHeaders() });
 }

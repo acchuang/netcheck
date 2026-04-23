@@ -428,4 +428,6 @@ export const ja = {
   "share.metric.label": "ラベル",
   "share.metric.summary": "概要",
   "share.metric.results": "結果",
+  "network.yourLocation": "Tu ubicación",
+  "network.closest": "Más cercano",
 } as const;

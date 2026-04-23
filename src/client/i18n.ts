@@ -96,6 +96,8 @@ const en = {
   "network.noResults": "No results",
   "network.error": "Failed to load probes",
   "network.relayLatency": "relay {0}ms",
+  "network.yourLocation": "Your Location",
+  "network.closest": "Closest",
 
   // About
   "about.title": "About NetCheck",
@@ -578,6 +580,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "network.noResults": "尚無結果",
   "network.error": "無法載入探測點",
   "network.relayLatency": "轉發 {0}ms",
+  "network.yourLocation": "您的位置",
+  "network.closest": "最近",
   "about.title": "關於 NetCheck",
   "about.subtitle": "本地診斷您的網路連線與瀏覽器安全。",
   "nav.about": "關於",

@@ -428,4 +428,6 @@ export const ko = {
   "share.metric.label": "라벨",
   "share.metric.summary": "요약",
   "share.metric.results": "결과",
+  "network.yourLocation": "Tu ubicación",
+  "network.closest": "Más cercano",
 } as const;
