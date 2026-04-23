@@ -1,6 +1,7 @@
 import { ConnectionQuality, type ConnectionInfo, type TlsInfo, type ResourceTimingBreakdown, type StabilityResults } from "./connection-quality";
 import { t } from "./i18n";
 import { renderSkeletonRows } from "./ui-utils";
+import { announce, announceProgress } from "./a11y";
 
 export function initConnectionQuality(): void {
   const btn = document.getElementById("quality-run-btn");
@@ -23,24 +24,28 @@ async function runQualityTest(): Promise<void> {
   renderTimingBreakdown(null, true);
   renderScorePlaceholder();
 
-  // Step 1: gather static info
+  // Step 1
   if (progressEl) progressEl.textContent = "Gathering connection info…";
+  announceProgress("Connection Quality: checking connection type and browser API info");
   const connectionInfo = ConnectionQuality.getConnectionInfo();
   renderConnectionInfo(connectionInfo, false);
 
-  // Step 2: fetch TLS from worker
+  // Step 2
   if (progressEl) progressEl.textContent = "Fetching TLS details…";
+  announceProgress("Connection Quality: fetching TLS and server details");
   const tlsInfo = await ConnectionQuality.fetchTlsInfo();
   renderTlsInfo(tlsInfo, false);
 
-  // Step 3: measure timing
+  // Step 3
   if (progressEl) progressEl.textContent = t("quality.running");
+  announceProgress("Connection Quality: measuring request timing breakdown");
   const timing = await ConnectionQuality.measureTiming();
   renderTimingBreakdown(timing, false);
 
-  // Compute and render score
+  // Score
   renderFinalScore(tlsInfo, null, connectionInfo);
   if (progressEl) progressEl.textContent = "Ready";
+  announce("Connection Quality test complete. Quality score displayed.");
 
   // Enable stability button
   if (stabilityBtn) {
@@ -49,6 +54,7 @@ async function runQualityTest(): Promise<void> {
       stabilityBtn.disabled = true;
       stabilityBtn.textContent = t("quality.stabilityRunning");
       if (progressEl) progressEl.textContent = "Pinging…";
+      announce("Connection Quality stability test started. Sending 30 pings.");
 
       const stability = await ConnectionQuality.runStabilityTest((sent) => {
         if (progressEl) progressEl.textContent = `Ping ${sent}/30`;
@@ -57,6 +63,7 @@ async function runQualityTest(): Promise<void> {
       renderStability(stability);
       renderFinalScore(tlsInfo, stability, connectionInfo);
       if (progressEl) progressEl.textContent = "Stability done";
+      announce(`Stability test complete. Min ${stability.min}ms, max ${stability.max}ms, mean ${stability.mean}ms, jitter ${stability.jitter}ms, loss ${stability.lossPercent}%.`);
       stabilityBtn.textContent = t("quality.runStabilityAgain");
       stabilityBtn.disabled = false;
     };

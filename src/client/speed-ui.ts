@@ -1,11 +1,28 @@
-import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-test";
+import {
+  SpeedTest,
+  type SpeedTestResults,
+  type SpeedTestPhase,
+} from "./speed-test";
 import { SpeedTestHistory } from "./history";
 import { t } from "./i18n";
-import { animateNumber, pulseValue, setActiveGauge } from "./ui-utils";
-import { clearGraph, drawSpeedGraph, addGraphPoint } from "./speed-graph";
-import { gradeKeys, renderSpeedSuggestions, updateServerBadge } from "./speed-suggestions";
+import {
+  animateNumber,
+  pulseValue,
+  setActiveGauge,
+} from "./ui-utils";
+import {
+  clearGraph,
+  drawSpeedGraph,
+  addGraphPoint,
+} from "./speed-graph";
+import {
+  gradeKeys,
+  renderSpeedSuggestions,
+  updateServerBadge,
+} from "./speed-suggestions";
 import { onLocaleChange } from "./locale-events";
 import { formatColo } from "./cf-pops";
+import { announce, announceProgress } from "./a11y";
 
 export function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
