@@ -16,6 +16,7 @@ import { runFilterListDetection } from "./filter-ui";
 import { initFingerprint } from "./fingerprint-ui";
 import { initAnalytics } from "./analytics";
 import { initOnboarding } from "./onboarding";
+import { initConnectionQuality } from "./connection-quality-ui";
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -29,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initFingerprint();
   initAnalytics();
   initOnboarding();
+  initConnectionQuality();
 });
 
 function renderInitialSkeletons(): void {

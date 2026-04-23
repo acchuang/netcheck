@@ -2501,3 +2501,50 @@ select option {
     padding: 14px 16px;
   }
 }
+
+/* Timing breakdown */
+.timing-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.timing-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  min-width: 110px;
+}
+
+.timing-bar-container {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timing-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+  min-width: 2px;
+}
+
+.timing-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 50px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .timing-label {
+    min-width: 80px;
+    font-size: 12px;
+  }
+  .timing-value {
+    min-width: 40px;
+    font-size: 12px;
+  }
+}

@@ -60,7 +60,11 @@
         </a>
         <a href="#fingerprint" class="nav-link" data-tab="fingerprint">
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-          <span class="nav-link-text">Fingerprint</span>
+          <span class="nav-link-text" id="nav-fingerprint-text">Fingerprint</span>
+        </a>
+        <a href="#quality" class="nav-link" data-tab="quality">
+          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <span class="nav-link-text" id="nav-quality-text">Quality</span>
         </a>
       </div>
       <div class="nav-actions">
@@ -496,6 +500,110 @@
         <h2 class="suggestions-title" id="fp-protection-title">Protection Tips</h2>
         <p class="suggestions-subtitle" id="fp-protection-subtitle"></p>
         <div class="suggestions-grid" id="fp-suggestions-grid"></div>
+      </div>
+    </section>
+
+    <!-- Connection Quality Section -->
+    <section id="quality" class="section" role="region" aria-label="Connection Quality">
+      <div class="section-header">
+        <h1 class="display" id="quality-title">Connection Quality</h1>
+        <p class="subtitle" id="quality-subtitle">Analyze your network connection, TLS security, and stability</p>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Quality Score Card -->
+        <div class="card score-card" id="quality-score-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <h2 class="card-title" id="quality-score-title">Quality Score</h2>
+          </div>
+          <div class="card-body">
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="score-ring-bg" cx="60" cy="60" r="54"/>
+                <circle class="score-ring-fill" id="quality-score-ring" cx="60" cy="60" r="54"/>
+              </svg>
+              <div class="score-value">
+                <span class="speed-grade grade-reveal" id="quality-grade">—</span>
+                <span class="score-label" id="quality-grade-label"></span>
+              </div>
+            </div>
+            <div class="score-meta">
+              <div class="grade-factors" id="quality-factors"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection Type Card -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+            <h2 class="card-title" id="quality-connection-title">Connection Type</h2>
+          </div>
+          <div class="card-body" id="quality-connection-info">
+            <p class="info-muted">Run the test to see your connection details.</p>
+          </div>
+        </div>
+
+        <!-- TLS Details Card -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <h2 class="card-title" id="quality-tls-title">TLS Details</h2>
+          </div>
+          <div class="card-body" id="quality-tls-info">
+            <p class="info-muted">Run the test to see TLS information.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Request Timing Card -->
+        <div class="card card-wide">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <h2 class="card-title" id="quality-timing-title">Request Timing</h2>
+          </div>
+          <div class="card-body" id="quality-timing-info">
+            <p class="info-muted">Run the test to see request timing breakdown.</p>
+          </div>
+        </div>
+
+        <!-- Connection Stability Card -->
+        <div class="card card-wide">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            <h2 class="card-title" id="quality-stability-title">Connection Stability</h2>
+            <span class="status-badge" id="stability-progress"></span>
+          </div>
+          <div class="card-body" id="quality-stability-info">
+            <p class="info-muted">Run a stability test to measure jitter and packet loss over 30 seconds.</p>
+          </div>
+          <div class="card-body" style="border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+            <button class="btn btn-primary" id="quality-stability-btn" disabled>Test Stability</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 24px;">
+        <button class="btn btn-primary btn-large" id="quality-run-btn">Run Test</button>
       </div>
     </section>
 

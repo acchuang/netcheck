@@ -19,6 +19,61 @@ const en = {
   // Onboarding
   "onboarding.text": "Test your DNS, ad blocker, speed, and security headers. Pick a tab above to get started.",
 
+  // Connection Quality
+  "quality.title": "Connection Quality",
+  "quality.subtitle": "Analyze your network connection, TLS security, and stability",
+  "quality.runTest": "Run Test",
+  "quality.running": "Testing...",
+  "quality.runAgain": "Run Again",
+  "quality.runStability": "Test Stability",
+  "quality.runStabilityAgain": "Test Again",
+  "quality.stabilityRunning": "Pinging...",
+  "quality.connectionTitle": "Connection Type",
+  "quality.tlsTitle": "TLS Details",
+  "quality.timingTitle": "Request Timing",
+  "quality.stabilityTitle": "Connection Stability",
+  "quality.scoreTitle": "Quality Score",
+  "quality.qualityScoreTitle": "Quality Score",
+  "quality.connType": "Type",
+  "quality.effectiveType": "Effective Type",
+  "quality.downlink": "Downlink Estimate",
+  "quality.rttEstimate": "RTT Estimate",
+  "quality.dataSaver": "Data Saver",
+  "quality.enabled": "Enabled",
+  "quality.disabled": "Disabled",
+  "quality.connectionUnavailable": "Connection info not available in this browser",
+  "quality.tlsUnavailable": "TLS info not available",
+  "quality.timingUnavailable": "Timing data not available",
+  "quality.tlsVersion": "TLS Version",
+  "quality.cipher": "Cipher Suite",
+  "quality.httpProtocol": "HTTP Protocol",
+  "quality.serverRtt": "Server RTT",
+  "quality.dnsTiming": "DNS Lookup",
+  "quality.tcpTiming": "TCP Connect",
+  "quality.tlsTiming": "TLS Handshake",
+  "quality.ttfbTiming": "TTFB",
+  "quality.downloadTiming": "Content Download",
+  "quality.min": "Min",
+  "quality.max": "Max",
+  "quality.mean": "Mean",
+  "quality.stddev": "Std Dev",
+  "quality.jitter": "Jitter",
+  "quality.packetLoss": "Packet Loss",
+  "quality.tlsFactor": "TLS",
+  "quality.serverRttFactor": "Server RTT",
+  "quality.connTypeFactor": "Connection",
+  "quality.stabilityFactor": "Stability",
+  "quality.grade.Exceptional": "Exceptional",
+  "quality.grade.Excellent": "Excellent",
+  "quality.grade.Good": "Good",
+  "quality.grade.Average": "Average",
+  "quality.grade.Below Average": "Below Average",
+  "quality.grade.Poor": "Poor",
+  "quality.grade.Very Poor": "Very Poor",
+  "quality.grade.Unknown": "Unknown",
+  "nav.quality": "Quality",
+  "nav.network": "Network",
+
   // DNS section
   "dns.title": "DNS & Network Check",
   "dns.subtitle": "Detect your IP, DNS resolvers, and network configuration",
@@ -393,6 +448,61 @@ const zhTW: Record<keyof typeof en, string> = {
 
   // Onboarding
   "onboarding.text": "測試您的 DNS、廣告攔截、網速與安全標頭。點擊上方分頁開始使用。",
+
+  // Connection Quality
+  "quality.title": "連線品質",
+  "quality.subtitle": "分析您的網路連線、TLS 安全性與穩定度",
+  "quality.runTest": "執行測試",
+  "quality.running": "測試中...",
+  "quality.runAgain": "重新測試",
+  "quality.runStability": "測試穩定度",
+  "quality.runStabilityAgain": "重新測試",
+  "quality.stabilityRunning": "傳送中...",
+  "quality.connectionTitle": "連線類型",
+  "quality.tlsTitle": "TLS 詳情",
+  "quality.timingTitle": "請求時間",
+  "quality.stabilityTitle": "連線穩定度",
+  "quality.scoreTitle": "品質評分",
+  "quality.qualityScoreTitle": "品質評分",
+  "quality.connType": "類型",
+  "quality.effectiveType": "有效類型",
+  "quality.downlink": "下行頻寬估計",
+  "quality.rttEstimate": "RTT 估計",
+  "quality.dataSaver": "省流量模式",
+  "quality.enabled": "已開啟",
+  "quality.disabled": "已關閉",
+  "quality.connectionUnavailable": "此瀏覽器不支援連線資訊",
+  "quality.tlsUnavailable": "TLS 資訊無法取得",
+  "quality.timingUnavailable": "時間資料無法取得",
+  "quality.tlsVersion": "TLS 版本",
+  "quality.cipher": "加密套件",
+  "quality.httpProtocol": "HTTP 協定",
+  "quality.serverRtt": "伺服器 RTT",
+  "quality.dnsTiming": "DNS 查詢",
+  "quality.tcpTiming": "TCP 連線",
+  "quality.tlsTiming": "TLS 交握",
+  "quality.ttfbTiming": "TTFB",
+  "quality.downloadTiming": "內容下載",
+  "quality.min": "最小",
+  "quality.max": "最大",
+  "quality.mean": "平均",
+  "quality.stddev": "標準差",
+  "quality.jitter": "抖動",
+  "quality.packetLoss": "封包遺失",
+  "quality.tlsFactor": "TLS",
+  "quality.serverRttFactor": "伺服器 RTT",
+  "quality.connTypeFactor": "連線",
+  "quality.stabilityFactor": "穩定度",
+  "quality.grade.Exceptional": "卓越",
+  "quality.grade.Excellent": "優異",
+  "quality.grade.Good": "良好",
+  "quality.grade.Average": "一般",
+  "quality.grade.Below Average": "低於平均",
+  "quality.grade.Poor": "差",
+  "quality.grade.Very Poor": "非常差",
+  "quality.grade.Unknown": "未知",
+  "nav.quality": "品質",
+  "nav.network": "網路",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",
@@ -814,6 +924,7 @@ function applyStaticTranslations(): void {
     else if (tab === "adblock") target.textContent = t("nav.adblock");
     else if (tab === "headers") target.textContent = t("nav.headers");
     else if (tab === "fingerprint") target.textContent = t("nav.fingerprint");
+    else if (tab === "quality") target.textContent = t("nav.quality");
   });
 
   s("export-btn-text", "nav.export");
@@ -885,6 +996,15 @@ function applyStaticTranslations(): void {
   s("fp-start-btn", "fp.scan");
   s("fp-uniqueness-label", "fp.uniqueness");
   s("fp-protection-title", "fp.protection");
+
+  // Connection Quality section
+  s("quality-title", "quality.title");
+  s("quality-subtitle", "quality.subtitle");
+  s("quality-connection-title", "quality.connectionTitle");
+  s("quality-tls-title", "quality.tlsTitle");
+  s("quality-timing-title", "quality.timingTitle");
+  s("quality-stability-title", "quality.stabilityTitle");
+  s("quality-score-title", "quality.scoreTitle");
 
   // Footer
   s("footer-text", "footer.text");
