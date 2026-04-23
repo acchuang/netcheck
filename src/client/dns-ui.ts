@@ -3,6 +3,7 @@ import { t } from "./i18n";
 import { CF_POPS } from "./cf-pops";
 import { setBadge, createCheckItem } from "./ui-utils";
 import { affiliate } from "./affiliates";
+import { onLocaleChange } from "./locale-events";
 
 interface IpData {
   ip?: string;
@@ -75,8 +76,41 @@ const dnsSuggestions: Suggestion[] = [
     when: (ctx) => ctx.reachableCount < 3 },
 ];
 
-export async function runDnsChecks(): Promise<void> {
-  const ipData: IpData = await DnsCheck.detectIp();
+let lastIpData: IpData | null = null;
+let lastResolvers: ResolverResult[] = [];
+let lastSecurityChecks: SecurityCheck[] = [];
+
+function localizeSecurityName(name: string): string {
+  const map: Record<string, string> = {
+    "DNSSEC Validation": "dns.securityCheck.dnssec",
+    "DNS-over-HTTPS": "dns.securityCheck.doh",
+    "Malware Domain Filtering": "dns.securityCheck.malware",
+    "WebRTC IP Leak": "dns.securityCheck.webrtc",
+  };
+  return map[name] ? t(map[name]) : name;
+}
+
+function localizeSecurityDetail(detail: string): string {
+  const map: Record<string, string> = {
+    "Your resolver validates DNSSEC": "dns.securityDetail.dnssecPass",
+    "DNSSEC not validated by resolver": "dns.securityDetail.dnssecWarn",
+    "Could not check DNSSEC": "dns.securityDetail.dnssecFail",
+    "DoH endpoint reachable": "dns.securityDetail.dohPass",
+    "DoH not available": "dns.securityDetail.dohFail",
+    "Known test domains filtered": "dns.securityDetail.malwarePass",
+    "No DNS-level filtering detected": "dns.securityDetail.malwareWarn",
+    "Could not test filtering": "dns.securityDetail.malwareFail",
+    "No WebRTC IP leak detected": "dns.securityDetail.webrtcPass",
+    "Could not check WebRTC": "dns.securityDetail.webrtcWarn",
+  };
+
+  const leaked = detail.match(/^Local IP exposed: (.+)$/);
+  if (leaked) return t("dns.securityDetail.webrtcFail", leaked[1]);
+
+  return map[detail] ? t(map[detail]) : detail;
+}
+
+function renderIpData(ipData: IpData): void {
   if (!ipData.error) {
     document.getElementById("ip-address")!.textContent = ipData.ip || "—";
     document.getElementById("ip-location")!.textContent =
@@ -95,8 +129,9 @@ export async function runDnsChecks(): Promise<void> {
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
   }
+}
 
-  const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
+function renderResolvers(resolvers: ResolverResult[]): void {
   const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
 
@@ -106,7 +141,7 @@ export async function runDnsChecks(): Promise<void> {
     reachable.forEach((r) => {
       const badges: string[] = [];
       if (r.dnssec) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
-      if (r.filtering) badges.push('<span class="resolver-badge filter">Filtering</span>');
+      if (r.filtering) badges.push(`<span class="resolver-badge filter">${t("dns.filteringLabel")}</span>`);
       const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
 
       const div = document.createElement("div");
@@ -154,8 +189,9 @@ export async function runDnsChecks(): Promise<void> {
     resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
     setBadge("dns-resolver-status", "error", t("dns.nonefound"));
   }
+}
 
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity();
+function renderSecurityChecks(securityChecks: SecurityCheck[]): void {
   const securityContainer = document.getElementById("dns-security-results")!;
   securityContainer.innerHTML = "";
 
@@ -163,7 +199,7 @@ export async function runDnsChecks(): Promise<void> {
   const anyFail = securityChecks.some((c) => c.status === "fail");
 
   securityChecks.forEach((check) => {
-    const item = createCheckItem(check.status, check.name, check.detail);
+    const item = createCheckItem(check.status, localizeSecurityName(check.name), localizeSecurityDetail(check.detail));
     securityContainer.appendChild(item);
   });
 
@@ -174,8 +210,23 @@ export async function runDnsChecks(): Promise<void> {
   } else {
     setBadge("dns-security-status", "done", t("dns.partial"));
   }
+}
 
-  renderDnsSuggestions({ resolvers, securityChecks, reachable });
+export async function runDnsChecks(): Promise<void> {
+  lastIpData = await DnsCheck.detectIp();
+  renderIpData(lastIpData);
+
+  lastResolvers = await DnsCheck.detectResolver();
+  renderResolvers(lastResolvers);
+
+  lastSecurityChecks = await DnsCheck.checkDnsSecurity();
+  renderSecurityChecks(lastSecurityChecks);
+
+  renderDnsSuggestions({
+    resolvers: lastResolvers,
+    securityChecks: lastSecurityChecks,
+    reachable: lastResolvers.filter((resolver) => resolver.reachable),
+  });
 }
 
 function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
@@ -207,7 +258,6 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
   }
 
   const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
-
   const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
 
   grid.innerHTML = relevant
@@ -284,3 +334,15 @@ export async function runDnsLookup(): Promise<void> {
   tableEl.innerHTML = html;
   outputEl.textContent = JSON.stringify(allData, null, 2);
 }
+
+onLocaleChange(() => {
+  if (!lastIpData) return;
+  renderIpData(lastIpData);
+  renderResolvers(lastResolvers);
+  renderSecurityChecks(lastSecurityChecks);
+  renderDnsSuggestions({
+    resolvers: lastResolvers,
+    securityChecks: lastSecurityChecks,
+    reachable: lastResolvers.filter((resolver) => resolver.reachable),
+  });
+});

@@ -1,6 +1,10 @@
 import { notifyLocaleChange } from "./locale-events";
+import { zhCN } from "./locales/zh-CN";
+import { es } from "./locales/es";
+import { ja } from "./locales/ja";
+import { ko } from "./locales/ko";
 
-export type Locale = "en" | "zh-TW";
+export type Locale = "en" | "zh-TW" | "zh-CN" | "es" | "ja" | "ko";
 
 const STORAGE_KEY = "netcheck-locale";
 
@@ -63,6 +67,16 @@ const en = {
   "quality.serverRttFactor": "Server RTT",
   "quality.connTypeFactor": "Connection",
   "quality.stabilityFactor": "Stability",
+  "quality.emptyConnection": "Run the test to see your connection details.",
+  "quality.emptyTls": "Run the test to see TLS information.",
+  "quality.emptyTiming": "Run the test to see request timing breakdown.",
+  "quality.emptyStability": "Run a stability test to measure jitter and packet loss over 30 pings.",
+  "quality.progressGathering": "Gathering connection info…",
+  "quality.progressFetchingTls": "Fetching TLS details…",
+  "quality.progressReady": "Ready",
+  "quality.progressPinging": "Pinging…",
+  "quality.progressPingCount": "Ping {0}/30",
+  "quality.progressStabilityDone": "Stability done",
   "quality.grade.Exceptional": "Exceptional",
   "quality.grade.Excellent": "Excellent",
   "quality.grade.Good": "Good",
@@ -123,6 +137,22 @@ const en = {
   "dns.partial": "partial",
   "dns.reachableOf": "{0} of {1} reachable",
   "dns.noResolvers": "No resolvers detected",
+  "dns.filteringLabel": "Filtering",
+  "dns.securityCheck.dnssec": "DNSSEC Validation",
+  "dns.securityCheck.doh": "DNS-over-HTTPS",
+  "dns.securityCheck.malware": "Malware Domain Filtering",
+  "dns.securityCheck.webrtc": "WebRTC IP Leak",
+  "dns.securityDetail.dnssecPass": "Your resolver validates DNSSEC",
+  "dns.securityDetail.dnssecWarn": "DNSSEC not validated by resolver",
+  "dns.securityDetail.dnssecFail": "Could not check DNSSEC",
+  "dns.securityDetail.dohPass": "DoH endpoint reachable",
+  "dns.securityDetail.dohFail": "DoH not available",
+  "dns.securityDetail.malwarePass": "Known test domains filtered",
+  "dns.securityDetail.malwareWarn": "No DNS-level filtering detected",
+  "dns.securityDetail.malwareFail": "Could not test filtering",
+  "dns.securityDetail.webrtcPass": "No WebRTC IP leak detected",
+  "dns.securityDetail.webrtcFail": "Local IP exposed: {0}",
+  "dns.securityDetail.webrtcWarn": "Could not check WebRTC",
 
   // DNS suggestions
   "dns.suggestGood": "Your DNS configuration looks solid. Here are tools to further enhance it:",
@@ -260,6 +290,7 @@ const en = {
   "speed.history.justNow": "just now",
   "speed.history.minAgo": "{0} min ago",
   "speed.history.hrAgo": "{0} hr ago",
+  "speed.history.clear": "Clear history",
 
   // Ad block section
   "adblock.title": "Ad Block Tester",
@@ -448,6 +479,17 @@ const en = {
   "fp.tip.canvas.name": "Canvas Blocker",
   "fp.tip.canvas.type": "Browser Extension",
   "fp.tip.canvas.desc": "Adds noise to canvas fingerprinting, making your browser harder to identify.",
+
+  // Share
+  "share.tooltip": "Copy results",
+  "share.aria": "Copy summary of current results",
+  "share.label": "Share",
+  "share.copied": "Copied!",
+  "share.metric.grade": "Grade",
+  "share.metric.score": "Score",
+  "share.metric.label": "Label",
+  "share.metric.summary": "Summary",
+  "share.metric.results": "Results",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
@@ -507,6 +549,16 @@ const zhTW: Record<keyof typeof en, string> = {
   "quality.serverRttFactor": "伺服器 RTT",
   "quality.connTypeFactor": "連線",
   "quality.stabilityFactor": "穩定度",
+  "quality.emptyConnection": "執行測試以查看您的連線詳細資訊。",
+  "quality.emptyTls": "執行測試以查看 TLS 資訊。",
+  "quality.emptyTiming": "執行測試以查看請求耗時明細。",
+  "quality.emptyStability": "執行穩定性測試，以測量 30 次 ping 的抖動與封包遺失。",
+  "quality.progressGathering": "正在收集連線資訊…",
+  "quality.progressFetchingTls": "正在取得 TLS 詳情…",
+  "quality.progressReady": "已就緒",
+  "quality.progressPinging": "正在 Ping…",
+  "quality.progressPingCount": "Ping {0}/30",
+  "quality.progressStabilityDone": "穩定性測試完成",
   "quality.grade.Exceptional": "卓越",
   "quality.grade.Excellent": "優異",
   "quality.grade.Good": "良好",
@@ -565,6 +617,22 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.partial": "部分通過",
   "dns.reachableOf": "{1} 個中 {0} 個可連線",
   "dns.noResolvers": "未偵測到解析器",
+  "dns.filteringLabel": "過濾",
+  "dns.securityCheck.dnssec": "DNSSEC 驗證",
+  "dns.securityCheck.doh": "DNS-over-HTTPS",
+  "dns.securityCheck.malware": "惡意網域過濾",
+  "dns.securityCheck.webrtc": "WebRTC IP 洩漏",
+  "dns.securityDetail.dnssecPass": "您的解析器會驗證 DNSSEC",
+  "dns.securityDetail.dnssecWarn": "解析器未驗證 DNSSEC",
+  "dns.securityDetail.dnssecFail": "無法檢查 DNSSEC",
+  "dns.securityDetail.dohPass": "DoH 端點可連線",
+  "dns.securityDetail.dohFail": "DoH 不可用",
+  "dns.securityDetail.malwarePass": "已過濾已知測試網域",
+  "dns.securityDetail.malwareWarn": "未偵測到 DNS 層級過濾",
+  "dns.securityDetail.malwareFail": "無法測試過濾功能",
+  "dns.securityDetail.webrtcPass": "未偵測到 WebRTC IP 洩漏",
+  "dns.securityDetail.webrtcFail": "本機 IP 已暴露：{0}",
+  "dns.securityDetail.webrtcWarn": "無法檢查 WebRTC",
 
   // DNS suggestions
   "dns.suggestGood": "您的 DNS 設定良好。以下工具可進一步增強防護：",
@@ -701,6 +769,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.history.justNow": "剛才",
   "speed.history.minAgo": "{0} 分鐘前",
   "speed.history.hrAgo": "{0} 小時前",
+  "speed.history.clear": "清除記錄",
 
   // Ad block section
   "adblock.title": "廣告攔截測試",
@@ -889,9 +958,20 @@ const zhTW: Record<keyof typeof en, string> = {
   "fp.tip.canvas.name": "Canvas Blocker",
   "fp.tip.canvas.type": "瀏覽器擴充功能",
   "fp.tip.canvas.desc": "為 Canvas 指紋加入雜訊，使您的瀏覽器更難被辨識。",
+
+  // Share
+  "share.tooltip": "複製結果",
+  "share.aria": "複製當前結果摘要",
+  "share.label": "分享",
+  "share.copied": "已複製！",
+  "share.metric.grade": "等級",
+  "share.metric.score": "分數",
+  "share.metric.label": "標籤",
+  "share.metric.summary": "摘要",
+  "share.metric.results": "結果",
 };
 
-const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
+const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW, "zh-CN": zhCN, es, ja, ko };
 
 export function t(key: string, ...args: (string | number)[]): string {
   let str = locales[current]?.[key] ?? locales.en[key as keyof typeof en] ?? key;
@@ -908,18 +988,73 @@ export function getLocale(): Locale {
 export function setLocale(locale: Locale): void {
   current = locale;
   localStorage.setItem(STORAGE_KEY, locale);
-  document.documentElement.lang = locale === "zh-TW" ? "zh-TW" : "en";
+  const langMap: Record<Locale, string> = {
+    en: "en",
+    "zh-TW": "zh-TW",
+    "zh-CN": "zh-CN",
+    es: "es",
+    ja: "ja",
+    ko: "ko",
+  };
+  document.documentElement.lang = langMap[locale];
   applyStaticTranslations();
 }
 
 export function initI18n(): void {
   const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
-  if (saved && (saved === "en" || saved === "zh-TW")) current = saved;
-  document.documentElement.lang = current === "zh-TW" ? "zh-TW" : "en";
+  const valid: Locale[] = ["en", "zh-TW", "zh-CN", "es", "ja", "ko"];
+  if (saved && valid.includes(saved)) current = saved;
+  const langMap: Record<Locale, string> = {
+    en: "en",
+    "zh-TW": "zh-TW",
+    "zh-CN": "zh-CN",
+    es: "es",
+    ja: "ja",
+    ko: "ko",
+  };
+  document.documentElement.lang = langMap[current];
   applyStaticTranslations();
 
-  document.getElementById("lang-toggle")?.addEventListener("click", () => {
-    setLocale(current === "en" ? "zh-TW" : "en");
+  // Language dropdown menu
+  const langToggle = document.getElementById("lang-toggle");
+  const langMenu = document.getElementById("lang-menu");
+  if (!langToggle || !langMenu) return;
+
+  function hideMenu(): void {
+    langMenu!.classList.remove("open");
+    langToggle!.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleMenu(): void {
+    const isOpen = langMenu!.classList.contains("open");
+    if (isOpen) {
+      hideMenu();
+    } else {
+      // Close any other open menus first
+      document.getElementById("export-menu")?.classList.remove("open");
+      langMenu!.classList.add("open");
+      langToggle!.setAttribute("aria-expanded", "true");
+    }
+  }
+
+  langToggle.addEventListener("click", toggleMenu);
+
+  // Click a language option
+  langMenu.querySelectorAll<HTMLButtonElement>("[data-lang]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const loc = btn.dataset.lang as Locale;
+      if (loc) setLocale(loc);
+      hideMenu();
+    });
+  });
+
+  // Close on outside click or Escape
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest("#lang-dropdown")) hideMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideMenu();
   });
 }
 
@@ -937,7 +1072,15 @@ function applyStaticTranslations(): void {
   const langBtn = document.getElementById("lang-toggle");
   if (langBtn) {
     const label = langBtn.querySelector(".lang-label");
-    if (label) label.textContent = current === "en" ? "中文" : "EN";
+    const labels: Record<Locale, string> = {
+      en: "EN",
+      "zh-TW": "繁中",
+      "zh-CN": "简中",
+      es: "ES",
+      ja: "JP",
+      ko: "KR",
+    };
+    if (label) label.textContent = labels[current];
   }
 
   // Nav
@@ -957,6 +1100,8 @@ function applyStaticTranslations(): void {
 
   s("export-btn-text", "nav.export");
   sa("export-btn", "nav.exportReport", "title");
+  s("export-markdown-text", "nav.downloadMd");
+  s("export-pdf-text", "nav.savePdf");
 
   // DNS section
   s("dns-title", "dns.title");
@@ -997,6 +1142,9 @@ function applyStaticTranslations(): void {
   s("speed-route-you", "speed.you");
   s("speed-history-title", "speed.history.title");
   s("speed-history-empty", "speed.history.empty");
+  sa("speed-history-clear", "speed.history.clear", "title");
+  sa("speed-history-clear", "speed.history.clear", "aria-label");
+  s("speed-start-btn", "speed.runBtn");
 
   // Ad block section
   s("adblock-title", "adblock.title");
@@ -1033,6 +1181,11 @@ function applyStaticTranslations(): void {
   s("quality-timing-title", "quality.timingTitle");
   s("quality-stability-title", "quality.stabilityTitle");
   s("quality-score-title", "quality.scoreTitle");
+  s("quality-run-btn", "quality.runTest");
+  s("quality-stability-btn", "quality.runStability");
+  s("network-title", "network.title");
+  s("network-subtitle", "network.subtitle");
+  s("network-run-btn", "network.runTest");
   s("about-title", "about.title");
   s("about-subtitle", "about.subtitle");
 
@@ -1041,7 +1194,15 @@ function applyStaticTranslations(): void {
   s("privacy-badge", "footer.privacyBadge");
 
   // Page title
-  document.title = current === "zh-TW" ? "NetCheck — DNS 與廣告攔截測試" : "NetCheck — DNS & Ad Block Tester";
+  const titles: Record<Locale, string> = {
+    en: "NetCheck — DNS & Ad Block Tester",
+    "zh-TW": "NetCheck — DNS 與廣告攔截測試",
+    "zh-CN": "NetCheck — DNS 与广告拦截测试",
+    es: "NetCheck — DNS y Bloqueador de Anuncios",
+    ja: "NetCheck — DNS & 広告ブロックテスター",
+    ko: "NetCheck — DNS & 광고 차단 테스트",
+  };
+  document.title = titles[current];
 
   // Re-render dynamic sections with new locale
   notifyLocaleChange();

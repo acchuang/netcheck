@@ -295,6 +295,13 @@ body {
 .nav-links {
   display: flex;
   gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
@@ -309,6 +316,8 @@ body {
   border-radius: var(--radius-md);
   position: relative;
   transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-link::after {
@@ -350,6 +359,7 @@ body {
   align-items: center;
   gap: 4px;
   margin-left: 8px;
+  flex-shrink: 0;
 }
 
 .btn-nav-action {
@@ -367,6 +377,8 @@ body {
   padding: 5px 8px;
   cursor: pointer;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-nav-action:hover {
@@ -410,6 +422,8 @@ body {
   padding: 5px 12px;
   cursor: pointer;
   transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-export:hover {
@@ -470,6 +484,15 @@ body {
 .export-option:hover {
   color: var(--text-primary);
   background: var(--active-bg);
+}
+
+.export-option.active {
+  color: var(--text-primary);
+  background: var(--active-bg);
+}
+
+.export-option.active svg {
+  stroke: var(--text-primary);
 }
 
 .export-option svg {

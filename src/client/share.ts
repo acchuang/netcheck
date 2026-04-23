@@ -1,51 +1,86 @@
 import { t } from "./i18n";
+import { onLocaleChange } from "./locale-events";
 
 function elText(id: string): string {
   return document.getElementById(id)?.textContent?.trim() || "";
 }
 
+function sectionTitle(): string {
+  return document.querySelector(".nav-link.active .nav-link-text")?.textContent?.trim() || "NetCheck";
+}
+
+function metricLine(label: string, value: string, suffix = ""): string | null {
+  if (!label || !value) return null;
+  return `${label}: ${value}${suffix}`;
+}
+
 function buildSummary(): string {
   const activeTab = document.querySelector(".nav-link.active")?.getAttribute("data-tab");
-  const parts: string[] = [];
+  const parts: string[] = [`[${sectionTitle()}]`];
 
   if (activeTab === "speed") {
-    parts.push("[Speed Test]");
-    parts.push(`Download: ${elText("speed-download")} Mbps`);
-    parts.push(`Upload: ${elText("speed-upload")} Mbps`);
-    parts.push(`Latency: ${elText("speed-latency")} ms`);
-    parts.push(`Jitter: ${elText("speed-jitter")} ms`);
-    parts.push(`Bufferbloat: ${elText("speed-bufferbloat")} ms`);
-    parts.push(`Grade: ${elText("speed-grade")} ${elText("speed-grade-label")}`);
-    parts.push(`Server: ${elText("speed-server-value")}`);
+    const grade = [elText("speed-grade"), elText("speed-grade-label")].filter(Boolean).join(" ");
+    const lines = [
+      metricLine(elText("speed-download-label"), elText("speed-download"), " Mbps"),
+      metricLine(elText("speed-upload-label"), elText("speed-upload"), " Mbps"),
+      metricLine(elText("speed-latency-label"), elText("speed-latency"), " ms"),
+      metricLine(elText("speed-jitter-label"), elText("speed-jitter"), " ms"),
+      metricLine(elText("speed-bufferbloat-label"), elText("speed-bufferbloat"), " ms"),
+      metricLine(t("share.metric.grade"), grade),
+      metricLine(elText("speed-server-label"), elText("speed-server-value")),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "adblock") {
-    parts.push("[Ad Block Test]");
-    parts.push(`Score: ${document.getElementById("score-number")?.textContent?.trim() || "—"}/100`);
-    parts.push(`Label: ${document.getElementById("score-summary")?.textContent?.trim() || ""}`);
+    const lines = [
+      metricLine(t("share.metric.score"), document.getElementById("score-number")?.textContent?.trim() || "—", "/100"),
+      metricLine(t("share.metric.label"), document.getElementById("score-summary")?.textContent?.trim() || ""),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "dns") {
-    parts.push("[DNS Check]");
-    parts.push(`IP: ${elText("ip-address")}`);
-    parts.push(`Location: ${elText("ip-location")}`);
-    parts.push(`DNSSEC: ${elText("dns-security-results")}`);
+    const lines = [
+      metricLine(elText("dns-ipv4-label"), elText("ip-address")),
+      metricLine(elText("dns-location-label"), elText("ip-location")),
+      metricLine(elText("dns-security-title"), elText("dns-security-status")),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "headers") {
-    parts.push("[Headers Check]");
-    parts.push(`Grade: ${elText("headers-grade")}`);
-    parts.push(`Score: ${elText("headers-score")}`);
+    const lines = [
+      metricLine(elText("headers-grade-title"), elText("headers-grade")),
+      metricLine(t("share.metric.score"), elText("headers-score")),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "fingerprint") {
-    parts.push("[Browser Fingerprint]");
-    parts.push(`Uniqueness: ${document.getElementById("fp-score-number")?.textContent?.trim() || "—"}`);
-    parts.push(`Summary: ${document.getElementById("fp-score-summary")?.textContent?.trim() || ""}`);
+    const lines = [
+      metricLine(elText("fp-uniqueness-label"), document.getElementById("fp-score-number")?.textContent?.trim() || "—"),
+      metricLine(t("share.metric.summary"), document.getElementById("fp-score-summary")?.textContent?.trim() || ""),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "quality") {
-    parts.push("[Connection Quality]");
-    parts.push(`Grade: ${elText("quality-grade")} ${elText("quality-grade-label")}`);
-    parts.push(`Server RTT: ${elText("quality-tls-info")?.match(/(\d+) ms/)?.[0] || "—"}`);
+    const grade = [elText("quality-grade"), elText("quality-grade-label")].filter(Boolean).join(" ");
+    const tlsText = elText("quality-tls-info");
+    const serverRtt = tlsText.match(/(\d+)\s*ms/)?.[0] || "—";
+    const lines = [
+      metricLine(elText("quality-score-title"), grade),
+      metricLine(t("quality.serverRtt"), serverRtt),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === "network") {
-    parts.push("[Network Map]");
-    parts.push(`Results: ${elText("network-info")}`);
+    const line = metricLine(t("share.metric.results"), elText("network-info"));
+    if (line) parts.push(line);
   }
 
   parts.push("");
   parts.push("—— via NetCheck (netcheck-site.oilygold.workers.dev)");
   return parts.join("\n");
+}
+
+function updateShareButton(): void {
+  const btn = document.getElementById("share-btn");
+  if (!btn) return;
+
+  btn.title = t("share.tooltip") || "Copy results";
+  btn.setAttribute("aria-label", t("share.aria") || "Copy summary of current results");
+  btn.querySelector(".sr-only")!.textContent = t("share.label") || "Share";
 }
 
 export function initShare(): void {
@@ -55,8 +90,6 @@ export function initShare(): void {
   const btn = document.createElement("button");
   btn.id = "share-btn";
   btn.className = "btn-nav-action";
-  btn.title = t("share.tooltip") || "Copy results";
-  btn.setAttribute("aria-label", t("share.aria") || "Copy summary of current results");
   btn.innerHTML = `
     <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="18" cy="5" r="3"/>
@@ -65,9 +98,10 @@ export function initShare(): void {
       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
       <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
     </svg>
-    <span class="sr-only">${t("share.label") || "Share"}</span>
+    <span class="sr-only"></span>
   `;
   container.appendChild(btn);
+  updateShareButton();
 
   let timeout: ReturnType<typeof setTimeout> | null = null;
   btn.addEventListener("click", async () => {
@@ -78,7 +112,6 @@ export function initShare(): void {
       if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => btn.classList.remove("copied"), 2000);
     } catch {
-      // Fallback
       const ta = document.createElement("textarea");
       ta.value = text;
       document.body.appendChild(ta);
@@ -91,3 +124,5 @@ export function initShare(): void {
     }
   });
 }
+
+onLocaleChange(updateShareButton);

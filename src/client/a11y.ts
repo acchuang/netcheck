@@ -88,7 +88,12 @@ const tabShortcuts: Record<string, string> = {
 };
 
 function hideExport(): void {
-  const menu = document.querySelector(".export-menu.open");
+  const menu = document.getElementById("export-menu");
+  if (menu) menu.classList.remove("open");
+}
+
+function hideLangMenu(): void {
+  const menu = document.getElementById("lang-menu");
   if (menu) menu.classList.remove("open");
 }
 

@@ -2,70 +2,184 @@ import { ConnectionQuality, type ConnectionInfo, type TlsInfo, type ResourceTimi
 import { t } from "./i18n";
 import { renderSkeletonRows } from "./ui-utils";
 import { announce, announceProgress } from "./a11y";
+import { onLocaleChange } from "./locale-events";
+
+type ProgressState =
+  | { mode: "idle" }
+  | { mode: "gathering" }
+  | { mode: "fetchingTls" }
+  | { mode: "running" }
+  | { mode: "ready" }
+  | { mode: "pinging" }
+  | { mode: "ping-count"; sent: number }
+  | { mode: "stability-done" };
+
+const state: {
+  connectionInfo: ConnectionInfo | null;
+  tlsInfo: TlsInfo | null;
+  timing: ResourceTimingBreakdown | null;
+  stability: StabilityResults | null;
+  hasRun: boolean;
+  progress: ProgressState;
+  isRunning: boolean;
+  isRunningStability: boolean;
+} = {
+  connectionInfo: null,
+  tlsInfo: null,
+  timing: null,
+  stability: null,
+  hasRun: false,
+  progress: { mode: "idle" },
+  isRunning: false,
+  isRunningStability: false,
+};
 
 export function initConnectionQuality(): void {
   const btn = document.getElementById("quality-run-btn");
   if (btn) btn.addEventListener("click", runQualityTest);
+  syncQualityUi();
 }
 
 let stabilityListenerCleanup: (() => void) | null = null;
 
+function progressText(progress: ProgressState): string {
+  switch (progress.mode) {
+    case "gathering":
+      return t("quality.progressGathering");
+    case "fetchingTls":
+      return t("quality.progressFetchingTls");
+    case "running":
+      return t("quality.running");
+    case "ready":
+      return t("quality.progressReady");
+    case "pinging":
+      return t("quality.progressPinging");
+    case "ping-count":
+      return t("quality.progressPingCount", progress.sent);
+    case "stability-done":
+      return t("quality.progressStabilityDone");
+    default:
+      return "";
+  }
+}
+
+function setProgress(progress: ProgressState): void {
+  state.progress = progress;
+  const progressEl = document.getElementById("quality-progress");
+  if (progressEl) progressEl.textContent = progressText(progress);
+}
+
+function syncQualityUi(): void {
+  if (!state.hasRun) {
+    renderInitialPlaceholders();
+  } else {
+    renderConnectionInfo(state.connectionInfo, false);
+    renderTlsInfo(state.tlsInfo, false);
+    renderTimingBreakdown(state.timing, false);
+    if (state.tlsInfo || state.connectionInfo) {
+      renderFinalScore(state.tlsInfo, state.stability, state.connectionInfo);
+    } else {
+      renderScorePlaceholder();
+    }
+    if (state.stability) renderStability(state.stability);
+    else renderStabilityPlaceholder();
+  }
+
+  setProgress(state.progress);
+
+  const runBtn = document.getElementById("quality-run-btn") as HTMLButtonElement | null;
+  if (runBtn) {
+    runBtn.disabled = state.isRunning;
+    runBtn.textContent = state.isRunning ? t("quality.running") : state.hasRun ? t("quality.runAgain") : t("quality.runTest");
+  }
+
+  const stabilityBtn = document.getElementById("quality-stability-btn") as HTMLButtonElement | null;
+  if (stabilityBtn) {
+    stabilityBtn.disabled = !state.hasRun || state.isRunningStability;
+    stabilityBtn.textContent = state.isRunningStability
+      ? t("quality.stabilityRunning")
+      : state.stability
+        ? t("quality.runStabilityAgain")
+        : t("quality.runStability");
+  }
+}
+
+function renderInitialPlaceholders(): void {
+  const connection = document.getElementById("quality-connection-info");
+  const tls = document.getElementById("quality-tls-info");
+  const timing = document.getElementById("quality-timing-info");
+
+  if (connection) connection.innerHTML = `<p class="info-muted">${t("quality.emptyConnection")}</p>`;
+  if (tls) tls.innerHTML = `<p class="info-muted">${t("quality.emptyTls")}</p>`;
+  if (timing) timing.innerHTML = `<p class="info-muted">${t("quality.emptyTiming")}</p>`;
+  renderStabilityPlaceholder();
+  renderScorePlaceholder();
+}
+
+function renderStabilityPlaceholder(): void {
+  const el = document.getElementById("quality-stability-info");
+  if (el) el.innerHTML = `<p class="info-muted">${t("quality.emptyStability")}</p>`;
+}
+
 async function runQualityTest(): Promise<void> {
-  const btn = document.getElementById("quality-run-btn") as HTMLButtonElement;
-  const progressEl = document.getElementById("quality-progress") as HTMLElement;
   const stabilityBtn = document.getElementById("quality-stability-btn") as HTMLButtonElement;
 
-  btn.disabled = true;
-  btn.textContent = t("quality.running");
+  state.isRunning = true;
+  state.hasRun = true;
+  state.connectionInfo = null;
+  state.tlsInfo = null;
+  state.timing = null;
+  state.stability = null;
+  syncQualityUi();
 
-  // Show skeleton loading with per-step labels
   renderConnectionInfo(null, true);
   renderTlsInfo(null, true);
   renderTimingBreakdown(null, true);
   renderScorePlaceholder();
+  renderStabilityPlaceholder();
 
-  // Step 1
-  if (progressEl) progressEl.textContent = "Gathering connection info…";
-  announceProgress("Connection Quality: checking connection type and browser API info");
+  setProgress({ mode: "gathering" });
+  announceProgress(t("quality.progressGathering"));
   const connectionInfo = ConnectionQuality.getConnectionInfo();
+  state.connectionInfo = connectionInfo;
   renderConnectionInfo(connectionInfo, false);
 
-  // Step 2
-  if (progressEl) progressEl.textContent = "Fetching TLS details…";
-  announceProgress("Connection Quality: fetching TLS and server details");
+  setProgress({ mode: "fetchingTls" });
+  announceProgress(t("quality.progressFetchingTls"));
   const tlsInfo = await ConnectionQuality.fetchTlsInfo();
+  state.tlsInfo = tlsInfo;
   renderTlsInfo(tlsInfo, false);
 
-  // Step 3
-  if (progressEl) progressEl.textContent = t("quality.running");
-  announceProgress("Connection Quality: measuring request timing breakdown");
+  setProgress({ mode: "running" });
+  announceProgress(t("quality.running"));
   const timing = await ConnectionQuality.measureTiming();
+  state.timing = timing;
   renderTimingBreakdown(timing, false);
 
-  // Score
   renderFinalScore(tlsInfo, null, connectionInfo);
-  if (progressEl) progressEl.textContent = "Ready";
-  announce("Connection Quality test complete. Quality score displayed.");
+  setProgress({ mode: "ready" });
+  announce(`${t("quality.title")}: ${t("quality.progressReady")}`);
 
-  // Enable stability button
   if (stabilityBtn) {
-    if (stabilityListenerCleanup) { stabilityListenerCleanup(); }
+    if (stabilityListenerCleanup) stabilityListenerCleanup();
     const handler = async () => {
-      stabilityBtn.disabled = true;
-      stabilityBtn.textContent = t("quality.stabilityRunning");
-      if (progressEl) progressEl.textContent = "Pinging…";
-      announce("Connection Quality stability test started. Sending 30 pings.");
+      state.isRunningStability = true;
+      syncQualityUi();
+
+      setProgress({ mode: "pinging" });
+      announce(t("quality.progressPinging"));
 
       const stability = await ConnectionQuality.runStabilityTest((sent) => {
-        if (progressEl) progressEl.textContent = `Ping ${sent}/30`;
+        setProgress({ mode: "ping-count", sent });
       });
 
+      state.stability = stability;
+      state.isRunningStability = false;
       renderStability(stability);
       renderFinalScore(tlsInfo, stability, connectionInfo);
-      if (progressEl) progressEl.textContent = "Stability done";
-      announce(`Stability test complete. Min ${stability.min}ms, max ${stability.max}ms, mean ${stability.mean}ms, jitter ${stability.jitter}ms, loss ${stability.lossPercent}%.`);
-      stabilityBtn.textContent = t("quality.runStabilityAgain");
-      stabilityBtn.disabled = false;
+      setProgress({ mode: "stability-done" });
+      announce(`${t("quality.progressStabilityDone")}: ${stability.min}ms / ${stability.max}ms / ${stability.mean}ms / ${stability.jitter}ms / ${stability.lossPercent}%`);
+      syncQualityUi();
     };
     stabilityBtn.addEventListener("click", handler);
     const oldCleanup = stabilityListenerCleanup;
@@ -73,12 +187,10 @@ async function runQualityTest(): Promise<void> {
       stabilityBtn.removeEventListener("click", handler);
       if (oldCleanup) oldCleanup();
     };
-    stabilityBtn.disabled = false;
   }
 
-  // Update main button
-  btn.textContent = t("quality.runAgain");
-  btn.disabled = false;
+  state.isRunning = false;
+  syncQualityUi();
 }
 
 function renderConnectionInfo(info: ConnectionInfo | null, skeleton?: boolean): void {
@@ -173,3 +285,5 @@ function renderFinalScore(tlsInfo: TlsInfo | null, stability: StabilityResults |
     return `<span class="grade-factor"><span class="grade-factor-dot ${s === "unavailable" ? "" : s}"></span>${f.label}</span>`;
   }).join("");
 }
+
+onLocaleChange(syncQualityUi);

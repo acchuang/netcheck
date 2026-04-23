@@ -1,5 +1,8 @@
 import { NetworkMap, type MapResults } from "./network-map";
 import { t } from "./i18n";
+import { onLocaleChange } from "./locale-events";
+
+let lastResults: MapResults | null = null;
 
 export function initNetworkMap(): void {
   const btn = document.getElementById("network-run-btn");
@@ -16,6 +19,7 @@ async function runMapTest(): Promise<void> {
 
   try {
     const results = await NetworkMap.run();
+    lastResults = results;
     renderResults(results);
   } catch {
     grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">${t("network.error") || "Failed to load probes"}</p>`;
@@ -53,7 +57,7 @@ function renderResults(results: MapResults): void {
     const color = NetworkMap.getLatencyColor(probe.latency);
     const dots = NetworkMap.getLatencyDots(probe.latency);
     const latencyText = probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : "—";
-    const relayText = probe.relayLatency != null ? `relay ${probe.relayLatency}ms` : "";
+    const relayText = probe.relayLatency != null ? t("network.relayLatency", probe.relayLatency) : "";
     const isClosest = probe.id === closest?.id;
 
     return `
@@ -68,3 +72,7 @@ function renderResults(results: MapResults): void {
       </div>`;
   }).join("");
 }
+
+onLocaleChange(() => {
+  if (lastResults) renderResults(lastResults);
+});

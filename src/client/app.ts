@@ -75,7 +75,7 @@ function initTabs(): void {
     e.stopPropagation();
     ReportExporter.showExportMenu();
   });
-  document.querySelectorAll<HTMLButtonElement>(".export-option").forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>("#export-menu .export-option").forEach((btn) => {
     btn.addEventListener("click", () => {
       const format = btn.dataset.format;
       if (format === "markdown") ReportExporter.downloadMarkdown();
