@@ -2639,6 +2639,60 @@ select option {
   }
 }
 
+/* About page */
+.about-cards {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+}
+
+.about-card .card-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.about-card .info-muted {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.about-footer {
+  margin-top: 32px;
+}
+
+/* Quality progress step indicator */
+.quality-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 8px 0 16px;
+  min-height: 20px;
+}
+
+/* Region skeleton state */
+.region-card.shimmer .region-name,
+.region-card.shimmer .region-latency {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  height: 16px;
+  margin: 8px auto;
+  width: 60%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.region-card.shimmer .region-latency {
+  height: 36px;
+  width: 40%;
+}
+
+@media (max-width: 768px) {
+  .about-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Utility */
 .hidden {
   display: none !important;

@@ -70,6 +70,10 @@
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           <span class="nav-link-text" id="nav-network-text">Network</span>
         </a>
+        <a href="#about" class="nav-link" data-tab="about">
+          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span class="nav-link-text" id="nav-about-text">About</span>
+        </a>
       </div>
       <div class="nav-actions">
         <button class="btn-nav-action" id="lang-toggle" title="Language">
@@ -606,6 +610,8 @@
         </div>
       </div>
 
+      <div class="quality-progress" id="quality-progress"></div>
+
       <div style="text-align: center; margin-bottom: 24px;">
         <button class="btn btn-primary btn-large" id="quality-run-btn">Run Test</button>
       </div>
@@ -625,6 +631,125 @@
       <p class="subtitle" id="network-info" style="text-align: center; font-size: 13px; color: var(--text-tertiary);"></p>
 
       <div class="region-grid hidden" id="network-results"></div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section" role="region" aria-label="About">
+      <div class="section-header">
+        <h1 class="display" id="about-title">About NetCheck</h1>
+        <p class="subtitle" id="about-subtitle">Local diagnostics for your network connection and browser security.</p>
+      </div>
+
+      <div class="cards-grid about-cards">
+        <!-- DNS Check -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span class="card-title">DNS Check</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-dns-desc">Detects your IP address, DNS resolver configuration, and checks DNS security features such as DNSSEC validation, DoH encryption, and malware filtering. Includes a DNS lookup tool to query domains for any record type.</p>
+          </div>
+        </div>
+
+        <!-- Speed Test -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span class="card-title">Speed Test</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-speed-desc">Measures download and upload speed, latency, jitter, and bufferbloat using your nearest Cloudflare edge server. Displays real-time performance graphs, a 5-factor quality grade, and keeps a persistent history of your last results.</p>
+          </div>
+        </div>
+
+        <!-- Ad Block Test -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="card-title">Ad Block Test</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-adblock-desc">Checks how well your ad blocker or browser is blocking ad scripts, trackers, analytics, social media widgets, and fingerprinting scripts. Gives a score from 0 to 100 with category-specific recommendations.</p>
+          </div>
+        </div>
+
+        <!-- Headers -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            <span class="card-title">Headers</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-headers-desc">Scans any website for 10 critical security headers: HSTS, CSP, X-Frame-Options, Referrer-Policy, and more. Provides a letter grade, detailed per-header analysis, and suggests improvements.</p>
+          </div>
+        </div>
+
+        <!-- Fingerprint -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <span class="card-title">Fingerprint</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-fp-desc">Analyzes how unique your browser fingerprint is across 6 categories: Canvas, WebGL, Audio, Fonts, Screen, and Navigator properties. Provides tailored privacy protection tips to reduce your online trackability.</p>
+          </div>
+        </div>
+
+        <!-- Connection Quality -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+            <span class="card-title">Connection Quality</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-quality-desc">Inspects your browser connection info (type, downlink, RTT), TLS details, request timing breakdown (DNS / TCP / TLS / TTFB / Download), and runs a stability test measuring jitter and packet loss over 30 pings. Computes an overall A+–F grade.</p>
+          </div>
+        </div>
+
+        <!-- Network Map -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span class="card-title">Network Map</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-network-desc">Measures your latency to global network endpoints, giving a regional view of connection health. Visualizes closest regions, quality ratings, and server relay latency via Cloudflare&rsquo;s distributed edge.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-footer">
+        <div class="about-card card card-wide">
+          <div class="card-body">
+            <svg class="card-icon" style="width:48px;height:48px;color:var(--brand);margin-bottom:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <p class="subtitle" style="font-size:16px;text-align:center;max-width:60ch;margin:0 auto">Everything runs locally in your browser.<br>No data is collected, stored, or sent anywhere.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
   </main>

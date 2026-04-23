@@ -83,6 +83,11 @@ const en = {
   "network.error": "Failed to load probes",
   "network.relayLatency": "relay {0}ms",
 
+  // About
+  "about.title": "About NetCheck",
+  "about.subtitle": "Local diagnostics for your network connection and browser security.",
+  "nav.about": "About",
+
   // DNS section
   "dns.title": "DNS & Network Check",
   "dns.subtitle": "Detect your IP, DNS resolvers, and network configuration",
@@ -521,6 +526,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "network.noResults": "尚無結果",
   "network.error": "無法載入探測點",
   "network.relayLatency": "轉發 {0}ms",
+  "about.title": "關於 NetCheck",
+  "about.subtitle": "本地診斷您的網路連線與瀏覽器安全。",
+  "nav.about": "關於",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",
@@ -944,6 +952,7 @@ function applyStaticTranslations(): void {
     else if (tab === "fingerprint") target.textContent = t("nav.fingerprint");
     else if (tab === "quality") target.textContent = t("nav.quality");
     else if (tab === "network") target.textContent = t("nav.network");
+    else if (tab === "about") target.textContent = t("nav.about");
   });
 
   s("export-btn-text", "nav.export");
@@ -1024,6 +1033,8 @@ function applyStaticTranslations(): void {
   s("quality-timing-title", "quality.timingTitle");
   s("quality-stability-title", "quality.stabilityTitle");
   s("quality-score-title", "quality.scoreTitle");
+  s("about-title", "about.title");
+  s("about-subtitle", "about.subtitle");
 
   // Footer
   s("footer-text", "footer.text");
