@@ -1,3 +1,13 @@
+import type { ResolverResult, SecurityCheck } from "./types";
+export type { ResolverResult, SecurityCheck };
+
+interface ResolverInfo {
+  name: string;
+  host: string;
+  ip: string;
+  desc: string;
+}
+
 interface IpResult {
   ip?: string;
   error?: string;
@@ -16,32 +26,17 @@ interface DnsAnswer {
   data: string;
 }
 
-interface ResolverInfo {
-  name: string;
-  host: string;
-  ip: string;
-  desc: string;
-}
-
-interface ResolverResult extends ResolverInfo {
-  reachable: boolean;
-  latency: number | null;
-  dnssec: boolean;
-  filtering: boolean;
-}
-
-type SecurityStatus = "pass" | "warn" | "fail";
-
-interface SecurityCheck {
-  name: string;
-  status: SecurityStatus;
-  detail: string;
-}
-
 interface DohResponse {
   AD?: boolean;
   Answer?: DnsAnswer[];
   Status?: number;
+}
+
+interface DnsAnswer {
+  name: string;
+  type: number;
+  TTL: number;
+  data: string;
 }
 
 export const DnsCheck = {

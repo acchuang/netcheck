@@ -1,4 +1,5 @@
 import { DnsCheck } from "./dns-check";
+import type { ResolverResult, SecurityCheck } from "./types";
 import { t } from "./i18n";
 import { CF_POPS } from "./cf-pops";
 import { setBadge, createCheckItem } from "./ui-utils";
@@ -19,21 +20,6 @@ interface IpData {
   tlsCipher?: string;
   clientTcpRtt?: number;
   error?: string;
-}
-
-interface ResolverResult {
-  name: string;
-  ip: string;
-  reachable: boolean;
-  latency: number | null;
-  dnssec: boolean;
-  filtering: boolean;
-}
-
-interface SecurityCheck {
-  name: string;
-  status: "pass" | "warn" | "fail";
-  detail: string;
 }
 
 interface DnsContext {
@@ -304,7 +290,7 @@ export async function runDnsLookup(): Promise<void> {
 
   let allData: Record<string, any>;
   if (type === "ALL") {
-    const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
+    const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "SRV"];
     const results = await Promise.all(types.map((rt) => DnsCheck.lookupDns(domain, rt)));
     allData = {};
     types.forEach((rt, i) => { allData[rt] = results[i]; });

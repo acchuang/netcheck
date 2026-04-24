@@ -90,7 +90,7 @@ async function measureTiming(): Promise<ResourceTimingBreakdown | null> {
       dns: Math.round(entry.domainLookupEnd - entry.domainLookupStart),
       tcp: Math.round(entry.connectEnd - entry.connectStart),
       tls: entry.secureConnectionStart > 0 ? Math.round(entry.connectEnd - entry.secureConnectionStart) : 0,
-      ttfb: Math.round(entry.responseStart - entry.responseEnd),
+      ttfb: Math.round(entry.responseStart - entry.requestStart),
       download: Math.round(entry.responseEnd - entry.responseStart),
       total: Math.round(entry.responseEnd - entry.startTime),
     };

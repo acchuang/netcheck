@@ -5,7 +5,7 @@ interface Env {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     const url = new URL(request.url);
@@ -28,7 +28,7 @@ export default {
     }
 
     if (url.pathname === "/api/dns/check-resolvers") {
-      return handleResolverCheck();
+      return handleResolverCheck(request);
     }
 
     if (url.pathname === "/api/analytics") {
@@ -44,7 +44,7 @@ export default {
     if (url.pathname === "/api/map/ping") {
       const cf = getCf(request);
       return new Response("pong", {
-        headers: { ...corsHeaders(), "x-colo": cf.colo || "unknown" },
+        headers: { ...corsHeaders(request), "x-colo": cf.colo || "unknown" },
       });
     }
 
@@ -53,7 +53,7 @@ export default {
       const colo = cf.colo || "unknown";
       return new Response("pong", {
         headers: {
-          ...corsHeaders(),
+          ...corsHeaders(request),
           "x-colo": colo,
           "x-lat": cf?.latitude || "",
           "x-lon": cf?.longitude || "",
@@ -70,7 +70,7 @@ export default {
       return handleSpeedUp(request);
     }
 
-    return Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders() });
+    return Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders(request) });
   },
 };
 
@@ -97,6 +97,7 @@ const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_WINDOW = 60_000;
 const RATE_LIMIT_MAX = 120;
 const RATE_LIMIT_SPEED_BURST = 60;
+const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
 function checkRateLimit(request: Request): Response | null {
   const url = new URL(request.url);
@@ -105,6 +106,13 @@ function checkRateLimit(request: Request): Response | null {
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   const now = Date.now();
   const key = isSpeedTest ? `speed:${ip}` : `gen:${ip}`;
+
+  if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    for (const [k, v] of rateLimitMap) {
+      if (now - v.windowStart > RATE_LIMIT_WINDOW) rateLimitMap.delete(k);
+    }
+  }
+
   const entry = rateLimitMap.get(key);
 
   if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW) {
@@ -116,7 +124,7 @@ function checkRateLimit(request: Request): Response | null {
   if (entry.count > maxRequests) {
     return Response.json(
       { error: "Rate limit exceeded", retryAfter: Math.ceil((RATE_LIMIT_WINDOW - (now - entry.windowStart)) / 1000) },
-      { status: 429, headers: { ...corsHeaders(), "Retry-After": "60" } }
+      { status: 429, headers: { ...corsHeaders(request), "Retry-After": "60" } }
     );
   }
 
@@ -128,7 +136,8 @@ function isPrivateHostname(hostname: string): boolean {
   if (hostname.endsWith(".internal") || hostname.endsWith(".test") || hostname.endsWith(".example")) return true;
   const parts = hostname.split(".");
   if (parts.length <= 1) return true;
-  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.)/.test(hostname)) return true;
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.|169\.254\.|100\.64\.)/.test(hostname)) return true;
+  if (/^\[/.test(hostname)) return true;
   return false;
 }
 
@@ -203,9 +212,9 @@ async function handleAnalytics(env: Env, request: Request): Promise<Response> {
     return Response.json({
       activeNow,
       uniqueToday,
-    }, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=30" } });
+    }, { headers: { ...corsHeaders(request), "Cache-Control": "public, max-age=30" } });
   } catch {
-    return Response.json({ activeNow: 1, uniqueToday: 1 }, { headers: corsHeaders() });
+    return Response.json({ activeNow: 1, uniqueToday: 1 }, { headers: corsHeaders(request) });
   }
 }
 
@@ -227,13 +236,22 @@ function handleIpCheck(request: Request): Response {
     tlsVersion: cf.tlsVersion || null,
     tlsCipher: cf.tlsCipher || null,
     clientTcpRtt: cf.clientTcpRtt || null,
-  }, { headers: corsHeaders() });
+  }, { headers: corsHeaders(request) });
 }
 
 async function handleDnsCheck(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const domain = url.searchParams.get("domain") || "example.com";
   const type = url.searchParams.get("type") || "A";
+
+  const allowedTypes = new Set(["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "SRV", "PTR"]);
+  if (!allowedTypes.has(type)) {
+    return Response.json({ error: "Unsupported DNS record type" }, { status: 400, headers: corsHeaders(request) });
+  }
+
+  if (isPrivateHostname(domain)) {
+    return Response.json({ error: "Private/internal domains are not allowed" }, { status: 400, headers: corsHeaders(request) });
+  }
 
   const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`;
 
@@ -242,11 +260,11 @@ async function handleDnsCheck(request: Request): Promise<Response> {
       headers: { Accept: "application/dns-json" },
     });
     const dnsData = await dnsResponse.json();
-    return Response.json(dnsData, { headers: corsHeaders() });
+    return Response.json(dnsData, { headers: corsHeaders(request) });
   } catch (err) {
     return Response.json(
       { error: "DNS lookup failed", detail: String(err) },
-      { status: 500, headers: corsHeaders() }
+      { status: 500, headers: corsHeaders(request) }
     );
   }
 }
@@ -256,7 +274,7 @@ function handleHeaders(request: Request): Response {
   for (const [key, value] of request.headers) {
     headers[key] = value;
   }
-  return Response.json({ headers }, { headers: corsHeaders() });
+  return Response.json({ headers }, { headers: corsHeaders(request) });
 }
 
 let RANDOM_BLOCK: Uint8Array | null = null;
@@ -275,7 +293,7 @@ function handleSpeedDown(url: URL, request: Request): Response {
 
   const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
   if (bytes <= 0) {
-    return new Response("", { headers: corsHeaders() });
+    return new Response("", { headers: corsHeaders(request) });
   }
   const block = getRandomBlock();
   const data = new Uint8Array(bytes);
@@ -285,7 +303,7 @@ function handleSpeedDown(url: URL, request: Request): Response {
   }
   return new Response(data, {
     headers: {
-      ...corsHeaders(),
+      ...corsHeaders(request),
       "Content-Type": "application/octet-stream",
       "Content-Length": String(bytes),
       "Cache-Control": "no-store",
@@ -298,7 +316,7 @@ async function handleSpeedUp(request: Request): Promise<Response> {
   if (rl) return rl;
 
   const body = await request.arrayBuffer();
-  return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
+  return Response.json({ bytes: body.byteLength }, { headers: corsHeaders(request) });
 }
 
 interface ResolverDef {
@@ -360,9 +378,9 @@ async function testOneResolver(resolver: ResolverDef) {
   }
 }
 
-async function handleResolverCheck(): Promise<Response> {
+async function handleResolverCheck(request: Request): Promise<Response> {
   const results = await Promise.all(RESOLVERS.map(testOneResolver));
-  return Response.json(results, { headers: corsHeaders() });
+  return Response.json(results, { headers: corsHeaders(request) });
 }
 
 const SECURITY_HEADERS = [
@@ -386,21 +404,21 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
   const target = url.searchParams.get("url");
 
   if (!target) {
-    return Response.json({ error: "Missing ?url= parameter" }, { status: 400, headers: corsHeaders() });
+    return Response.json({ error: "Missing ?url= parameter" }, { status: 400, headers: corsHeaders(request) });
   }
 
   let targetUrl: string;
   try {
     const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
     if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-      return Response.json({ error: "Only HTTP/HTTPS URLs are allowed" }, { status: 400, headers: corsHeaders() });
+      return Response.json({ error: "Only HTTP/HTTPS URLs are allowed" }, { status: 400, headers: corsHeaders(request) });
     }
     if (isPrivateHostname(parsed.hostname)) {
-      return Response.json({ error: "Private/internal hostnames are not allowed" }, { status: 400, headers: corsHeaders() });
+      return Response.json({ error: "Private/internal hostnames are not allowed" }, { status: 400, headers: corsHeaders(request) });
     }
     targetUrl = parsed.href;
   } catch {
-    return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders() });
+    return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders(request) });
   }
 
   try {
@@ -439,11 +457,11 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       checks,
       server: headers["server"] || null,
       poweredBy: headers["x-powered-by"] || null,
-    }, { headers: corsHeaders() });
+    }, { headers: corsHeaders(request) });
   } catch (err) {
     return Response.json(
       { error: "Failed to fetch URL", detail: String(err) },
-      { status: 500, headers: corsHeaders() }
+      { status: 500, headers: corsHeaders(request) }
     );
   }
 }
@@ -482,13 +500,22 @@ async function handleMapProbes(request: Request): Promise<Response> {
     userLon,
     probes: PROBES.map((p) => ({ id: p.id, name: p.name, region: p.region, city: p.city, lat: p.lat, lon: p.lon })),
     relayLatencies,
-  }, { headers: corsHeaders() });
+  }, { headers: corsHeaders(request) });
 }
 
-function corsHeaders(): Record<string, string> {
+function corsHeaders(request?: Request): Record<string, string> {
+  const origin = request?.headers.get("Origin") || "";
+  const allowed = [
+    "https://netcheck-site.oilygold.workers.dev",
+    "https://7b64681b.netcheck-site.pages.dev",
+    "http://localhost:8787",
+    "http://127.0.0.1:8787",
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : allowed[0];
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json",
   };
 }
