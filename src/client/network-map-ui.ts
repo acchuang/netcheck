@@ -121,17 +121,19 @@ function renderMapResults(results: MapResults): void {
     }).addTo(m);
 
     const latencyText = probe.latency != null ? `${probe.latency}ms` : "—";
-    const relayText = probe.relayLatency != null ? (t("network.relayLatency", probe.relayLatency) + "<br>") : "";
     const closestBadge = probe.id === closest?.id
       ? `<span style="background:#5e6ad2;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t("network.closest") || "Closest"}</span>`
+      : "";
+    const estimateLabel = !probe.measured
+      ? `<br><span style="font-size:10px;color:#999">⏱ ${t("network.estimated")}</span>`
       : "";
 
     marker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
         <strong>${probe.name} (${probe.id})${closestBadge}</strong><br>
         <span style="font-size:12px;color:#888">${probe.city}, ${probe.country}</span><br>
-        <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span><br>
-        <span style="font-size:11px;color:#999">${relayText}</span>
+        <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span>
+        ${estimateLabel}
       </div>`
     );
 
@@ -222,17 +224,18 @@ function renderResults(results: MapResults): void {
     const color = NetworkMap.getLatencyColor(probe.latency);
     const dots = NetworkMap.getLatencyDots(probe.latency);
     const latencyText = probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : "—";
-    const relayText = probe.relayLatency != null ? t("network.relayLatency", probe.relayLatency) : "";
+    const estimateBadge = !probe.measured
+      ? `<span class="estimate-badge">${t("network.estimated")}</span>`
+      : "";
     const isClosest = probe.id === closest?.id;
 
     return `
       <div class="region-card${isClosest ? " active" : ""}">
         <div class="region-name" style="color:var(--text-primary)">${probe.name} <span style="color:var(--text-quaternary);font-size:11px">${probe.id}</span></div>
-        <div class="region-latency" style="color:${color}">${latencyText}</div>
+        <div class="region-latency" style="color:${color}">${latencyText} ${estimateBadge}</div>
         <div class="region-dots" style="color:${color}">
           ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? " active" : ""}"></span>`).join("")}
         </div>
-        ${relayText ? `<div style="color:var(--text-quaternary);font-size:11px;margin-top:4px">${relayText}</div>` : ""}
       </div>`;
   };
 

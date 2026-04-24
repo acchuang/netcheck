@@ -107,6 +107,7 @@ const en = {
   "network.relayLatency": "relay {0}ms",
   "network.yourLocation": "Your Location",
   "network.closest": "Closest",
+  "network.estimated": "estimated",
 
   // About
   "about.title": "About NetCheck",

@@ -94,6 +94,7 @@ export const zhTW = {
   "network.relayLatency": "轉發 {0}ms",
   "network.yourLocation": "您的位置",
   "network.closest": "最近",
+  "network.estimated": "估計",
   "about.title": "關於 NetCheck",
   "about.subtitle": "本地診斷您的網路連線與瀏覽器安全。",
   "nav.about": "關於",

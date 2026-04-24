@@ -438,4 +438,5 @@ export const ja = {
   "share.metric.results": "結果",
   "network.yourLocation": "Tu ubicación",
   "network.closest": "Más cercano",
+  "network.estimated": "推定",
 } as const;

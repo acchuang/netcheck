@@ -5,3 +5,27 @@ main = "src/worker/index.ts"
 [[kv_namespaces]]
 binding = "ANALYTICS"
 id = "c8d691f38f32437db35f62b5111d6c3b"
+
+[[r2_buckets]]
+binding = "PING_WNAM"
+bucket_name = "netcheck-ping-wnam"
+
+[[r2_buckets]]
+binding = "PING_ENAM"
+bucket_name = "netcheck-ping-enam"
+
+[[r2_buckets]]
+binding = "PING_WEUR"
+bucket_name = "netcheck-ping-weur"
+
+[[r2_buckets]]
+binding = "PING_EEUR"
+bucket_name = "netcheck-ping-eeur"
+
+[[r2_buckets]]
+binding = "PING_APAC"
+bucket_name = "netcheck-ping-apac"
+
+[[r2_buckets]]
+binding = "PING_OC"
+bucket_name = "netcheck-ping-oc"

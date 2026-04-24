@@ -438,4 +438,5 @@ export const ko = {
   "share.metric.results": "결과",
   "network.yourLocation": "Tu ubicación",
   "network.closest": "Más cercano",
+  "network.estimated": "추정",
 } as const;

@@ -2678,6 +2678,17 @@ select option {
   color: var(--text-tertiary);
 }
 
+.estimate-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-quaternary);
+  background: var(--surface-secondary);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 .region-dots {
   display: flex;
   justify-content: center;
