@@ -210,7 +210,15 @@ function renderResults(results: MapResults): void {
     .replace(
     "{1}", closest?.latency != null ? `${closest.latency}ms` : "—");
 
-  grid.innerHTML = results.probes.map((probe) => {
+  const regionOrder = ["North America", "South America", "Europe", "Middle East", "Africa", "Asia", "Oceania"];
+  const grouped: Record<string, typeof results.probes> = {};
+  for (const region of regionOrder) grouped[region] = [];
+  for (const probe of results.probes) {
+    if (!grouped[probe.region]) grouped[probe.region] = [];
+    grouped[probe.region].push(probe);
+  }
+
+  const probeCard = (probe: typeof results.probes[0]) => {
     const color = NetworkMap.getLatencyColor(probe.latency);
     const dots = NetworkMap.getLatencyDots(probe.latency);
     const latencyText = probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : "—";
@@ -220,14 +228,33 @@ function renderResults(results: MapResults): void {
     return `
       <div class="region-card${isClosest ? " active" : ""}">
         <div class="region-name" style="color:var(--text-primary)">${probe.name} <span style="color:var(--text-quaternary);font-size:11px">${probe.id}</span></div>
-        <div class="region-city" style="color:var(--text-tertiary);font-size:12px">${t(regionKey(probe.region))}</div>
         <div class="region-latency" style="color:${color}">${latencyText}</div>
         <div class="region-dots" style="color:${color}">
           ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? " active" : ""}"></span>`).join("")}
         </div>
         ${relayText ? `<div style="color:var(--text-quaternary);font-size:11px;margin-top:4px">${relayText}</div>` : ""}
       </div>`;
-  }).join("");
+  };
+
+  let html = "";
+  for (const region of regionOrder) {
+    const probes = grouped[region];
+    if (!probes || probes.length === 0) continue;
+    html += `<div class="region-group"><div class="region-group-title">${t(regionKey(region))}</div><div class="region-grid">`;
+    for (const probe of probes) html += probeCard(probe);
+    html += `</div></div>`;
+  }
+  // Add any regions not in regionOrder
+  for (const region of Object.keys(grouped)) {
+    if (regionOrder.includes(region)) continue;
+    const probes = grouped[region];
+    if (!probes || probes.length === 0) continue;
+    html += `<div class="region-group"><div class="region-group-title">${t(regionKey(region))}</div><div class="region-grid">`;
+    for (const probe of probes) html += probeCard(probe);
+    html += `</div></div>`;
+  }
+
+  grid.innerHTML = html;
 }
 
 onLocaleChange(() => {
