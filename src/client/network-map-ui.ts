@@ -5,6 +5,20 @@ import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from
 
 declare const L: L;
 
+function regionKey(region: string): string {
+  const map: Record<string, string> = {
+    "North America": "network.region.northAmerica",
+    "South America": "network.region.southAmerica",
+    "Europe": "network.region.europe",
+    "Middle East": "network.region.middleEast",
+    "Africa": "network.region.africa",
+    "Asia": "network.region.asia",
+    "Oceania": "network.region.oceania",
+    "Global": "network.region.global",
+  };
+  return map[region] || region;
+}
+
 let lastResults: MapResults | null = null;
 let map: Map | null = null;
 let userMarker: CircleMarker | null = null;
@@ -114,8 +128,8 @@ function renderMapResults(results: MapResults): void {
 
     marker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
-        <strong>${probe.region}${closestBadge}</strong><br>
-        <span style="font-size:12px;color:#888">${probe.city}</span><br>
+        <strong>${probe.name} (${probe.id})${closestBadge}</strong><br>
+        <span style="font-size:12px;color:#888">${probe.city}, ${probe.country}</span><br>
         <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span><br>
         <span style="font-size:11px;color:#999">${relayText}</span>
       </div>`
@@ -192,7 +206,7 @@ function renderResults(results: MapResults): void {
   }, null as typeof results.probes[0] | null);
 
   infoEl.textContent = t("network.closestRegion").replace(
-    "{0}", closest?.region || t("network.noResults"))
+    "{0}", closest?.name || t("network.noResults"))
     .replace(
     "{1}", closest?.latency != null ? `${closest.latency}ms` : "—");
 
@@ -205,8 +219,8 @@ function renderResults(results: MapResults): void {
 
     return `
       <div class="region-card${isClosest ? " active" : ""}">
-        <div class="region-name" style="color:var(--text-primary)">${probe.region}</div>
-        <div class="region-city" style="color:var(--text-tertiary);font-size:12px">${probe.city}</div>
+        <div class="region-name" style="color:var(--text-primary)">${probe.name} <span style="color:var(--text-quaternary);font-size:11px">${probe.id}</span></div>
+        <div class="region-city" style="color:var(--text-tertiary);font-size:12px">${t(regionKey(probe.region))}</div>
         <div class="region-latency" style="color:${color}">${latencyText}</div>
         <div class="region-dots" style="color:${color}">
           ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? " active" : ""}"></span>`).join("")}

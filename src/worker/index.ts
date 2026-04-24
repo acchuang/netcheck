@@ -467,11 +467,37 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 }
 
 const PROBES = [
-  { id: "cf-na", name: "Cloudflare NA", url: "https://1.1.1.1/cdn-cgi/trace", region: "North America", city: "Multiple", lat: 39.0, lon: -98.0 },
-  { id: "cf-eu", name: "Cloudflare EU", url: "https://1.0.0.1/cdn-cgi/trace", region: "Europe", city: "Multiple", lat: 50.0, lon: 5.0 },
-  { id: "google", name: "Google DNS", url: "https://dns.google/resolve", region: "Global", city: "Multiple", lat: 37.4, lon: -122.1 },
-  { id: "quad9", name: "Quad9", url: "https://www.quad9.net", region: "Europe", city: "Zurich", lat: 47.46, lon: 8.55 },
-  { id: "adguard", name: "AdGuard", url: "https://dns.adguard-dns.com/resolve", region: "Global", city: "Multiple", lat: 50.0, lon: 5.0 },
+  { id: "IAD", name: "Ashburn", country: "US", region: "North America", city: "Ashburn", lat: 39.04, lon: -77.49, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "DFW", name: "Dallas", country: "US", region: "North America", city: "Dallas", lat: 32.79, lon: -96.77, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "LAX", name: "Los Angeles", country: "US", region: "North America", city: "Los Angeles", lat: 33.94, lon: -118.41, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "ORD", name: "Chicago", country: "US", region: "North America", city: "Chicago", lat: 41.88, lon: -87.63, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "SEA", name: "Seattle", country: "US", region: "North America", city: "Seattle", lat: 47.61, lon: -122.33, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "YYZ", name: "Toronto", country: "CA", region: "North America", city: "Toronto", lat: 43.65, lon: -79.38, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "MIA", name: "Miami", country: "US", region: "North America", city: "Miami", lat: 25.76, lon: -80.19, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "GRU", name: "São Paulo", country: "BR", region: "South America", city: "São Paulo", lat: -23.55, lon: -46.63, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "EZE", name: "Buenos Aires", country: "AR", region: "South America", city: "Buenos Aires", lat: -34.60, lon: -58.38, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "SCL", name: "Santiago", country: "CL", region: "South America", city: "Santiago", lat: -33.45, lon: -70.67, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "BOG", name: "Bogotá", country: "CO", region: "South America", city: "Bogotá", lat: 4.71, lon: -74.07, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "LHR", name: "London", country: "GB", region: "Europe", city: "London", lat: 51.51, lon: -0.13, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "FRA", name: "Frankfurt", country: "DE", region: "Europe", city: "Frankfurt", lat: 50.11, lon: 8.68, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "CDG", name: "Paris", country: "FR", region: "Europe", city: "Paris", lat: 49.01, lon: 2.55, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "AMS", name: "Amsterdam", country: "NL", region: "Europe", city: "Amsterdam", lat: 52.37, lon: 4.90, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "ARN", name: "Stockholm", country: "SE", region: "Europe", city: "Stockholm", lat: 59.33, lon: 18.07, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "WAW", name: "Warsaw", country: "PL", region: "Europe", city: "Warsaw", lat: 52.23, lon: 21.01, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "MAD", name: "Madrid", country: "ES", region: "Europe", city: "Madrid", lat: 40.42, lon: -3.70, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "DXB", name: "Dubai", country: "AE", region: "Middle East", city: "Dubai", lat: 25.20, lon: 55.27, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "TLV", name: "Tel Aviv", country: "IL", region: "Middle East", city: "Tel Aviv", lat: 32.09, lon: 34.77, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "JNB", name: "Johannesburg", country: "ZA", region: "Africa", city: "Johannesburg", lat: -26.20, lon: 28.05, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "LOS", name: "Lagos", country: "NG", region: "Africa", city: "Lagos", lat: 6.52, lon: 3.38, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "NBO", name: "Nairobi", country: "KE", region: "Africa", city: "Nairobi", lat: -1.29, lon: 36.82, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "SIN", name: "Singapore", country: "SG", region: "Asia", city: "Singapore", lat: 1.35, lon: 103.82, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "NRT", name: "Tokyo", country: "JP", region: "Asia", city: "Tokyo", lat: 35.68, lon: 139.69, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "HKG", name: "Hong Kong", country: "HK", region: "Asia", city: "Hong Kong", lat: 22.32, lon: 114.17, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "BOM", name: "Mumbai", country: "IN", region: "Asia", city: "Mumbai", lat: 19.08, lon: 72.88, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "ICN", name: "Seoul", country: "KR", region: "Asia", city: "Seoul", lat: 37.57, lon: 126.98, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "TPE", name: "Taipei", country: "TW", region: "Asia", city: "Taipei", lat: 25.03, lon: 121.57, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "SYD", name: "Sydney", country: "AU", region: "Oceania", city: "Sydney", lat: -33.87, lon: 151.21, url: "https://1.1.1.1/cdn-cgi/trace" },
+  { id: "AKL", name: "Auckland", country: "NZ", region: "Oceania", city: "Auckland", lat: -36.85, lon: 174.76, url: "https://1.1.1.1/cdn-cgi/trace" },
 ];
 
 async function handleMapProbes(request: Request): Promise<Response> {
@@ -498,7 +524,7 @@ async function handleMapProbes(request: Request): Promise<Response> {
     userColo,
     userLat,
     userLon,
-    probes: PROBES.map((p) => ({ id: p.id, name: p.name, region: p.region, city: p.city, lat: p.lat, lon: p.lon })),
+    probes: PROBES.map((p) => ({ id: p.id, name: p.name, country: p.country, region: p.region, city: p.city, lat: p.lat, lon: p.lon })),
     relayLatencies,
   }, { headers: corsHeaders(request) });
 }

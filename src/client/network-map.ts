@@ -1,6 +1,7 @@
 export interface ProbeDef {
   id: string;
   name: string;
+  country: string;
   region: string;
   city: string;
   lat: number;
@@ -10,6 +11,7 @@ export interface ProbeDef {
 export interface ProbeResult {
   id: string;
   name: string;
+  country: string;
   region: string;
   city: string;
   lat: number;
