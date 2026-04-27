@@ -96,13 +96,13 @@ function getCf(request: Request): CfProperties {
   return (request as unknown as { cf?: CfProperties }).cf || {};
 }
 
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
-const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 120;
-const RATE_LIMIT_SPEED_BURST = 60;
-const RATE_LIMIT_MAX_ENTRIES = 10_000;
+export const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+export const RATE_LIMIT_WINDOW = 60_000;
+export const RATE_LIMIT_MAX = 120;
+export const RATE_LIMIT_SPEED_BURST = 60;
+export const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
-function checkRateLimit(request: Request): Response | null {
+export function checkRateLimit(request: Request): Response | null {
   const url = new URL(request.url);
   const isSpeedTest = url.pathname.startsWith("/api/speedtest/");
   const maxRequests = isSpeedTest ? RATE_LIMIT_SPEED_BURST : RATE_LIMIT_MAX;
@@ -134,17 +134,50 @@ function checkRateLimit(request: Request): Response | null {
   return null;
 }
 
-function isPrivateHostname(hostname: string): boolean {
-  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) return true;
-  if (hostname.endsWith(".internal") || hostname.endsWith(".test") || hostname.endsWith(".example")) return true;
-  const parts = hostname.split(".");
-  if (parts.length <= 1) return true;
-  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.|169\.254\.|100\.64\.)/.test(hostname)) return true;
-  if (/^\[/.test(hostname)) return true;
+export function isPrivateHostname(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+
+  // Block well-known local/reserved names
+  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local")) return true;
+  if (h.endsWith(".internal") || h.endsWith(".test") || h.endsWith(".example")) return true;
+
+  // Block single-label hostnames (decimal IPs like 2130706433, hex like 0x7f000001)
+  if (!h.includes(".")) return true;
+
+  // Block bracketed IPv6 (e.g., [::1], [fe80::1])
+  if (h.startsWith("[")) return true;
+
+  const parts = h.split(".");
+  if (parts.length === 4) {
+    // Check for ambiguous segments (octal like 0177, hex like 0x7f)
+    // These are inherently dangerous: different systems interpret them differently
+    const hasAmbiguousSegment = parts.some(
+      (seg) => (seg.length > 1 && seg.startsWith("0")) || seg.toLowerCase().startsWith("0x")
+    );
+    if (hasAmbiguousSegment) return true;
+
+    // All segments are plain decimal — check for private IP ranges
+    const nums = parts.map((seg) => parseInt(seg, 10));
+    if (nums.every((n) => !isNaN(n) && n >= 0 && n <= 255)) {
+      const [a, b] = nums;
+      if (a === 10) return true;                        // 10.0.0.0/8
+      if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+      if (a === 192 && b === 168) return true;           // 192.168.0.0/16
+      if (a === 127) return true;                        // 127.0.0.0/8
+      if (a === 0) return true;                          // 0.0.0.0/8
+      if (a === 169 && b === 254) return true;           // 169.254.0.0/16 (link-local / metadata)
+      if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 (CGNAT)
+    }
+  }
+
+  // Also catch dotted-decimal private IPs that the normalization above doesn't cover
+  // (e.g., bare decimal like 192.168.1.1 parsed as decimal)
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.|169\.254\.|100\.64\.)/.test(h)) return true;
+
   return false;
 }
 
-async function hashIp(ip: string): Promise<string> {
+export async function hashIp(ip: string): Promise<string> {
   const data = new TextEncoder().encode(ip + "_netcheck_v1");
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(hashBuffer)).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -399,74 +432,116 @@ const SECURITY_HEADERS = [
   { key: "cross-origin-resource-policy", name: "headers.corp", desc: "headers.corp.desc" },
 ];
 
+export function validateTargetUrl(raw: string | null): { ok: true; url: string } | { ok: false; error: string } {
+  if (!raw) return { ok: false, error: "Missing ?url= parameter" };
+
+  // If the input already has a scheme, reject non-HTTP early
+  const schemeMatch = raw.match(/^([a-z][a-z0-9+.-]*):/i);
+  if (schemeMatch && !["http", "https"].includes(schemeMatch[1].toLowerCase())) {
+    return { ok: false, error: "Only HTTP/HTTPS URLs are allowed" };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+  } catch {
+    return { ok: false, error: "Invalid URL" };
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return { ok: false, error: "Only HTTP/HTTPS URLs are allowed" };
+  }
+  if (parsed.username || parsed.password) {
+    return { ok: false, error: "URLs with credentials are not allowed" };
+  }
+  if (isPrivateHostname(parsed.hostname)) {
+    return { ok: false, error: "Private/internal hostnames are not allowed" };
+  }
+
+  return { ok: true, url: parsed.href };
+}
+
 async function handleHeadersCheck(request: Request): Promise<Response> {
   const rl = checkRateLimit(request);
   if (rl) return rl;
 
   const url = new URL(request.url);
-  const target = url.searchParams.get("url");
-
-  if (!target) {
-    return Response.json({ error: "Missing ?url= parameter" }, { status: 400, headers: corsHeaders(request) });
+  const validation = validateTargetUrl(url.searchParams.get("url"));
+  if (!validation.ok) {
+    return Response.json({ error: validation.error }, { status: 400, headers: corsHeaders(request) });
   }
-
-  let targetUrl: string;
-  try {
-    const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-      return Response.json({ error: "Only HTTP/HTTPS URLs are allowed" }, { status: 400, headers: corsHeaders(request) });
-    }
-    if (isPrivateHostname(parsed.hostname)) {
-      return Response.json({ error: "Private/internal hostnames are not allowed" }, { status: 400, headers: corsHeaders(request) });
-    }
-    targetUrl = parsed.href;
-  } catch {
-    return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders(request) });
-  }
+  const targetUrl = validation.url;
 
   try {
     const res = await fetch(targetUrl, {
       method: "GET",
-      redirect: "follow",
+      redirect: "manual",
       signal: AbortSignal.timeout(8000),
       headers: { "User-Agent": "NetCheck Security Scanner/1.0" },
     });
 
-    const headers: Record<string, string> = {};
-    for (const [key, value] of res.headers) {
-      headers[key.toLowerCase()] = value;
+    // Check redirect targets for private IPs
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get("location");
+      if (location) {
+        try {
+          const redirectUrl = new URL(location, targetUrl);
+          if (isPrivateHostname(redirectUrl.hostname)) {
+            return Response.json({ error: "Redirect to private/internal hostname is not allowed" }, { status: 400, headers: corsHeaders(request) });
+          }
+        } catch {
+          // Invalid redirect URL — let it fail naturally
+        }
+      }
+      // For redirects, re-fetch the safe redirect target
+      const finalRes = await fetch(targetUrl, {
+        method: "GET",
+        redirect: "follow",
+        signal: AbortSignal.timeout(8000),
+        headers: { "User-Agent": "NetCheck Security Scanner/1.0" },
+      });
+      return buildHeadersResponse(finalRes, targetUrl, request);
     }
 
-    const checks = SECURITY_HEADERS.map((h) => {
-      const value = headers[h.key] || null;
-      return {
-        name: h.name,
-        key: h.key,
-        desc: h.desc,
-        value,
-        present: !!value,
-      };
-    });
-
-    const present = checks.filter((c) => c.present).length;
-    const total = checks.length;
-    const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
-
-    return Response.json({
-      url: targetUrl,
-      statusCode: res.status,
-      grade,
-      score: { present, total },
-      checks,
-      server: headers["server"] || null,
-      poweredBy: headers["x-powered-by"] || null,
-    }, { headers: corsHeaders(request) });
+    return buildHeadersResponse(res, targetUrl, request);
   } catch (err) {
     return Response.json(
       { error: "Failed to fetch URL", detail: String(err) },
       { status: 500, headers: corsHeaders(request) }
     );
   }
+}
+
+function buildHeadersResponse(res: Response, targetUrl: string, request: Request): Response {
+  const headers: Record<string, string> = {};
+  for (const [key, value] of res.headers) {
+    headers[key.toLowerCase()] = value;
+  }
+
+  const checks = SECURITY_HEADERS.map((h) => {
+    const value = headers[h.key] || null;
+    return {
+      name: h.name,
+      key: h.key,
+      desc: h.desc,
+      value,
+      present: !!value,
+    };
+  });
+
+  const present = checks.filter((c) => c.present).length;
+  const total = checks.length;
+  const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
+
+  return Response.json({
+    url: targetUrl,
+    statusCode: res.status,
+    grade,
+    score: { present, total },
+    checks,
+    server: headers["server"] || null,
+    poweredBy: headers["x-powered-by"] || null,
+  }, { headers: corsHeaders(request) });
 }
 
 const PROBES = [
@@ -547,7 +622,7 @@ async function handleMapProbes(request: Request): Promise<Response> {
   }, { headers: corsHeaders(request) });
 }
 
-function corsHeaders(request?: Request): Record<string, string> {
+export function corsHeaders(request?: Request): Record<string, string> {
   const origin = request?.headers.get("Origin") || "";
   const allowed = [
     "https://netcheck-site.oilygold.workers.dev",
