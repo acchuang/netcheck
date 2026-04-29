@@ -52,6 +52,12 @@ export default {
 
     const url = new URL(request.url);
 
+    // KV-backed rate limit check for all API routes
+    if (url.pathname.startsWith("/api/")) {
+      const rlKv = await checkRateLimitKV(request, env.ANALYTICS);
+      if (rlKv) return withSecurityHeaders(rlKv, request);
+    }
+
     if (url.pathname === "/api/ip") {
       trackVisitor(request, env).catch(() => {});
       return withSecurityHeaders(await handleIpCheck(request), request);
@@ -165,6 +171,44 @@ export function checkRateLimit(request: Request): Response | null {
       { error: "Rate limit exceeded", retryAfter: Math.ceil((RATE_LIMIT_WINDOW - (now - entry.windowStart)) / 1000) },
       { status: 429, headers: { ...corsHeaders(request), "Retry-After": "60" } }
     );
+  }
+
+  return null;
+}
+
+// ─── KV-backed rate limiting (cross-isolate coordination) ──────────
+
+export const RATE_LIMIT_KV_PREFIX = "rl:";
+
+export async function checkRateLimitKV(
+  request: Request,
+  kv: KVNamespace
+): Promise<Response | null> {
+  const url = new URL(request.url);
+  const isSpeedTest = url.pathname.startsWith("/api/speedtest/");
+  const maxRequests = isSpeedTest ? RATE_LIMIT_SPEED_BURST : RATE_LIMIT_MAX;
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  const now = Date.now();
+  const windowIndex = Math.floor(now / RATE_LIMIT_WINDOW);
+  const kvKey = `${RATE_LIMIT_KV_PREFIX}${isSpeedTest ? "speed" : "gen"}:${ip}:${windowIndex}`;
+
+  try {
+    const current = await kv.get(kvKey);
+    const count = current ? parseInt(current, 10) : 0;
+
+    if (count >= maxRequests) {
+      return Response.json(
+        { error: "Rate limit exceeded", retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000) },
+        { status: 429, headers: { ...corsHeaders(request), "Retry-After": "60" } }
+      );
+    }
+
+    // Increment with TTL; don't await to avoid blocking the request
+    kv.put(kvKey, String(count + 1), {
+      expirationTtl: Math.ceil((RATE_LIMIT_WINDOW * 2) / 1000),
+    }).catch(() => {});
+  } catch {
+    // KV unavailable — fall through to in-memory only
   }
 
   return null;

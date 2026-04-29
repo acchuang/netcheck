@@ -1,9 +1,29 @@
 :root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radii */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-pill: 9999px;
+
+  /* Font sizes */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
 }
 
 /* Animation keyframes */
@@ -125,6 +145,7 @@
   --emerald: #10b981;
   --red: #ef4444;
   --amber: #f59e0b;
+  --danger: #e5484d;
 
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-standard: rgba(255, 255, 255, 0.09);
@@ -166,6 +187,7 @@
   --emerald: #059669;
   --red: #dc2626;
   --amber: #d97706;
+  --danger: #dc2626;
 
   --border-subtle: rgba(0, 0, 0, 0.05);
   --border-standard: rgba(0, 0, 0, 0.09);
@@ -2497,7 +2519,7 @@ select option {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--transition-fast), background var(--transition-fast);
   flex-shrink: 0;
 }
 
@@ -2825,7 +2847,7 @@ select option {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  color: var(--danger, #e5484d);
+  color: var(--danger);
   margin-top: 1px;
 }
 
@@ -2860,7 +2882,7 @@ select option {
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .error-toast-close:hover {

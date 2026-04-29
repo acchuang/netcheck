@@ -3,10 +3,12 @@ import {
   isPrivateHostname,
   hashIp,
   checkRateLimit,
+  checkRateLimitKV,
   corsHeaders,
   validateTargetUrl,
   rateLimitMap,
   RATE_LIMIT_MAX,
+  RATE_LIMIT_KV_PREFIX,
   RATE_LIMIT_SPEED_BURST,
 } from "./index";
 
@@ -355,5 +357,67 @@ describe("validateTargetUrl", () => {
     expect(validateTargetUrl("https://github.com").ok).toBe(true);
     expect(validateTargetUrl("https://cloudflare.com").ok).toBe(true);
     expect(validateTargetUrl("https://1.1.1.1").ok).toBe(true);
+  });
+});
+// ─── checkRateLimitKV ──────────────────────────────────────────────
+
+
+function makeKvMock(initialValue?: string): KVNamespace {
+  let stored = initialValue ?? null;
+  return {
+    get: async () => stored,
+    put: async (_key: string, value: string) => { stored = value; },
+    delete: async () => {},
+    list: async () => ({ keys: [], list_complete: true, cursor: "" }),
+    getWithMetadata: async () => ({ value: stored, metadata: null }),
+  } as unknown as KVNamespace;
+}
+
+describe("checkRateLimitKV", () => {
+  it("returns null when under limit", async () => {
+    const kv = makeKvMock("5");
+    const req = new Request("https://netcheck-site.oilygold.workers.dev/api/ip", {
+      headers: { "cf-connecting-ip": "1.2.3.4" },
+    });
+    const result = await checkRateLimitKV(req, kv);
+    expect(result).toBeNull();
+  });
+
+  it("returns 429 when at limit", async () => {
+    const kv = makeKvMock(String(RATE_LIMIT_MAX));
+    const req = new Request("https://netcheck-site.oilygold.workers.dev/api/ip", {
+      headers: { "cf-connecting-ip": "1.2.3.4" },
+    });
+    const result = await checkRateLimitKV(req, kv);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(429);
+  });
+
+  it("returns null when KV key does not exist", async () => {
+    const kv = makeKvMock(); // no value
+    const req = new Request("https://netcheck-site.oilygold.workers.dev/api/ip", {
+      headers: { "cf-connecting-ip": "1.2.3.4" },
+    });
+    const result = await checkRateLimitKV(req, kv);
+    expect(result).toBeNull();
+  });
+
+  it("uses speed test limit for speedtest routes", async () => {
+    const kv = makeKvMock("60"); // at speed burst limit
+    const req = new Request("https://netcheck-site.oilygold.workers.dev/api/speedtest/down?bytes=1024", {
+      headers: { "cf-connecting-ip": "5.6.7.8" },
+    });
+    const result = await checkRateLimitKV(req, kv);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(429);
+  });
+
+  it("includes CORS headers in KV rate limit response", async () => {
+    const kv = makeKvMock(String(RATE_LIMIT_MAX));
+    const req = new Request("https://netcheck-site.oilygold.workers.dev/api/ip", {
+      headers: { "cf-connecting-ip": "1.2.3.4" },
+    });
+    const result = await checkRateLimitKV(req, kv);
+    expect(result!.headers.has("Access-Control-Allow-Origin")).toBe(true);
   });
 });
