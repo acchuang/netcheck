@@ -11,10 +11,10 @@ interface Env {
 function csp(): string {
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com",
     "style-src 'self' 'unsafe-inline' https://rsms.me https://unpkg.com",
     "font-src 'self' https://rsms.me",
-    "img-src 'self' data: https://*.tile.openstreetmap.org",
+    "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com",
     "connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com",
     "frame-src 'self'",
     "base-uri 'self'",
