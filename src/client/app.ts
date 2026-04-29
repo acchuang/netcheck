@@ -20,23 +20,25 @@ import { initConnectionQuality } from "./connection-quality-ui";
 import { initNetworkMap } from "./network-map-ui";
 import { initKeyboardShortcuts } from "./a11y";
 import { initShare } from "./share";
+import { safeInit, safeInitAsync } from "./error-boundary";
+
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTabs();
-  initTooltips();
-  renderInitialSkeletons();
-  runDnsChecks();
-  runAdBlockTests();
-  runFilterListDetection();
-  initSpeedTest();
-  initHeadersCheck();
-  initFingerprint();
-  initAnalytics();
-  initOnboarding();
-  initConnectionQuality();
-  initNetworkMap();
-  initKeyboardShortcuts();
-  initShare();
+  safeInit("Tabs", initTabs);
+  safeInit("Tooltips", initTooltips);
+  safeInit("Skeletons", renderInitialSkeletons);
+  safeInitAsync("DNS Checks", runDnsChecks);
+  safeInitAsync("Ad Block Tests", runAdBlockTests);
+  safeInitAsync("Filter Lists", runFilterListDetection);
+  safeInit("Speed Test", initSpeedTest);
+  safeInit("Headers Check", initHeadersCheck);
+  safeInit("Fingerprint", initFingerprint);
+  safeInit("Analytics", initAnalytics);
+  safeInit("Onboarding", initOnboarding);
+  safeInit("Connection Quality", initConnectionQuality);
+  safeInit("Network Map", initNetworkMap);
+  safeInit("Keyboard Shortcuts", initKeyboardShortcuts);
+  safeInit("Share", initShare);
 });
 
 function renderInitialSkeletons(): void {

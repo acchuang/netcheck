@@ -8,53 +8,89 @@ interface Env {
   PING_OC: R2Bucket;
 }
 
+function csp(): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://rsms.me https://unpkg.com",
+    "font-src 'self' https://rsms.me",
+    "img-src 'self' data: https://*.tile.openstreetmap.org",
+    "connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com",
+    "frame-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+function securityHeaders(request?: Request): Record<string, string> {
+  return {
+    "Content-Security-Policy": csp(),
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  };
+}
+
+function withSecurityHeaders(response: Response, request?: Request): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(securityHeaders(request))) {
+    if (!headers.has(key)) headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(request) });
+      return withSecurityHeaders(new Response(null, { status: 204, headers: corsHeaders(request) }), request);
     }
 
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ip") {
       trackVisitor(request, env).catch(() => {});
-      return handleIpCheck(request);
+      return withSecurityHeaders(await handleIpCheck(request), request);
     }
 
     if (url.pathname === "/api/dns") {
-      return handleDnsCheck(request);
+      return withSecurityHeaders(await handleDnsCheck(request), request);
     }
 
     if (url.pathname === "/api/headers") {
-      return handleHeaders(request);
+      return withSecurityHeaders(await handleHeaders(request), request);
     }
 
     if (url.pathname === "/api/headers/check") {
-      return handleHeadersCheck(request);
+      return withSecurityHeaders(await handleHeadersCheck(request), request);
     }
 
     if (url.pathname === "/api/dns/check-resolvers") {
-      return handleResolverCheck(request);
+      return withSecurityHeaders(await handleResolverCheck(request), request);
     }
 
     if (url.pathname === "/api/analytics") {
       trackVisitor(request, env).catch(() => {});
-      return handleAnalytics(env, request);
+      return withSecurityHeaders(await handleAnalytics(env, request), request);
     }
 
     if (url.pathname === "/api/map/probes") {
       trackVisitor(request, env).catch(() => {});
-      return handleMapProbes(request);
+      return withSecurityHeaders(await handleMapProbes(request), request);
     }
 
     if (url.pathname === "/api/map/ping" && url.searchParams.has("region")) {
-      return handleRegionPing(url, env, request);
+      return withSecurityHeaders(await handleRegionPing(url, env, request), request);
     }
 
     if (url.pathname === "/api/speedtest/ping") {
       const cf = getCf(request);
       const colo = cf.colo || "unknown";
-      return new Response("pong", {
+      return withSecurityHeaders(new Response("pong", {
         headers: {
           ...corsHeaders(request),
           "x-colo": colo,
@@ -62,18 +98,18 @@ export default {
           "x-lon": cf?.longitude || "",
           "Access-Control-Expose-Headers": "x-colo, x-lat, x-lon",
         },
-      });
+      }), request);
     }
 
     if (url.pathname === "/api/speedtest/down") {
-      return handleSpeedDown(url, request);
+      return withSecurityHeaders(await handleSpeedDown(url, request), request);
     }
 
     if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
-      return handleSpeedUp(request);
+      return withSecurityHeaders(await handleSpeedUp(request), request);
     }
 
-    return Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders(request) });
+    return withSecurityHeaders(Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders(request) }), request);
   },
 };
 

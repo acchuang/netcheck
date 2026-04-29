@@ -592,139 +592,134 @@ export function initI18n(): void {
 }
 
 function applyStaticTranslations(): void {
-  const s = (id: string, key: string) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
-  };
-  const sa = (id: string, key: string, attr: string) => {
-    const el = document.getElementById(id);
-    if (el) el.setAttribute(attr, t(key));
-  };
+  interface Binding { selector: string; key: string; attr?: string; }
+  const bindings: Binding[] = [
+    // Nav
+    { selector: ".nav-link[data-tab='dns'] .nav-link-text", key: "nav.dns" },
+    { selector: ".nav-link[data-tab='speed'] .nav-link-text", key: "nav.speed" },
+    { selector: ".nav-link[data-tab='adblock'] .nav-link-text", key: "nav.adblock" },
+    { selector: ".nav-link[data-tab='headers'] .nav-link-text", key: "nav.headers" },
+    { selector: ".nav-link[data-tab='fingerprint'] .nav-link-text", key: "nav.fingerprint" },
+    { selector: ".nav-link[data-tab='quality'] .nav-link-text", key: "nav.quality" },
+    { selector: ".nav-link[data-tab='network'] .nav-link-text", key: "nav.network" },
+    { selector: ".nav-link[data-tab='about'] .nav-link-text", key: "nav.about" },
+    { selector: "#export-btn-text", key: "nav.export" },
+    { selector: "#export-btn", key: "nav.exportReport", attr: "title" },
+    { selector: "#export-markdown-text", key: "nav.downloadMd" },
+    { selector: "#export-pdf-text", key: "nav.savePdf" },
+
+    // DNS
+    { selector: "#dns-title", key: "dns.title" },
+    { selector: "#dns-subtitle", key: "dns.subtitle" },
+    { selector: "#dns-ip-title", key: "dns.ipTitle" },
+    { selector: "#dns-ipv4-label", key: "dns.ipv4" },
+    { selector: "#dns-location-label", key: "dns.location" },
+    { selector: "#dns-isp-label", key: "dns.isp" },
+    { selector: "#dns-timezone-label", key: "dns.timezone" },
+    { selector: "#dns-colo-label", key: "dns.colo" },
+    { selector: "#dns-resolver-title", key: "dns.resolverTitle" },
+    { selector: "#dns-security-title", key: "dns.securityTitle" },
+    { selector: "#dns-lookup-title", key: "dns.lookupTitle" },
+    { selector: "#dns-lookup-btn", key: "dns.lookupBtn" },
+    { selector: "#dns-raw-json-summary", key: "dns.rawJson" },
+    { selector: "#dns-ptr-option", key: "dns.ptrReverse" },
+    { selector: "#dns-all-option", key: "dns.allRecords" },
+    { selector: "#dns-suggestions-title", key: "dns.recommendations" },
+    { selector: "#dns-http-label", key: "dns.http" },
+    { selector: "#dns-tls-label", key: "dns.tls" },
+
+    // Speed
+    { selector: "#speed-title", key: "speed.title" },
+    { selector: "#speed-subtitle", key: "speed.subtitle" },
+    { selector: "#speed-server-label", key: "speed.testServer" },
+    { selector: "#speed-download-label", key: "speed.download" },
+    { selector: "#speed-upload-label", key: "speed.upload" },
+    { selector: "#speed-latency-label", key: "speed.latency" },
+    { selector: "#speed-jitter-label", key: "speed.jitter" },
+    { selector: "#speed-bufferbloat-label", key: "speed.bufferbloat" },
+    { selector: "#speed-graph-title-text", key: "speed.graphTitle" },
+    { selector: "#speed-dl-legend", key: "speed.download" },
+    { selector: "#speed-ul-legend", key: "speed.upload" },
+    { selector: "#speed-suggestions-title", key: "speed.recommendations" },
+    { selector: "#speed-route-you", key: "speed.you" },
+    { selector: "#speed-history-title", key: "speed.history.title" },
+    { selector: "#speed-history-empty", key: "speed.history.empty" },
+    { selector: "#speed-start-btn", key: "speed.runBtn" },
+    { selector: "#speed-download-label", key: "speed.tip.download", attr: "data-tooltip" },
+    { selector: "#speed-upload-label", key: "speed.tip.upload", attr: "data-tooltip" },
+    { selector: "#speed-latency-label", key: "speed.tip.latency", attr: "data-tooltip" },
+    { selector: "#speed-jitter-label", key: "speed.tip.jitter", attr: "data-tooltip" },
+    { selector: "#speed-bufferbloat-label", key: "speed.tip.bufferbloat", attr: "data-tooltip" },
+    { selector: "#speed-history-clear", key: "speed.history.clear", attr: "title" },
+    { selector: "#speed-history-clear", key: "speed.history.clear", attr: "aria-label" },
+
+    // Ad block
+    { selector: "#adblock-title", key: "adblock.title" },
+    { selector: "#adblock-subtitle", key: "adblock.subtitle" },
+    { selector: "#filter-list-title", key: "filter.title" },
+    { selector: "#adblock-suggestions-title", key: "adblock.recommendations" },
+
+    // Headers
+    { selector: "#headers-title", key: "headers.title" },
+    { selector: "#headers-subtitle", key: "headers.subtitle" },
+    { selector: "#headers-check-title", key: "headers.checkTitle" },
+    { selector: "#headers-check-btn", key: "headers.scan" },
+    { selector: "#headers-grade-title", key: "headers.gradeTitle" },
+    { selector: "#headers-info-title", key: "headers.infoTitle" },
+    { selector: "#headers-info-desc", key: "headers.infoDesc" },
+    { selector: "#headers-detail-title", key: "headers.detailTitle" },
+
+    // Fingerprint
+    { selector: "#fp-title", key: "fp.title" },
+    { selector: "#fp-subtitle", key: "fp.subtitle" },
+    { selector: "#fp-start-btn", key: "fp.scan" },
+    { selector: "#fp-uniqueness-label", key: "fp.uniqueness" },
+    { selector: "#fp-protection-title", key: "fp.protection" },
+
+    // Connection Quality
+    { selector: "#quality-title", key: "quality.title" },
+    { selector: "#quality-subtitle", key: "quality.subtitle" },
+    { selector: "#quality-connection-title", key: "quality.connectionTitle" },
+    { selector: "#quality-tls-title", key: "quality.tlsTitle" },
+    { selector: "#quality-timing-title", key: "quality.timingTitle" },
+    { selector: "#quality-stability-title", key: "quality.stabilityTitle" },
+    { selector: "#quality-score-title", key: "quality.scoreTitle" },
+    { selector: "#quality-run-btn", key: "quality.runTest" },
+    { selector: "#quality-stability-btn", key: "quality.runStability" },
+
+    // Network
+    { selector: "#network-title", key: "network.title" },
+    { selector: "#network-subtitle", key: "network.subtitle" },
+    { selector: "#network-run-btn", key: "network.runTest" },
+
+    // About
+    { selector: "#about-title", key: "about.title" },
+    { selector: "#about-subtitle", key: "about.subtitle" },
+
+    // Footer
+    { selector: "#footer-text", key: "footer.text" },
+    { selector: "#privacy-badge", key: "footer.privacyBadge" },
+  ];
+
+  for (const { selector, key, attr } of bindings) {
+    const el = document.querySelector(selector);
+    if (!el) continue;
+    if (attr) {
+      el.setAttribute(attr, t(key));
+    } else {
+      el.textContent = t(key);
+    }
+  }
 
   // Update lang toggle label
   const langBtn = document.getElementById("lang-toggle");
   if (langBtn) {
     const label = langBtn.querySelector(".lang-label");
     const labels: Record<Locale, string> = {
-      en: "EN",
-      "zh-TW": "繁中",
-      "zh-CN": "简中",
-      es: "ES",
-      ja: "JP",
-      ko: "KR",
+      en: "EN", "zh-TW": "繁中", "zh-CN": "简中", es: "ES", ja: "JP", ko: "KR",
     };
     if (label) label.textContent = labels[current];
   }
-
-  // Nav
-  document.querySelectorAll<HTMLAnchorElement>(".nav-link[data-tab]").forEach((link) => {
-    const tab = link.dataset.tab;
-    const textEl = link.querySelector(".nav-link-text");
-    const target = textEl || link;
-    if (tab === "dns") target.textContent = t("nav.dns");
-    else if (tab === "speed") target.textContent = t("nav.speed");
-    else if (tab === "adblock") target.textContent = t("nav.adblock");
-    else if (tab === "headers") target.textContent = t("nav.headers");
-    else if (tab === "fingerprint") target.textContent = t("nav.fingerprint");
-    else if (tab === "quality") target.textContent = t("nav.quality");
-    else if (tab === "network") target.textContent = t("nav.network");
-    else if (tab === "about") target.textContent = t("nav.about");
-  });
-
-  s("export-btn-text", "nav.export");
-  sa("export-btn", "nav.exportReport", "title");
-  s("export-markdown-text", "nav.downloadMd");
-  s("export-pdf-text", "nav.savePdf");
-
-  // DNS section
-  s("dns-title", "dns.title");
-  s("dns-subtitle", "dns.subtitle");
-  s("dns-ip-title", "dns.ipTitle");
-  s("dns-ipv4-label", "dns.ipv4");
-  s("dns-location-label", "dns.location");
-  s("dns-isp-label", "dns.isp");
-  s("dns-timezone-label", "dns.timezone");
-  s("dns-colo-label", "dns.colo");
-  s("dns-resolver-title", "dns.resolverTitle");
-  s("dns-security-title", "dns.securityTitle");
-  s("dns-lookup-title", "dns.lookupTitle");
-  s("dns-lookup-btn", "dns.lookupBtn");
-  s("dns-raw-json-summary", "dns.rawJson");
-  s("dns-ptr-option", "dns.ptrReverse");
-  s("dns-all-option", "dns.allRecords");
-  s("dns-suggestions-title", "dns.recommendations");
-
-  // Speed section
-  s("speed-title", "speed.title");
-  s("speed-subtitle", "speed.subtitle");
-  s("speed-server-label", "speed.testServer");
-  s("speed-download-label", "speed.download");
-  s("speed-upload-label", "speed.upload");
-  s("speed-latency-label", "speed.latency");
-  s("speed-jitter-label", "speed.jitter");
-  s("speed-bufferbloat-label", "speed.bufferbloat");
-  s("speed-graph-title-text", "speed.graphTitle");
-  sa("speed-download-label", "speed.tip.download", "data-tooltip");
-  sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
-  sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
-  sa("speed-jitter-label", "speed.tip.jitter", "data-tooltip");
-  sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
-  s("speed-dl-legend", "speed.download");
-  s("speed-ul-legend", "speed.upload");
-  s("speed-suggestions-title", "speed.recommendations");
-  s("speed-route-you", "speed.you");
-  s("speed-history-title", "speed.history.title");
-  s("speed-history-empty", "speed.history.empty");
-  sa("speed-history-clear", "speed.history.clear", "title");
-  sa("speed-history-clear", "speed.history.clear", "aria-label");
-  s("speed-start-btn", "speed.runBtn");
-
-  // Ad block section
-  s("adblock-title", "adblock.title");
-  s("adblock-subtitle", "adblock.subtitle");
-  s("filter-list-title", "filter.title");
-  s("adblock-suggestions-title", "adblock.recommendations");
-
-  // DNS connection info
-  s("dns-http-label", "dns.http");
-  s("dns-tls-label", "dns.tls");
-
-  // Headers section
-  s("headers-title", "headers.title");
-  s("headers-subtitle", "headers.subtitle");
-  s("headers-check-title", "headers.checkTitle");
-  s("headers-check-btn", "headers.scan");
-  s("headers-grade-title", "headers.gradeTitle");
-  s("headers-info-title", "headers.infoTitle");
-  s("headers-info-desc", "headers.infoDesc");
-  s("headers-detail-title", "headers.detailTitle");
-
-  // Fingerprint
-  s("fp-title", "fp.title");
-  s("fp-subtitle", "fp.subtitle");
-  s("fp-start-btn", "fp.scan");
-  s("fp-uniqueness-label", "fp.uniqueness");
-  s("fp-protection-title", "fp.protection");
-
-  // Connection Quality section
-  s("quality-title", "quality.title");
-  s("quality-subtitle", "quality.subtitle");
-  s("quality-connection-title", "quality.connectionTitle");
-  s("quality-tls-title", "quality.tlsTitle");
-  s("quality-timing-title", "quality.timingTitle");
-  s("quality-stability-title", "quality.stabilityTitle");
-  s("quality-score-title", "quality.scoreTitle");
-  s("quality-run-btn", "quality.runTest");
-  s("quality-stability-btn", "quality.runStability");
-  s("network-title", "network.title");
-  s("network-subtitle", "network.subtitle");
-  s("network-run-btn", "network.runTest");
-  s("about-title", "about.title");
-  s("about-subtitle", "about.subtitle");
-
-  // Footer
-  s("footer-text", "footer.text");
-  s("privacy-badge", "footer.privacyBadge");
 
   // Page title
   const titles: Record<Locale, string> = {
@@ -737,6 +732,5 @@ function applyStaticTranslations(): void {
   };
   document.title = titles[current];
 
-  // Re-render dynamic sections with new locale
   notifyLocaleChange();
 }
