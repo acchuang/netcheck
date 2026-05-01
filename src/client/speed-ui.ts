@@ -107,6 +107,7 @@ onLocaleChange(renderSpeedHistory);
 async function runSpeedTest(): Promise<void> {
   const section = document.getElementById("speed")!;
   section.setAttribute("aria-busy", "true");
+  const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = t("speed.running");
 
