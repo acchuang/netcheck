@@ -1,0 +1,154 @@
+/* ========================================
+   NetCheck Design Tokens — Primitives
+   ======================================== */
+
+/* ── Grey scale ── */
+:root {
+  --gray-0: #ffffff;
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #868e96;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-850: #13151a;
+  --gray-900: #212529;
+  --gray-950: #0d0e10;
+  --gray-1000: #000000;
+}
+
+/* ── Brand (indigo/violet) ── */
+:root {
+  --brand-50: #f0f1ff;
+  --brand-100: #e0e2ff;
+  --brand-200: #c4c7fe;
+  --brand-300: #a4a7fc;
+  --brand-400: #8386f9;
+  --brand-500: #6b6ef5;
+  --brand-600: #5e6ad2;
+  --brand-700: #4c56b8;
+  --brand-800: #3e469e;
+  --brand-900: #32387f;
+  --brand-950: #1e2254;
+}
+
+/* ── Semantic status colours ── */
+:root {
+  --green-50: #e6faf0;
+  --green-100: #c4f2db;
+  --green-200: #9de8c1;
+  --green-300: #6dd9a4;
+  --green-400: #3ec986;
+  --green-500: #28b872;
+  --green-600: #1e9b5e;
+  --green-700: #177e4c;
+  --green-800: #13653d;
+  --green-900: #105233;
+  --green-950: #082e1c;
+
+  --amber-50: #fff9eb;
+  --amber-100: #fff0cc;
+  --amber-200: #ffe099;
+  --amber-300: #ffcd5c;
+  --amber-400: #ffba2e;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+  --amber-800: #92400e;
+  --amber-900: #78350f;
+  --amber-950: #451a03;
+
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-950: #450a0a;
+}
+
+/* ── Spacing scale ── */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-13: 52px;
+  --space-14: 56px;
+  --space-15: 60px;
+  --space-16: 64px;
+}
+
+/* ── Radius scale ── */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+/* ── Shadow scale (light) ── */
+:root {
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.1);
+}
+
+/* ── Type scale ── */
+:root {
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.75rem;
+}
+
+/* ── Leading ── */
+:root {
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+}
+
+/* ── Transitions ── */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --duration-120: 120ms;
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+  --duration-400: 400ms;
+  --duration-600: 600ms;
+  --duration-800: 800ms;
+}
+
+/* ── Layout ── */
+:root {
+  --page-px: clamp(1rem, 5vw, 2.5rem);
+  --container-max: 1280px;
+  --gap-sm: var(--space-2);
+  --gap-md: var(--space-4);
+  --gap-lg: var(--space-6);
+  --card-p: var(--space-5);
+  --btn-h: 40px;
+}
