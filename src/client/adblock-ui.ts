@@ -2,6 +2,7 @@ import { AdBlockTest } from "./adblock-test";
 import { t } from "./i18n";
 import { setBadge, renderSkeletonRows } from "./ui-utils";
 import { affiliate } from "./affiliates";
+import { CnameChecker } from "./adblock-cname";
 
 interface AdblockScore {
   score: number;
@@ -123,6 +124,20 @@ export async function runAdBlockTests(): Promise<void> {
   const score = AdBlockTest.getScore();
   document.getElementById("score-number")!.textContent = String(score.score);
 
+  // CNAME tracking check
+  const cnameSection = document.getElementById("cname-section");
+  if (cnameSection) {
+    cnameSection.classList.remove("hidden");
+    document.getElementById("cname-results")!.innerHTML = `<p class="info-muted">Checking tracker origins...</p>`;
+    CnameChecker.runAll().then(cnameData => {
+      document.getElementById("cname-results")!.innerHTML = CnameChecker.renderCnameCards(cnameData.results);
+      const cnameTitle = document.getElementById("cname-title");
+      if (cnameTitle) cnameTitle.textContent = `${t("adblock.cnameTitle")} (${cnameData.blockedCount}/${cnameData.total})`;
+    }).catch(() => {
+      document.getElementById("cname-results")!.innerHTML = `<p class="info-muted">Could not check tracker origins.</p>`;
+    });
+  }
+
   const ring = document.getElementById("score-ring-fill") as unknown as SVGCircleElement;
   const circumference = 2 * Math.PI * 54;
   ring.style.strokeDashoffset = String(circumference - (score.score / 100) * circumference);
@@ -145,8 +160,42 @@ export async function runAdBlockTests(): Promise<void> {
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
   renderAdblockSuggestions(score, AdBlockTest.results);
+
+  // Community ranking
+  loadCommunityStats(score.score);
+
   const sectionEl = document.getElementById("adblock");
   if (sectionEl) sectionEl.setAttribute("aria-busy", "false");
+}
+
+async function loadCommunityStats(score: number): Promise<void> {
+  try {
+    await fetch("/api/adblock/stats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score }) });
+    const res = await fetch("/api/adblock/stats");
+    const stats = await res.json() as { total: number; median: number; p75: number; p90: number };
+    const el = document.getElementById("community-stats");
+    if (!el) return;
+    let percentile = "top 50%";
+    if (score >= stats.p90) percentile = "top 10%";
+    else if (score >= stats.p75) percentile = "top 25%";
+    else if (score >= stats.median) percentile = "top 50%";
+    else percentile = "below median";
+
+    const pct = stats.total > 0 ? Math.min(100, Math.round((score / Math.max(stats.p90 || 1, 1)) * 100)) : 0;
+    el.innerHTML = `
+      <div class="score-ring" style="width:100px;height:100px;margin:0 auto">
+        <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-tertiary)" stroke-width="6"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand)" stroke-width="6" stroke-dasharray="263.9" stroke-dashoffset="${263.9 - (pct / 100) * 263.9}" stroke-linecap="round"/>
+        </svg>
+        <div class="score-value" style="transform:translate(-50%,-50%)">
+          <span style="font-size:20px;font-weight:700">${score}</span>
+          <span style="font-size:10px;display:block">/ 100 · ${percentile}</span>
+        </div>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--text-tertiary);margin-top:8px">${t("adblock.communityStats", stats.total)}</p>`;
+    el.classList.remove("hidden");
+  } catch { /* community stats unavailable */ }
 }
 
 function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]): void {

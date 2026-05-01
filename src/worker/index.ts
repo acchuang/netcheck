@@ -127,6 +127,17 @@ export default {
       return withSecurityHeaders(await handleDnsBenchmark(request), request);
     }
 
+    if (url.pathname === "/api/adblock/stats") {
+      if (request.method === "GET") {
+        trackVisitor(request, env).catch(() => {});
+        return withSecurityHeaders(await handleAdBlockStats(env, request), request);
+      }
+      if (request.method === "POST") {
+        trackVisitor(request, env).catch(() => {});
+        return withSecurityHeaders(await handleAdBlockSubmit(env, request), request);
+      }
+    }
+
     return withSecurityHeaders(Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders(request) }), request);
   },
 };
@@ -668,6 +679,16 @@ const PROBES = [
   { id: "TPE", name: "Taipei", country: "TW", region: "Asia", city: "Taipei", lat: 25.03, lon: 121.57 },
   { id: "SYD", name: "Sydney", country: "AU", region: "Oceania", city: "Sydney", lat: -33.87, lon: 151.21 },
   { id: "AKL", name: "Auckland", country: "NZ", region: "Oceania", city: "Auckland", lat: -36.85, lon: 174.76 },
+  // Cloud provider edge locations
+  { id: "AWS-VA", name: "AWS us-east-1", country: "US", region: "North America", city: "Ashburn", lat: 39.04, lon: -77.49 },
+  { id: "AWS-IR", name: "AWS eu-west-1", country: "IE", region: "Europe", city: "Dublin", lat: 53.34, lon: -6.26 },
+  { id: "AWS-SG", name: "AWS ap-southeast-1", country: "SG", region: "Asia", city: "Singapore", lat: 1.35, lon: 103.82 },
+  { id: "GCP-IA", name: "GCP us-central1", country: "US", region: "North America", city: "Council Bluffs", lat: 41.26, lon: -95.86 },
+  { id: "GCP-BE", name: "GCP europe-west1", country: "BE", region: "Europe", city: "St. Ghislain", lat: 50.45, lon: 3.82 },
+  { id: "GCP-TW", name: "GCP asia-east1", country: "TW", region: "Asia", city: "Changhua", lat: 24.06, lon: 120.53 },
+  { id: "AZ-US", name: "Azure eastus", country: "US", region: "North America", city: "Boydton", lat: 36.67, lon: -78.39 },
+  { id: "AZ-NL", name: "Azure westeurope", country: "NL", region: "Europe", city: "Amsterdam", lat: 52.37, lon: 4.90 },
+  { id: "AZ-SG", name: "Azure southeastasia", country: "SG", region: "Asia", city: "Singapore", lat: 1.35, lon: 103.82 },
 ];
 
 const REGION_BUCKETS: Record<string, keyof Env> = {
@@ -942,4 +963,43 @@ async function handleDnsBenchmark(request: Request): Promise<Response> {
   return Response.json({ resolvers: results, pathTimings }, {
     headers: { ...corsHeaders(request), "Cache-Control": "no-store" },
   });
+}
+
+async function handleAdBlockStats(env: Env, request: Request): Promise<Response> {
+  try {
+    const dayKey = `adblock:${new Date().toISOString().slice(0, 10)}`;
+    const data = await env.ANALYTICS.get(dayKey, "json") as { total: number; scores: number[] } | null;
+    if (!data || !data.scores.length) {
+      return Response.json({ total: 0, median: 0, p75: 0, p90: 0 }, { headers: corsHeaders(request) });
+    }
+    const sorted = [...data.scores].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const p75 = sorted[Math.floor(sorted.length * 0.75)];
+    const p90 = sorted[Math.floor(sorted.length * 0.9)];
+    return Response.json({ total: data.total, median: Math.round(median), p75: Math.round(p75), p90: Math.round(p90) }, {
+      headers: { ...corsHeaders(request), "Cache-Control": "public, max-age=300" },
+    });
+  } catch {
+    return Response.json({ total: 0, median: 0, p75: 0, p90: 0 }, { headers: corsHeaders(request) });
+  }
+}
+
+async function handleAdBlockSubmit(env: Env, request: Request): Promise<Response> {
+  try {
+    const body = await request.json() as { score: number };
+    if (typeof body.score !== "number" || body.score < 0 || body.score > 100) {
+      return Response.json({ error: "Invalid score" }, { status: 400, headers: corsHeaders(request) });
+    }
+    const dayKey = `adblock:${new Date().toISOString().slice(0, 10)}`;
+    const data = await env.ANALYTICS.get(dayKey, "json") as { total: number; scores: number[] } | null;
+    const current = data || { total: 0, scores: [] };
+    current.total += 1;
+    current.scores.push(body.score);
+    // Cap at 5000 scores to keep size manageable
+    if (current.scores.length > 5000) current.scores.shift();
+    await env.ANALYTICS.put(dayKey, JSON.stringify(current), { expirationTtl: 86400 * 2 });
+    return Response.json({ ok: true }, { headers: corsHeaders(request) });
+  } catch {
+    return Response.json({ ok: false }, { headers: corsHeaders(request) });
+  }
 }
