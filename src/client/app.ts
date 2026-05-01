@@ -5,7 +5,7 @@ import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-t
 import { SpeedTestHistory } from "./history";
 import { ReportExporter } from "./export-report";
 import { t } from "./i18n";
-import { initTooltips, renderSkeletonRows } from "./ui-utils";
+import { renderSkeletonRows } from "./ui-utils";
 import { initHeadersCheck } from "./headers-ui";
 import { initTheme } from "./theme";
 import { initI18n } from "./i18n";
@@ -21,6 +21,7 @@ import { initNetworkMap } from "./network-map-ui";
 import { initKeyboardShortcuts } from "./a11y";
 import { initShare } from "./share";
 import { safeInit, safeInitAsync } from "./error-boundary";
+import { initTooltips } from "./tooltip";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -63,6 +64,16 @@ function initTabs(): void {
       link.classList.add("active");
       link.setAttribute("aria-current", "page");
 
+      document.querySelectorAll(".nav-bottom-item").forEach((bi) => {
+        bi.classList.remove("active");
+        bi.removeAttribute("aria-current");
+      });
+      const bottomItem = document.querySelector(`.nav-bottom-item[data-tab="${tab}"]`);
+      if (bottomItem) {
+        bottomItem.classList.add("active");
+        bottomItem.setAttribute("aria-current", "page");
+      }
+
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       document.getElementById(tab)!.classList.add("active");
     });
@@ -87,6 +98,15 @@ function initTabs(): void {
   });
   document.addEventListener("click", (e) => {
     if (!(e.target as HTMLElement).closest(".export-dropdown")) ReportExporter.hideExportMenu();
+  });
+
+  document.querySelectorAll(".nav-bottom-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
+      const tab = (item as HTMLElement).dataset.tab!;
+      const link = document.querySelector(`.nav-link[data-tab="${tab}"]`) as HTMLAnchorElement;
+      if (link) link.click();
+    });
   });
 }
 

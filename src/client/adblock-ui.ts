@@ -145,6 +145,8 @@ export async function runAdBlockTests(): Promise<void> {
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
   renderAdblockSuggestions(score, AdBlockTest.results);
+  const sectionEl = document.getElementById("adblock");
+  if (sectionEl) sectionEl.setAttribute("aria-busy", "false");
 }
 
 function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]): void {

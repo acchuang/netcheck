@@ -122,6 +122,8 @@ function renderStabilityPlaceholder(): void {
 }
 
 async function runQualityTest(): Promise<void> {
+  const section = document.getElementById("quality")!;
+  section.setAttribute("aria-busy", "true");
   const stabilityBtn = document.getElementById("quality-stability-btn") as HTMLButtonElement;
 
   state.isRunning = true;
@@ -191,6 +193,8 @@ async function runQualityTest(): Promise<void> {
 
   state.isRunning = false;
   syncQualityUi();
+  const sectionEl = document.getElementById("quality");
+  if (sectionEl) sectionEl.setAttribute("aria-busy", "false");
 }
 
 function renderConnectionInfo(info: ConnectionInfo | null, skeleton?: boolean): void {

@@ -105,7 +105,8 @@ function renderSpeedHistory(): void {
 onLocaleChange(renderSpeedHistory);
 
 async function runSpeedTest(): Promise<void> {
-  const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
+  const section = document.getElementById("speed")!;
+  section.setAttribute("aria-busy", "true");
   btn.disabled = true;
   btn.textContent = t("speed.running");
 
@@ -223,6 +224,7 @@ async function runSpeedTest(): Promise<void> {
   renderSpeedHistory();
   btn.disabled = false;
   btn.textContent = t("speed.runAgain");
+  section.setAttribute("aria-busy", "false");
 }
 
 function renderTimingBreakdown(timing: import("./speed-test").SpeedTestResults["timing"]): void {

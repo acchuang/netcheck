@@ -7,6 +7,8 @@ export function initFingerprint(): void {
 }
 
 async function runFingerprintScan(): Promise<void> {
+  const section = document.getElementById("fingerprint")!;
+  section.setAttribute("aria-busy", "true");
   const btn = document.getElementById("fp-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = t("fp.scanning");
@@ -97,4 +99,5 @@ async function runFingerprintScan(): Promise<void> {
 
   btn.disabled = false;
   btn.textContent = t("fp.scan");
+  section.setAttribute("aria-busy", "false");
 }

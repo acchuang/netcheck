@@ -61,29 +61,3 @@ export function setActiveGauge(phase: string): void {
     g.classList.toggle("active", phases[i] === phase);
   });
 }
-
-export function initTooltips(): void {
-  const tip = document.createElement("div");
-  tip.className = "tooltip";
-  document.body.appendChild(tip);
-
-  document.addEventListener("mouseenter", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
-    if (!target) return;
-    tip.textContent = target.dataset.tooltip!;
-    tip.classList.add("visible");
-
-    const rect = target.getBoundingClientRect();
-    const tipRect = tip.getBoundingClientRect();
-    let left = rect.left + rect.width / 2 - tipRect.width / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
-    tip.style.left = `${left}px`;
-    tip.style.top = `${rect.top - tipRect.height - 6}px`;
-  }, true);
-
-  document.addEventListener("mouseleave", (e) => {
-    if ((e.target as HTMLElement).closest("[data-tooltip]")) {
-      tip.classList.remove("visible");
-    }
-  }, true);
-}

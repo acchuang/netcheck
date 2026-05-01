@@ -199,6 +199,8 @@ function renderSecurityChecks(securityChecks: SecurityCheck[]): void {
 }
 
 export async function runDnsChecks(): Promise<void> {
+  const section = document.getElementById("dns")!;
+  section.setAttribute("aria-busy", "true");
   lastIpData = await DnsCheck.detectIp();
   renderIpData(lastIpData);
 
@@ -213,6 +215,7 @@ export async function runDnsChecks(): Promise<void> {
     securityChecks: lastSecurityChecks,
     reachable: lastResolvers.filter((resolver) => resolver.reachable),
   });
+  section.setAttribute("aria-busy", "false");
 }
 
 function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {

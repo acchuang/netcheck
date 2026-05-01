@@ -102,6 +102,7 @@ export function initKeyboardShortcuts(): void {
     // Escape closes menus and focuses nothing
     if (e.key === "Escape") {
       hideExport();
+      hideLangMenu();
       (document.activeElement as HTMLElement | null)?.blur();
       return;
     }
