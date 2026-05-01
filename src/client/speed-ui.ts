@@ -14,7 +14,10 @@ import {
   clearGraph,
   drawSpeedGraph,
   addGraphPoint,
+  drawHistoryChart,
 } from "./speed-graph";
+import { SpeedMonitor, type MonitorDuration } from "./speed-monitor";
+
 import {
   gradeKeys,
   renderSpeedSuggestions,
@@ -26,80 +29,31 @@ import { announce, announceProgress } from "./a11y";
 
 export function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
+  const monitorSelect = document.getElementById("speed-monitor-select") as unknown as HTMLSelectElement;
+  const monitorBtn = document.getElementById("speed-monitor-btn") as HTMLButtonElement;
+  monitorBtn?.addEventListener("click", () => {
+    const dur = parseInt(monitorSelect.value) as MonitorDuration;
+    runMonitor(dur);
+  });
+  const csvBtn = document.getElementById("speed-csv-btn");
+  csvBtn?.addEventListener("click", () => SpeedTestHistory.downloadCsv());
   renderSpeedHistory();
 }
 
-function formatHistoryTimestamp(ts: number): string {
-  const diff = Math.max(0, Date.now() - ts);
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  if (minutes < 1) return t("speed.history.justNow");
-  if (minutes < 60) return t("speed.history.minAgo").replace("{0}", String(minutes));
-  if (hours < 24) return t("speed.history.hrAgo").replace("{0}", String(hours));
-  const d = new Date(ts);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-}
-
 function renderSpeedHistory(): void {
+  const history = SpeedTestHistory.getAll();
   const container = document.getElementById("speed-history")!;
-  const cardsEl = document.getElementById("speed-history-cards")!;
-  const entries = SpeedTestHistory.load();
+  const csvBtn = document.getElementById("speed-csv-btn") as HTMLButtonElement | null;
 
-  if (entries.length === 0) {
+  if (!history.length) {
     container.classList.remove("visible");
-    cardsEl.innerHTML = "";
+    if (csvBtn) csvBtn.disabled = true;
     return;
   }
 
   container.classList.add("visible");
-
-  const clearBtn = document.getElementById("speed-history-clear") as HTMLButtonElement;
-  if (entries.length > 0) {
-    clearBtn.style.display = "inline-flex";
-    clearBtn.onclick = () => { SpeedTestHistory.clear(); renderSpeedHistory(); };
-  } else {
-    clearBtn.style.display = "none";
-  }
-
-  cardsEl.innerHTML = entries.map((entry) => {
-    const grade = SpeedTest.getGrade(
-      entry.download,
-      entry.upload,
-      entry.latency,
-      entry.jitter,
-      entry.bufferbloat ?? null
-    );
-    const gradeLabel = t(gradeKeys[grade.label] || grade.label);
-    const server = formatColo(entry.colo, entry.userLat, entry.userLon);
-    const time = formatHistoryTimestamp(entry.timestamp);
-
-    return `
-    <div class="speed-history-card stagger-item">
-      <div class="speed-history-card-header">
-        <span class="speed-history-card-time">${time}</span>
-        <span class="speed-history-card-grade">${grade.grade} · ${gradeLabel}</span>
-      </div>
-      <span class="speed-history-card-server">${server}</span>
-      <div class="speed-history-card-metrics">
-        <div class="speed-history-card-metric download">
-          <div class="speed-history-card-metric-value">${SpeedTest.formatSpeed(entry.download)}</div>
-          <div class="speed-history-card-metric-label">↓</div>
-        </div>
-        <div class="speed-history-card-metric upload">
-          <div class="speed-history-card-metric-value">${SpeedTest.formatSpeed(entry.upload)}</div>
-          <div class="speed-history-card-metric-label">↑</div>
-        </div>
-        <div class="speed-history-card-metric latency">
-          <div class="speed-history-card-metric-value">${entry.latency !== null ? String(Math.round(entry.latency)) : "—"}</div>
-          <div class="speed-history-card-metric-label">ms</div>
-        </div>
-        <div class="speed-history-card-metric jitter">
-          <div class="speed-history-card-metric-value">${entry.jitter !== null ? String(Math.round(entry.jitter)) : "—"}</div>
-          <div class="speed-history-card-metric-label">ms</div>
-        </div>
-      </div>
-    </div>`;
-  }).join("");
+  if (csvBtn) csvBtn.disabled = false;
+  drawHistoryChart(history);
 }
 
 onLocaleChange(renderSpeedHistory);
@@ -285,4 +239,28 @@ function renderStabilityReadout(avgRtt: number | null, pingJitter: number | null
   const text = [avgText, jitterText].filter(Boolean).join(" · ");
   el.textContent = text;
   el.classList.remove("hidden");
+}
+
+async function runMonitor(duration: MonitorDuration): Promise<void> {
+  const monitorBar = document.getElementById("speed-monitor-bar")!;
+  const monitorStatus = document.getElementById("speed-monitor-status")!;
+  const monitorStopBtn = document.getElementById("speed-monitor-stop") as HTMLButtonElement;
+  monitorBar.classList.remove("hidden");
+  monitorStopBtn.addEventListener("click", () => SpeedMonitor.stop());
+
+  await SpeedMonitor.start(duration, (result, index) => {
+    if (!result) {
+      monitorStatus.textContent = t("speed.monitorStarting");
+      return;
+    }
+    const state = SpeedMonitor.state;
+    if (state) {
+      const pct = (index / state.testsTotal * 100).toFixed(0);
+      (document.getElementById("speed-monitor-progress") as HTMLElement).style.width = `${pct}%`;
+      monitorStatus.textContent = t("speed.monitorProgress", index, state.testsTotal);
+      drawHistoryChart(SpeedTestHistory.getAll());
+    }
+  });
+
+  monitorBar.classList.add("hidden");
 }

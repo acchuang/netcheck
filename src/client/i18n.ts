@@ -241,6 +241,16 @@ const en = {
   "speed.runBtn": "Run Speed Test",
   "speed.running": "Running...",
   "speed.runAgain": "Run Again",
+
+  // Speed Monitor
+  "speed.monitorStarted": "Monitor started: {0} minutes",
+  "speed.monitorComplete": "Monitor complete",
+  "speed.monitorStarting": "Starting monitor...",
+  "speed.monitorProgress": "Test {0}/{1}",
+
+  // History
+  "speed.history.downloadCsv": "Download CSV (Speed History)",
+  "speed.history.noData": "No history data available",
   "speed.detecting": "detecting...",
   "speed.graphTitle": "Speed Over Time",
   "speed.recommendations": "Recommendations",

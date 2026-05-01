@@ -385,8 +385,25 @@
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
             <div class="grade-factors" id="grade-factors"></div>
           </div>
-          </div>
+        </div>
           <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <select class="input select" id="speed-monitor-select" style="width:auto">
+              <option value="5">Monitor 5 min</option>
+              <option value="10">Monitor 10 min</option>
+              <option value="30">Monitor 30 min</option>
+            </select>
+            <button class="btn btn-primary" id="speed-monitor-btn">Monitor</button>
+          </div>
+          <div class="hidden" id="speed-monitor-bar" style="margin-top:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:4px;background:var(--surface-tertiary);border-radius:2px;overflow:hidden">
+                <div id="speed-monitor-progress" style="width:0%;height:100%;background:linear-gradient(135deg,var(--brand),var(--brand-500));transition:width 0.3s"></div>
+              </div>
+              <button class="btn-nav-action" id="speed-monitor-stop" title="Stop monitoring">\u2715</button>
+            </div>
+            <p id="speed-monitor-status" style="font-size:12px;color:var(--text-tertiary);margin-top:4px"></p>
+          </div>
         </div>
         <!-- Speed Graph -->
         <div class="speed-graph-card">
@@ -403,6 +420,7 @@
         <!-- Speed History -->
         <div id="speed-history" class="speed-history">
           <h2 class="speed-history-title" id="speed-history-title">History</h2>
+          <button class="btn btn-primary" id="speed-csv-btn" style="margin-bottom:8px" disabled>Download CSV</button>
           <button class="btn-nav-action" id="speed-history-clear" style="display:none" title="Clear history">\u2715</button>
           <p class="speed-history-empty" id="speed-history-empty">No previous tests recorded</p>
           <div class="speed-history-cards" id="speed-history-cards"></div>
