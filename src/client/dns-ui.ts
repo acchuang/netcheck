@@ -5,6 +5,8 @@ import { CF_POPS } from "./cf-pops";
 import { setBadge, createCheckItem } from "./ui-utils";
 import { affiliate } from "./affiliates";
 import { onLocaleChange } from "./locale-events";
+import { DnsBenchmark, renderBenchmarkHeatmap, renderPathBars } from "./dns-benchmark";
+import { DnsAudit, renderHijackRows, renderEcsRows } from "./dns-audit";
 
 interface IpData {
   ip?: string;
@@ -215,6 +217,49 @@ export async function runDnsChecks(): Promise<void> {
     securityChecks: lastSecurityChecks,
     reachable: lastResolvers.filter((resolver) => resolver.reachable),
   });
+
+  const auditBtn = document.getElementById("dns-audit-btn") as HTMLButtonElement | null;
+  if (auditBtn) { auditBtn.disabled = false; auditBtn.textContent = t("dns.runAudit"); }
+
+  section.setAttribute("aria-busy", "false");
+}
+
+export async function runDnsAudit(): Promise<void> {
+  const section = document.getElementById("dns")!;
+  section.setAttribute("aria-busy", "true");
+  const auditBtn = document.getElementById("dns-audit-btn") as HTMLButtonElement | null;
+  if (auditBtn) { auditBtn.disabled = true; auditBtn.textContent = t("dns.running"); }
+
+  const benchmarkCard = document.getElementById("dns-benchmark-card")!;
+  const pathCard = document.getElementById("dns-path-card")!;
+  benchmarkCard.classList.remove("hidden");
+  pathCard.classList.remove("hidden");
+  document.getElementById("dns-benchmark-results")!.innerHTML = `<p class="info-muted">${t("dns.running")}</p>`;
+  document.getElementById("dns-path-results")!.innerHTML = "";
+
+  try {
+    const [hijackData, ecsData, benchmarkData] = await Promise.all([
+      DnsAudit.checkHijacking(),
+      DnsAudit.checkEcs(),
+      DnsBenchmark.runAll(),
+    ]);
+
+    const securityContainer = document.getElementById("dns-security-results")!;
+    const hijackSection = document.createElement("div");
+    hijackSection.innerHTML = `<p style="font-size:13px;font-weight:600;margin:8px 0 4px;color:var(--text-secondary)">DNS Tampering</p>${renderHijackRows(hijackData)}`;
+    securityContainer.appendChild(hijackSection);
+
+    const ecsSection = document.createElement("div");
+    ecsSection.innerHTML = `<p style="font-size:13px;font-weight:600;margin:8px 0 4px;color:var(--text-secondary)">ECS Leak Detection</p>${renderEcsRows(ecsData)}`;
+    securityContainer.appendChild(ecsSection);
+
+    document.getElementById("dns-benchmark-results")!.innerHTML = renderBenchmarkHeatmap(benchmarkData);
+    document.getElementById("dns-path-results")!.innerHTML = renderPathBars(benchmarkData.pathTimings);
+  } catch {
+    document.getElementById("dns-benchmark-results")!.innerHTML = `<p class="info-muted">Could not retrieve audit results. Check your connection.</p>`;
+  }
+
+  if (auditBtn) { auditBtn.disabled = false; auditBtn.textContent = t("dns.runAudit"); }
   section.setAttribute("aria-busy", "false");
 }
 

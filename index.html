@@ -178,6 +178,7 @@
       <div class="section-header">
         <h1 class="display" id="dns-title">DNS & Network Check</h1>
         <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
+        <button class="btn btn-primary" id="dns-audit-btn" style="margin-top:12px;display:none">Run DNS Audit</button>
       </div>
 
       <div class="cards-grid">
@@ -253,6 +254,34 @@
               <p class="info-muted">Evaluating DNS security features...</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- DNS Benchmark Card -->
+      <div class="card card-wide hidden" id="dns-benchmark-card">
+        <div class="card-header">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          <h2 class="card-title" id="dns-benchmark-title">DNS Benchmark</h2>
+        </div>
+        <div class="card-body" id="dns-benchmark-results">
+          <p class="info-muted">Run the DNS audit to see benchmark results.</p>
+        </div>
+      </div>
+
+      <!-- Resolution Path Card -->
+      <div class="card card-wide hidden" id="dns-path-card">
+        <div class="card-header">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <h2 class="card-title" id="dns-path-title">Resolution Path</h2>
+        </div>
+        <div class="card-body" id="dns-path-results">
+          <p class="info-muted">Run the DNS audit to see resolution path timing.</p>
         </div>
       </div>
 

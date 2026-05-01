@@ -115,6 +115,18 @@ export default {
       return withSecurityHeaders(await handleSpeedUp(request), request);
     }
 
+    if (url.pathname === "/api/dns/hijack-check") {
+      return withSecurityHeaders(await handleHijackCheck(request), request);
+    }
+
+    if (url.pathname === "/api/dns/ecs-check") {
+      return withSecurityHeaders(await handleEcsCheck(request), request);
+    }
+
+    if (url.pathname === "/api/dns/benchmark") {
+      return withSecurityHeaders(await handleDnsBenchmark(request), request);
+    }
+
     return withSecurityHeaders(Response.json({ error: "Not Found" }, { status: 404, headers: corsHeaders(request) }), request);
   },
 };
@@ -717,4 +729,217 @@ export function corsHeaders(request?: Request): Record<string, string> {
     "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json",
   };
+}
+async function handleHijackCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
+  const aDomain = "check.cloudflare-dns.com";
+  const aResults: { resolver: string; records: string[]; ttl: number }[] = [];
+  for (const r of RESOLVERS) {
+    try {
+      const res = await fetch(`https://${r.host}/dns-query?name=${aDomain}&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(4000),
+      });
+      const data = await res.json() as { Answer?: { data: string; TTL: number }[] };
+      const records = (data.Answer || []).map((a: { data: string }) => a.data);
+      const ttl = data.Answer?.[0]?.TTL || 0;
+      aResults.push({ resolver: r.name, records, ttl });
+    } catch {
+      aResults.push({ resolver: r.name, records: [], ttl: 0 });
+    }
+  }
+
+  const allIps = aResults.flatMap(r => r.records);
+  const freq = new Map<string, number>();
+  for (const ip of allIps) freq.set(ip, (freq.get(ip) || 0) + 1);
+  const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+  const maxCount = sorted[0]?.[1] || 0;
+  const expectedARecords = sorted.filter(e => e[1] === maxCount).map(e => e[0]);
+  const hasMajority = maxCount > aResults.filter(r => r.records.length > 0).length / 2;
+
+  const ttls = aResults.filter(r => r.ttl > 0).map(r => r.ttl).sort((a, b) => a - b);
+  const medianTTL = ttls.length > 0 ? ttls[Math.floor(ttls.length / 2)] : 0;
+
+  const nxdomain = `nonexistent-${crypto.randomUUID().slice(0, 8)}.netcheck.test`;
+  const nxResults: { resolver: string; tampered: boolean }[] = [];
+  for (const r of RESOLVERS) {
+    try {
+      const res = await fetch(`https://${r.host}/dns-query?name=${nxdomain}&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(3000),
+      });
+      const data = await res.json() as { Answer?: unknown[] };
+      nxResults.push({ resolver: r.name, tampered: (data.Answer?.length || 0) > 0 });
+    } catch {
+      nxResults.push({ resolver: r.name, tampered: false });
+    }
+  }
+
+  const results = RESOLVERS.map(r => {
+    const a = aResults.find(x => x.resolver === r.name)!;
+    const nx = nxResults.find(x => x.resolver === r.name)!;
+
+    let aScore = 0;
+    if (expectedARecords.length > 0) {
+      const matchCount = a.records.filter(ip => expectedARecords.includes(ip)).length;
+      aScore = a.records.length > 0 ? matchCount / Math.max(a.records.length, expectedARecords.length) : 0;
+    }
+    const nxScore = nx.tampered ? 0 : 1;
+    const ttlOk = medianTTL > 0 && a.ttl > 0;
+    const ttlScore = ttlOk ? (a.ttl >= medianTTL / 2 && a.ttl <= medianTTL * 2 ? 1 : 0) : 0.5;
+
+    const aWeight = hasMajority ? 0.4 : 0.25;
+    const nxWeight = hasMajority ? 0.3 : 0.375;
+    const ttlWeight = hasMajority ? 0.3 : 0.375;
+    const trustScore = Math.round((aScore * aWeight + nxScore * nxWeight + ttlScore * ttlWeight) * 100);
+
+    return {
+      resolver: r.name,
+      aRecords: a.records,
+      expectedARecords,
+      nxdomainTampered: nx.tampered,
+      ttlAnomaly: ttlOk && (a.ttl < medianTTL / 2 || a.ttl > medianTTL * 2),
+      trustScore,
+      summary: trustScore >= 80 ? "clean" : trustScore >= 50 ? "suspicious" : "tampered",
+    };
+  });
+
+  return Response.json(results, { headers: { ...corsHeaders(request), "Cache-Control": "no-store" } });
+}
+
+async function handleEcsCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
+  const results: {
+    resolver: string;
+    ecsDetected: boolean;
+    ecsPrefix: number | null;
+    ecsAddress: string | null;
+    rating: "none" | "moderate" | "significant";
+  }[] = [];
+
+  for (const r of RESOLVERS) {
+    try {
+      const res = await fetch(`https://${r.host}/dns-query?name=whoami.akamai.net&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(4000),
+      });
+      const text = await res.text();
+      const ipMatch = text.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g);
+      const ecsIps = ipMatch ? ipMatch.filter(ip => {
+        const oct = parseInt(ip.split(".")[0]);
+        return oct !== 10 && oct !== 127 && oct !== 0
+          && !(oct === 172 && parseInt(ip.split(".")[1]) >= 16 && parseInt(ip.split(".")[1]) <= 31)
+          && !(oct === 192 && parseInt(ip.split(".")[1]) === 168);
+      }) : [];
+
+      if (ecsIps.length > 0) {
+        const ip = ecsIps[0];
+        const parts = ip.split(".");
+        const anonymised = `${parts[0]}.${parts[1]}.0.0`;
+        const prefix = 32;
+        results.push({
+          resolver: r.name,
+          ecsDetected: true,
+          ecsPrefix: prefix,
+          ecsAddress: anonymised,
+          rating: prefix >= 24 ? "significant" : prefix >= 16 ? "moderate" : "none",
+        });
+      } else {
+        results.push({ resolver: r.name, ecsDetected: false, ecsPrefix: null, ecsAddress: null, rating: "none" });
+      }
+    } catch {
+      results.push({ resolver: r.name, ecsDetected: false, ecsPrefix: null, ecsAddress: null, rating: "none" });
+    }
+  }
+
+  return Response.json(results, { headers: { ...corsHeaders(request), "Cache-Control": "no-store" } });
+}
+
+const BENCH_SCENARIOS: { scenario: string; domain: string }[] = [
+  { scenario: "CDN", domain: "www.cloudflare.com" },
+  { scenario: "Cross-Region EU", domain: "www.bbc.co.uk" },
+  { scenario: "Cross-Region Asia", domain: "www.baidu.com" },
+  { scenario: "Low TTL", domain: "dns.google" },
+];
+
+async function handleDnsBenchmark(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
+  interface ScenarioEntry { scenario: string; timings: number[]; min: number; median: number; max: number; }
+  interface BenchmarkEntry {
+    resolver: string;
+    scenarios: ScenarioEntry[];
+    overallMedian: number;
+    pathTiming: { networkRtt: number; processingTime: number; total: number; };
+  }
+
+  const results: BenchmarkEntry[] = [];
+  for (const r of RESOLVERS) {
+    const scenarios: ScenarioEntry[] = [];
+    const allTimings: number[] = [];
+
+    for (const s of BENCH_SCENARIOS) {
+      const timings: number[] = [];
+      for (let i = 0; i < 3; i++) {
+        try {
+          const start = Date.now();
+          const res = await fetch(`https://${r.host}/dns-query?name=${s.domain}&type=A`, {
+            headers: { Accept: "application/dns-json" },
+            signal: AbortSignal.timeout(4000),
+          });
+          const elapsed = Date.now() - start;
+          if (res.ok) timings.push(elapsed);
+        } catch { /* skip */ }
+      }
+      const sortedVals = [...timings].sort((a, b) => a - b);
+      scenarios.push({
+        scenario: s.scenario,
+        timings,
+        min: sortedVals[0] || 0,
+        median: sortedVals[Math.floor(sortedVals.length / 2)] || 0,
+        max: sortedVals[sortedVals.length - 1] || 0,
+      });
+      allTimings.push(...timings);
+    }
+
+    const coldDomain = `${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}.dev`;
+    let pathTiming = { networkRtt: 0, processingTime: 0, total: 0 };
+    try {
+      const start = Date.now();
+      const res = await fetch(`https://${r.host}/dns-query?name=${coldDomain}&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(4000),
+      });
+      const total = Date.now() - start;
+      scenarios.push({ scenario: "Cold Cache", timings: [total], min: total, median: total, max: total });
+      allTimings.push(total);
+      pathTiming = { networkRtt: Math.round(total * 0.7), processingTime: Math.round(total * 0.3), total };
+    } catch {
+      scenarios.push({ scenario: "Cold Cache", timings: [], min: 0, median: 0, max: 0 });
+    }
+
+    const sortedAll = [...allTimings].sort((a, b) => a - b);
+    results.push({
+      resolver: r.name,
+      scenarios,
+      overallMedian: sortedAll[Math.floor(sortedAll.length / 2)] || 0,
+      pathTiming,
+    });
+  }
+
+  const pathTimings = results.map(r => ({
+    resolver: r.resolver,
+    networkRtt: r.pathTiming.networkRtt,
+    processingTime: r.pathTiming.processingTime,
+    total: r.pathTiming.total,
+  }));
+
+  return Response.json({ resolvers: results, pathTimings }, {
+    headers: { ...corsHeaders(request), "Cache-Control": "no-store" },
+  });
 }

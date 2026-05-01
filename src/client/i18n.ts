@@ -399,6 +399,22 @@ const en = {
   "dns.http": "HTTP Protocol",
   "dns.tls": "TLS Version",
 
+  // DNS Audit
+  "dns.hijackClean": "No tampering detected",
+  "dns.hijackSuspicious": "Potential interference",
+  "dns.hijackTampered": "DNS response tampered",
+  "dns.hijackNxdomain": "NXDOMAIN hijacked",
+  "dns.hijackTtl": "TTL anomaly",
+  "dns.ecsDetected": "ECS leaked: /{0} prefix ({1})",
+  "dns.ecsNone": "No ECS leak",
+  "dns.benchmark": "DNS Benchmark",
+  "dns.benchmarkDesc": "Multi-scenario latency across resolvers",
+  "dns.path": "Resolution Path",
+  "dns.pathDesc": "Network RTT vs resolver processing time",
+  "dns.runAudit": "Run DNS Audit",
+  "dns.running": "Running DNS audit...",
+  "dns.noData": "No benchmark data available",
+
   // Headers section
   "nav.headers": "Headers",
   "headers.title": "Security Headers",
