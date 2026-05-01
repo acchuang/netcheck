@@ -152,3 +152,73 @@
   --card-p: var(--space-5);
   --btn-h: 40px;
 }
+
+/* ========================================
+   Semantic Tokens — Dark Theme
+   ======================================== */
+
+[data-theme="dark"] {
+  --surface-primary: var(--gray-950);
+  --surface-secondary: var(--gray-900);
+  --surface-tertiary: var(--gray-800);
+  --surface-elevated: var(--gray-850);
+
+  --text-primary: var(--gray-100);
+  --text-secondary: var(--gray-300);
+  --text-tertiary: var(--gray-500);
+
+  --border-subtle: color-mix(in srgb, var(--gray-700) 60%, transparent);
+  --border-default: var(--gray-700);
+
+  --brand: var(--brand-600);
+  --brand-glow: color-mix(in srgb, var(--brand) 25%, transparent);
+
+  --status-pass: var(--green-400);
+  --status-warn: var(--amber-400);
+  --status-fail: var(--red-400);
+  --status-progress: var(--brand-400);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+}
+
+/* ========================================
+   Semantic Tokens — Light Theme
+   ======================================== */
+
+[data-theme="light"] {
+  --surface-primary: var(--gray-50);
+  --surface-secondary: var(--gray-0);
+  --surface-tertiary: var(--gray-100);
+  --surface-elevated: var(--gray-0);
+
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-400);
+
+  --border-subtle: color-mix(in srgb, var(--gray-200) 75%, transparent);
+  --border-default: var(--gray-200);
+
+  --brand: var(--brand-600);
+  --brand-glow: color-mix(in srgb, var(--brand) 15%, transparent);
+
+  --status-pass: var(--green-600);
+  --status-warn: var(--amber-600);
+  --status-fail: var(--red-600);
+  --status-progress: var(--brand-600);
+}
+
+/* ── Progressive enhancement fallbacks ── */
+
+@supports not (background: color-mix(in srgb, black 50%, transparent)) {
+  [data-theme="dark"] {
+    --border-subtle: var(--gray-700);
+    --brand-glow: rgba(94, 106, 210, 0.25);
+  }
+  [data-theme="light"] {
+    --border-subtle: var(--gray-200);
+    --brand-glow: rgba(94, 106, 210, 0.15);
+  }
+}
