@@ -178,6 +178,8 @@
   --status-fail: var(--red-400);
   --status-progress: var(--brand-400);
 
+  color-scheme: dark;
+
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
@@ -208,6 +210,11 @@
   --status-warn: var(--amber-600);
   --status-fail: var(--red-600);
   --status-progress: var(--brand-600);
+}
+
+/* Light theme — color-scheme */
+[data-theme="light"] {
+  color-scheme: light;
 }
 
 /* ── Progressive enhancement fallbacks ── */

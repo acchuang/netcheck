@@ -219,7 +219,7 @@ export async function runDnsChecks(): Promise<void> {
   });
 
   const auditBtn = document.getElementById("dns-audit-btn") as HTMLButtonElement | null;
-  if (auditBtn) { auditBtn.disabled = false; auditBtn.textContent = t("dns.runAudit"); }
+  if (auditBtn) { auditBtn.disabled = false; auditBtn.style.display = ""; auditBtn.textContent = t("dns.runAudit"); }
 
   section.setAttribute("aria-busy", "false");
 }
