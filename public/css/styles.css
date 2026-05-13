@@ -1839,6 +1839,11 @@ select option {
   height: 16px;
 }
 
+.footer-bmc-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .footer-top {
   margin-bottom: 8px;
 }
