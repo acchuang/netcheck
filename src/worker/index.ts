@@ -28,6 +28,7 @@ function securityHeaders(request?: Request): Record<string, string> {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   };
 }

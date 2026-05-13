@@ -1,3 +1,4 @@
+import type { Translations } from "../i18n";
 export const zhTW = {
   // Nav
   "nav.dns": "DNS 檢測",
@@ -297,7 +298,6 @@ export const zhTW = {
   "adblock.basic": "基本防護",
   "adblock.minimal": "最低防護",
   "adblock.scoreDetail": "在 {2} 個類別中攔截了 {1} 個追蹤器/廣告中的 {0} 個",
-  "adblock.testing": "正在測試 {0} 個項目...",
   "adblock.blocked": "已攔截",
   "adblock.allowed": "已放行",
   "adblock.uncertain": "不確定",
@@ -486,4 +486,27 @@ export const zhTW = {
   "share.metric.label": "標籤",
   "share.metric.summary": "摘要",
   "share.metric.results": "結果",
-};
+"adblock.cnameTitle": "Tracker Origin Detection",
+  "adblock.communityStats": "Based on {0} scans today",
+  "adblock.communityTitle": "Community Ranking",
+  "dns.benchmark": "DNS Benchmark",
+  "dns.benchmarkDesc": "Multi-scenario latency across resolvers",
+  "dns.ecsDetected": "ECS leaked: /{0} prefix ({1})",
+  "dns.ecsNone": "No ECS leak",
+  "dns.hijackClean": "No tampering detected",
+  "dns.hijackNxdomain": "NXDOMAIN hijacked",
+  "dns.hijackSuspicious": "Potential interference",
+  "dns.hijackTampered": "DNS response tampered",
+  "dns.hijackTtl": "TTL anomaly",
+  "dns.noData": "No benchmark data available",
+  "dns.path": "Resolution Path",
+  "dns.pathDesc": "Network RTT vs resolver processing time",
+  "dns.runAudit": "Run DNS Audit",
+  "dns.running": "Running DNS audit...",
+  "speed.history.downloadCsv": "Download CSV (Speed History)",
+  "speed.history.noData": "No history data available",
+  "speed.monitorComplete": "Monitor complete",
+  "speed.monitorProgress": "Test {0}/{1}",
+  "speed.monitorStarted": "Monitor started: {0} minutes",
+  "speed.monitorStarting": "Starting monitor...",
+} satisfies Translations;

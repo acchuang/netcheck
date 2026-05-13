@@ -3,7 +3,34 @@ import { t } from "./i18n";
 import { onLocaleChange } from "./locale-events";
 import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from "./leaflet";
 
-declare const L: L;
+let L: L | undefined;
+
+const LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+const LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+let leafletLoadPromise: Promise<L> | null = null;
+
+function loadLeaflet(): Promise<L> {
+  if (L) return Promise.resolve(L);
+  if (leafletLoadPromise) return leafletLoadPromise;
+
+  leafletLoadPromise = new Promise<L>((resolve, reject) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = LEAFLET_CSS;
+    document.head.appendChild(link);
+
+    const script = document.createElement("script");
+    script.src = LEAFLET_JS;
+    script.onload = () => {
+      L = (window as unknown as Record<string, L>).L as L;
+      resolve(L);
+    };
+    script.onerror = () => reject(new Error("Failed to load Leaflet"));
+    document.head.appendChild(script);
+  });
+
+  return leafletLoadPromise;
+}
 
 function regionKey(region: string): string {
   const map: Record<string, string> = {
@@ -35,6 +62,7 @@ function isDark(): boolean {
 }
 
 function initMap(): Map {
+  if (!L) throw new Error("Leaflet not loaded");
   const m = L.map("world-map", {
     center: [20, 0],
     zoom: 2,
@@ -84,6 +112,7 @@ function renderMapResults(results: MapResults): void {
 
   if (results.userLat != null && results.userLon != null) {
     const userLatLng: LatLngExpression = [results.userLat, results.userLon];
+    if (!L) return;
     userMarker = L.circleMarker(userLatLng, {
       radius: 8,
       fillColor: "#5e6ad2",
@@ -111,6 +140,7 @@ function renderMapResults(results: MapResults): void {
     const color = NetworkMap.getLatencyColor(probe.latency);
     const cssColor = color.startsWith("var(") ? resolveCSSColor(color) : color;
 
+    if (!L) return;
     const marker = L.circleMarker([probe.lat, probe.lon], {
       radius: probe.id === closest?.id ? 9 : 7,
       fillColor: cssColor,
@@ -141,6 +171,7 @@ function renderMapResults(results: MapResults): void {
     bounds.push([probe.lat, probe.lon]);
 
     if (results.userLat != null && results.userLon != null) {
+      if (!L) return;
       const line = L.polyline(
         [[results.userLat, results.userLon], [probe.lat, probe.lon]],
         { color: cssColor, weight: 1.5, opacity: 0.4, dashArray: "6 4" }
@@ -166,6 +197,17 @@ export function initNetworkMap(): void {
 }
 
 async function runMapTest(): Promise<void> {
+  try {
+    await loadLeaflet();
+  } catch {
+    const grid = document.getElementById("network-results")!;
+    grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">Failed to load map library</p>`;
+    const btn = document.getElementById("network-run-btn") as HTMLButtonElement;
+    btn.disabled = false;
+    btn.textContent = t("network.runTest");
+    return;
+  }
+
   const btn = document.getElementById("network-run-btn") as HTMLButtonElement;
   const grid = document.getElementById("network-results")!;
   const mapContainer = document.getElementById("world-map-container")!;
