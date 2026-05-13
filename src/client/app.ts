@@ -9,7 +9,7 @@ import { renderSkeletonRows } from "./ui-utils";
 import { initHeadersCheck } from "./headers-ui";
 import { initTheme } from "./theme";
 import { initI18n } from "./i18n";
-import { runDnsChecks, runDnsLookup } from "./dns-ui";
+import { runDnsChecks, runDnsLookup, runDnsAudit } from "./dns-ui";
 import { runAdBlockTests } from "./adblock-ui";
 import { initSpeedTest } from "./speed-ui";
 import { runFilterListDetection } from "./filter-ui";
@@ -83,6 +83,8 @@ function initTabs(): void {
   document.getElementById("dns-lookup-domain")!.addEventListener("keydown", (e) => {
     if ((e as KeyboardEvent).key === "Enter") runDnsLookup();
   });
+
+  document.getElementById("dns-audit-btn")!.addEventListener("click", runDnsAudit);
 
   document.getElementById("export-btn")!.addEventListener("click", (e) => {
     e.stopPropagation();

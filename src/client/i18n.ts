@@ -553,6 +553,7 @@ export function setLocale(locale: Locale): void {
   };
   document.documentElement.lang = langMap[locale];
   applyStaticTranslations();
+  requestAnimationFrame(() => notifyLocaleChange());
 }
 
 export function initI18n(): void {
@@ -754,5 +755,4 @@ function applyStaticTranslations(): void {
   };
   document.title = titles[current];
 
-  notifyLocaleChange();
 }
