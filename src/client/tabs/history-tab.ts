@@ -10,6 +10,7 @@ export const historyState = {
 
 let compareMode = false;
 let selectedForCompare: string[] = [];
+let timeRange: '7d' | '30d' | 'all' = '30d';
 
 export function initHistory(): void {
   refreshHistory();
@@ -58,26 +59,68 @@ export function refreshHistory(): void {
     }
   }
   historyState.entries.set(entries);
+  renderTimeRangeFilter();
   renderChart(entries);
   renderStats(entries);
   renderComparison();
+}
+
+function filterByRange(entries: HistoryEntry[]): HistoryEntry[] {
+  if (timeRange === 'all') return entries;
+  const now = Date.now();
+  const cutoff = timeRange === '7d' ? now - 7 * 24 * 60 * 60 * 1000 : now - 30 * 24 * 60 * 60 * 1000;
+  return entries.filter((e) => e.timestamp >= cutoff);
+}
+
+function renderTimeRangeFilter(): void {
+  const container = document.getElementById('history-chart');
+  if (!container) return;
+  const parent = container.parentElement;
+  if (!parent) return;
+
+  let filterEl = parent.querySelector('.history-range-filter');
+  if (!filterEl) {
+    filterEl = document.createElement('div');
+    filterEl.className = 'history-range-filter';
+    parent.insertBefore(filterEl, container);
+  }
+
+  const ranges: { key: '7d' | '30d' | 'all'; label: string }[] = [
+    { key: '7d', label: '7D' },
+    { key: '30d', label: '30D' },
+    { key: 'all', label: t('history.all', 'All') },
+  ];
+
+  filterEl.innerHTML = ranges
+    .map(
+      (r) =>
+        `<button class="history-range-btn${r.key === timeRange ? ' active' : ''}" data-range="${r.key}">${r.label}</button>`,
+    )
+    .join('');
+
+  filterEl.querySelectorAll<HTMLButtonElement>('.history-range-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      timeRange = btn.dataset.range as '7d' | '30d' | 'all';
+      const entries = historyState.entries.get();
+      renderTimeRangeFilter();
+      renderChart(entries);
+    });
+  });
 }
 
 function renderChart(entries: HistoryEntry[]): void {
   const container = document.getElementById('history-chart');
   if (!container) return;
 
-  const now = Date.now();
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-  const recent = entries.filter((e) => e.timestamp >= thirtyDaysAgo);
+  const filtered = filterByRange(entries);
 
-  if (recent.length === 0) {
+  if (filtered.length === 0) {
     container.innerHTML = `<div class="history-empty"><p>${t('history.noData', 'No test history yet. Run a speed test to start tracking.')}</p></div>`;
     return;
   }
 
   const byDay = new Map<string, number>();
-  for (const e of recent) {
+  for (const e of filtered) {
     const day = new Date(e.timestamp).toISOString().slice(0, 10);
     const dl = e.speed?.download ?? 0;
     byDay.set(day, Math.max(byDay.get(day) ?? 0, dl));
@@ -86,6 +129,9 @@ function renderChart(entries: HistoryEntry[]): void {
   const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   const maxSpeed = Math.max(...days.map((d) => d[1]), 1);
 
+  const firstTs = filtered[0].timestamp;
+  const lastTs = filtered[filtered.length - 1].timestamp;
+
   let barsHtml = '';
   for (const [day, speed] of days) {
     const pct = (speed / maxSpeed) * 100;
@@ -93,7 +139,7 @@ function renderChart(entries: HistoryEntry[]): void {
       month: 'short',
       day: 'numeric',
     });
-    barsHtml += `<div class="history-bar" title="${dateLabel}: ${Math.round(speed)} Mbps" style="--bar-height: ${pct}%">
+    barsHtml += `<div class="history-bar history-bar-day" title="${dateLabel}: ${Math.round(speed)} Mbps" style="--bar-height: ${pct}%">
       <div class="history-bar-fill"></div>
     </div>`;
   }
@@ -103,8 +149,8 @@ function renderChart(entries: HistoryEntry[]): void {
       ${barsHtml}
     </div>
     <div class="history-chart-labels">
-      <span>${new Date(thirtyDaysAgo).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-      <span>${new Date(now).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+      <span>${new Date(firstTs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+      <span>${new Date(lastTs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
     </div>
   `;
 }
@@ -113,7 +159,7 @@ function renderStats(entries: HistoryEntry[]): void {
   const container = document.getElementById('history-stats');
   if (!container) return;
 
-  const speedEntries = entries.filter((e) => e.speed);
+  const speedEntries = filterByRange(entries).filter((e) => e.speed);
   if (speedEntries.length === 0) {
     container.innerHTML = '';
     return;
@@ -121,6 +167,7 @@ function renderStats(entries: HistoryEntry[]): void {
 
   const avgDl = speedEntries.reduce((sum, e) => sum + (e.speed?.download ?? 0), 0) / speedEntries.length;
   const avgLat = speedEntries.reduce((sum, e) => sum + (e.speed?.latency ?? 0), 0) / speedEntries.length;
+  const totalTests = speedEntries.length;
 
   let trend = 0;
   if (speedEntries.length >= 2) {
@@ -143,6 +190,10 @@ function renderStats(entries: HistoryEntry[]): void {
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('history.trend', 'Trend')}</div>
         <div class="dash-stat-value${trend > 0 ? ' dash-stat-up' : trend < 0 ? ' dash-stat-down' : ''}">${trend > 0 ? '↑' : trend < 0 ? '↓' : '—'} ${Math.abs(trend)}%</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('history.totalTests', 'Total Tests')}</div>
+        <div class="dash-stat-value">${totalTests}</div>
       </div>
     </div>
   `;

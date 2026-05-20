@@ -1,10 +1,15 @@
 # NetCheck
 
-DNS, ad block, speed test, and browser fingerprint diagnostics — all in one tool.
+Network diagnostics, security checks, and browser privacy — all in one tool, all running locally in your browser.
 
 **Live:** [netcheck-site.oilygold.workers.dev](https://netcheck-site.oilygold.workers.dev)
 
 ## Features
+
+### Dashboard
+- Overall network score at a glance (weighted across DNS, speed, headers, ad block, quality, fingerprint, TLS)
+- Your IP address and location shown in real time
+- Latest download speed and latency cards — auto-populated as tests complete
 
 ### DNS Check
 - Public IP address detection with geolocation, ISP/ASN, and Cloudflare PoP
@@ -16,9 +21,13 @@ DNS, ad block, speed test, and browser fingerprint diagnostics — all in one to
 - Download and upload bandwidth measurement via Cloudflare's global edge network
 - Latency (median of 20 pings), jitter, and bufferbloat calculation
 - Progressive chunk sizing that adapts to connection speed
-- Connection quality analysis with TLS details, timing breakdown, and stability testing
 - Letter grade (A+ to F) with human-readable summary
-- Speed test history (last 3 results)
+
+### TLS Inspector
+- TLS protocol version and cipher suite detection
+- Key exchange and forward secrecy support check
+- Certificate chain and SAN inspection
+- A+–F security grade
 
 ### Ad Block Test
 - 24 tests across 7 categories: contextual ads, analytics, banners, error monitoring, social trackers, fingerprint protection, cookie consent
@@ -34,25 +43,38 @@ DNS, ad block, speed test, and browser fingerprint diagnostics — all in one to
 - Screen, navigator, and storage entropy analysis
 - Overall uniqueness score with protection tips
 
-### Network Map
-- Global latency map using Leaflet
-- Real-time ping measurements to Cloudflare and other probe endpoints
-
 ### Connection Quality
 - Network Information API details (type, effective type, downlink, RTT)
 - TLS version, cipher suite, and HTTP protocol detection
 - Resource timing breakdown (DNS, TCP, TLS, TTFB, download)
 - 30-ping stability test with jitter and packet loss
 
+### Network Map
+- Global latency map using Leaflet
+- Real-time ping measurements to Cloudflare and other probe endpoints
+
+### History
+- Persistent speed test history with a visual bar chart
+- Time range filter: 7 days, 30 days, or all history
+- Average stats (download, latency) and trend indicator
+- Side-by-side test comparison with percentage deltas
+- CSV export
+
+### Share & Export
+- Copy a text summary of any test result to clipboard via the sidebar share button
+- Export full reports as Markdown or PDF
+- 6-language localization (EN, zh-TW, zh-CN, ES, JA, KO)
+
 ## Tech Stack
 
 - **Runtime:** [Cloudflare Workers](https://workers.cloudflare.com/)
 - **Build:** [Vite](https://vitejs.dev/) with `@cloudflare/vite-plugin`
-- **Frontend:** Vanilla TypeScript (no framework)
+- **Frontend:** Vanilla TypeScript with thin observable state layer (no framework)
 - **i18n:** 6 languages (English, Traditional Chinese, Simplified Chinese, Spanish, Japanese, Korean)
 - **DNS Lookups:** Cloudflare DNS-over-HTTPS
 - **KV Storage:** Cloudflare KV for visitor analytics
-- **Design:** Linear-inspired dark theme with Inter Variable
+- **Design:** Geist font, violet accent (#7c5cfc), noise texture, dark theme with frosted-glass mobile nav
+- **Bundle:** ~90KB JS, ~13KB CSS gzipped
 
 ## Project Structure
 
@@ -65,9 +87,9 @@ netcheck-site/
 ├── src/
 │   ├── client/
 │   │   ├── main.ts            # Module entry
-│   │   ├── app.ts             # Tab routing & orchestration
+│   │   ├── app.ts             # Tab routing, sidebar, toolbar panels
 │   │   ├── dns-check.ts       # IP detection, DNS API client
-│   │   ├── dns-ui.ts          # DNS tab rendering
+│   │   ├── dns-ui.ts          # DNS tab rendering, DNS state observables
 │   │   ├── speed-test.ts      # Speed test engine
 │   │   ├── speed-ui.ts        # Speed tab rendering
 │   │   ├── adblock-test.ts    # Ad/tracker blocking test engine
@@ -75,21 +97,27 @@ netcheck-site/
 │   │   ├── filter-lists.ts    # Filter list detection
 │   │   ├── headers-ui.ts      # Security headers scanner UI
 │   │   ├── fingerprint.ts     # Browser fingerprint collection
-│   │   ├── fingerprint-ui.ts  # Fingerprint tab rendering
+│   │   ├── fingerprint-ui.ts   # Fingerprint tab rendering
 │   │   ├── connection-quality.ts  # Quality measurement logic
 │   │   ├── connection-quality-ui.ts # Quality tab UI
 │   │   ├── network-map.ts     # Network map data & probing
 │   │   ├── network-map-ui.ts  # Leaflet map rendering
+│   │   ├── share.ts           # Share summary builder
+│   │   ├── export-report.ts   # Markdown/PDF report exporter
+│   │   ├── history.ts         # Legacy speed history store
 │   │   ├── i18n.ts            # Internationalization system
 │   │   ├── locales/           # Translation files (zh-TW, zh-CN, es, ja, ko)
+│   │   ├── state/             # Observable state modules (dns-state, tls-state, history-state, shared-state)
+│   │   ├── tabs/              # Tab modules (dashboard-tab, tls-tab, history-tab)
 │   │   ├── types.ts           # Shared TypeScript interfaces
-│   │   └── ...                # Theme, export, history, a11y, analytics
+│   │   └── ...                # Theme, onboarding, a11y, analytics, PWA
 │   └── worker/
 │       └── index.ts            # Cloudflare Worker — all API routes
 ├── public/
-│   ├── css/styles.css         # Design system (2778 lines)
+│   ├── css/styles.css         # Design system (3300+ lines)
+│   ├── css/tokens.css         # Design tokens (colors, spacing, typography)
 │   ├── manifest.json          # PWA manifest
-│   ├── sw.js                  # Service worker
+│   ├── sw.js                  # Service worker (stale-while-revalidate + bg sync)
 │   └── og-image.png           # Social sharing image
 ```
 

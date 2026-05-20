@@ -86,6 +86,9 @@ export function initDashboard(): void {
     if (checks.length > 0) markCompleted('dns');
     renderDashboard();
   });
+  dnsState.ipData.subscribe(() => {
+    renderDashboard();
+  });
   speedState.download.subscribe((dl) => {
     if (dl > 0) markCompleted('speed');
     renderDashboard();
@@ -128,6 +131,10 @@ function renderDashboard(): void {
   const gradeColor = GRADE_COLORS[grade] || 'var(--text-secondary)';
   const download = speedState.download.get();
   const latency = speedState.latency.get();
+  const ip = dnsState.ipData.get()?.ip || '';
+  const location = dnsState.ipData.get()
+    ? [dnsState.ipData.get()!.city, dnsState.ipData.get()!.country].filter(Boolean).join(', ')
+    : '';
   const colo = dnsState.ipData.get()?.colo || '—';
   const history = SpeedTestHistory.getAll();
   const lastTest = history.length > 0 ? history[history.length - 1] : null;
@@ -146,6 +153,11 @@ function renderDashboard(): void {
         <div class="dash-stat-label">${t('dashboard.overallScore', 'Overall Score')}</div>
         <div class="dash-stat-value" style="color:${gradeColor}">${grade || '—'}</div>
         <div class="dash-stat-sub">${testsCompleted} ${t('dashboard.testsCompleted', 'tests completed')}</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('dashboard.yourIp', 'Your IP')}</div>
+        <div class="dash-stat-value${ip ? ' dash-stat-mono' : ''}">${ip || '—'}</div>
+        <div class="dash-stat-sub">${location || '—'}</div>
       </div>
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.downloadSpeed', 'Download Speed')}</div>

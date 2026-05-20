@@ -20,7 +20,7 @@ import { initOnboarding } from './onboarding';
 import { initConnectionQuality } from './connection-quality-ui';
 import { initNetworkMap } from './network-map-ui';
 import { initKeyboardShortcuts } from './a11y';
-import { initShare } from './share';
+import { initShare, buildSummary } from './share';
 import { initInstallPrompt } from './install-prompt';
 import { initMotion } from './motion';
 import { safeInit, safeInitAsync } from './error-boundary';
@@ -95,10 +95,32 @@ function updateMetaForTab(tab: string): void {
 }
 
 function initTabs(): void {
+  const burger = document.getElementById('nav-burger');
+  const overlay = document.getElementById('nav-overlay');
+
+  function closeNav(): void {
+    document.body.classList.remove('nav-open');
+    if (burger) burger.setAttribute('aria-expanded', 'false');
+  }
+
+  function openNav(): void {
+    document.body.classList.add('nav-open');
+    if (burger) burger.setAttribute('aria-expanded', 'true');
+  }
+
+  function toggleNav(): void {
+    if (document.body.classList.contains('nav-open')) closeNav();
+    else openNav();
+  }
+
+  if (burger) burger.addEventListener('click', toggleNav);
+  if (overlay) overlay.addEventListener('click', closeNav);
+
   const links = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-tab]');
   links.forEach((link) => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
+      closeNav();
       const tab = link.dataset.tab!;
 
       document.querySelectorAll('.nav-link').forEach((l) => {
@@ -134,20 +156,84 @@ function initTabs(): void {
 
   document.getElementById('dns-audit-btn')!.addEventListener('click', runDnsAudit);
 
+  function positionToolbarPanel(trigger: HTMLElement, panel: HTMLElement): void {
+    const r = trigger.getBoundingClientRect();
+    const vpH = window.innerHeight;
+    const vpW = window.innerWidth;
+    const panelH = panel.offsetHeight || 200;
+    const panelW = panel.offsetWidth || 160;
+    const sidebarW = vpW >= 769 ? 220 : (vpW >= 641 ? 220 : 280);
+    const left = Math.min(sidebarW + 8, vpW - panelW - 8);
+    const top = Math.max(8, Math.min(r.top, vpH - panelH - 8));
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.left = `${Math.round(left)}px`;
+  }
+
   document.getElementById('export-btn')!.addEventListener('click', (e) => {
     e.stopPropagation();
-    ReportExporter.showExportMenu();
+    const btn = e.currentTarget as HTMLElement;
+    const menu = document.getElementById('export-menu');
+    if (menu) {
+      const wasOpen = menu.classList.contains('open');
+      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+      if (!wasOpen) {
+        menu.classList.add('open');
+        positionToolbarPanel(btn, menu);
+      }
+    }
   });
-  document.querySelectorAll<HTMLButtonElement>('#export-menu .export-option').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('#export-menu .nav-toolbar-option').forEach((btn) => {
     btn.addEventListener('click', () => {
       const format = btn.dataset.format;
       if (format === 'markdown') ReportExporter.downloadMarkdown();
       else if (format === 'pdf') ReportExporter.downloadPdf();
-      ReportExporter.hideExportMenu();
+      document.getElementById('export-menu')?.classList.remove('open');
     });
   });
+
+  const shareBtn = document.getElementById('share-btn');
+  const shareMenu = document.getElementById('share-menu');
+  const sharePreview = document.getElementById('share-preview');
+  const shareCopyBtn = document.getElementById('share-copy-btn');
+  if (shareBtn && shareMenu && sharePreview && shareCopyBtn) {
+    shareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = shareMenu.classList.contains('open');
+      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+      if (!wasOpen) {
+        sharePreview.textContent = buildSummary();
+        shareMenu.classList.add('open');
+        positionToolbarPanel(shareBtn, shareMenu);
+      }
+    });
+    shareCopyBtn.addEventListener('click', async () => {
+      const text = sharePreview.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      shareCopyBtn.textContent = t('share.copied') || 'Copied!';
+      shareBtn.classList.add('nav-toolbar-btn-copied');
+      setTimeout(() => {
+        shareCopyBtn.textContent = t('share.copy') || 'Copy to clipboard';
+        shareBtn.classList.remove('nav-toolbar-btn-copied');
+        shareMenu.classList.remove('open');
+      }, 1500);
+    });
+  }
+
   document.addEventListener('click', (e) => {
-    if (!(e.target as HTMLElement).closest('.export-dropdown')) ReportExporter.hideExportMenu();
+    if (!(e.target as HTMLElement).closest('.nav-toolbar-item') && !(e.target as HTMLElement).closest('.nav-toolbar-panel')) {
+      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+    }
   });
 
   document.querySelectorAll('.nav-bottom-item').forEach((item) => {
@@ -157,6 +243,10 @@ function initTabs(): void {
       const link = document.querySelector(`.nav-link[data-tab="${tab}"]`) as HTMLAnchorElement;
       if (link) link.click();
     });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNav();
   });
 }
 

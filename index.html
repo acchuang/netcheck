@@ -71,6 +71,14 @@
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
+  <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">
+    <svg class="nav-burger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="nav-overlay" id="nav-overlay"></div>
   <nav class="nav">
     <div class="nav-inner">
       <div class="nav-brand">
@@ -151,69 +159,61 @@
           </div>
         </div>
       </div>
-      <div class="nav-actions">
-        <div class="export-dropdown" id="lang-dropdown">
-          <button class="btn-export" id="lang-toggle" title="Language">
-            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-            <span class="lang-label" id="lang-label">EN</span>
-          </button>
-          <div class="export-menu" id="lang-menu" role="menu" aria-label="Language menu">
-            <button class="export-option" data-lang="en" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              English
+       <div class="nav-toolbar">
+         <div class="nav-toolbar-item" id="lang-dropdown">
+           <button class="nav-toolbar-btn" id="lang-toggle" title="Language">
+             <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <circle cx="12" cy="12" r="10"/>
+               <line x1="2" y1="12" x2="22" y2="12"/>
+               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+             </svg>
+             <span class="nav-toolbar-badge" id="lang-label">EN</span>
+           </button>
+           <div class="nav-toolbar-panel" id="lang-menu" role="menu" aria-label="Language menu">
+             <button class="nav-toolbar-option" data-lang="en" role="menuitem">English</button>
+             <button class="nav-toolbar-option" data-lang="zh-TW" role="menuitem">繁體中文</button>
+             <button class="nav-toolbar-option" data-lang="zh-CN" role="menuitem">简体中文</button>
+             <button class="nav-toolbar-option" data-lang="es" role="menuitem">Español</button>
+             <button class="nav-toolbar-option" data-lang="ja" role="menuitem">日本語</button>
+             <button class="nav-toolbar-option" data-lang="ko" role="menuitem">한국어</button>
+           </div>
+         </div>
+         <button class="nav-toolbar-btn" id="theme-toggle" title="Theme: dark">
+           <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+           </svg>
+         </button>
+          <div class="nav-toolbar-item">
+            <button class="nav-toolbar-btn" id="export-btn" title="Export Report">
+              <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </button>
-            <button class="export-option" data-lang="zh-TW" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              繁體中文
-            </button>
-            <button class="export-option" data-lang="zh-CN" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              简体中文
-            </button>
-            <button class="export-option" data-lang="es" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              Español
-            </button>
-            <button class="export-option" data-lang="ja" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              日本語
-            </button>
-            <button class="export-option" data-lang="ko" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-              한국어
-            </button>
+            <div class="nav-toolbar-panel" id="export-menu">
+              <button class="nav-toolbar-option" data-format="markdown" id="export-markdown-text">Download Markdown</button>
+              <button class="nav-toolbar-option" data-format="pdf" id="export-pdf-text">Save as PDF</button>
+            </div>
           </div>
-        </div>
-        <button class="btn-nav-action" id="theme-toggle" title="Theme: dark">
-          <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-        </button>
-        <div class="export-dropdown">
-          <button class="btn-export" id="export-btn" title="Export Report">
-            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span class="export-btn-text" id="export-btn-text">Export</span>
-          </button>
-          <div class="export-menu" id="export-menu">
-            <button class="export-option" data-format="markdown">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span id="export-markdown-text">Download Markdown</span>
+          <div class="nav-toolbar-item">
+            <button class="nav-toolbar-btn" id="share-btn" title="Copy results" aria-label="Copy summary of current results">
+              <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
             </button>
-            <button class="export-option" data-format="pdf">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-              <span id="export-pdf-text">Save as PDF</span>
-            </button>
+            <div class="nav-toolbar-panel" id="share-menu">
+              <div class="share-panel-content">
+                <pre id="share-preview" class="share-preview"></pre>
+                <button class="nav-toolbar-option share-copy-btn" id="share-copy-btn">Copy to clipboard</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+       </div>
     </div>
   </nav>
 
@@ -413,7 +413,7 @@
         <div class="card card-wide">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <h2 class="card-title" data-i18n="history.chartTitle">30-Day Download Speed</h2>
+            <h2 class="card-title" data-i18n="history.chartTitle">Download Speed</h2>
           </div>
           <div class="card-body">
             <div id="history-chart" aria-live="polite" aria-label="Download speed chart"></div>
@@ -884,6 +884,19 @@
       </div>
 
       <div class="cards-grid about-cards">
+        <!-- Dashboard -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span class="card-title">Dashboard</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-dashboard-desc">Your network at a glance. Shows an overall score, your IP address and location, recent download speed, and latency — all updated in real time as tests complete.</p>
+          </div>
+        </div>
+
         <!-- DNS Check -->
         <div class="card about-card">
           <div class="card-header">
@@ -894,7 +907,7 @@
             <span class="card-title">DNS Check</span>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-dns-desc">Detects your IP address, DNS resolver configuration, and checks DNS security features such as DNSSEC validation, DoH encryption, and malware filtering. Includes a DNS lookup tool to query domains for any record type.</p>
+            <p class="info-muted" id="about-dns-desc">Detects your IP address, DNS resolver configuration, and checks DNS security features such as DNSSEC validation, DoH encryption, and malware filtering. Includes a DNS lookup tool to query domains for any record type and WebRTC leak detection.</p>
           </div>
         </div>
 
@@ -907,7 +920,20 @@
             <span class="card-title">Speed Test</span>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-speed-desc">Measures download and upload speed, latency, jitter, and bufferbloat using your nearest Cloudflare edge server. Displays real-time performance graphs, a 5-factor quality grade, and keeps a persistent history of your last results.</p>
+            <p class="info-muted" id="about-speed-desc">Measures download and upload speed, latency, jitter, and bufferbloat using your nearest Cloudflare edge server. Displays real-time performance graphs and a 5-factor quality grade.</p>
+          </div>
+        </div>
+
+        <!-- TLS Inspector -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span class="card-title">TLS Inspector</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-tls-desc">Inspects the TLS connection to Cloudflare's edge, reporting protocol version, cipher suite, key exchange, forward secrecy support, and certificate details. Assigns an A+–F security grade.</p>
           </div>
         </div>
 
@@ -980,6 +1006,33 @@
             <p class="info-muted" id="about-network-desc">Measures your latency to global network endpoints, giving a regional view of connection health. Visualizes closest regions, quality ratings, and server relay latency via Cloudflare&rsquo;s distributed edge.</p>
           </div>
         </div>
+
+        <!-- History -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <span class="card-title">History</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-history-desc">Tracks your speed test results over time with a visual bar chart, average stats and trend indicator. Filter by 7 days, 30 days, or view all history. Compare any two tests side by side and export data as CSV.</p>
+          </div>
+        </div>
+
+        <!-- Share & Export -->
+        <div class="card about-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+            <span class="card-title">Share &amp; Export</span>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-share-desc">Copy a text summary of any test result to your clipboard via the share button, or export a full report as Markdown or PDF. Supports 6 languages with automatic localization.</p>
+          </div>
+        </div>
       </div>
 
       <div class="about-footer">
@@ -994,8 +1047,6 @@
         </div>
       </div>
     </section>
-
-  </main>
 
   <footer class="footer">
     <div class="footer-top">
@@ -1018,6 +1069,7 @@
       </div>
     </div>
   </footer>
+  </main>
 
   <script type="module" src="/src/client/main.ts"></script>
   <svg width="0" height="0" style="position:absolute">

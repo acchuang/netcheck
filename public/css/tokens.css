@@ -152,6 +152,7 @@
 :root {
   --page-px: clamp(1rem, 5vw, 2.5rem);
   --container-max: 1200px;
+  --sidebar-width: 220px;
   --gap-sm: var(--space-2);
   --gap-md: var(--space-4);
   --gap-lg: var(--space-6);

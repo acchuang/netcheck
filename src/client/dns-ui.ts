@@ -271,12 +271,34 @@ export async function runDnsChecks(): Promise<void> {
   section.setAttribute('aria-busy', 'true');
   lastIpData = await DnsCheck.detectIp();
   renderIpData(lastIpData);
+  if (!lastIpData.error) {
+    dnsState.ipData.set({
+      ip: lastIpData.ip || '',
+      city: lastIpData.city || '',
+      region: lastIpData.region || '',
+      country: lastIpData.country || '',
+      asOrganization: lastIpData.asOrganization || '',
+      asn: Number(lastIpData.asn) || 0,
+      timezone: lastIpData.timezone || '',
+      colo: lastIpData.colo || '',
+      httpProtocol: lastIpData.httpProtocol || '',
+      tlsVersion: lastIpData.tlsVersion || '',
+      tlsCipher: lastIpData.tlsCipher || '',
+      clientTcpRtt: lastIpData.clientTcpRtt || 0,
+      latitude: 0,
+      longitude: 0,
+    });
+  }
 
   lastResolvers = await DnsCheck.detectResolver();
   renderResolvers(lastResolvers);
 
   lastSecurityChecks = await DnsCheck.checkDnsSecurity();
   renderSecurityChecks(lastSecurityChecks);
+  dnsState.securityChecks.set(lastSecurityChecks);
+  dnsState.webrtcLeak.set(
+    lastSecurityChecks.some((c) => c.name === 'WebRTC IP Leak' && c.status === 'fail'),
+  );
 
   renderDnsSuggestions({
     resolvers: lastResolvers,

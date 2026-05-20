@@ -23,6 +23,8 @@ const en = {
   'nav.exportReport': 'Export Report',
   'nav.downloadMd': 'Download Markdown',
   'nav.savePdf': 'Save as PDF',
+  'nav.lang': 'Language',
+  'nav.theme': 'Theme',
 
   // Dashboard
   'dashboard.title': 'Network Overview',
@@ -31,6 +33,7 @@ const en = {
   'dashboard.testsCompleted': 'tests completed',
   'dashboard.downloadSpeed': 'Download Speed',
   'dashboard.latency': 'Latency',
+  'dashboard.yourIp': 'Your IP',
   'dashboard.colo': 'PoP',
   'dashboard.quickStatus': 'Quick Status',
   'dashboard.dnsSecurity': 'DNS Security',
@@ -375,7 +378,7 @@ const en = {
   // History tab
   'history.subtitle': 'Track your network performance over time',
   'history.title': 'Connection History',
-  'history.chartTitle': '30-Day Download Speed',
+  'history.chartTitle': 'Download Speed',
   'history.exportCsv': 'Export CSV',
   'history.clearHistory': 'Clear History',
   'history.confirmClear': 'Clear all history? This cannot be undone.',
@@ -383,6 +386,8 @@ const en = {
   'history.avgDownload': 'Avg Download',
   'history.avgLatency': 'Avg Latency',
   'history.trend': 'Trend',
+  'history.totalTests': 'Total Tests',
+  'history.all': 'All',
   'history.compare': 'Compare',
   'history.cancelCompare': 'Cancel Compare',
   'history.compareMin': 'Need at least 2 tests to compare.',
@@ -547,11 +552,13 @@ const en = {
   'share.aria': 'Copy summary of current results',
   'share.label': 'Share',
   'share.copied': 'Copied!',
+  'share.copy': 'Copy to clipboard',
   'share.metric.grade': 'Grade',
   'share.metric.score': 'Score',
   'share.metric.label': 'Label',
   'share.metric.summary': 'Summary',
   'share.metric.results': 'Results',
+  'share.noData': 'Run a test first to share results',
   'adblock.advice.analytics.desc':
     'Analytics trackers collect data about your browsing behavior. Privacy-focused filters are needed.',
   'adblock.advice.analytics.fix1': 'Enable EasyPrivacy list in your ad blocker',
@@ -678,15 +685,29 @@ export function initI18n(): void {
     langToggle!.setAttribute('aria-expanded', 'false');
   }
 
+  function positionPanel(trigger: HTMLElement, panel: HTMLElement): void {
+    const r = trigger.getBoundingClientRect();
+    const vpH = window.innerHeight;
+    const vpW = window.innerWidth;
+    const panelH = panel.offsetHeight || 200;
+    const panelW = panel.offsetWidth || 160;
+    // Place panel right of the sidebar; clamp to viewport
+    const sidebarW = vpW >= 769 ? 220 : (vpW >= 641 ? 220 : 280);
+    const left = Math.min(sidebarW + 8, vpW - panelW - 8);
+    const top = Math.max(8, Math.min(r.top, vpH - panelH - 8));
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.left = `${Math.round(left)}px`;
+  }
+
   function toggleMenu(): void {
     const isOpen = langMenu!.classList.contains('open');
     if (isOpen) {
       hideMenu();
     } else {
-      // Close any other open menus first
       document.getElementById('export-menu')?.classList.remove('open');
       langMenu!.classList.add('open');
       langToggle!.setAttribute('aria-expanded', 'true');
+      positionPanel(langToggle!, langMenu!);
     }
   }
 
@@ -704,7 +725,7 @@ export function initI18n(): void {
   // Close on outside click or Escape
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (!target.closest('#lang-dropdown')) hideMenu();
+    if (!target.closest('#lang-dropdown') && !target.closest('#lang-menu')) hideMenu();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideMenu();
@@ -728,10 +749,10 @@ function applyStaticTranslations(): void {
     { selector: ".nav-link[data-tab='quality'] .nav-link-text", key: 'nav.quality' },
     { selector: ".nav-link[data-tab='network'] .nav-link-text", key: 'nav.network' },
     { selector: ".nav-link[data-tab='about'] .nav-link-text", key: 'nav.about' },
-    { selector: '#export-btn-text', key: 'nav.export' },
     { selector: '#export-btn', key: 'nav.exportReport', attr: 'title' },
     { selector: '#export-markdown-text', key: 'nav.downloadMd' },
     { selector: '#export-pdf-text', key: 'nav.savePdf' },
+    { selector: '#lang-toggle', key: 'nav.lang', attr: 'title' },
 
     // DNS
     { selector: '#dns-title', key: 'dns.title' },
@@ -847,7 +868,7 @@ function applyStaticTranslations(): void {
   // Update lang toggle label
   const langBtn = document.getElementById('lang-toggle');
   if (langBtn) {
-    const label = langBtn.querySelector('.lang-label');
+    const label = langBtn.querySelector('.nav-toolbar-badge');
     const labels: Record<Locale, string> = {
       en: 'EN',
       'zh-TW': '繁中',
