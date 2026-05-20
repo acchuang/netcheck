@@ -1,7 +1,7 @@
 # NetCheck Incremental Modernization Design
 
 **Date:** 2026-05-20
-**Status:** Approved
+**Status:** Approved (revised after spec review)
 **Approach:** Incremental Modernization (4 phases, ~5 weeks total)
 
 ## Context
@@ -28,26 +28,43 @@ NetCheck is a comprehensive client-side network diagnostics tool — vanilla Typ
 
 ### 1.2 Lint & Format
 
-- `eslint.config.js` — flat config with `@typescript-eslint/recommended`, `no-console` rule (use structured logging)
+- `eslint.config.js` — flat config with `@typescript-eslint/recommended`, `no-console` rule in production builds only (dev builds allow console for debugging)
+- Add `src/client/logger.ts` — thin wrapper over `console` that respects log levels and can be silenced in production
 - `.prettierrc` — consistent formatting, enforced in CI
 - `npm run lint` and `npm run format` scripts in `package.json`
+- **Done when:** `npm run lint` and `npm run format:check` pass with zero errors in CI
 
 ### 1.3 State Management Layer
 
 **New directory:** `src/client/state/`
 
-`observable.ts` — minimal reactive primitive (~50 LOC):
+`observable.ts` — minimal reactive primitive (~120-150 LOC, including batch scheduling, error boundaries, and disposal):
+
 ```typescript
 type Subscriber<T> = (value: T) => void;
+type Disposer = () => void;
 
 interface Observable<T> {
   get(): T;
   set(value: T): void;
-  subscribe(fn: Subscriber<T>): () => void;
+  subscribe(fn: Subscriber<T>): Disposer;
 }
 
+// Create a reactive value
 function observable<T>(initial: T): Observable<T>;
-function derive<T>(sources: Observable<any>[], compute: (...values: any[]) => T): Observable<T>;
+
+// Derive a computed value from other observables.
+// Automatically subscribes to sources, unsubscribes on dispose().
+function derive<T>(sources: Observable<any>[], compute: (...values: any[]) => T): Observable<T> & { dispose: Disposer };
+
+// Batch multiple observable updates into a single notification cycle.
+// Subscribers are notified once after the callback completes, not per-set.
+function batch<T>(fn: () => T): T;
+
+// Error handling: if a compute function in derive() throws,
+// the derived observable retains its last good value and logs the error.
+// It does not enter an error state — subsequent source changes retry compute.
+```
 ```
 
 Per-tab state modules:
@@ -66,14 +83,13 @@ No DOM logic in state files. State modules export `Observable` instances and act
 
 **New directory:** `src/client/components/`
 
-Extract reusable render functions from existing UI files:
-- `gauge.ts` — circular/speed gauge (used by Speed, Quality)
-- `badge.ts` — pass/warn/fail badge (used by DNS, Headers, Ad Block)
-- `card.ts` — result card layout (used by all tabs)
-- `progress.ts` — progress bar/skeleton (used by all tabs)
-- `chart.ts` — canvas-based line chart (used by Speed, History)
+Extract reusable render functions from existing `*-ui.ts` files. Each component is a pure function that reads from observables and renders to a container. The existing `ui-utils.ts` helpers (`animateNumber`, `setActiveGauge`, skeleton row generators) are absorbed into these components.
 
-Each component: pure function `(container: HTMLElement, data: ComponentProps) => void`. No internal state, no side effects — reads from observables and renders.
+- `gauge.ts` — circular/speed gauge (used by Speed, Quality). Props: `GaugeProps = { value: number; max: number; label: string; phase?: 'idle' | 'testing' | 'done'; unit?: string }`
+- `badge.ts` — pass/warn/fail badge (used by DNS, Headers, Ad Block). Props: `BadgeProps = { status: 'pass' | 'warn' | 'fail'; label: string; detail?: string }`
+- `card.ts` — result card layout (used by all tabs). Props: `CardProps = { title: string; grade?: string; children: HTMLElement[] }`
+- `progress.ts` — progress bar/skeleton (used by all tabs). Props: `ProgressProps = { percent: number; label?: string; indeterminate?: boolean }`
+- `chart.ts` — canvas-based line chart (used by Speed, History). Props: `ChartProps = { data: { x: number; y: number }[]; width: number; height: number; color?: string; label?: string }`
 
 ### 1.5 File Structure After Phase 1
 
@@ -106,12 +122,15 @@ src/client/
     dashboard-tab.ts        # (Phase 2 — placeholder for now)
   app.ts
   main.ts
-  i18n.ts
-  theme.ts
+  i18n.ts                # (unchanged)
+  theme.ts               # (unchanged)
+  logger.ts              # New: thin console wrapper, log-level aware
   ...existing utils...
 ```
 
 Existing `*-ui.ts` files are refactored to become thin `*-tab.ts` wrappers that compose state + components. The logic that was in `*-ui.ts` splits into `state/` (data) and `components/` (rendering).
+
+**Phase 1 acceptance criteria:** All existing tabs work identically to before refactoring. CI pipeline runs on every push. `npm run lint` and `npm run typecheck` pass. State layer has 100% test coverage.
 
 ---
 
@@ -133,17 +152,34 @@ New default landing tab (`dashboard-tab.ts`). Replaces DNS as the first tab user
 - `history.ts` — existing localStorage history, expanded to store more metrics
 - Dashboard doesn't run any tests itself — it reads from other states
 
+**Overall Score algorithm:**
+Each test produces a 0-100 numeric score. The overall score is a weighted average:
+
+| Test | Weight | Rationale |
+|------|--------|-----------|
+| DNS Security | 20% | Core infrastructure check |
+| Speed | 20% | Primary user concern |
+| Ad Block | 15% | Privacy/security |
+| Headers | 15% | Security posture |
+| Fingerprint | 10% | Privacy awareness |
+| Connection Quality | 15% | Stability indicator |
+| TLS | 5% | Bonus metric |
+
+Incomplete tests are excluded from the weight, redistributed proportionally. Grade thresholds: ≥93 A+, ≥90 A, ≥80 B, ≥70 C, ≥60 D, <60 F.
+
+**Empty state:** On first load with no completed tests, show skeleton cards with "Run your first test" CTA buttons. Each card transitions to real data as the corresponding test completes.
+
 ### 2.2 Categorized Navigation
 
 Replace flat 8-tab horizontal scroll with categorized groups:
 
 | Category | Tabs |
 |----------|------|
-| Overview | Dashboard |
+| Overview | Dashboard, History |
 | Performance | Speed, Quality |
-| Security | DNS, Headers, Ad Block |
+| Security | DNS, Headers, Ad Block, TLS |
 | Privacy | Fingerprint |
-| Explore | Network Map |
+| Explore | Network Map, About |
 
 Implementation: `<nav>` gets category group labels. On mobile, categories collapse into a hamburger/dropdown. Current active tab's category expands.
 
@@ -154,26 +190,36 @@ Implementation: `<nav>` gets category group labels. On mobile, categories collap
 - **Gauge reveal:** spring-eased count-up animation for scores/grades
 - **Reduced motion:** all animations respect `prefers-reduced-motion: reduce`
 
-No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for gauge count-ups.
+No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for gauge count-ups (preserving existing `animateNumber` from `ui-utils.ts`, absorbed into `components/gauge.ts`).
+
+**Phase 2 acceptance criteria:** Dashboard shows overall score computed from completed tests. Empty state shows skeleton with CTA. Navigation groups tabs by category. Tab transitions are animated. `prefers-reduced-motion` respected.
 
 ---
 
 ## Phase 3 — New Features (~1.5 weeks after Phase 2)
 
-### 3.1 TLS Certificate Inspector
+### 3.1 TLS Connection Inspector
 
 **New tab** under Security category.
 
-**Data source:** Worker `/api/ip` already returns `cf-tlsVersion`, `cf-tlsCipher`. Add new Worker endpoint `/api/tls/cert` that:
-- Reads TLS certificate from the incoming connection (Cloudflare exposes cert info via `request.cf` and `request.headers`)
-- Returns: subject, issuer, validity dates, key type/size, SANs, CT SCTs, chain
+**Design constraint:** Cloudflare Workers' `request.cf` only exposes `tlsVersion` and `tlsCipher` — full certificate chain, SANs, validity dates, and CT SCTs are not available server-side. This tab uses a combination of available data and client-side checks.
+
+**Data sources:**
+- Worker `/api/ip` — existing endpoint already returns `cf-tlsVersion`, `cf-tlsCipher`, `cf-httpProtocol`
+- Worker `/api/headers/check` — existing endpoint, point at the site's own origin to check HSTS, CSP, etc.
+- Client-side `PerformanceResourceTiming` — `secureConnectionStart` and `connectEnd` for TLS handshake duration
+- Client-side check — `crypto.subtle` availability, HSTS preload list check
 
 **Client UI:**
-- Certificate validity card (valid/invalid/expired, days remaining)
-- Certificate chain visualization (leaf → intermediate → root)
-- TLS handshake details (protocol, cipher, key exchange, forward secrecy)
-- OCSP stapling, HSTS status
-- Overall TLS grade (A+ through F)
+- **TLS Protocol** — version, cipher suite, key exchange (from existing data)
+- **Forward Secrecy** — determined from cipher suite name (e.g., ECDHE = yes)
+- **TLS Handshake Time** — from Performance API timing
+- **HTTP Protocol** — h2 vs h3 (from `cf-httpProtocol`)
+- **HSTS Status** — checked via headers scan of own origin
+- **OCSP Stapling** — not directly detectable client-side, shown as "unknown" with explanation
+- **Overall TLS Grade** — A+ through F, computed from protocol version, cipher strength, forward secrecy, and HSTS
+
+**Note:** This is intentionally scoped to what's feasible. No certificate chain, no SANs, no validity dates — those require server-side cert parsing that Cloudflare Workers doesn't expose.
 
 **State:** `tls-state.ts` — new observable state for TLS results
 
@@ -181,14 +227,20 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 
 **Integrated into DNS tab** (new section, not a separate tab).
 
-**Tests:**
-1. **IPv6 connectivity** — attempt fetch to dual-stack endpoint, check if AAAA record resolved
-2. **DNS AAAA resolution** — query AAAA record for known dual-stack domains
-3. **Happy Eyeballs v2 (RFC 8305)** — verify client implements connection racing
-4. **IPv4 fallback** — confirm IPv4 still works as backup
-5. **Path MTU** — check IPv6 path MTU ≥ 1280
+**Design constraint:** IPv6 connectivity, AAAA resolution, and dual-stack behavior are client-side observations. The server can only report whether the incoming request arrived over IPv6 (via `cf-connecting-ip`). All other checks must be performed client-side.
 
-**Worker endpoint:** `/api/ipv6/check` — returns IPv6 address, IPv4 address, AAAA resolution results
+**Tests (all client-side):**
+1. **IPv4 connectivity** — `fetch()` to a known IPv4-only endpoint, measure latency
+2. **IPv6 connectivity** — `fetch()` to a known IPv6-only endpoint (Cloudflare R2 bucket with AAAA record), measure latency
+3. **DNS AAAA resolution** — query Cloudflare DoH (`cloudflare-dns.com/dns-query?name=ipv6test.google.com&type=AAAA`) and check for AAAA response
+4. **IPv4 fallback** — verify IPv4 endpoint still works after IPv6
+5. **Dual-stack preference** — compare IPv6 latency vs IPv4 latency; if IPv6 is faster, dual-stack is working correctly
+
+**Not feasible client-side** (removed from design):
+- Happy Eyeballs v2 compliance (browser networking stack, not observable from JS)
+- Path MTU discovery (requires ICMP or OS-level APIs)
+
+**Server endpoint:** No new endpoint needed. The existing `/api/ip` already returns the client's IP address (which reveals IPv4 vs IPv6 transport).
 
 **State:** Added to `dns-state.ts` as `ipv6` observable
 
@@ -202,6 +254,25 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 - CSV export (reuse existing `history.ts` export)
 - History expanded from 50 → 200 entries in localStorage
 - Detail view: click a bar to see full test results
+- **Schema migration:** History key gets a `v` field. Current schema is `v: 0` (speed-only). New schema:
+
+```typescript
+interface HistoryEntry {
+  v: 1;
+  id: string;                    // unique ID for comparison
+  timestamp: number;             // Unix ms
+  speed?: { download: number; upload: number; latency: number; jitter: number; bufferbloat: number; grade: string };
+  dns?: { security: string; webrtcLeak: boolean; resolverCount: number; dnssec: boolean };
+  adblock?: { score: number; categories: Record<string, number> };
+  headers?: { url: string; grade: string; score: number };
+  fingerprint?: { uniquenessScore: number; categories: Record<string, number> };
+  quality?: { effectiveType: string; downlink: number; rtt: number; tlsGrade: string };
+}
+```
+
+Migration: existing `v: 0` entries (speed-only) are converted to `v: 1` with only the `speed` field populated. Unknown fields default to `undefined`.
+
+- CSV export (reuse existing `history.ts` export, expanded columns for all tab results)
 
 **State:** `history-state.ts` — wraps `history.ts` with observables, stores entries with richer metadata (all tab results, not just speed)
 
@@ -215,6 +286,8 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 - Percentage change displayed
 
 **State:** `compare-state.ts` — holds references to two history entries, computes diff
+
+**Phase 3 acceptance criteria:** TLS tab displays connection info with grade. IPv6 section in DNS tab shows 5 client-side checks. History timeline shows 30-day bar chart with clickable detail. Comparison view shows side-by-side diff with green/red highlighting. History schema migrates v0 → v1 automatically.
 
 ---
 
@@ -244,8 +317,8 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 - SEO ≥ 95
 
 **Bundle size targets** (gzipped):
-- JS < 80 KB (current: ~60 KB)
-- CSS < 20 KB (current: ~15 KB)
+- JS < 90 KB (current: ~60 KB; headroom for observable, components, new tabs)
+- CSS < 25 KB (current: ~15 KB; headroom for dashboard, history, navigation styles)
 - First Paint < 1.5s on 4G
 - TTI < 3s on 4G
 
@@ -253,7 +326,7 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 
 ### 4.3 PWA & Offline Improvements
 
-**Enhanced service worker** (`public/sw.js`):
+**Enhanced service worker** (registered at `/public/sw.js` in `app.ts`):
 - Cache-first for static assets (JS, CSS, fonts, images)
 - Network-first for API calls, fallback to cached results
 - Stale-while-revalidate for analytics badge
@@ -279,13 +352,15 @@ No JS animation libraries. Pure CSS transitions + `requestAnimationFrame` for ga
 - Touch targets ≥ 44px
 - axe-core automated audit in CI pipeline
 
+**Phase 4 acceptance criteria:** Test coverage ≥80% overall, 100% state layer. Lighthouse scores all meet targets. Custom PWA install prompt shown on 2nd visit. axe-core zero violations in CI. All animations respect `prefers-reduced-motion`.
+
 ---
 
 ## Architecture Decisions
 
 ### No Framework
 
-The project stays vanilla TypeScript. The `observable.ts` reactive primitive adds ~50-100 LOC total and provides the benefits of reactive state without framework overhead, bundle bloat, or supply chain risk. This is the right choice because:
+The project stays vanilla TypeScript. The `observable.ts` reactive primitive adds ~120-150 LOC total (including batch scheduling, error handling, and disposal) and provides the benefits of reactive state without framework overhead, bundle bloat, or supply chain risk. This is the right choice because:
 
 1. **Zero bundle increase** — no framework to ship
 2. **Cloudflare Workers compatible** — no SSR complexity
@@ -305,9 +380,7 @@ One tab per PR. Never refactor multiple tabs simultaneously.
 
 ### Backward Compatibility
 
-All existing API endpoints remain unchanged. New endpoints:
-- `GET /api/tls/cert` — TLS certificate info
-- `GET /api/ipv6/check` — IPv6 readiness check
+All existing API endpoints remain unchanged. No new Worker endpoints are needed — TLS data comes from existing `/api/ip` and `/api/headers/check`, and IPv6 checks are client-side.
 
 localStorage schema versioned — `history` key gets a `v` field. Migration logic in `history.ts`.
 
