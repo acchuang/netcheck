@@ -335,7 +335,7 @@ body {
 
 .section.active {
   display: block;
-  animation: fade-in 0.25s ease-out, slide-up-section 0.25s ease-out;
+  animation: fade-in 0.3s var(--ease-out), slide-up-section 0.35s var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -344,30 +344,39 @@ body {
 }
 
 @keyframes slide-up-section {
-  from { transform: translateY(8px); }
+  from { transform: translateY(16px); }
   to { transform: translateY(0); }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--brand-glow); }
+  50% { box-shadow: 0 0 20px 0 var(--brand-glow); }
 }
 
 .section.active .card,
 .section.active .score-card,
+.section.active .card,
 .section.active .fp-score-card,
 .section.active .speed-gauge,
 .section.active .speed-status-row,
 .section.active .speed-graph-card,
 .section.active .test-category,
 .section.active .suggestion-card {
-  animation: slide-up 0.35s ease-out both;
+  animation: slide-up 0.4s var(--ease-out) both;
 }
 
 .section.active .card:nth-child(1),
 .section.active .score-card { animation-delay: 0ms; }
-.section.active .card:nth-child(2) { animation-delay: 50ms; }
-.section.active .card:nth-child(3) { animation-delay: 100ms; }
+.section.active .card:nth-child(2) { animation-delay: 60ms; }
+.section.active .card:nth-child(3) { animation-delay: 120ms; }
+.section.active .card:nth-child(4) { animation-delay: 180ms; }
+.section.active .card:nth-child(5) { animation-delay: 240ms; }
+.section.active .card:nth-child(6) { animation-delay: 300ms; }
 
 .section-header {
   margin-bottom: 56px;
@@ -460,33 +469,34 @@ body {
 /* Status Badge */
 .status-badge {
   font-size: 11px;
-  font-weight: 510;
-  padding: 2px 8px;
+  font-weight: 600;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-default);
   color: var(--text-tertiary);
   white-space: nowrap;
-  transition: color 0.3s, border-color 0.3s, background-color 0.3s;
+  transition: all 0.2s var(--ease-out);
+  letter-spacing: 0.02em;
 }
 
 .status-badge.done {
   color: var(--status-pass);
-  border-color: rgba(16, 185, 129, 0.3);
-  background: rgba(16, 185, 129, 0.08);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.1);
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.15);
 }
 
 .status-badge.error {
   color: var(--status-fail);
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.08);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.1);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.12);
 }
 
 .status-badge.detecting {
   color: var(--brand);
-  border-color: rgba(113, 112, 255, 0.25);
-  background: rgba(113, 112, 255, 0.06);
+  border-color: rgba(124, 92, 252, 0.3);
+  background: rgba(124, 92, 252, 0.08);
   animation: badge-pulse 1.5s ease-in-out infinite;
 }
 
@@ -1830,15 +1840,16 @@ select option {
 /* Footer */
 .footer {
   border-top: 1px solid var(--border-subtle);
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
-  background: linear-gradient(180deg, transparent 0%, var(--surface-tertiary) 100%);
-  margin-top: 40px;
+  background: linear-gradient(180deg, transparent 0%, var(--surface-tertiary, var(--gray-800)) 100%);
+  margin-top: 48px;
 }
 
 .footer-text {
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--text-muted, var(--text-tertiary));
+  letter-spacing: 0.01em;
 }
 
 .footer-link {
@@ -1846,11 +1857,11 @@ select option {
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  font-weight: 510;
+  font-weight: 600;
   color: var(--text-tertiary);
   text-decoration: none;
   margin-top: 8px;
-  transition: color 0.2s;
+  transition: color 0.2s var(--ease-out);
 }
 
 .footer-link:hover {
@@ -2044,14 +2055,14 @@ select option {
     left: 0;
     right: 0;
     z-index: 100;
-    background: var(--surface-tertiary);
+    background: color-mix(in srgb, var(--surface-primary) 85%, transparent);
     border-top: 1px solid var(--border-subtle);
     border-bottom: none;
     padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
     justify-content: space-around;
     gap: 0;
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
   }
 
   .nav-category {
@@ -2068,7 +2079,8 @@ select option {
 
   .nav-link {
     flex-direction: column;
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 600;
     padding: 6px 4px;
     gap: 2px;
     flex: 1;
@@ -2084,6 +2096,10 @@ select option {
 
   .nav-link-icon {
     display: block;
+  }
+
+  .nav-link.active {
+    background: color-mix(in srgb, var(--brand) 15%, transparent);
   }
 
   body {
