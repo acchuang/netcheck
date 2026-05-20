@@ -3,6 +3,8 @@ import type { ResolverResult, SecurityCheck } from './types';
 import { t } from './i18n';
 import { CF_POPS } from './cf-pops';
 import { setBadge, createCheckItem } from './ui-utils';
+import { dnsState } from './state/dns-state';
+import { safeInitAsync } from './error-boundary';
 import { affiliate } from './affiliates';
 import { onLocaleChange } from './locale-events';
 import { DnsBenchmark, renderBenchmarkHeatmap, renderPathBars } from './dns-benchmark';
@@ -289,6 +291,13 @@ export async function runDnsChecks(): Promise<void> {
     auditBtn.textContent = t('dns.runAudit');
   }
 
+  // Run IPv6 check
+  safeInitAsync('IPv6 Check', async () => {
+    const { runIpv6Check } = await import('./state/ipv6-check');
+    await runIpv6Check();
+    renderIpv6Results();
+  });
+
   section.setAttribute('aria-busy', 'false');
 }
 
@@ -490,3 +499,42 @@ onLocaleChange(() => {
     reachable: lastResolvers.filter((resolver) => resolver.reachable),
   });
 });
+
+function renderIpv6Results(): void {
+  const container = document.getElementById('dns-ipv6-results');
+  const card = document.getElementById('dns-ipv6-card');
+  const ipv6 = dnsState.ipv6.get();
+
+  if (!container || !ipv6) return;
+  if (card) card.classList.remove('hidden');
+
+  const statusIcon = (pass: boolean | null) =>
+    pass === true ? '✓' : pass === false ? '✗' : '—';
+  const statusClass = (pass: boolean | null) =>
+    pass === true ? 'pass' : pass === false ? 'fail' : '';
+
+  container.innerHTML = `
+    <div class="ipv6-grid">
+      <div class="ipv6-test-item">
+        <span class="ipv6-test-label">IPv4 Connectivity</span>
+        <span class="status-badge ${statusClass(ipv6.ipv4Connectivity)}">${statusIcon(ipv6.ipv4Connectivity)} ${ipv6.ipv4Connectivity ? 'Active' : 'Unavailable'}</span>
+      </div>
+      <div class="ipv6-test-item">
+        <span class="ipv6-test-label">IPv6 Connectivity</span>
+        <span class="status-badge ${statusClass(ipv6.ipv6Connectivity)}">${statusIcon(ipv6.ipv6Connectivity)} ${ipv6.ipv6Connectivity ? 'Active' : 'Unavailable'}</span>
+      </div>
+      <div class="ipv6-test-item">
+        <span class="ipv6-test-label">DNS AAAA Resolution</span>
+        <span class="status-badge ${statusClass(ipv6.aaaaResolution)}">${statusIcon(ipv6.aaaaResolution)} ${ipv6.aaaaResolution ? 'Supported' : 'Not found'}</span>
+      </div>
+      <div class="ipv6-test-item">
+        <span class="ipv6-test-label">IPv4 Fallback</span>
+        <span class="status-badge ${statusClass(ipv6.ipv4Fallback)}">${statusIcon(ipv6.ipv4Fallback)} ${ipv6.ipv4Fallback ? 'Available' : 'Unavailable'}</span>
+      </div>
+      <div class="ipv6-test-item">
+        <span class="ipv6-test-label">Dual-Stack Preference</span>
+        <span class="status-badge ${ipv6.dualStackPreference === 'ipv6' ? 'pass' : 'warn'}">${ipv6.dualStackPreference === 'ipv6' ? '✓ IPv6 preferred' : ipv6.dualStackPreference === 'ipv4' ? '△ IPv4 preferred' : '—'}</span>
+      </div>
+    </div>
+  `;
+}
