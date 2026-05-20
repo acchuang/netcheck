@@ -1,57 +1,42 @@
-import {
-  SpeedTest,
-  type SpeedTestResults,
-  type SpeedTestPhase,
-} from "./speed-test";
-import { SpeedTestHistory } from "./history";
-import { t } from "./i18n";
-import {
-  animateNumber,
-  pulseValue,
-  setActiveGauge,
-} from "./ui-utils";
-import {
-  clearGraph,
-  drawSpeedGraph,
-  addGraphPoint,
-  drawHistoryChart,
-} from "./speed-graph";
-import { SpeedMonitor, type MonitorDuration } from "./speed-monitor";
+import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from './speed-test';
+import { SpeedTestHistory } from './history';
+import { t } from './i18n';
+import { animateNumber, pulseValue, setActiveGauge } from './ui-utils';
+import { clearGraph, drawSpeedGraph, addGraphPoint, drawHistoryChart } from './speed-graph';
+import { SpeedMonitor, type MonitorDuration } from './speed-monitor';
 
-import {
-  gradeKeys,
-  renderSpeedSuggestions,
-  updateServerBadge,
-} from "./speed-suggestions";
-import { onLocaleChange } from "./locale-events";
-import { formatColo } from "./cf-pops";
-import { announce, announceProgress } from "./a11y";
+import { gradeKeys, renderSpeedSuggestions, updateServerBadge } from './speed-suggestions';
+import { onLocaleChange } from './locale-events';
+import { formatColo } from './cf-pops';
+import { announce, announceProgress } from './a11y';
 
 export function initSpeedTest(): void {
-  document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
-  const monitorSelect = document.getElementById("speed-monitor-select") as unknown as HTMLSelectElement;
-  const monitorBtn = document.getElementById("speed-monitor-btn") as HTMLButtonElement;
-  monitorBtn?.addEventListener("click", () => {
+  document.getElementById('speed-start-btn')!.addEventListener('click', runSpeedTest);
+  const monitorSelect = document.getElementById(
+    'speed-monitor-select',
+  ) as unknown as HTMLSelectElement;
+  const monitorBtn = document.getElementById('speed-monitor-btn') as HTMLButtonElement;
+  monitorBtn?.addEventListener('click', () => {
     const dur = parseInt(monitorSelect.value) as MonitorDuration;
     runMonitor(dur);
   });
-  const csvBtn = document.getElementById("speed-csv-btn");
-  csvBtn?.addEventListener("click", () => SpeedTestHistory.downloadCsv());
+  const csvBtn = document.getElementById('speed-csv-btn');
+  csvBtn?.addEventListener('click', () => SpeedTestHistory.downloadCsv());
   renderSpeedHistory();
 }
 
 function renderSpeedHistory(): void {
   const history = SpeedTestHistory.getAll();
-  const container = document.getElementById("speed-history")!;
-  const csvBtn = document.getElementById("speed-csv-btn") as HTMLButtonElement | null;
+  const container = document.getElementById('speed-history')!;
+  const csvBtn = document.getElementById('speed-csv-btn') as HTMLButtonElement | null;
 
   if (!history.length) {
-    container.classList.remove("visible");
+    container.classList.remove('visible');
     if (csvBtn) csvBtn.disabled = true;
     return;
   }
 
-  container.classList.add("visible");
+  container.classList.add('visible');
   if (csvBtn) csvBtn.disabled = false;
   drawHistoryChart(history);
 }
@@ -59,114 +44,138 @@ function renderSpeedHistory(): void {
 onLocaleChange(renderSpeedHistory);
 
 async function runSpeedTest(): Promise<void> {
-  const section = document.getElementById("speed")!;
-  section.setAttribute("aria-busy", "true");
-  const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
+  const section = document.getElementById('speed')!;
+  section.setAttribute('aria-busy', 'true');
+  const btn = document.getElementById('speed-start-btn') as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = t("speed.running");
+  btn.textContent = t('speed.running');
 
   clearGraph();
   drawSpeedGraph();
 
-  document.getElementById("speed-download")!.textContent = "—";
-  document.getElementById("speed-upload")!.textContent = "—";
-  document.getElementById("speed-latency")!.textContent = "—";
-  document.getElementById("speed-jitter")!.textContent = "—";
-  document.getElementById("speed-bufferbloat")!.textContent = "—";
-  document.getElementById("speed-server-value")!.textContent = t("speed.detecting");
-  (["download", "upload", "latency", "jitter", "bufferbloat"] as const).forEach((k) => {
-    (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
+  document.getElementById('speed-download')!.textContent = '—';
+  document.getElementById('speed-upload')!.textContent = '—';
+  document.getElementById('speed-latency')!.textContent = '—';
+  document.getElementById('speed-jitter')!.textContent = '—';
+  document.getElementById('speed-bufferbloat')!.textContent = '—';
+  document.getElementById('speed-server-value')!.textContent = t('speed.detecting');
+  (['download', 'upload', 'latency', 'jitter', 'bufferbloat'] as const).forEach((k) => {
+    (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = '0%';
   });
   // Hide new containers at start
-  (document.getElementById("speed-timing-breakdown") as HTMLElement)?.classList.add("hidden");
-  (document.getElementById("speed-connection-badge") as HTMLElement)?.classList.remove("active");
-  (document.getElementById("speed-stability-readout") as HTMLElement)?.classList.add("hidden");
+  (document.getElementById('speed-timing-breakdown') as HTMLElement)?.classList.add('hidden');
+  (document.getElementById('speed-connection-badge') as HTMLElement)?.classList.remove('active');
+  (document.getElementById('speed-stability-readout') as HTMLElement)?.classList.add('hidden');
 
   const startTime = performance.now();
 
   const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0, bufferbloat: 0 };
 
-  const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
-    const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
-    document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
-    (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
-    setActiveGauge(phase);
+  const results = await SpeedTest.run(
+    (phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
+      const phaseLabel =
+        phase === 'latency'
+          ? t('speed.measuringLatency')
+          : phase === 'download'
+            ? t('speed.testingDownload')
+            : t('speed.testingUpload');
+      document.getElementById('speed-phase')!.textContent = `${phaseLabel}... ${progress}%`;
+      (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
+      setActiveGauge(phase);
 
-    if (data) {
-      if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
-      if (data.latency !== null) {
-        const el = document.getElementById("speed-latency")!;
-        animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
-        pulseValue(el);
-        prevValues.latency = data.latency;
+      if (data) {
+        if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
+        if (data.latency !== null) {
+          const el = document.getElementById('speed-latency')!;
+          animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
+          pulseValue(el);
+          prevValues.latency = data.latency;
+        }
+        if (data.jitter !== null) {
+          const el = document.getElementById('speed-jitter')!;
+          animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
+          pulseValue(el);
+          prevValues.jitter = data.jitter;
+        }
+        if (data.bufferbloat !== null) {
+          const el = document.getElementById('speed-bufferbloat')!;
+          animateNumber(el, prevValues.bufferbloat ?? 0, data.bufferbloat, 200, (v) =>
+            String(Math.round(v)),
+          );
+          pulseValue(el);
+          prevValues.bufferbloat = data.bufferbloat;
+        }
+        if (data.download !== null) {
+          const el = document.getElementById('speed-download')!;
+          animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
+          pulseValue(el);
+          prevValues.download = data.download;
+          addGraphPoint('download', (performance.now() - startTime) / 1000, data.download);
+          drawSpeedGraph();
+        }
+        if (data.upload !== null) {
+          const el = document.getElementById('speed-upload')!;
+          animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
+          pulseValue(el);
+          prevValues.upload = data.upload;
+          addGraphPoint('upload', (performance.now() - startTime) / 1000, data.upload);
+          drawSpeedGraph();
+        }
       }
-      if (data.jitter !== null) {
-        const el = document.getElementById("speed-jitter")!;
-        animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
-        pulseValue(el);
-        prevValues.jitter = data.jitter;
-      }
-      if (data.bufferbloat !== null) {
-        const el = document.getElementById("speed-bufferbloat")!;
-        animateNumber(el, prevValues.bufferbloat ?? 0, data.bufferbloat, 200, (v) => String(Math.round(v)));
-        pulseValue(el);
-        prevValues.bufferbloat = data.bufferbloat;
-      }
-      if (data.download !== null) {
-        const el = document.getElementById("speed-download")!;
-        animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
-        pulseValue(el);
-        prevValues.download = data.download;
-        addGraphPoint("download", (performance.now() - startTime) / 1000, data.download);
-        drawSpeedGraph();
-      }
-      if (data.upload !== null) {
-        const el = document.getElementById("speed-upload")!;
-        animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
-        pulseValue(el);
-        prevValues.upload = data.upload;
-        addGraphPoint("upload", (performance.now() - startTime) / 1000, data.upload);
-        drawSpeedGraph();
-      }
-    }
-  });
+    },
+  );
 
-  setActiveGauge("");
-  document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";
-  document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
-  document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
-  document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
-  document.getElementById("speed-bufferbloat")!.textContent = results.bufferbloat !== null ? String(Math.round(results.bufferbloat)) : "—";
+  setActiveGauge('');
+  document.getElementById('speed-download')!.textContent =
+    results.download !== null ? results.download.toFixed(1) : '—';
+  document.getElementById('speed-upload')!.textContent =
+    results.upload !== null ? results.upload.toFixed(1) : '—';
+  document.getElementById('speed-latency')!.textContent =
+    results.latency !== null ? String(results.latency) : '—';
+  document.getElementById('speed-jitter')!.textContent =
+    results.jitter !== null ? String(results.jitter) : '—';
+  document.getElementById('speed-bufferbloat')!.textContent =
+    results.bufferbloat !== null ? String(Math.round(results.bufferbloat)) : '—';
 
   if (results.bufferbloat !== null) {
-    const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
+    const bbBar = document.getElementById('speed-bufferbloat-bar') as HTMLElement;
     const bbPct = Math.min(100, (results.bufferbloat / 100) * 100);
     bbBar.style.width = `${bbPct}%`;
   }
 
-  const grade = SpeedTest.getGrade(results.download, results.upload, results.latency, results.jitter, results.bufferbloat);
-  const gradeEl = document.getElementById("speed-grade")!;
+  const grade = SpeedTest.getGrade(
+    results.download,
+    results.upload,
+    results.latency,
+    results.jitter,
+    results.bufferbloat,
+  );
+  const gradeEl = document.getElementById('speed-grade')!;
   gradeEl.textContent = grade.grade;
-  gradeEl.classList.add("grade-reveal");
-  setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
-  document.getElementById("speed-grade-label")!.textContent = t(gradeKeys[grade.label] || grade.label);
+  gradeEl.classList.add('grade-reveal');
+  setTimeout(() => gradeEl.classList.remove('grade-reveal'), 400);
+  document.getElementById('speed-grade-label')!.textContent = t(
+    gradeKeys[grade.label] || grade.label,
+  );
 
-  const factorsEl = document.getElementById("grade-factors")!;
+  const factorsEl = document.getElementById('grade-factors')!;
   const factorKeys: { key: keyof typeof grade.factors; label: string }[] = [
-    { key: "download", label: t("speed.factor.download") },
-    { key: "upload", label: t("speed.factor.upload") },
-    { key: "latency", label: t("speed.factor.latency") },
-    { key: "jitter", label: t("speed.factor.jitter") },
-    { key: "bufferbloat", label: t("speed.factor.bufferbloat") },
+    { key: 'download', label: t('speed.factor.download') },
+    { key: 'upload', label: t('speed.factor.upload') },
+    { key: 'latency', label: t('speed.factor.latency') },
+    { key: 'jitter', label: t('speed.factor.jitter') },
+    { key: 'bufferbloat', label: t('speed.factor.bufferbloat') },
   ];
-  factorsEl.innerHTML = factorKeys.map((f) => {
-    const status = grade.factors[f.key];
-    return `<span class="grade-factor"><span class="grade-factor-dot ${status}"></span>${f.label}</span>`;
-  }).join("");
+  factorsEl.innerHTML = factorKeys
+    .map((f) => {
+      const status = grade.factors[f.key];
+      return `<span class="grade-factor"><span class="grade-factor-dot ${status}"></span>${f.label}</span>`;
+    })
+    .join('');
 
-  const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
-  document.getElementById("speed-phase")!.textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}`;
+  const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : '';
+  document.getElementById('speed-phase')!.textContent =
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t('speed.latency').toLowerCase()}`;
 
   // --- RENDER NEW FEATURES ---
   renderTimingBreakdown(results.timing);
@@ -178,28 +187,29 @@ async function runSpeedTest(): Promise<void> {
   SpeedTestHistory.save(results);
   renderSpeedHistory();
   btn.disabled = false;
-  btn.textContent = t("speed.runAgain");
-  section.setAttribute("aria-busy", "false");
+  btn.textContent = t('speed.runAgain');
+  section.setAttribute('aria-busy', 'false');
 }
 
-function renderTimingBreakdown(timing: import("./speed-test").SpeedTestResults["timing"]): void {
-  const el = document.getElementById("speed-timing-breakdown");
+function renderTimingBreakdown(timing: import('./speed-test').SpeedTestResults['timing']): void {
+  const el = document.getElementById('speed-timing-breakdown');
   if (!el) return;
   if (!timing || timing.total === 0) {
-    el.classList.add("hidden");
+    el.classList.add('hidden');
     return;
   }
   const phases = [
-    { key: "dns", label: "DNS", value: timing.dns, color: "var(--brand)" },
-    { key: "tcp", label: "TCP", value: timing.tcp, color: "var(--emerald)" },
-    { key: "tls", label: "TLS", value: timing.tls, color: "var(--accent)" },
-    { key: "ttfb", label: "TTFB", value: timing.ttfb, color: "var(--amber)" },
-    { key: "download", label: "Download", value: timing.download, color: "var(--text-tertiary)" },
+    { key: 'dns', label: 'DNS', value: timing.dns, color: 'var(--brand)' },
+    { key: 'tcp', label: 'TCP', value: timing.tcp, color: 'var(--emerald)' },
+    { key: 'tls', label: 'TLS', value: timing.tls, color: 'var(--accent)' },
+    { key: 'ttfb', label: 'TTFB', value: timing.ttfb, color: 'var(--amber)' },
+    { key: 'download', label: 'Download', value: timing.download, color: 'var(--text-tertiary)' },
   ];
   const total = timing.total;
-  el.innerHTML = phases.map((p) => {
-    const pct = total > 0 ? Math.max(2, (p.value / total) * 100) : 0;
-    return `
+  el.innerHTML = phases
+    .map((p) => {
+      const pct = total > 0 ? Math.max(2, (p.value / total) * 100) : 0;
+      return `
       <div class="timing-row">
         <span class="timing-label">${p.label}</span>
         <div class="timing-bar-container">
@@ -207,60 +217,63 @@ function renderTimingBreakdown(timing: import("./speed-test").SpeedTestResults["
         </div>
         <span class="timing-value mono">${p.value}ms</span>
       </div>`;
-  }).join("");
-  el.classList.remove("hidden");
+    })
+    .join('');
+  el.classList.remove('hidden');
 }
 
-function renderConnectionBadge(info: import("./speed-test").SpeedTestResults["connectionInfo"]): void {
-  const badge = document.getElementById("speed-connection-badge");
-  const valueEl = document.getElementById("speed-connection-value");
+function renderConnectionBadge(
+  info: import('./speed-test').SpeedTestResults['connectionInfo'],
+): void {
+  const badge = document.getElementById('speed-connection-badge');
+  const valueEl = document.getElementById('speed-connection-value');
   if (!badge || !valueEl) return;
   if (!info) {
-    badge.classList.remove("active");
+    badge.classList.remove('active');
     return;
   }
   const parts: string[] = [];
   if (info.effectiveType) parts.push(info.effectiveType.toUpperCase());
   if (info.downlinkMbps != null) parts.push(`${info.downlinkMbps} Mbps`);
-  if (info.dataSaver) parts.push("Data Saver");
-  valueEl.textContent = parts.join(" · ") || "—";
-  badge.classList.add("active");
+  if (info.dataSaver) parts.push('Data Saver');
+  valueEl.textContent = parts.join(' · ') || '—';
+  badge.classList.add('active');
 }
 
 function renderStabilityReadout(avgRtt: number | null, pingJitter: number | null): void {
-  const el = document.getElementById("speed-stability-readout");
+  const el = document.getElementById('speed-stability-readout');
   if (!el) return;
   if (avgRtt == null && pingJitter == null) {
-    el.classList.add("hidden");
+    el.classList.add('hidden');
     return;
   }
-  const avgText = avgRtt != null ? `Avg RTT: ${avgRtt.toFixed(1)}ms` : "";
-  const jitterText = pingJitter != null ? `Jitter: ${pingJitter.toFixed(1)}ms` : "";
-  const text = [avgText, jitterText].filter(Boolean).join(" · ");
+  const avgText = avgRtt != null ? `Avg RTT: ${avgRtt.toFixed(1)}ms` : '';
+  const jitterText = pingJitter != null ? `Jitter: ${pingJitter.toFixed(1)}ms` : '';
+  const text = [avgText, jitterText].filter(Boolean).join(' · ');
   el.textContent = text;
-  el.classList.remove("hidden");
+  el.classList.remove('hidden');
 }
 
 async function runMonitor(duration: MonitorDuration): Promise<void> {
-  const monitorBar = document.getElementById("speed-monitor-bar")!;
-  const monitorStatus = document.getElementById("speed-monitor-status")!;
-  const monitorStopBtn = document.getElementById("speed-monitor-stop") as HTMLButtonElement;
-  monitorBar.classList.remove("hidden");
-  monitorStopBtn.addEventListener("click", () => SpeedMonitor.stop());
+  const monitorBar = document.getElementById('speed-monitor-bar')!;
+  const monitorStatus = document.getElementById('speed-monitor-status')!;
+  const monitorStopBtn = document.getElementById('speed-monitor-stop') as HTMLButtonElement;
+  monitorBar.classList.remove('hidden');
+  monitorStopBtn.addEventListener('click', () => SpeedMonitor.stop());
 
   await SpeedMonitor.start(duration, (result, index) => {
     if (!result) {
-      monitorStatus.textContent = t("speed.monitorStarting");
+      monitorStatus.textContent = t('speed.monitorStarting');
       return;
     }
     const state = SpeedMonitor.state;
     if (state) {
-      const pct = (index / state.testsTotal * 100).toFixed(0);
-      (document.getElementById("speed-monitor-progress") as HTMLElement).style.width = `${pct}%`;
-      monitorStatus.textContent = t("speed.monitorProgress", index, state.testsTotal);
+      const pct = ((index / state.testsTotal) * 100).toFixed(0);
+      (document.getElementById('speed-monitor-progress') as HTMLElement).style.width = `${pct}%`;
+      monitorStatus.textContent = t('speed.monitorProgress', index, state.testsTotal);
       drawHistoryChart(SpeedTestHistory.getAll());
     }
   });
 
-  monitorBar.classList.add("hidden");
+  monitorBar.classList.add('hidden');
 }

@@ -1,31 +1,31 @@
 interface ScriptTest {
   name: string;
-  type: "script";
+  type: 'script';
   url: string;
 }
 
 interface ImageTest {
   name: string;
-  type: "image";
+  type: 'image';
   url: string;
 }
 
 interface PixelTest {
   name: string;
-  type: "pixel";
+  type: 'pixel';
   url: string;
 }
 
 interface IframeTest {
   name: string;
-  type: "iframe";
+  type: 'iframe';
   width: number;
   height: number;
 }
 
 interface ElementTest {
   name: string;
-  type: "element";
+  type: 'element';
   className?: string;
   id?: string;
 }
@@ -59,71 +59,131 @@ interface Score {
 export const AdBlockTest = {
   categories: [
     {
-      name: "Contextual Advertising",
+      name: 'Contextual Advertising',
       tests: [
-        { name: "Google AdSense", type: "script", url: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" },
-        { name: "Google Publisher Tag", type: "script", url: "https://securepubads.g.doubleclick.net/tag/js/gpt.js" },
-        { name: "Amazon Ads", type: "script", url: "https://c.amazon-adsystem.com/aax2/apstag.js" },
-        { name: "Ad element (class)", type: "element", className: "ad-banner" },
-        { name: "Ad element (id)", type: "element", id: "google_ads_iframe" },
+        {
+          name: 'Google AdSense',
+          type: 'script',
+          url: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+        },
+        {
+          name: 'Google Publisher Tag',
+          type: 'script',
+          url: 'https://securepubads.g.doubleclick.net/tag/js/gpt.js',
+        },
+        { name: 'Amazon Ads', type: 'script', url: 'https://c.amazon-adsystem.com/aax2/apstag.js' },
+        { name: 'Ad element (class)', type: 'element', className: 'ad-banner' },
+        { name: 'Ad element (id)', type: 'element', id: 'google_ads_iframe' },
       ],
     },
     {
-      name: "Analytics & Tracking",
+      name: 'Analytics & Tracking',
       tests: [
-        { name: "Google Analytics", type: "script", url: "https://www.google-analytics.com/analytics.js" },
-        { name: "Google Tag Manager", type: "script", url: "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXX" },
-        { name: "Facebook Pixel", type: "pixel", url: "https://www.facebook.com/tr?id=0&ev=PageView" },
-        { name: "Hotjar", type: "script", url: "https://static.hotjar.com/c/hotjar-0.js?sv=0" },
-        { name: "Yandex Metrica", type: "script", url: "https://mc.yandex.ru/metrika/watch.js" },
-        { name: "Mixpanel", type: "script", url: "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" },
-        { name: "Segment", type: "script", url: "https://cdn.segment.com/analytics.js/v1/test/analytics.min.js" },
+        {
+          name: 'Google Analytics',
+          type: 'script',
+          url: 'https://www.google-analytics.com/analytics.js',
+        },
+        {
+          name: 'Google Tag Manager',
+          type: 'script',
+          url: 'https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXX',
+        },
+        {
+          name: 'Facebook Pixel',
+          type: 'pixel',
+          url: 'https://www.facebook.com/tr?id=0&ev=PageView',
+        },
+        { name: 'Hotjar', type: 'script', url: 'https://static.hotjar.com/c/hotjar-0.js?sv=0' },
+        { name: 'Yandex Metrica', type: 'script', url: 'https://mc.yandex.ru/metrika/watch.js' },
+        {
+          name: 'Mixpanel',
+          type: 'script',
+          url: 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js',
+        },
+        {
+          name: 'Segment',
+          type: 'script',
+          url: 'https://cdn.segment.com/analytics.js/v1/test/analytics.min.js',
+        },
       ],
     },
     {
-      name: "Banner & Display Ads",
+      name: 'Banner & Display Ads',
       tests: [
-        { name: "DoubleClick ad image", type: "image", url: "https://ad.doubleclick.net/favicon.ico" },
-        { name: "Ad-sized iframe (728x90)", type: "iframe", width: 728, height: 90 },
-        { name: "Ad-sized iframe (300x250)", type: "iframe", width: 300, height: 250 },
-        { name: "Ad div (banner class)", type: "element", className: "banner_ad" },
-        { name: "Ad div (sponsored)", type: "element", className: "sponsored-content" },
+        {
+          name: 'DoubleClick ad image',
+          type: 'image',
+          url: 'https://ad.doubleclick.net/favicon.ico',
+        },
+        { name: 'Ad-sized iframe (728x90)', type: 'iframe', width: 728, height: 90 },
+        { name: 'Ad-sized iframe (300x250)', type: 'iframe', width: 300, height: 250 },
+        { name: 'Ad div (banner class)', type: 'element', className: 'banner_ad' },
+        { name: 'Ad div (sponsored)', type: 'element', className: 'sponsored-content' },
       ],
     },
     {
-      name: "Error Monitoring & Dev Tools",
+      name: 'Error Monitoring & Dev Tools',
       tests: [
-        { name: "Sentry", type: "script", url: "https://browser.sentry-cdn.com/7.0.0/bundle.min.js" },
-        { name: "Bugsnag", type: "script", url: "https://d2wy8f7a9ursnm.cloudfront.net/v7/bugsnag.min.js" },
-        { name: "LogRocket", type: "script", url: "https://cdn.logrocket.io/LogRocket.min.js" },
+        {
+          name: 'Sentry',
+          type: 'script',
+          url: 'https://browser.sentry-cdn.com/7.0.0/bundle.min.js',
+        },
+        {
+          name: 'Bugsnag',
+          type: 'script',
+          url: 'https://d2wy8f7a9ursnm.cloudfront.net/v7/bugsnag.min.js',
+        },
+        { name: 'LogRocket', type: 'script', url: 'https://cdn.logrocket.io/LogRocket.min.js' },
       ],
     },
     {
-      name: "Social Media Trackers",
+      name: 'Social Media Trackers',
       tests: [
-        { name: "Facebook SDK", type: "script", url: "https://connect.facebook.net/en_US/sdk.js" },
-        { name: "Twitter widgets", type: "script", url: "https://platform.twitter.com/widgets.js" },
-        { name: "LinkedIn Insight", type: "script", url: "https://snap.licdn.com/li.lms-analytics/insight.min.js" },
-        { name: "TikTok Pixel", type: "pixel", url: "https://analytics.tiktok.com/i18n/pixel/events.js" },
+        { name: 'Facebook SDK', type: 'script', url: 'https://connect.facebook.net/en_US/sdk.js' },
+        { name: 'Twitter widgets', type: 'script', url: 'https://platform.twitter.com/widgets.js' },
+        {
+          name: 'LinkedIn Insight',
+          type: 'script',
+          url: 'https://snap.licdn.com/li.lms-analytics/insight.min.js',
+        },
+        {
+          name: 'TikTok Pixel',
+          type: 'pixel',
+          url: 'https://analytics.tiktok.com/i18n/pixel/events.js',
+        },
       ],
     },
     {
-      name: "Fingerprint Protection",
+      name: 'Fingerprint Protection',
       tests: [
-        { name: "Canvas fingerprint", type: "script", url: "https://cdn.jsdelivr.net/npm/fingerprintjs@0.5.3/fingerprint.min.js" },
-        { name: "WebGL fingerprint probe", type: "element", className: "fp-canvas-probe" },
-        { name: "AudioContext fingerprint", type: "element", id: "audio-fingerprint" },
-        { name: "ClientRects fingerprint", type: "element", className: "getClientRects-fingerprint" },
+        {
+          name: 'Canvas fingerprint',
+          type: 'script',
+          url: 'https://cdn.jsdelivr.net/npm/fingerprintjs@0.5.3/fingerprint.min.js',
+        },
+        { name: 'WebGL fingerprint probe', type: 'element', className: 'fp-canvas-probe' },
+        { name: 'AudioContext fingerprint', type: 'element', id: 'audio-fingerprint' },
+        {
+          name: 'ClientRects fingerprint',
+          type: 'element',
+          className: 'getClientRects-fingerprint',
+        },
       ],
     },
     {
-      name: "Cookie Consent & Annoyances",
+      name: 'Cookie Consent & Annoyances',
       tests: [
-        { name: "Cookie notice banner", type: "element", className: "cookie-notice" },
-        { name: "Cookie consent popup", type: "element", id: "cookie-consent-banner" },
-        { name: "Newsletter popup", type: "element", className: "newsletter-signup-popup" },
-        { name: "Push notification prompt", type: "element", className: "push-notification-prompt" },
-        { name: "Survey widget", type: "element", id: "survey-widget" },
+        { name: 'Cookie notice banner', type: 'element', className: 'cookie-notice' },
+        { name: 'Cookie consent popup', type: 'element', id: 'cookie-consent-banner' },
+        { name: 'Newsletter popup', type: 'element', className: 'newsletter-signup-popup' },
+        {
+          name: 'Push notification prompt',
+          type: 'element',
+          className: 'push-notification-prompt',
+        },
+        { name: 'Survey widget', type: 'element', id: 'survey-widget' },
       ],
     },
   ] as Category[],
@@ -132,9 +192,10 @@ export const AdBlockTest = {
 
   async runAll(): Promise<CategoryResult[]> {
     this.results = [];
-    const container = document.createElement("div");
-    container.id = "adblock-test-container";
-    container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
+    const container = document.createElement('div');
+    container.id = 'adblock-test-container';
+    container.style.cssText =
+      'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
     document.body.appendChild(container);
 
     const categoryPromises = this.categories.map(async (category) => {
@@ -142,7 +203,7 @@ export const AdBlockTest = {
       const testResults = await Promise.all(testPromises);
       const catResults: CategoryResult = {
         name: category.name,
-        tests: category.tests.map((test, i) => ({ ...test, ...testResults[i] } as TestWithResult)),
+        tests: category.tests.map((test, i) => ({ ...test, ...testResults[i] }) as TestWithResult),
       };
       return catResults;
     });
@@ -155,22 +216,25 @@ export const AdBlockTest = {
 
   runTest(test: Test, container: HTMLDivElement): Promise<TestResult> {
     return new Promise((resolve) => {
-      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true }), 3000);
+      const timeout: ReturnType<typeof setTimeout> = setTimeout(
+        () => resolve({ blocked: true }),
+        3000,
+      );
 
       switch (test.type) {
-        case "script":
+        case 'script':
           this.testScript(test.url, container, timeout, resolve);
           break;
-        case "image":
+        case 'image':
           this.testImage(test.url, container, timeout, resolve);
           break;
-        case "pixel":
+        case 'pixel':
           this.testPixel(test.url, container, timeout, resolve);
           break;
-        case "iframe":
+        case 'iframe':
           this.testIframe(test, container, timeout, resolve);
           break;
-        case "element":
+        case 'element':
           this.testElement(test, container, timeout, resolve);
           break;
         default:
@@ -180,8 +244,13 @@ export const AdBlockTest = {
     });
   },
 
-  testScript(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const script = document.createElement("script");
+  testScript(
+    url: string,
+    container: HTMLDivElement,
+    timeout: ReturnType<typeof setTimeout>,
+    resolve: (result: TestResult) => void,
+  ): void {
+    const script = document.createElement('script');
     script.src = url;
     script.onload = () => {
       clearTimeout(timeout);
@@ -194,8 +263,13 @@ export const AdBlockTest = {
     container.appendChild(script);
   },
 
-  testImage(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const img = document.createElement("img");
+  testImage(
+    url: string,
+    container: HTMLDivElement,
+    timeout: ReturnType<typeof setTimeout>,
+    resolve: (result: TestResult) => void,
+  ): void {
+    const img = document.createElement('img');
     img.src = url;
     img.onload = () => {
       clearTimeout(timeout);
@@ -208,8 +282,13 @@ export const AdBlockTest = {
     container.appendChild(img);
   },
 
-  testPixel(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const img = document.createElement("img");
+  testPixel(
+    url: string,
+    container: HTMLDivElement,
+    timeout: ReturnType<typeof setTimeout>,
+    resolve: (result: TestResult) => void,
+  ): void {
+    const img = document.createElement('img');
     img.src = url;
     img.width = 1;
     img.height = 1;
@@ -224,38 +303,52 @@ export const AdBlockTest = {
     container.appendChild(img);
   },
 
-  testIframe(test: IframeTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const iframe = document.createElement("iframe");
+  testIframe(
+    test: IframeTest,
+    container: HTMLDivElement,
+    timeout: ReturnType<typeof setTimeout>,
+    resolve: (result: TestResult) => void,
+  ): void {
+    const iframe = document.createElement('iframe');
     iframe.width = String(test.width);
     iframe.height = String(test.height);
-    iframe.src = "about:blank";
-    iframe.className = "ad_iframe";
+    iframe.src = 'about:blank';
+    iframe.className = 'ad_iframe';
     iframe.style.cssText = `width:${test.width}px;height:${test.height}px;`;
     container.appendChild(iframe);
 
     requestAnimationFrame(() => {
       const rect = iframe.getBoundingClientRect();
-      const hidden = rect.width === 0 || rect.height === 0 ||
-        getComputedStyle(iframe).display === "none" ||
-        getComputedStyle(iframe).visibility === "hidden";
+      const hidden =
+        rect.width === 0 ||
+        rect.height === 0 ||
+        getComputedStyle(iframe).display === 'none' ||
+        getComputedStyle(iframe).visibility === 'hidden';
       clearTimeout(timeout);
       resolve({ blocked: hidden });
     });
   },
 
-  testElement(test: ElementTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const div = document.createElement("div");
+  testElement(
+    test: ElementTest,
+    container: HTMLDivElement,
+    timeout: ReturnType<typeof setTimeout>,
+    resolve: (result: TestResult) => void,
+  ): void {
+    const div = document.createElement('div');
     if (test.className) div.className = test.className;
     if (test.id) div.id = test.id;
-    div.style.cssText = "width:300px;height:250px;background:transparent;";
-    div.innerHTML = "&nbsp;";
+    div.style.cssText = 'width:300px;height:250px;background:transparent;';
+    div.innerHTML = '&nbsp;';
     container.appendChild(div);
 
     requestAnimationFrame(() => {
       const rect = div.getBoundingClientRect();
-      const hidden = rect.width === 0 || rect.height === 0 ||
-        getComputedStyle(div).display === "none" ||
-        getComputedStyle(div).visibility === "hidden";
+      const hidden =
+        rect.width === 0 ||
+        rect.height === 0 ||
+        getComputedStyle(div).display === 'none' ||
+        getComputedStyle(div).visibility === 'hidden';
       clearTimeout(timeout);
       resolve({ blocked: hidden });
     });

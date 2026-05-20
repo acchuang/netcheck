@@ -6,8 +6,8 @@ let pressStartY = 0;
 
 function ensureTip(): HTMLDivElement {
   if (!tipEl) {
-    tipEl = document.createElement("div");
-    tipEl.className = "tooltip";
+    tipEl = document.createElement('div');
+    tipEl.className = 'tooltip';
     document.body.appendChild(tipEl);
   }
   return tipEl;
@@ -15,10 +15,10 @@ function ensureTip(): HTMLDivElement {
 
 function showTooltip(target: HTMLElement): void {
   const tip = ensureTip();
-  const text = target.dataset.tooltip || target.getAttribute("title") || "";
+  const text = target.dataset.tooltip || target.getAttribute('title') || '';
   if (!text) return;
   tip.textContent = text;
-  tip.classList.add("visible");
+  tip.classList.add('visible');
 
   const rect = target.getBoundingClientRect();
   const tipRect = tip.getBoundingClientRect();
@@ -33,16 +33,16 @@ function showTooltip(target: HTMLElement): void {
   tip.style.left = `${left}px`;
   tip.style.top = `${top}px`;
 
-  target.setAttribute("aria-describedby", "tooltip");
-  tip.id = "tooltip";
+  target.setAttribute('aria-describedby', 'tooltip');
+  tip.id = 'tooltip';
 }
 
 function hideTooltip(target: HTMLElement): void {
   if (tipEl) {
-    tipEl.classList.remove("visible");
-    tipEl.removeAttribute("id");
+    tipEl.classList.remove('visible');
+    tipEl.removeAttribute('id');
   }
-  target.removeAttribute("aria-describedby");
+  target.removeAttribute('aria-describedby');
 }
 
 function clearPressTimer(): void {
@@ -54,37 +54,49 @@ function clearPressTimer(): void {
 }
 
 export function initTooltips(): void {
-  document.addEventListener("mouseenter", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
-    if (!target) return;
-    showTooltip(target);
-  }, true);
+  document.addEventListener(
+    'mouseenter',
+    (e) => {
+      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      if (!target) return;
+      showTooltip(target);
+    },
+    true,
+  );
 
-  document.addEventListener("mouseleave", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
-    if (target) hideTooltip(target);
-  }, true);
+  document.addEventListener(
+    'mouseleave',
+    (e) => {
+      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      if (target) hideTooltip(target);
+    },
+    true,
+  );
 
-  document.addEventListener("touchstart", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
-    if (!target) return;
-    const touch = e.touches[0];
-    pressStartX = touch.clientX;
-    pressStartY = touch.clientY;
-    pressTarget = target;
-    pressTimer = setTimeout(() => {
-      if (pressTarget) {
-        const dx = Math.abs(touch.clientX - pressStartX);
-        const dy = Math.abs(touch.clientY - pressStartY);
-        if (dx < 5 && dy < 5) {
-          showTooltip(pressTarget);
+  document.addEventListener(
+    'touchstart',
+    (e) => {
+      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      if (!target) return;
+      const touch = e.touches[0];
+      pressStartX = touch.clientX;
+      pressStartY = touch.clientY;
+      pressTarget = target;
+      pressTimer = setTimeout(() => {
+        if (pressTarget) {
+          const dx = Math.abs(touch.clientX - pressStartX);
+          const dy = Math.abs(touch.clientY - pressStartY);
+          if (dx < 5 && dy < 5) {
+            showTooltip(pressTarget);
+          }
         }
-      }
-      pressTimer = null;
-    }, 500);
-  }, { passive: true });
+        pressTimer = null;
+      }, 500);
+    },
+    { passive: true },
+  );
 
-  document.addEventListener("touchend", () => {
+  document.addEventListener('touchend', () => {
     clearPressTimer();
     if (pressTarget) {
       hideTooltip(pressTarget);
@@ -92,13 +104,17 @@ export function initTooltips(): void {
     }
   });
 
-  document.addEventListener("touchmove", () => {
+  document.addEventListener('touchmove', () => {
     clearPressTimer();
   });
 
-  document.addEventListener("scroll", () => {
-    if (tipEl?.classList.contains("visible")) {
-      tipEl.classList.remove("visible");
-    }
-  }, { passive: true });
+  document.addEventListener(
+    'scroll',
+    () => {
+      if (tipEl?.classList.contains('visible')) {
+        tipEl.classList.remove('visible');
+      }
+    },
+    { passive: true },
+  );
 }

@@ -1,4 +1,7 @@
-export const speedGraphData: { download: { time: number; value: number }[]; upload: { time: number; value: number }[] } = {
+export const speedGraphData: {
+  download: { time: number; value: number }[];
+  upload: { time: number; value: number }[];
+} = {
   download: [],
   upload: [],
 };
@@ -6,7 +9,7 @@ export const speedGraphData: { download: { time: number; value: number }[]; uplo
 let cachedW = 0;
 let cachedH = 0;
 
-export function addGraphPoint(phase: "download" | "upload", time: number, value: number): void {
+export function addGraphPoint(phase: 'download' | 'upload', time: number, value: number): void {
   speedGraphData[phase].push({ time, value });
 }
 
@@ -16,9 +19,9 @@ export function clearGraph(): void {
 }
 
 export function drawSpeedGraph(): void {
-  const canvas = document.getElementById("speed-graph") as HTMLCanvasElement;
+  const canvas = document.getElementById('speed-graph') as HTMLCanvasElement;
   if (!canvas) return;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext('2d')!;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return;
@@ -37,24 +40,24 @@ export function drawSpeedGraph(): void {
 
   ctx.clearRect(0, 0, w, h);
 
-  const allVals = [...speedGraphData.download, ...speedGraphData.upload].map(p => p.value);
+  const allVals = [...speedGraphData.download, ...speedGraphData.upload].map((p) => p.value);
   if (allVals.length === 0) {
-    ctx.fillStyle = "rgba(255,255,255,0.2)";
-    ctx.font = "14px Inter, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Run a test to see your speed", w / 2, h / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '14px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Run a test to see your speed', w / 2, h / 2);
     return;
   }
 
   const maxVal = Math.max(...allVals, 1) * 1.15;
-  const gridColor = "rgba(255,255,255,0.06)";
-  const labelColor = "rgba(255,255,255,0.3)";
+  const gridColor = 'rgba(255,255,255,0.06)';
+  const labelColor = 'rgba(255,255,255,0.3)';
 
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
-  ctx.font = "10px Inter, sans-serif";
+  ctx.font = '10px Inter, sans-serif';
   ctx.fillStyle = labelColor;
-  ctx.textAlign = "right";
+  ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + plotH - (i / 4) * plotH;
     ctx.beginPath();
@@ -66,11 +69,14 @@ export function drawSpeedGraph(): void {
 
   function drawLine(points: { time: number; value: number }[], color: string): void {
     if (points.length < 2) return;
-    const maxTime = Math.max(...speedGraphData.download.concat(speedGraphData.upload).map(p => p.time), 1);
+    const maxTime = Math.max(
+      ...speedGraphData.download.concat(speedGraphData.upload).map((p) => p.time),
+      1,
+    );
 
     const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    grad.addColorStop(0, color + "26");
-    grad.addColorStop(1, color + "00");
+    grad.addColorStop(0, color + '26');
+    grad.addColorStop(1, color + '00');
 
     ctx.beginPath();
     points.forEach((p, i) => {
@@ -99,14 +105,24 @@ export function drawSpeedGraph(): void {
     ctx.stroke();
   }
 
-  drawLine(speedGraphData.download, "#5e6ad2");
-  drawLine(speedGraphData.upload, "#3ec986");
+  drawLine(speedGraphData.download, '#5e6ad2');
+  drawLine(speedGraphData.upload, '#3ec986');
 }
 
-export function drawHistoryChart(history: { ts: number; download: number; upload: number; latency: number; jitter: number; bufferbloat: number; colo: string }[]): void {
-  const canvas = document.getElementById("speed-graph") as HTMLCanvasElement;
+export function drawHistoryChart(
+  history: {
+    ts: number;
+    download: number;
+    upload: number;
+    latency: number;
+    jitter: number;
+    bufferbloat: number;
+    colo: string;
+  }[],
+): void {
+  const canvas = document.getElementById('speed-graph') as HTMLCanvasElement;
   if (!canvas || !history.length) return;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext('2d')!;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return;
@@ -123,15 +139,15 @@ export function drawHistoryChart(history: { ts: number; download: number; upload
 
   ctx.clearRect(0, 0, w, h);
 
-  const maxMbps = Math.max(...history.map(e => Math.max(e.download, e.upload)), 1) * 1.1;
-  const maxMs = Math.max(...history.map(e => e.latency), 1) * 1.2;
-  const gridColor = "rgba(255,255,255,0.05)";
+  const maxMbps = Math.max(...history.map((e) => Math.max(e.download, e.upload)), 1) * 1.1;
+  const maxMs = Math.max(...history.map((e) => e.latency), 1) * 1.2;
+  const gridColor = 'rgba(255,255,255,0.05)';
 
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
-  ctx.font = "10px Inter, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.25)";
-  ctx.textAlign = "right";
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + plotH - (i / 4) * plotH;
     ctx.beginPath();
@@ -142,21 +158,32 @@ export function drawHistoryChart(history: { ts: number; download: number; upload
   }
 
   const timeSpan = history[history.length - 1].ts - history[0].ts || 60000;
-  const labelColor = "rgba(255,255,255,0.3)";
+  const labelColor = 'rgba(255,255,255,0.3)';
   ctx.fillStyle = labelColor;
-  ctx.textAlign = "center";
+  ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
     const x = pad.left + (i / 4) * plotW;
     const minsAgo = Math.round((timeSpan * (1 - i / 4)) / 60000);
-    ctx.fillText(minsAgo === 0 ? "now" : `${minsAgo}m ago`, x, h - 4);
+    ctx.fillText(minsAgo === 0 ? 'now' : `${minsAgo}m ago`, x, h - 4);
   }
 
-  function drawHistoryLine(index: number, colour: string, yScale: (e: { download: number; upload: number; latency: number; jitter: number; bufferbloat: number }) => number, maxY: number): void {
+  function drawHistoryLine(
+    index: number,
+    colour: string,
+    yScale: (e: {
+      download: number;
+      upload: number;
+      latency: number;
+      jitter: number;
+      bufferbloat: number;
+    }) => number,
+    maxY: number,
+  ): void {
     if (history.length < 2) return;
     ctx.beginPath();
     ctx.strokeStyle = colour;
     ctx.lineWidth = 2;
-    ctx.lineJoin = "round";
+    ctx.lineJoin = 'round';
 
     history.forEach((e, i) => {
       const x = pad.left + ((e.ts - history[0].ts) / timeSpan) * plotW;
@@ -171,18 +198,18 @@ export function drawHistoryChart(history: { ts: number; download: number; upload
     ctx.globalAlpha = 1;
   }
 
-  drawHistoryLine(0, "#5e6ad2", e => e.download, maxMbps);
-  drawHistoryLine(1, "#3ec986", e => e.upload, maxMbps);
-  drawHistoryLine(2, "#ffba2e", e => e.latency, maxMs);
+  drawHistoryLine(0, '#5e6ad2', (e) => e.download, maxMbps);
+  drawHistoryLine(1, '#3ec986', (e) => e.upload, maxMbps);
+  drawHistoryLine(2, '#ffba2e', (e) => e.latency, maxMs);
 
   // Legend
-  ctx.font = "11px Inter, sans-serif";
-  ctx.textAlign = "left";
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
   const legendY = pad.top + 4;
   const legends = [
-    { label: "Download", color: "#5e6ad2", x: w - pad.right - 220 },
-    { label: "Upload", color: "#3ec986", x: w - pad.right - 140 },
-    { label: "Latency", color: "#ffba2e", x: w - pad.right - 72 },
+    { label: 'Download', color: '#5e6ad2', x: w - pad.right - 220 },
+    { label: 'Upload', color: '#3ec986', x: w - pad.right - 140 },
+    { label: 'Latency', color: '#ffba2e', x: w - pad.right - 72 },
   ];
   for (const l of legends) {
     ctx.fillStyle = l.color;

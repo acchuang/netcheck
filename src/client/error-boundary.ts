@@ -5,19 +5,19 @@ let toastContainer: HTMLDivElement | null = null;
 
 function getContainer(): HTMLDivElement {
   if (!toastContainer) {
-    toastContainer = document.createElement("div");
-    toastContainer.id = "error-toast-container";
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'error-toast-container';
     toastContainer.style.cssText =
-      "position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:380px;";
+      'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:380px;';
     document.body.appendChild(toastContainer);
   }
   return toastContainer;
 }
 
 function createToast(moduleName: string, error: Error): HTMLDivElement {
-  const toast = document.createElement("div");
-  toast.className = "error-toast";
-  toast.setAttribute("role", "alert");
+  const toast = document.createElement('div');
+  toast.className = 'error-toast';
+  toast.setAttribute('role', 'alert');
 
   const message = error.message || String(error);
   toast.innerHTML = `
@@ -33,8 +33,8 @@ function createToast(moduleName: string, error: Error): HTMLDivElement {
     <button class="error-toast-close" aria-label="Dismiss">&times;</button>
   `;
 
-  const closeBtn = toast.querySelector(".error-toast-close")!;
-  closeBtn.addEventListener("click", () => dismiss(toast));
+  const closeBtn = toast.querySelector('.error-toast-close')!;
+  closeBtn.addEventListener('click', () => dismiss(toast));
 
   setTimeout(() => dismiss(toast), TOAST_DURATION);
 
@@ -42,19 +42,19 @@ function createToast(moduleName: string, error: Error): HTMLDivElement {
 }
 
 function escapeHtml(str: string): string {
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
 function dismiss(toast: HTMLDivElement): void {
-  toast.classList.add("error-toast-exit");
-  toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+  toast.classList.add('error-toast-exit');
+  toast.addEventListener('transitionend', () => toast.remove(), { once: true });
   setTimeout(() => toast.remove(), 300);
 }
 
 function trimToasts(container: HTMLDivElement): void {
-  const toasts = container.querySelectorAll(".error-toast");
+  const toasts = container.querySelectorAll('.error-toast');
   while (toasts.length > MAX_TOASTS) {
     toasts[0].remove();
   }

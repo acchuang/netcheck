@@ -1,6 +1,6 @@
-import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test";
-import { AdBlockTest } from "./adblock-test";
-import { FilterListDetector } from "./filter-lists";
+import { SpeedTest, type SpeedTestResults, type SpeedGrade } from './speed-test';
+import { AdBlockTest } from './adblock-test';
+import { FilterListDetector } from './filter-lists';
 
 interface AdBlockTestResult {
   name: string;
@@ -29,7 +29,7 @@ interface FilterListResult {
   special?: string;
 }
 
-type CheckStatus = "pass" | "fail" | "warn";
+type CheckStatus = 'pass' | 'fail' | 'warn';
 
 interface DnsCheckItem {
   label: string;
@@ -89,28 +89,36 @@ interface ReportData {
 export const ReportExporter = {
   collectData(): ReportData {
     const dns: DnsData = {
-      ip: document.getElementById("ip-address")?.textContent || "\u2014",
-      location: document.getElementById("ip-location")?.textContent || "\u2014",
-      asn: document.getElementById("ip-asn")?.textContent || "\u2014",
-      timezone: document.getElementById("ip-timezone")?.textContent || "\u2014",
-      colo: document.getElementById("ip-colo")?.textContent || "\u2014",
+      ip: document.getElementById('ip-address')?.textContent || '\u2014',
+      location: document.getElementById('ip-location')?.textContent || '\u2014',
+      asn: document.getElementById('ip-asn')?.textContent || '\u2014',
+      timezone: document.getElementById('ip-timezone')?.textContent || '\u2014',
+      colo: document.getElementById('ip-colo')?.textContent || '\u2014',
       resolvers: [],
       security: [],
     };
 
-    document.querySelectorAll("#dns-resolver-results .dns-check-item").forEach((item) => {
-      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
-      const icon = item.querySelector(".check-icon");
-      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
+    document.querySelectorAll('#dns-resolver-results .dns-check-item').forEach((item) => {
+      const label = item.querySelector('.check-label')?.textContent?.trim() || '';
+      const value = item.querySelector('.check-value')?.textContent?.trim() || '';
+      const icon = item.querySelector('.check-icon');
+      const status: CheckStatus = icon?.classList.contains('pass')
+        ? 'pass'
+        : icon?.classList.contains('fail')
+          ? 'fail'
+          : 'warn';
       dns.resolvers.push({ label, value, status });
     });
 
-    document.querySelectorAll("#dns-security-results .dns-check-item").forEach((item) => {
-      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
-      const icon = item.querySelector(".check-icon");
-      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
+    document.querySelectorAll('#dns-security-results .dns-check-item').forEach((item) => {
+      const label = item.querySelector('.check-label')?.textContent?.trim() || '';
+      const value = item.querySelector('.check-value')?.textContent?.trim() || '';
+      const icon = item.querySelector('.check-icon');
+      const status: CheckStatus = icon?.classList.contains('pass')
+        ? 'pass'
+        : icon?.classList.contains('fail')
+          ? 'fail'
+          : 'warn';
       dns.security.push({ label, value, status });
     });
 
@@ -121,7 +129,10 @@ export const ReportExporter = {
       upload: sr.upload,
       latency: sr.latency,
       jitter: sr.jitter,
-      grade: sr.download != null ? SpeedTest.getGrade(sr.download, sr.upload, sr.latency, sr.jitter, sr.bufferbloat) : null,
+      grade:
+        sr.download != null
+          ? SpeedTest.getGrade(sr.download, sr.upload, sr.latency, sr.jitter, sr.bufferbloat)
+          : null,
       tested: sr.download != null,
     };
 
@@ -136,20 +147,22 @@ export const ReportExporter = {
     }
 
     // Headers
-    const headers: HeadersData = { url: "", grade: "", score: "", scanned: false, checks: [] };
-    const headersUrl = (document.getElementById("headers-url-input") as HTMLInputElement)?.value;
+    const headers: HeadersData = { url: '', grade: '', score: '', scanned: false, checks: [] };
+    const headersUrl = (document.getElementById('headers-url-input') as HTMLInputElement)?.value;
     if (headersUrl) {
       headers.url = headersUrl;
       headers.scanned = true;
-      headers.grade = document.getElementById("headers-grade")?.textContent || "";
-      headers.score = document.getElementById("headers-score")?.textContent || "";
-      document.querySelectorAll("#headers-check-results .dns-check-item").forEach((item) => {
-        const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-        const desc = item.querySelector(".check-sublabel")?.textContent?.trim() || "";
-        const icon = item.querySelector(".check-icon");
-        const present = icon?.classList.contains("pass") ?? false;
-        const value = item.querySelector(".header-value-truncate")?.textContent ||
-                     item.querySelector(".check-value")?.textContent || null;
+      headers.grade = document.getElementById('headers-grade')?.textContent || '';
+      headers.score = document.getElementById('headers-score')?.textContent || '';
+      document.querySelectorAll('#headers-check-results .dns-check-item').forEach((item) => {
+        const label = item.querySelector('.check-label')?.textContent?.trim() || '';
+        const desc = item.querySelector('.check-sublabel')?.textContent?.trim() || '';
+        const icon = item.querySelector('.check-icon');
+        const present = icon?.classList.contains('pass') ?? false;
+        const value =
+          item.querySelector('.header-value-truncate')?.textContent ||
+          item.querySelector('.check-value')?.textContent ||
+          null;
         headers.checks.push({ label, desc, present, value });
       });
     }
@@ -166,18 +179,18 @@ export const ReportExporter = {
 
   generateMarkdown(data: ReportData): string {
     const lines: string[] = [];
-    const ln = (s: string = "") => lines.push(s);
+    const ln = (s: string = '') => lines.push(s);
 
-    ln("# NetCheck Report");
+    ln('# NetCheck Report');
     ln(`> Generated: ${data.date}`);
     ln();
 
     // DNS
-    ln("## DNS & Network Check");
+    ln('## DNS & Network Check');
     ln();
-    ln("### Your IP Address");
-    ln("| Property | Value |");
-    ln("|----------|-------|");
+    ln('### Your IP Address');
+    ln('| Property | Value |');
+    ln('|----------|-------|');
     ln(`| IPv4 | \`${data.dns.ip}\` |`);
     ln(`| Location | ${data.dns.location} |`);
     ln(`| ISP / ASN | ${data.dns.asn} |`);
@@ -186,47 +199,49 @@ export const ReportExporter = {
     ln();
 
     if (data.dns.resolvers.length > 0) {
-      ln("### DNS Resolvers");
-      ln("| Resolver | Latency | Status |");
-      ln("|----------|---------|--------|");
+      ln('### DNS Resolvers');
+      ln('| Resolver | Latency | Status |');
+      ln('|----------|---------|--------|');
       data.dns.resolvers.forEach((r) => {
-        const icon = r.status === "pass" ? "\u2705" : r.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        const icon =
+          r.status === 'pass' ? '\u2705' : r.status === 'fail' ? '\u274C' : '\u26A0\uFE0F';
         ln(`| ${r.label} | ${r.value} | ${icon} |`);
       });
       ln();
     }
 
     if (data.dns.security.length > 0) {
-      ln("### DNS Security");
-      ln("| Check | Detail | Status |");
-      ln("|-------|--------|--------|");
+      ln('### DNS Security');
+      ln('| Check | Detail | Status |');
+      ln('|-------|--------|--------|');
       data.dns.security.forEach((s) => {
-        const icon = s.status === "pass" ? "\u2705" : s.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        const icon =
+          s.status === 'pass' ? '\u2705' : s.status === 'fail' ? '\u274C' : '\u26A0\uFE0F';
         ln(`| ${s.label} | ${s.value} | ${icon} |`);
       });
       ln();
     }
 
     // Speed
-    ln("## Speed Test");
+    ln('## Speed Test');
     ln();
     if (data.speed.tested) {
-      ln("| Metric | Value |");
-      ln("|--------|-------|");
-      ln(`| Download | ${data.speed.download?.toFixed(1) ?? "\u2014"} Mbps |`);
-      ln(`| Upload | ${data.speed.upload?.toFixed(1) ?? "\u2014"} Mbps |`);
-      ln(`| Latency | ${data.speed.latency ?? "\u2014"} ms |`);
-      ln(`| Jitter | ${data.speed.jitter ?? "\u2014"} ms |`);
+      ln('| Metric | Value |');
+      ln('|--------|-------|');
+      ln(`| Download | ${data.speed.download?.toFixed(1) ?? '\u2014'} Mbps |`);
+      ln(`| Upload | ${data.speed.upload?.toFixed(1) ?? '\u2014'} Mbps |`);
+      ln(`| Latency | ${data.speed.latency ?? '\u2014'} ms |`);
+      ln(`| Jitter | ${data.speed.jitter ?? '\u2014'} ms |`);
       if (data.speed.grade) {
         ln(`| Grade | **${data.speed.grade.grade}** \u2014 ${data.speed.grade.label} |`);
       }
     } else {
-      ln("*Speed test was not run.*");
+      ln('*Speed test was not run.*');
     }
     ln();
 
     // Ad Block
-    ln("## Ad Block Test");
+    ln('## Ad Block Test');
     ln();
     if (data.adblock.score) {
       const s = data.adblock.score;
@@ -237,22 +252,22 @@ export const ReportExporter = {
         const blocked = cat.tests.filter((t) => t.blocked).length;
         ln(`### ${cat.name} (${blocked}/${cat.tests.length} blocked)`);
         cat.tests.forEach((t) => {
-          const icon = t.blocked ? "\u2705" : "\u274C";
-          const label = t.blocked ? "blocked" : "allowed";
+          const icon = t.blocked ? '\u2705' : '\u274C';
+          const label = t.blocked ? 'blocked' : 'allowed';
           ln(`- ${icon} ${t.name} \u2014 ${label}`);
         });
         ln();
       });
     } else {
-      ln("*Ad block test results not available.*");
+      ln('*Ad block test results not available.*');
     }
 
     if (data.adblock.filterLists.length > 0) {
-      ln("### Detected Filter Lists");
-      ln("| Filter List | Status |");
-      ln("|-------------|--------|");
+      ln('### Detected Filter Lists');
+      ln('| Filter List | Status |');
+      ln('|-------------|--------|');
       data.adblock.filterLists.forEach((fl) => {
-        const status = fl.detected ? "\u2705 Detected" : "\u2014 Not found";
+        const status = fl.detected ? '\u2705 Detected' : '\u2014 Not found';
         ln(`| ${fl.name} | ${status} |`);
       });
       ln();
@@ -260,24 +275,24 @@ export const ReportExporter = {
 
     // Headers
     if (data.headers.scanned) {
-      ln("## Security Headers");
+      ln('## Security Headers');
       ln();
       ln(`**URL:** \`${data.headers.url}\``);
       ln(`**Grade:** ${data.headers.grade} \u2014 ${data.headers.score}`);
       ln();
-      ln("| Header | Status | Value |");
-      ln("|--------|--------|-------|");
+      ln('| Header | Status | Value |');
+      ln('|--------|--------|-------|');
       data.headers.checks.forEach((h) => {
-        const icon = h.present ? "\u2705" : "\u274C";
-        ln(`| ${h.label} | ${icon} | ${h.value || "\u2014"} |`);
+        const icon = h.present ? '\u2705' : '\u274C';
+        ln(`| ${h.label} | ${icon} | ${h.value || '\u2014'} |`);
       });
       ln();
     }
 
-    ln("---");
-    ln("*Generated by [NetCheck](https://netcheck-site.oilygold.workers.dev)*");
+    ln('---');
+    ln('*Generated by [NetCheck](https://netcheck-site.oilygold.workers.dev)*');
 
-    return lines.join("\n");
+    return lines.join('\n');
   },
 
   generatePrintHtml(data: ReportData): string {
@@ -285,30 +300,42 @@ export const ReportExporter = {
 
     // Convert markdown to basic HTML
     let html = md
-      .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-      .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-      .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
       .replace(/^> (.+)$/gm, '<p class="meta">$1</p>')
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      .replace(/`(.+?)`/g, "<code>$1</code>")
-      .replace(/^---$/gm, "<hr>")
-      .replace(/^- (.+)$/gm, "<li>$1</li>")
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/^---$/gm, '<hr>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 
     // Convert tables
     html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock: string) => {
-      const rows = tableBlock.trim().split("\n").filter((r) => !r.match(/^\|[\s-|]+\|$/));
-      if (rows.length === 0) return "";
+      const rows = tableBlock
+        .trim()
+        .split('\n')
+        .filter((r) => !r.match(/^\|[\s-|]+\|$/));
+      if (rows.length === 0) return '';
       const toRow = (row: string, tag: string): string =>
-        "<tr>" + row.split("|").filter((_: string, i: number, a: string[]) => i > 0 && i < a.length - 1).map((c: string) => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
-      const header = toRow(rows[0], "th");
-      const body = rows.slice(1).map((r) => toRow(r, "td")).join("");
+        '<tr>' +
+        row
+          .split('|')
+          .filter((_: string, i: number, a: string[]) => i > 0 && i < a.length - 1)
+          .map((c: string) => `<${tag}>${c.trim()}</${tag}>`)
+          .join('') +
+        '</tr>';
+      const header = toRow(rows[0], 'th');
+      const body = rows
+        .slice(1)
+        .map((r) => toRow(r, 'td'))
+        .join('');
       return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
     });
 
     // Wrap <li> in <ul>
-    html = html.replace(/((?:<li>.+<\/li>\n?)+)/g, "<ul>$1</ul>");
+    html = html.replace(/((?:<li>.+<\/li>\n?)+)/g, '<ul>$1</ul>');
 
     return `<!DOCTYPE html>
 <html>
@@ -347,9 +374,9 @@ ${html}
     const data = this.collectData();
     const md = this.generateMarkdown(data);
     const dateStr = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `netcheck-report-${dateStr}.md`;
     document.body.appendChild(a);
@@ -361,19 +388,22 @@ ${html}
   downloadPdf(): void {
     const data = this.collectData();
     const html = this.generatePrintHtml(data);
-    const win = window.open("", "_blank");
-    if (!win) { alert("Please allow popups to export PDF."); return; }
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Please allow popups to export PDF.');
+      return;
+    }
     win.document.write(html);
     win.document.close();
   },
 
   showExportMenu(): void {
-    const menu = document.getElementById("export-menu");
+    const menu = document.getElementById('export-menu');
     if (!menu) return;
-    menu.classList.toggle("open");
+    menu.classList.toggle('open');
   },
 
   hideExportMenu(): void {
-    document.getElementById("export-menu")?.classList.remove("open");
+    document.getElementById('export-menu')?.classList.remove('open');
   },
 };

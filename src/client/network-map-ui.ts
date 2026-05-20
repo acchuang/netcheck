@@ -1,12 +1,12 @@
-import { NetworkMap, type MapResults } from "./network-map";
-import { t } from "./i18n";
-import { onLocaleChange } from "./locale-events";
-import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from "./leaflet";
+import { NetworkMap, type MapResults } from './network-map';
+import { t } from './i18n';
+import { onLocaleChange } from './locale-events';
+import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from './leaflet';
 
 let L: L | undefined;
 
-const LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-const LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 let leafletLoadPromise: Promise<L> | null = null;
 
 function loadLeaflet(): Promise<L> {
@@ -14,18 +14,18 @@ function loadLeaflet(): Promise<L> {
   if (leafletLoadPromise) return leafletLoadPromise;
 
   leafletLoadPromise = new Promise<L>((resolve, reject) => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
     link.href = LEAFLET_CSS;
     document.head.appendChild(link);
 
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = LEAFLET_JS;
     script.onload = () => {
       L = (window as unknown as Record<string, L>).L as L;
       resolve(L);
     };
-    script.onerror = () => reject(new Error("Failed to load Leaflet"));
+    script.onerror = () => reject(new Error('Failed to load Leaflet'));
     document.head.appendChild(script);
   });
 
@@ -34,14 +34,14 @@ function loadLeaflet(): Promise<L> {
 
 function regionKey(region: string): string {
   const map: Record<string, string> = {
-    "North America": "network.region.northAmerica",
-    "South America": "network.region.southAmerica",
-    "Europe": "network.region.europe",
-    "Middle East": "network.region.middleEast",
-    "Africa": "network.region.africa",
-    "Asia": "network.region.asia",
-    "Oceania": "network.region.oceania",
-    "Global": "network.region.global",
+    'North America': 'network.region.northAmerica',
+    'South America': 'network.region.southAmerica',
+    Europe: 'network.region.europe',
+    'Middle East': 'network.region.middleEast',
+    Africa: 'network.region.africa',
+    Asia: 'network.region.asia',
+    Oceania: 'network.region.oceania',
+    Global: 'network.region.global',
   };
   return map[region] || region;
 }
@@ -54,16 +54,16 @@ let probeLines: Polyline[] = [];
 let darkTile: TileLayer | null = null;
 let lightTile: TileLayer | null = null;
 
-const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
 function isDark(): boolean {
-  return document.documentElement.getAttribute("data-theme") !== "light";
+  return document.documentElement.getAttribute('data-theme') !== 'light';
 }
 
 function initMap(): Map {
-  if (!L) throw new Error("Leaflet not loaded");
-  const m = L.map("world-map", {
+  if (!L) throw new Error('Leaflet not loaded');
+  const m = L.map('world-map', {
     center: [20, 0],
     zoom: 2,
     zoomControl: true,
@@ -77,7 +77,7 @@ function initMap(): Map {
   lightTile = L.tileLayer(LIGHT_TILES, { maxZoom: 19, opacity: 0 });
 
   const observer = new MutationObserver(() => syncTileLayer());
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   return m;
 }
@@ -115,48 +115,52 @@ function renderMapResults(results: MapResults): void {
     if (!L) return;
     userMarker = L.circleMarker(userLatLng, {
       radius: 8,
-      fillColor: "#5e6ad2",
+      fillColor: '#5e6ad2',
       fillOpacity: 0.9,
-      color: "#fff",
+      color: '#fff',
       weight: 2,
       opacity: 1,
     }).addTo(m);
     userMarker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif">
-        <strong>${t("network.yourLocation") || "Your Location"}</strong><br>
+        <strong>${t('network.yourLocation') || 'Your Location'}</strong><br>
         <span style="font-size:12px;color:#888">${results.userColo}</span>
-      </div>`
+      </div>`,
     );
     bounds.push([results.userLat, results.userLon]);
   }
 
-  const closest = results.probes.reduce((best, p) => {
-    if (p.latency === null) return best;
-    if (best === null || p.latency < best.latency!) return p;
-    return best;
-  }, null as typeof results.probes[0] | null);
+  const closest = results.probes.reduce(
+    (best, p) => {
+      if (p.latency === null) return best;
+      if (best === null || p.latency < best.latency!) return p;
+      return best;
+    },
+    null as (typeof results.probes)[0] | null,
+  );
 
   results.probes.forEach((probe) => {
     const color = NetworkMap.getLatencyColor(probe.latency);
-    const cssColor = color.startsWith("var(") ? resolveCSSColor(color) : color;
+    const cssColor = color.startsWith('var(') ? resolveCSSColor(color) : color;
 
     if (!L) return;
     const marker = L.circleMarker([probe.lat, probe.lon], {
       radius: probe.id === closest?.id ? 9 : 7,
       fillColor: cssColor,
       fillOpacity: 0.85,
-      color: "#fff",
+      color: '#fff',
       weight: 1.5,
       opacity: 0.6,
     }).addTo(m);
 
-    const latencyText = probe.latency != null ? `${probe.latency}ms` : "—";
-    const closestBadge = probe.id === closest?.id
-      ? `<span style="background:#5e6ad2;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t("network.closest") || "Closest"}</span>`
-      : "";
+    const latencyText = probe.latency != null ? `${probe.latency}ms` : '—';
+    const closestBadge =
+      probe.id === closest?.id
+        ? `<span style="background:#5e6ad2;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t('network.closest') || 'Closest'}</span>`
+        : '';
     const estimateLabel = !probe.measured
-      ? `<br><span style="font-size:10px;color:#999">⏱ ${t("network.estimated")}</span>`
-      : "";
+      ? `<br><span style="font-size:10px;color:#999">⏱ ${t('network.estimated')}</span>`
+      : '';
 
     marker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
@@ -164,7 +168,7 @@ function renderMapResults(results: MapResults): void {
         <span style="font-size:12px;color:#888">${probe.city}, ${probe.country}</span><br>
         <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span>
         ${estimateLabel}
-      </div>`
+      </div>`,
     );
 
     probeMarkers.push(marker);
@@ -173,8 +177,11 @@ function renderMapResults(results: MapResults): void {
     if (results.userLat != null && results.userLon != null) {
       if (!L) return;
       const line = L.polyline(
-        [[results.userLat, results.userLon], [probe.lat, probe.lon]],
-        { color: cssColor, weight: 1.5, opacity: 0.4, dashArray: "6 4" }
+        [
+          [results.userLat, results.userLon],
+          [probe.lat, probe.lon],
+        ],
+        { color: cssColor, weight: 1.5, opacity: 0.4, dashArray: '6 4' },
       ).addTo(m);
       probeLines.push(line);
     }
@@ -186,35 +193,35 @@ function renderMapResults(results: MapResults): void {
 }
 
 function resolveCSSColor(cssVar: string): string {
-  if (!cssVar.startsWith("var(")) return cssVar;
-  const name = cssVar.replace("var(", "").replace(")", "");
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#5e6ad2";
+  if (!cssVar.startsWith('var(')) return cssVar;
+  const name = cssVar.replace('var(', '').replace(')', '');
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#5e6ad2';
 }
 
 export function initNetworkMap(): void {
-  const btn = document.getElementById("network-run-btn");
-  if (btn) btn.addEventListener("click", runMapTest);
+  const btn = document.getElementById('network-run-btn');
+  if (btn) btn.addEventListener('click', runMapTest);
 }
 
 async function runMapTest(): Promise<void> {
   try {
     await loadLeaflet();
   } catch {
-    const grid = document.getElementById("network-results")!;
+    const grid = document.getElementById('network-results')!;
     grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">Failed to load map library</p>`;
-    const btn = document.getElementById("network-run-btn") as HTMLButtonElement;
+    const btn = document.getElementById('network-run-btn') as HTMLButtonElement;
     btn.disabled = false;
-    btn.textContent = t("network.runTest");
+    btn.textContent = t('network.runTest');
     return;
   }
 
-  const btn = document.getElementById("network-run-btn") as HTMLButtonElement;
-  const grid = document.getElementById("network-results")!;
-  const mapContainer = document.getElementById("world-map-container")!;
+  const btn = document.getElementById('network-run-btn') as HTMLButtonElement;
+  const grid = document.getElementById('network-results')!;
+  const mapContainer = document.getElementById('world-map-container')!;
   btn.disabled = true;
-  btn.textContent = t("network.running");
-  grid.classList.remove("hidden");
-  mapContainer.classList.remove("hidden");
+  btn.textContent = t('network.running');
+  grid.classList.remove('hidden');
+  mapContainer.classList.remove('hidden');
   renderLoading(grid);
 
   try {
@@ -223,38 +230,50 @@ async function runMapTest(): Promise<void> {
     renderResults(results);
     renderMapResults(results);
   } catch {
-    grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">${t("network.error") || "Failed to load probes"}</p>`;
+    grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">${t('network.error') || 'Failed to load probes'}</p>`;
   }
 
   btn.disabled = false;
-  btn.textContent = t("network.runAgain");
+  btn.textContent = t('network.runAgain');
 }
 
 function renderLoading(grid: HTMLElement): void {
-  grid.innerHTML = Array.from({ length: 5 }, () =>
-    `<div class="region-card shimmer">
+  grid.innerHTML = Array.from(
+    { length: 5 },
+    () =>
+      `<div class="region-card shimmer">
       <div class="skeleton skeleton-text" style="width:60%; margin:0 auto 12px"></div>
       <div class="skeleton skeleton-value" style="width:40%; margin:0 auto"></div>
-    </div>`
-  ).join("");
+    </div>`,
+  ).join('');
 }
 
 function renderResults(results: MapResults): void {
-  const grid = document.getElementById("network-results")!;
-  const infoEl = document.getElementById("network-info")!;
+  const grid = document.getElementById('network-results')!;
+  const infoEl = document.getElementById('network-info')!;
 
-  const closest = results.probes.reduce((best, p) => {
-    if (p.latency === null) return best;
-    if (best === null || p.latency < best.latency!) return p;
-    return best;
-  }, null as typeof results.probes[0] | null);
+  const closest = results.probes.reduce(
+    (best, p) => {
+      if (p.latency === null) return best;
+      if (best === null || p.latency < best.latency!) return p;
+      return best;
+    },
+    null as (typeof results.probes)[0] | null,
+  );
 
-  infoEl.textContent = t("network.closestRegion").replace(
-    "{0}", closest?.name || t("network.noResults"))
-    .replace(
-    "{1}", closest?.latency != null ? `${closest.latency}ms` : "—");
+  infoEl.textContent = t('network.closestRegion')
+    .replace('{0}', closest?.name || t('network.noResults'))
+    .replace('{1}', closest?.latency != null ? `${closest.latency}ms` : '—');
 
-  const regionOrder = ["North America", "South America", "Europe", "Middle East", "Africa", "Asia", "Oceania"];
+  const regionOrder = [
+    'North America',
+    'South America',
+    'Europe',
+    'Middle East',
+    'Africa',
+    'Asia',
+    'Oceania',
+  ];
   const grouped: Record<string, typeof results.probes> = {};
   for (const region of regionOrder) grouped[region] = [];
   for (const probe of results.probes) {
@@ -262,26 +281,27 @@ function renderResults(results: MapResults): void {
     grouped[probe.region].push(probe);
   }
 
-  const probeCard = (probe: typeof results.probes[0]) => {
+  const probeCard = (probe: (typeof results.probes)[0]) => {
     const color = NetworkMap.getLatencyColor(probe.latency);
     const dots = NetworkMap.getLatencyDots(probe.latency);
-    const latencyText = probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : "—";
+    const latencyText =
+      probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : '—';
     const estimateBadge = !probe.measured
-      ? `<span class="estimate-badge">${t("network.estimated")}</span>`
-      : "";
+      ? `<span class="estimate-badge">${t('network.estimated')}</span>`
+      : '';
     const isClosest = probe.id === closest?.id;
 
     return `
-      <div class="region-card${isClosest ? " active" : ""}">
+      <div class="region-card${isClosest ? ' active' : ''}">
         <div class="region-name" style="color:var(--text-primary)">${probe.name} <span style="color:var(--text-quaternary);font-size:11px">${probe.id}</span></div>
         <div class="region-latency" style="color:${color}">${latencyText} ${estimateBadge}</div>
         <div class="region-dots" style="color:${color}">
-          ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? " active" : ""}"></span>`).join("")}
+          ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? ' active' : ''}"></span>`).join('')}
         </div>
       </div>`;
   };
 
-  let html = "";
+  let html = '';
   for (const region of regionOrder) {
     const probes = grouped[region];
     if (!probes || probes.length === 0) continue;

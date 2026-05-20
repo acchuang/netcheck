@@ -1,0 +1,6 @@
+dist/
+node_modules/
+.wrangler/
+.output/
+*.min.js
+package-lock.json

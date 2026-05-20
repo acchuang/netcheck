@@ -1,4 +1,4 @@
-import type { ResolverResult, SecurityCheck } from "./types";
+import type { ResolverResult, SecurityCheck } from './types';
 export type { ResolverResult, SecurityCheck };
 
 interface ResolverInfo {
@@ -42,45 +42,66 @@ interface DnsAnswer {
 export const DnsCheck = {
   async detectIp(): Promise<IpResult> {
     try {
-      const res = await fetch("/api/ip");
+      const res = await fetch('/api/ip');
       return await res.json();
     } catch {
-      return { error: "Failed to detect IP" };
+      return { error: 'Failed to detect IP' };
     }
   },
 
   async lookupDns(domain: string, type: string): Promise<DnsResult> {
     try {
-      const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`);
+      const res = await fetch(
+        `/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`,
+      );
       return await res.json();
     } catch {
-      return { error: "DNS lookup failed" };
+      return { error: 'DNS lookup failed' };
     }
   },
 
   async detectResolver(): Promise<ResolverResult[]> {
     try {
-      const res = await fetch("/api/dns/check-resolvers");
+      const res = await fetch('/api/dns/check-resolvers');
       if (res.ok) return await res.json();
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
 
     // Fallback: direct DoH checks (may fail due to CORS)
     const resolvers: ResolverInfo[] = [
-      { name: "Cloudflare", host: "cloudflare-dns.com", ip: "1.1.1.1", desc: "Fast, privacy-focused" },
-      { name: "Google", host: "dns.google", ip: "8.8.8.8", desc: "Reliable, global" },
-      { name: "Quad9", host: "dns.quad9.net", ip: "9.9.9.9", desc: "Security-focused" },
+      {
+        name: 'Cloudflare',
+        host: 'cloudflare-dns.com',
+        ip: '1.1.1.1',
+        desc: 'Fast, privacy-focused',
+      },
+      { name: 'Google', host: 'dns.google', ip: '8.8.8.8', desc: 'Reliable, global' },
+      { name: 'Quad9', host: 'dns.quad9.net', ip: '9.9.9.9', desc: 'Security-focused' },
     ];
     const results: ResolverResult[] = [];
     for (const resolver of resolvers) {
       try {
         const start = performance.now();
         const res = await fetch(`https://${resolver.host}/dns-query?name=example.com&type=A`, {
-          headers: { Accept: "application/dns-json" },
+          headers: { Accept: 'application/dns-json' },
           signal: AbortSignal.timeout(3000),
         });
-        results.push({ ...resolver, reachable: res.ok, latency: res.ok ? Math.round(performance.now() - start) : null, dnssec: false, filtering: false });
+        results.push({
+          ...resolver,
+          reachable: res.ok,
+          latency: res.ok ? Math.round(performance.now() - start) : null,
+          dnssec: false,
+          filtering: false,
+        });
       } catch {
-        results.push({ ...resolver, reachable: false, latency: null, dnssec: false, filtering: false });
+        results.push({
+          ...resolver,
+          reachable: false,
+          latency: null,
+          dnssec: false,
+          filtering: false,
+        });
       }
     }
     return results;
@@ -91,62 +112,72 @@ export const DnsCheck = {
 
     // DNSSEC validation check — resolve a known DNSSEC-signed domain
     try {
-      const res = await fetch("https://cloudflare-dns.com/dns-query?name=cloudflare.com&type=A&do=1", {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
-      });
+      const res = await fetch(
+        'https://cloudflare-dns.com/dns-query?name=cloudflare.com&type=A&do=1',
+        {
+          headers: { Accept: 'application/dns-json' },
+          signal: AbortSignal.timeout(3000),
+        },
+      );
       const data: DohResponse = await res.json();
       checks.push({
-        name: "DNSSEC Validation",
-        status: data.AD ? "pass" : "warn",
-        detail: data.AD ? "Your resolver validates DNSSEC" : "DNSSEC not validated by resolver",
+        name: 'DNSSEC Validation',
+        status: data.AD ? 'pass' : 'warn',
+        detail: data.AD ? 'Your resolver validates DNSSEC' : 'DNSSEC not validated by resolver',
       });
     } catch {
-      checks.push({ name: "DNSSEC Validation", status: "fail", detail: "Could not check DNSSEC" });
+      checks.push({ name: 'DNSSEC Validation', status: 'fail', detail: 'Could not check DNSSEC' });
     }
 
     // DNS-over-HTTPS support
     try {
-      const res = await fetch("https://cloudflare-dns.com/dns-query?name=example.com&type=A", {
-        headers: { Accept: "application/dns-json" },
+      const res = await fetch('https://cloudflare-dns.com/dns-query?name=example.com&type=A', {
+        headers: { Accept: 'application/dns-json' },
         signal: AbortSignal.timeout(3000),
       });
       checks.push({
-        name: "DNS-over-HTTPS",
-        status: res.ok ? "pass" : "fail",
-        detail: res.ok ? "DoH endpoint reachable" : "DoH not available",
+        name: 'DNS-over-HTTPS',
+        status: res.ok ? 'pass' : 'fail',
+        detail: res.ok ? 'DoH endpoint reachable' : 'DoH not available',
       });
     } catch {
-      checks.push({ name: "DNS-over-HTTPS", status: "fail", detail: "DoH not available" });
+      checks.push({ name: 'DNS-over-HTTPS', status: 'fail', detail: 'DoH not available' });
     }
 
     // Check if known malware domain is blocked (safe test domain)
     try {
-      const res = await fetch("https://cloudflare-dns.com/dns-query?name=malware.testcategory.com&type=A", {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
-      });
+      const res = await fetch(
+        'https://cloudflare-dns.com/dns-query?name=malware.testcategory.com&type=A',
+        {
+          headers: { Accept: 'application/dns-json' },
+          signal: AbortSignal.timeout(3000),
+        },
+      );
       const data: DohResponse = await res.json();
       const blocked = !data.Answer || data.Answer.length === 0 || data.Status === 3;
       checks.push({
-        name: "Malware Domain Filtering",
-        status: blocked ? "pass" : "warn",
-        detail: blocked ? "Known test domains filtered" : "No DNS-level filtering detected",
+        name: 'Malware Domain Filtering',
+        status: blocked ? 'pass' : 'warn',
+        detail: blocked ? 'Known test domains filtered' : 'No DNS-level filtering detected',
       });
     } catch {
-      checks.push({ name: "Malware Domain Filtering", status: "warn", detail: "Could not test filtering" });
+      checks.push({
+        name: 'Malware Domain Filtering',
+        status: 'warn',
+        detail: 'Could not test filtering',
+      });
     }
 
     // WebRTC IP leak check
     try {
       const leaked = await DnsCheck.checkWebRtcLeak();
       checks.push({
-        name: "WebRTC IP Leak",
-        status: leaked ? "fail" : "pass",
-        detail: leaked ? `Local IP exposed: ${leaked}` : "No WebRTC IP leak detected",
+        name: 'WebRTC IP Leak',
+        status: leaked ? 'fail' : 'pass',
+        detail: leaked ? `Local IP exposed: ${leaked}` : 'No WebRTC IP leak detected',
       });
     } catch {
-      checks.push({ name: "WebRTC IP Leak", status: "warn", detail: "Could not check WebRTC" });
+      checks.push({ name: 'WebRTC IP Leak', status: 'warn', detail: 'Could not check WebRTC' });
     }
 
     return checks;
@@ -155,11 +186,13 @@ export const DnsCheck = {
   checkWebRtcLeak(): Promise<string | null> {
     return new Promise((resolve) => {
       try {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        });
         const ips = new Set<string>();
         let resolved = false;
 
-        pc.createDataChannel("");
+        pc.createDataChannel('');
         pc.createOffer().then((offer) => pc.setLocalDescription(offer));
 
         pc.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
@@ -173,7 +206,7 @@ export const DnsCheck = {
           const match = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
           if (match) {
             const ip = match[1];
-            if (!ip.startsWith("0.") && !ips.has(ip)) {
+            if (!ip.startsWith('0.') && !ips.has(ip)) {
               ips.add(ip);
               // Private IPs indicate a leak
               if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip)) {

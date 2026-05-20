@@ -9,7 +9,7 @@ export interface ResolverResult {
   filtering: boolean;
 }
 
-export type SecurityStatus = "pass" | "warn" | "fail";
+export type SecurityStatus = 'pass' | 'warn' | 'fail';
 
 export interface SecurityCheck {
   name: string;
