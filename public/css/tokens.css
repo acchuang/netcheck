@@ -1,8 +1,8 @@
 /* ========================================
-   NetCheck Design Tokens — Primitives
+   NetCheck Bold Design Tokens
    ======================================== */
 
-/* ── Grey scale ── */
+/* ── Bold Color Palette ── */
 :root {
   --gray-0: #ffffff;
   --gray-50: #f8f9fa;
@@ -10,39 +10,39 @@
   --gray-200: #e9ecef;
   --gray-300: #dee2e6;
   --gray-400: #ced4da;
-  --gray-500: #adb5bd;
-  --gray-600: #868e96;
-  --gray-700: #495057;
-  --gray-800: #343a40;
-  --gray-850: #13151a;
-  --gray-900: #212529;
-  --gray-950: #0d0e10;
+  --gray-500: #8b8f96;
+  --gray-600: #6b6f76;
+  --gray-700: #3d4048;
+  --gray-800: #262830;
+  --gray-850: #1a1c22;
+  --gray-900: #141618;
+  --gray-950: #08090a;
   --gray-1000: #000000;
 }
 
-/* ── Brand (indigo/violet) ── */
+/* ── Brand (Bold violet, shifted from muted indigo) ── */
 :root {
-  --brand-50: #f0f1ff;
-  --brand-100: #e0e2ff;
-  --brand-200: #c4c7fe;
-  --brand-300: #a4a7fc;
-  --brand-400: #8386f9;
-  --brand-500: #6b6ef5;
-  --brand-600: #5e6ad2;
-  --brand-700: #4c56b8;
-  --brand-800: #3e469e;
-  --brand-900: #32387f;
-  --brand-950: #1e2254;
+  --brand-50: #f3f0ff;
+  --brand-100: #e5deff;
+  --brand-200: #d0c4ff;
+  --brand-300: #b09dff;
+  --brand-400: #977cff;
+  --brand-500: #7c5cfc;
+  --brand-600: #6d47f0;
+  --brand-700: #5a36d4;
+  --brand-800: #4a2bae;
+  --brand-900: #3b2389;
+  --brand-950: #220f52;
 }
 
-/* ── Semantic status colours ── */
+/* ── Status colors ── */
 :root {
   --green-50: #e6faf0;
   --green-100: #c4f2db;
   --green-200: #9de8c1;
   --green-300: #6dd9a4;
-  --green-400: #3ec986;
-  --green-500: #28b872;
+  --green-400: #2dd4bf;
+  --green-500: #22b89e;
   --green-600: #1e9b5e;
   --green-700: #177e4c;
   --green-800: #13653d;
@@ -53,7 +53,7 @@
   --amber-100: #fff0cc;
   --amber-200: #ffe099;
   --amber-300: #ffcd5c;
-  --amber-400: #ffba2e;
+  --amber-400: #fbbf24;
   --amber-500: #f59e0b;
   --amber-600: #d97706;
   --amber-700: #b45309;
@@ -94,24 +94,27 @@
   --space-16: 64px;
 }
 
-/* ── Radius scale ── */
+/* ── Radius scale (softer for bold feel) ── */
 :root {
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
   --radius-full: 9999px;
 }
 
-/* ── Shadow scale (light) ── */
+/* ── Shadows (tinted, never pure black) ── */
 :root {
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 0 40px rgba(124, 92, 252, 0.2);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* ── Type scale ── */
+/* ── Type scale (Bigger, Bolder) ── */
 :root {
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
@@ -121,11 +124,13 @@
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
   --text-3xl: 2.75rem;
+  --text-display: 3.5rem;
 }
 
 /* ── Leading ── */
 :root {
-  --leading-tight: 1.15;
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
   --leading-normal: 1.5;
   --leading-relaxed: 1.7;
 }
@@ -134,6 +139,7 @@
 :root {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-120: 120ms;
   --duration-150: 150ms;
   --duration-200: 200ms;
@@ -145,12 +151,12 @@
 /* ── Layout ── */
 :root {
   --page-px: clamp(1rem, 5vw, 2.5rem);
-  --container-max: 1280px;
+  --container-max: 1200px;
   --gap-sm: var(--space-2);
   --gap-md: var(--space-4);
   --gap-lg: var(--space-6);
   --card-p: var(--space-5);
-  --btn-h: 40px;
+  --btn-h: 44px;
 }
 
 /* ========================================
@@ -164,13 +170,14 @@
   --surface-elevated: var(--gray-850);
 
   --text-primary: var(--gray-100);
-  --text-secondary: var(--gray-300);
-  --text-tertiary: var(--gray-500);
+  --text-secondary: var(--gray-500);
+  --text-muted: #565960;
 
   --border-subtle: color-mix(in srgb, var(--gray-700) 60%, transparent);
   --border-default: var(--gray-700);
+  --border-accent: rgba(124, 92, 252, 0.3);
 
-  --brand: var(--brand-600);
+  --brand: var(--brand-500);
   --brand-glow: color-mix(in srgb, var(--brand) 25%, transparent);
 
   --status-pass: var(--green-400);
@@ -180,10 +187,10 @@
 
   color-scheme: dark;
 
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 /* ========================================
@@ -191,17 +198,18 @@
    ======================================== */
 
 [data-theme="light"] {
-  --surface-primary: var(--gray-50);
-  --surface-secondary: var(--gray-0);
-  --surface-tertiary: var(--gray-100);
-  --surface-elevated: var(--gray-0);
+  --surface-primary: #f5f5f7;
+  --surface-secondary: #ffffff;
+  --surface-tertiary: #eeeef0;
+  --surface-elevated: #ffffff;
 
-  --text-primary: var(--gray-900);
-  --text-secondary: var(--gray-600);
-  --text-tertiary: var(--gray-400);
+  --text-primary: #1a1a1e;
+  --text-secondary: #6b6f76;
+  --text-muted: #9ca0a8;
 
   --border-subtle: color-mix(in srgb, var(--gray-200) 75%, transparent);
   --border-default: var(--gray-200);
+  --border-accent: rgba(124, 92, 252, 0.3);
 
   --brand: var(--brand-600);
   --brand-glow: color-mix(in srgb, var(--brand) 15%, transparent);
@@ -210,11 +218,13 @@
   --status-warn: var(--amber-600);
   --status-fail: var(--red-600);
   --status-progress: var(--brand-600);
-}
 
-/* Light theme — color-scheme */
-[data-theme="light"] {
   color-scheme: light;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
 }
 
 /* ── Progressive enhancement fallbacks ── */
@@ -222,10 +232,10 @@
 @supports not (background: color-mix(in srgb, black 50%, transparent)) {
   [data-theme="dark"] {
     --border-subtle: var(--gray-700);
-    --brand-glow: rgba(94, 106, 210, 0.25);
+    --brand-glow: rgba(124, 92, 252, 0.25);
   }
   [data-theme="light"] {
     --border-subtle: var(--gray-200);
-    --brand-glow: rgba(94, 106, 210, 0.15);
+    --brand-glow: rgba(124, 92, 252, 0.15);
   }
 }

@@ -337,7 +337,8 @@ export const es = {
   'history.noData': 'Sin historial de pruebas. Ejecuta una prueba de velocidad para comenzar.',
   'history.avgDownload': 'Descarga promedio',
   'history.avgLatency': 'Latencia promedio',
-  'history.trend': 'Tendencia',
+'history.trend': 'Tendencia',
+
   'history.compare': 'Comparar',
   'history.cancelCompare': 'Cancelar comparación',
   'history.compareMin': 'Se necesitan al menos 2 pruebas para comparar.',

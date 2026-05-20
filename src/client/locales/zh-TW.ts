@@ -350,15 +350,15 @@ export const zhTW = {
   'history.noData': '尚無測試記錄。執行速度測試以開始追蹤。',
   'history.avgDownload': '平均下載',
   'history.avgLatency': '平均延遲',
-  'history.trend': '趨勢',
+'history.trend': '趨勢',
+
   'history.compare': '比較',
   'history.cancelCompare': '取消比較',
-  'history.compareMin': '至少需要 2 筆測試結果才能比較。',
+  'history.compareMin': '至少需要2次測試才能比較。',
   'history.testA': '測試 A',
   'history.testB': '測試 B',
   'history.runCompare': '比較',
 
-  // Ad block section
   'adblock.title': '廣告攔截測試',
   'adblock.subtitle': '測試您的廣告攔截器在多個類別的效果',
   'adblock.running': '測試中...',

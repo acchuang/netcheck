@@ -333,10 +333,11 @@ export const ja = {
   'history.noData': 'テスト履歴がありません。速度テストを実行して追跡を開始してください。',
   'history.avgDownload': '平均ダウンロード',
   'history.avgLatency': '平均レイテンシ',
-  'history.trend': 'トレンド',
+'history.trend': 'トレンド',
+
   'history.compare': '比較',
   'history.cancelCompare': '比較をキャンセル',
-  'history.compareMin': '比較には2つ以上のテスト結果が必要です。',
+  'history.compareMin': '比較には2つ以上のテストが必要です。',
   'history.testA': 'テスト A',
   'history.testB': 'テスト B',
   'history.runCompare': '比較',

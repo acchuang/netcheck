@@ -330,10 +330,11 @@ export const zhCN = {
   'history.noData': '尚无测试记录。运行速度测试以开始追踪。',
   'history.avgDownload': '平均下载',
   'history.avgLatency': '平均延迟',
-  'history.trend': '趋势',
+'history.trend': '趋势',
+
   'history.compare': '比较',
   'history.cancelCompare': '取消比较',
-  'history.compareMin': '至少需要2项测试结果才能比较。',
+  'history.compareMin': '至少需要2次测试才能比较。',
   'history.testA': '测试 A',
   'history.testB': '测试 B',
   'history.runCompare': '比较',

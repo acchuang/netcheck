@@ -332,10 +332,11 @@ export const ko = {
   'history.noData': '테스트 기록이 없습니다. 속도 테스트를 실행하여 추적을 시작하세요.',
   'history.avgDownload': '평균 다운로드',
   'history.avgLatency': '평균 지연 시간',
-  'history.trend': '추세',
+'history.trend': '추세',
+
   'history.compare': '비교',
   'history.cancelCompare': '비교 취소',
-  'history.compareMin': '비교하려면 최소 2개의 테스트 결과가 필요합니다.',
+  'history.compareMin': '비교하려면 최소 2개의 테스트가 필요합니다.',
   'history.testA': '테스트 A',
   'history.testB': '테스트 B',
   'history.runCompare': '비교',

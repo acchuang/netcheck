@@ -1,3 +1,4 @@
+import './app.css';
 import { DnsCheck } from './dns-check';
 import { AdBlockTest } from './adblock-test';
 import { FilterListDetector } from './filter-lists';

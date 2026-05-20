@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ========================================
+   NetCheck Bold Design System
+   ======================================== */
+
+@theme {
+  /* ── Bold Color Palette ── */
+  --color-bg: #08090a;
+  --color-bg-subtle: #0e1012;
+  --color-bg-card: #141618;
+  --color-bg-card-hover: #1a1d21;
+  --color-bg-elevated: #1e2226;
+
+  --color-text: #f0f0f2;
+  --color-text-secondary: #8b8f96;
+  --color-text-muted: #565960;
+
+  --color-accent: #7c5cfc;
+  --color-accent-hover: #977cff;
+  --color-accent-glow: rgba(124, 92, 252, 0.25);
+  --color-accent-subtle: rgba(124, 92, 252, 0.08);
+
+  --color-green: #2dd4bf;
+  --color-amber: #fbbf24;
+  --color-red: #f87171;
+
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
+  --color-border-accent: rgba(124, 92, 252, 0.3);
+
+  /* ── Type Scale (Bigger, Bolder) ── */
+  --font-sans: "Geist Variable", "Geist", "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Berkeley Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
+  --font-display: "Geist Variable", "Geist", system-ui, sans-serif;
+
+  --text-display: 4rem;
+  --text-4xl: 2.5rem;
+  --text-3xl: 2rem;
+  --text-2xl: 1.5rem;
+  --text-xl: 1.25rem;
+  --text-lg: 1.125rem;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
+
+  /* ── Spacing ── */
+  --spacing-page: clamp(1.5rem, 5vw, 3rem);
+  --container-max: 1200px;
+
+  /* ── Radius ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ── Shadows (Tinted, never black) ── */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-glow: 0 0 40px var(--color-accent-glow);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* ── Transitions ── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Base Reset ── */
+@layer base {
+  *, *::before, *::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv01", "ss03";
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+}
+
+/* ── Utility Classes ── */
+@layer utilities {
+  .text-display {
+    font-size: var(--text-display);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .text-display-sm {
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .text-heading {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .text-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .glow-border {
+    position: relative;
+  }
+  .glow-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--color-accent), transparent 40%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-200, 200ms) var(--ease-out);
+  }
+  .glow-border:hover::before {
+    opacity: 1;
+  }
+
+  .card-base {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+  }
+  .card-base:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--color-accent) 0%, #c084fc 50%, var(--color-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
