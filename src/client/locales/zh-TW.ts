@@ -137,6 +137,7 @@ export const zhTW = {
   'about.title': '關於 NetCheck',
   'about.subtitle': '本地診斷您的網路連線與瀏覽器安全。',
   'nav.about': '關於',
+  'nav.history': '歷史記錄',
 
   // DNS section
   'dns.title': 'DNS 與網路檢測',
@@ -338,6 +339,18 @@ export const zhTW = {
   'speed.history.minAgo': '{0} 分鐘前',
   'speed.history.hrAgo': '{0} 小時前',
   'speed.history.clear': '清除記錄',
+
+  // History tab
+  'history.subtitle': '追蹤您的網路效能變化',
+  'history.title': '連線記錄',
+  'history.chartTitle': '30天下載速度',
+  'history.exportCsv': '匯出 CSV',
+  'history.clearHistory': '清除記錄',
+  'history.confirmClear': '確定要清除所有記錄嗎？此操作無法復原。',
+  'history.noData': '尚無測試記錄。執行速度測試以開始追蹤。',
+  'history.avgDownload': '平均下載',
+  'history.avgLatency': '平均延遲',
+  'history.trend': '趨勢',
 
   // Ad block section
   'adblock.title': '廣告攔截測試',

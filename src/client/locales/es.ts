@@ -130,6 +130,7 @@ export const es = {
   'about.title': 'Sobre NetCheck',
   'about.subtitle': 'Diagnósticos locales para tu conexión de red y seguridad del navegador.',
   'nav.about': 'Acerca de',
+  'nav.history': 'Historial',
   'dns.title': 'Comprobación DNS y red',
   'dns.subtitle': 'Detecta tu IP, resolutores DNS y configuración de red',
   'dns.ipTitle': 'Tu dirección IP',
@@ -325,6 +326,19 @@ export const es = {
   'speed.history.minAgo': 'hace {0} min',
   'speed.history.hrAgo': 'hace {0} h',
   'speed.history.clear': 'Borrar historial',
+
+  // History tab
+  'history.subtitle': 'Rastrea el rendimiento de tu red con el tiempo',
+  'history.title': 'Historial de conexión',
+  'history.chartTitle': 'Velocidad de descarga en 30 días',
+  'history.exportCsv': 'Exportar CSV',
+  'history.clearHistory': 'Borrar historial',
+  'history.confirmClear': '¿Borrar todo el historial? Esta acción no se puede deshacer.',
+  'history.noData': 'Sin historial de pruebas. Ejecuta una prueba de velocidad para comenzar.',
+  'history.avgDownload': 'Descarga promedio',
+  'history.avgLatency': 'Latencia promedio',
+  'history.trend': 'Tendencia',
+
   'adblock.title': 'Test de bloqueador de anuncios',
   'adblock.subtitle': 'Prueba la efectividad de tu bloqueador de anuncios en múltiples categorías',
   'adblock.running': 'Ejecutando pruebas...',

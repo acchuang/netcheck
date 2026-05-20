@@ -372,6 +372,20 @@ const en = {
   'speed.history.hrAgo': '{0} hr ago',
   'speed.history.clear': 'Clear history',
 
+  // History tab
+  'history.subtitle': 'Track your network performance over time',
+  'history.title': 'Connection History',
+  'history.chartTitle': '30-Day Download Speed',
+  'history.exportCsv': 'Export CSV',
+  'history.clearHistory': 'Clear History',
+  'history.confirmClear': 'Clear all history? This cannot be undone.',
+  'history.noData': 'No test history yet. Run a speed test to start tracking.',
+  'history.avgDownload': 'Avg Download',
+  'history.avgLatency': 'Avg Latency',
+  'history.trend': 'Trend',
+
+  'nav.history': 'History',
+
   // Ad block section
   'adblock.title': 'Ad Block Tester',
   'adblock.subtitle': 'Test the effectiveness of your ad blocker across multiple categories',
@@ -700,6 +714,7 @@ function applyStaticTranslations(): void {
   const bindings: Binding[] = [
     // Nav
     { selector: ".nav-link[data-tab='dns'] .nav-link-text", key: 'nav.dns' },
+    { selector: ".nav-link[data-tab='history'] .nav-link-text", key: 'nav.history' },
     { selector: ".nav-link[data-tab='speed'] .nav-link-text", key: 'nav.speed' },
     { selector: ".nav-link[data-tab='adblock'] .nav-link-text", key: 'nav.adblock' },
     { selector: ".nav-link[data-tab='headers'] .nav-link-text", key: 'nav.headers' },
@@ -756,6 +771,13 @@ function applyStaticTranslations(): void {
     { selector: '#speed-bufferbloat-label', key: 'speed.tip.bufferbloat', attr: 'data-tooltip' },
     { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'title' },
     { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'aria-label' },
+
+    // History tab
+    { selector: '[data-i18n="history.title"]', key: 'history.title' },
+    { selector: '[data-i18n="history.subtitle"]', key: 'history.subtitle' },
+    { selector: '[data-i18n="history.chartTitle"]', key: 'history.chartTitle' },
+    { selector: '#history-csv-btn', key: 'history.exportCsv' },
+    { selector: '#history-clear-btn', key: 'history.clearHistory' },
 
     // Ad block
     { selector: '#adblock-title', key: 'adblock.title' },

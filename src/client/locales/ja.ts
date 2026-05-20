@@ -130,6 +130,7 @@ export const ja = {
   'about.title': 'NetCheck について',
   'about.subtitle': 'ネットワーク接続とブラウザセキュリティのローカル診断。',
   'nav.about': 'について',
+  'nav.history': '履歴',
   'dns.title': 'DNS \u0026 ネットワークチェック',
   'dns.subtitle': 'IP、DNS リゾルバー、ネットワーク設定を検出',
   'dns.ipTitle': 'あなたの IP アドレス',
@@ -321,6 +322,19 @@ export const ja = {
   'speed.history.minAgo': '{0} 分前',
   'speed.history.hrAgo': '{0} 時間前',
   'speed.history.clear': '履歴を消去',
+
+  // History tab
+  'history.subtitle': 'ネットワークパフォーマンスの推移を追跡',
+  'history.title': '接続履歴',
+  'history.chartTitle': '30日間のダウンロード速度',
+  'history.exportCsv': 'CSVエクスポート',
+  'history.clearHistory': '履歴を消去',
+  'history.confirmClear': 'すべての履歴を消去しますか？この操作は元に戻せません。',
+  'history.noData': 'テスト履歴がありません。速度テストを実行して追跡を開始してください。',
+  'history.avgDownload': '平均ダウンロード',
+  'history.avgLatency': '平均レイテンシ',
+  'history.trend': 'トレンド',
+
   'adblock.title': '広告ブロックテスター',
   'adblock.subtitle': '複数のカテゴリーで広告ブロックの有効性をテスト',
   'adblock.running': 'テスト実行中...',

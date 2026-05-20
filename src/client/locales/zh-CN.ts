@@ -128,6 +128,7 @@ export const zhCN = {
   'about.title': '关于 NetCheck',
   'about.subtitle': '针对您的网络连接和浏览器安全的本地诊断工具。',
   'nav.about': '关于',
+  'nav.history': '历史记录',
   'dns.title': 'DNS 与网络检测',
   'dns.subtitle': '检测您的 IP、DNS 解析器和网络配置',
   'dns.ipTitle': '您的 IP 地址',
@@ -318,6 +319,19 @@ export const zhCN = {
   'speed.history.minAgo': '{0} 分钟前',
   'speed.history.hrAgo': '{0} 小时前',
   'speed.history.clear': '清除记录',
+
+  // History tab
+  'history.subtitle': '追踪您的网络性能变化',
+  'history.title': '连接记录',
+  'history.chartTitle': '30天下载速度',
+  'history.exportCsv': '导出 CSV',
+  'history.clearHistory': '清除记录',
+  'history.confirmClear': '确定要清除所有记录吗？此操作无法撤销。',
+  'history.noData': '尚无测试记录。运行速度测试以开始追踪。',
+  'history.avgDownload': '平均下载',
+  'history.avgLatency': '平均延迟',
+  'history.trend': '趋势',
+
   'adblock.title': '广告拦截测试',
   'adblock.subtitle': '测试您的广告拦截器在多个类别中的拦截效果',
   'adblock.running': '正在测试…',

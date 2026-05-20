@@ -88,6 +88,10 @@
               <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               <span class="nav-link-text">Dashboard</span>
             </a>
+            <a href="#history" class="nav-link" data-tab="history">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span class="nav-link-text">History</span>
+            </a>
           </div>
         </div>
         <div class="nav-category">
@@ -391,6 +395,31 @@
         <h2 class="suggestions-title" id="dns-suggestions-title">Recommendations</h2>
         <p class="suggestions-subtitle" id="dns-suggestions-subtitle"></p>
         <div class="suggestions-grid" id="dns-suggestions-grid"></div>
+      </div>
+    </section>
+
+    <!-- History Section -->
+    <section id="history" class="section" role="region" tabindex="-1" aria-label="History">
+      <div class="section-inner">
+        <h1 class="section-title" data-i18n="history.title">Connection History</h1>
+        <p class="section-subtitle" data-i18n="history.subtitle">Track your network performance over time</p>
+
+        <div class="history-actions">
+          <button class="btn btn-secondary" id="history-csv-btn" data-i18n="history.exportCsv">Export CSV</button>
+          <button class="btn btn-danger" id="history-clear-btn" data-i18n="history.clearHistory">Clear History</button>
+        </div>
+
+        <div class="card card-wide">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <h2 class="card-title" data-i18n="history.chartTitle">30-Day Download Speed</h2>
+          </div>
+          <div class="card-body">
+            <div id="history-chart"></div>
+          </div>
+        </div>
+
+        <div id="history-stats"></div>
       </div>
     </section>
 

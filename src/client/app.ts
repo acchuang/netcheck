@@ -24,10 +24,13 @@ import { safeInit, safeInitAsync } from './error-boundary';
 import { initTooltips } from './tooltip';
 import { initDashboard } from './tabs/dashboard-tab';
 import { initTlsCheck } from './tabs/tls-tab';
+import { initHistory } from './tabs/history-tab';
+import { refreshHistory } from './tabs/history-tab';
 
 document.addEventListener('DOMContentLoaded', () => {
   safeInit('Dashboard', initDashboard);
   safeInit('TLS Check', initTlsCheck);
+  safeInit('History', initHistory);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);
@@ -57,7 +60,8 @@ function updateMetaForTab(tab: string): void {
   const tabNames: Record<string, string> = {
     dashboard: 'Dashboard',
     tls: 'TLS Inspector',
-  dns: t('nav.dns'),
+    history: t('nav.history'),
+    dns: t('nav.dns'),
     speed: t('nav.speed'),
     adblock: t('nav.adblock'),
     headers: t('nav.headers'),
@@ -113,6 +117,8 @@ function initTabs(): void {
       document.getElementById(tab)!.classList.add('active');
 
       updateMetaForTab(tab);
+
+      if (tab === 'history') refreshHistory();
     });
   });
 

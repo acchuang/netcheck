@@ -129,6 +129,7 @@ export const ko = {
   'about.title': 'NetCheck 정보',
   'about.subtitle': '네트워크 연결 및 브라우저 보안에 대한 로컬 진단 도구입니다.',
   'nav.about': '정보',
+  'nav.history': '기록',
   'dns.title': 'DNS 및 네트워크 확인',
   'dns.subtitle': 'IP, DNS 리졸버, 네트워크 구성을 확인합니다',
   'dns.ipTitle': '내 IP 주소',
@@ -320,6 +321,19 @@ export const ko = {
   'speed.history.minAgo': '{0}분 전',
   'speed.history.hrAgo': '{0}시간 전',
   'speed.history.clear': '기록 지우기',
+
+  // History tab
+  'history.subtitle': '시간에 따른 네트워크 성능 추적',
+  'history.title': '연결 기록',
+  'history.chartTitle': '30일 다운로드 속도',
+  'history.exportCsv': 'CSV 내보내기',
+  'history.clearHistory': '기록 지우기',
+  'history.confirmClear': '모든 기록을 지우시겠습니까? 복원할 수 없습니다.',
+  'history.noData': '테스트 기록이 없습니다. 속도 테스트를 실행하여 추적을 시작하세요.',
+  'history.avgDownload': '평균 다운로드',
+  'history.avgLatency': '평균 지연 시간',
+  'history.trend': '추세',
+
   'adblock.title': '광고 차단 테스트',
   'adblock.subtitle': '여러 카테고리에서 광고 차단기 효과를 테스트합니다',
   'adblock.running': '테스트 실행 중...',

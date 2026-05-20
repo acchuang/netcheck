@@ -3012,3 +3012,103 @@ select option {
     scroll-behavior: auto;
   }
 }
+
+/* History Tab */
+.history-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-actions .btn-danger {
+  background: var(--color-danger, #e74c3c);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.history-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 160px;
+  padding: 0.5rem 0;
+}
+
+.history-bar {
+  flex: 1;
+  min-width: 6px;
+  max-width: 24px;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.history-bar-fill {
+  width: 100%;
+  height: var(--bar-height, 0%);
+  background: var(--color-accent, #5e6ad2);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+  min-height: 2px;
+}
+
+.history-bar:hover .history-bar-fill {
+  opacity: 0.85;
+}
+
+.history-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  margin-top: 0.25rem;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.history-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.dash-stat-card {
+  background: var(--color-card-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--color-border, rgba(255,255,255,0.1));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.dash-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 0.25rem;
+}
+
+.dash-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text, #e5e5e5);
+}
+
+.dash-stat-unit {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.dash-stat-up { color: #22c55e !important; }
+.dash-stat-down { color: #ef4444 !important; }
