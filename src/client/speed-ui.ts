@@ -1,5 +1,6 @@
 import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from './speed-test';
 import { SpeedTestHistory } from './history';
+import { saveHistoryEntry } from './state/history-state';
 import { t } from './i18n';
 import { animateNumber, pulseValue, setActiveGauge } from './ui-utils';
 import { clearGraph, drawSpeedGraph, addGraphPoint, drawHistoryChart } from './speed-graph';
@@ -185,6 +186,25 @@ async function runSpeedTest(): Promise<void> {
   drawSpeedGraph();
   renderSpeedSuggestions(results);
   SpeedTestHistory.save(results);
+  const gradeForHistory = SpeedTest.getGrade(
+    results.download ?? 0,
+    results.upload ?? 0,
+    results.latency ?? 0,
+    results.jitter ?? 0,
+  );
+  saveHistoryEntry({
+    v: 1,
+    timestamp: Date.now(),
+    speed: {
+      download: results.download ?? 0,
+      upload: results.upload ?? 0,
+      latency: results.latency ?? 0,
+      jitter: results.jitter ?? 0,
+      bufferbloat: results.bufferbloat ?? 0,
+      grade: gradeForHistory.grade,
+      colo: results.colo ?? 'unknown',
+    },
+  });
   renderSpeedHistory();
   btn.disabled = false;
   btn.textContent = t('speed.runAgain');
