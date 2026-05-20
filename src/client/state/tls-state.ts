@@ -14,7 +14,7 @@ export interface TlsInfo {
   grade: string;
 }
 
-function inferKeyExchange(cipher: string): string {
+export function inferKeyExchange(cipher: string): string {
   const lower = cipher.toLowerCase();
   if (lower.includes('ecdhe') || lower.includes('ecdsa')) return 'ECDHE';
   if (lower.includes('dhe')) return 'DHE';
@@ -22,12 +22,12 @@ function inferKeyExchange(cipher: string): string {
   return 'Unknown';
 }
 
-function hasForwardSecrecy(cipher: string): boolean {
+export function hasForwardSecrecy(cipher: string): boolean {
   const lower = cipher.toLowerCase();
   return lower.includes('ecdhe') || lower.includes('dhe');
 }
 
-function computeTlsGrade(
+export function computeTlsGrade(
   tlsVersion: string,
   cipher: string,
   forwardSecrecy: boolean,
