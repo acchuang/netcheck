@@ -321,7 +321,7 @@
           </svg>
           <h2 class="card-title" id="dns-ipv6-title">IPv6 Readiness</h2>
         </div>
-        <div class="card-body" id="dns-ipv6-results">
+        <div class="card-body" id="dns-ipv6-results" aria-live="polite">
           <p class="info-muted">Checking IPv6 connectivity...</p>
         </div>
       </div>
@@ -416,13 +416,13 @@
             <h2 class="card-title" data-i18n="history.chartTitle">30-Day Download Speed</h2>
           </div>
           <div class="card-body">
-            <div id="history-chart"></div>
+            <div id="history-chart" aria-live="polite" aria-label="Download speed chart"></div>
           </div>
         </div>
 
-        <div id="history-stats"></div>
+        <div id="history-stats" aria-live="polite"></div>
 
-        <div id="history-compare"></div>
+        <div id="history-compare" aria-live="polite"></div>
       </div>
     </section>
 

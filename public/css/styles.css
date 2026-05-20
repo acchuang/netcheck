@@ -3247,3 +3247,8 @@ select option {
     text-align: center;
   }
 }
+
+/* Accessibility: Minimum touch targets for interactive elements */
+.btn-sm { min-height: 44px; }
+.compare-select { min-height: 44px; }
+.history-actions .btn { min-height: 44px; }
