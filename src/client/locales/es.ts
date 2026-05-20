@@ -338,6 +338,12 @@ export const es = {
   'history.avgDownload': 'Descarga promedio',
   'history.avgLatency': 'Latencia promedio',
   'history.trend': 'Tendencia',
+  'history.compare': 'Comparar',
+  'history.cancelCompare': 'Cancelar comparación',
+  'history.compareMin': 'Se necesitan al menos 2 pruebas para comparar.',
+  'history.testA': 'Prueba A',
+  'history.testB': 'Prueba B',
+  'history.runCompare': 'Comparar',
 
   'adblock.title': 'Test de bloqueador de anuncios',
   'adblock.subtitle': 'Prueba la efectividad de tu bloqueador de anuncios en múltiples categorías',

@@ -383,6 +383,12 @@ const en = {
   'history.avgDownload': 'Avg Download',
   'history.avgLatency': 'Avg Latency',
   'history.trend': 'Trend',
+  'history.compare': 'Compare',
+  'history.cancelCompare': 'Cancel Compare',
+  'history.compareMin': 'Need at least 2 tests to compare.',
+  'history.testA': 'Test A',
+  'history.testB': 'Test B',
+  'history.runCompare': 'Compare',
 
   'nav.history': 'History',
 
@@ -778,6 +784,7 @@ function applyStaticTranslations(): void {
     { selector: '[data-i18n="history.chartTitle"]', key: 'history.chartTitle' },
     { selector: '#history-csv-btn', key: 'history.exportCsv' },
     { selector: '#history-clear-btn', key: 'history.clearHistory' },
+    { selector: '#history-compare-btn', key: 'history.compare' },
 
     // Ad block
     { selector: '#adblock-title', key: 'adblock.title' },

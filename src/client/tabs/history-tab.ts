@@ -1,13 +1,15 @@
-import { getAllHistory, clearHistory, downloadHistoryCsv } from '../state/history-state';
+import { getAllHistory, clearHistory, downloadHistoryCsv, type HistoryEntry } from '../state/history-state';
 import { SpeedTestHistory } from '../history';
 import { t } from '../i18n';
-import { appState } from '../state/shared-state';
 import { observable } from '../state/observable';
 
 export const historyState = {
-  entries: observable<ReturnType<typeof getAllHistory>>([]),
+  entries: observable<HistoryEntry[]>([]),
   selectedIds: observable<[string, string] | null>(null),
 };
+
+let compareMode = false;
+let selectedForCompare: string[] = [];
 
 export function initHistory(): void {
   refreshHistory();
@@ -27,11 +29,15 @@ export function initHistory(): void {
   if (csvBtn) {
     csvBtn.addEventListener('click', () => downloadHistoryCsv());
   }
+
+  const compareBtn = document.getElementById('history-compare-btn');
+  if (compareBtn) {
+    compareBtn.addEventListener('click', () => toggleCompareMode());
+  }
 }
 
 export function refreshHistory(): void {
   const entries = getAllHistory();
-  // Also include legacy speed-only entries if no v1 entries exist
   if (entries.length === 0) {
     const legacy = SpeedTestHistory.getAll();
     for (const e of legacy) {
@@ -54,9 +60,10 @@ export function refreshHistory(): void {
   historyState.entries.set(entries);
   renderChart(entries);
   renderStats(entries);
+  renderComparison();
 }
 
-function renderChart(entries: ReturnType<typeof getAllHistory>): void {
+function renderChart(entries: HistoryEntry[]): void {
   const container = document.getElementById('history-chart');
   if (!container) return;
 
@@ -69,7 +76,6 @@ function renderChart(entries: ReturnType<typeof getAllHistory>): void {
     return;
   }
 
-  // Group by day
   const byDay = new Map<string, number>();
   for (const e of recent) {
     const day = new Date(e.timestamp).toISOString().slice(0, 10);
@@ -103,7 +109,7 @@ function renderChart(entries: ReturnType<typeof getAllHistory>): void {
   `;
 }
 
-function renderStats(entries: ReturnType<typeof getAllHistory>): void {
+function renderStats(entries: HistoryEntry[]): void {
   const container = document.getElementById('history-stats');
   if (!container) return;
 
@@ -139,5 +145,128 @@ function renderStats(entries: ReturnType<typeof getAllHistory>): void {
         <div class="dash-stat-value${trend > 0 ? ' dash-stat-up' : trend < 0 ? ' dash-stat-down' : ''}">${trend > 0 ? '↑' : trend < 0 ? '↓' : '—'} ${Math.abs(trend)}%</div>
       </div>
     </div>
+  `;
+}
+
+function toggleCompareMode(): void {
+  compareMode = !compareMode;
+  selectedForCompare = [];
+  const compareBtn = document.getElementById('history-compare-btn');
+  if (compareBtn) {
+    compareBtn.textContent = compareMode
+      ? t('history.cancelCompare', 'Cancel Compare')
+      : t('history.compare', 'Compare');
+  }
+  renderComparison();
+}
+
+function renderComparison(): void {
+  const container = document.getElementById('history-compare');
+  if (!container) return;
+
+  if (!compareMode) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const entries = historyState.entries.get();
+  if (entries.length < 2) {
+    container.innerHTML = `<p class="info-muted">${t('history.compareMin', 'Need at least 2 tests to compare.')}</p>`;
+    return;
+  }
+
+  const recent = entries.slice(-10);
+  const optionsHtml = recent
+    .map((e) => {
+      const date = new Date(e.timestamp).toLocaleString();
+      const dl = e.speed ? `${Math.round(e.speed.download)} Mbps` : '—';
+      return `<option value="${e.id}">${date} — ${dl}</option>`;
+    })
+    .join('');
+
+  let diffHtml = '';
+  if (selectedForCompare.length === 2) {
+    const a = entries.find((e) => e.id === selectedForCompare[0]);
+    const b = entries.find((e) => e.id === selectedForCompare[1]);
+    if (a && b) {
+      diffHtml = renderDiff(a, b);
+    }
+  }
+
+  container.innerHTML = `
+    <div class="compare-selectors">
+      <div class="compare-field">
+        <label>${t('history.testA', 'Test A')}</label>
+        <select id="compare-a" class="compare-select">${optionsHtml}</select>
+      </div>
+      <div class="compare-field">
+        <label>${t('history.testB', 'Test B')}</label>
+        <select id="compare-b" class="compare-select">${optionsHtml}</select>
+      </div>
+      <button class="btn btn-primary" id="compare-run-btn">${t('history.runCompare', 'Compare')}</button>
+    </div>
+    <div id="compare-result">${diffHtml}</div>
+  `;
+
+  const selA = container.querySelector('#compare-a') as HTMLSelectElement | null;
+  const selB = container.querySelector('#compare-b') as HTMLSelectElement | null;
+  if (selA && recent.length > 0) selA.value = recent[recent.length - 2].id;
+  if (selB && recent.length > 1) selB.value = recent[recent.length - 1].id;
+
+  const runBtn = container.querySelector('#compare-run-btn');
+  if (runBtn) {
+    runBtn.addEventListener('click', () => {
+      if (!selA || !selB) return;
+      selectedForCompare = [selA.value, selB.value];
+      renderComparison();
+    });
+  }
+}
+
+function renderDiff(a: HistoryEntry, b: HistoryEntry): string {
+  const fmt = (v: number | undefined, unit: string) =>
+    v !== undefined ? `${v} ${unit}` : '—';
+  const diff = (va: number | undefined, vb: number | undefined) => {
+    if (va === undefined || vb === undefined) return '';
+    const d = vb - va;
+    if (d === 0) return '<span class="diff-same">0</span>';
+    const pct = va !== 0 ? Math.round((d / va) * 100) : 0;
+    return d > 0
+      ? `<span class="diff-up">+${Math.round(d)} (${pct > 0 ? '+' : ''}${pct}%)</span>`
+      : `<span class="diff-down">${Math.round(d)} (${pct}%)</span>`;
+  };
+
+  const rows = [
+    { label: 'Download', aVal: a.speed?.download, bVal: b.speed?.download, unit: 'Mbps' },
+    { label: 'Upload', aVal: a.speed?.upload, bVal: b.speed?.upload, unit: 'Mbps' },
+    { label: 'Latency', aVal: a.speed?.latency, bVal: b.speed?.latency, unit: 'ms' },
+    { label: 'Jitter', aVal: a.speed?.jitter, bVal: b.speed?.jitter, unit: 'ms' },
+    { label: 'Bufferbloat', aVal: a.speed?.bufferbloat, bVal: b.speed?.bufferbloat, unit: 'ms' },
+  ];
+
+  if (a.dns && b.dns) {
+    rows.push({ label: 'DNS Security', aVal: a.dns.security, bVal: b.dns.security, unit: '/100' });
+  }
+  if (a.tls && b.tls) {
+    rows.push({ label: 'TLS Grade', aVal: undefined, bVal: undefined, unit: '' });
+  }
+
+  const dateA = new Date(a.timestamp).toLocaleString();
+  const dateB = new Date(b.timestamp).toLocaleString();
+
+  return `
+    <table class="compare-table">
+      <thead>
+        <tr><th>Metric</th><th>${dateA}</th><th>${dateB}</th><th>Diff</th></tr>
+      </thead>
+      <tbody>
+        ${rows.map((r) => `<tr>
+          <td>${r.label}</td>
+          <td>${fmt(r.aVal, r.unit)}</td>
+          <td>${fmt(r.bVal, r.unit)}</td>
+          <td>${diff(r.aVal, r.bVal)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
   `;
 }

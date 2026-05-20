@@ -331,6 +331,12 @@ export const zhCN = {
   'history.avgDownload': '平均下载',
   'history.avgLatency': '平均延迟',
   'history.trend': '趋势',
+  'history.compare': '比较',
+  'history.cancelCompare': '取消比较',
+  'history.compareMin': '至少需要2项测试结果才能比较。',
+  'history.testA': '测试 A',
+  'history.testB': '测试 B',
+  'history.runCompare': '比较',
 
   'adblock.title': '广告拦截测试',
   'adblock.subtitle': '测试您的广告拦截器在多个类别中的拦截效果',

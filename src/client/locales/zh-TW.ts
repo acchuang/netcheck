@@ -351,6 +351,12 @@ export const zhTW = {
   'history.avgDownload': '平均下載',
   'history.avgLatency': '平均延遲',
   'history.trend': '趨勢',
+  'history.compare': '比較',
+  'history.cancelCompare': '取消比較',
+  'history.compareMin': '至少需要 2 筆測試結果才能比較。',
+  'history.testA': '測試 A',
+  'history.testB': '測試 B',
+  'history.runCompare': '比較',
 
   // Ad block section
   'adblock.title': '廣告攔截測試',

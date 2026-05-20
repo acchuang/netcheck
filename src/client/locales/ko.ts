@@ -333,6 +333,12 @@ export const ko = {
   'history.avgDownload': '평균 다운로드',
   'history.avgLatency': '평균 지연 시간',
   'history.trend': '추세',
+  'history.compare': '비교',
+  'history.cancelCompare': '비교 취소',
+  'history.compareMin': '비교하려면 최소 2개의 테스트 결과가 필요합니다.',
+  'history.testA': '테스트 A',
+  'history.testB': '테스트 B',
+  'history.runCompare': '비교',
 
   'adblock.title': '광고 차단 테스트',
   'adblock.subtitle': '여러 카테고리에서 광고 차단기 효과를 테스트합니다',

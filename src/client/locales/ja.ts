@@ -334,6 +334,12 @@ export const ja = {
   'history.avgDownload': '平均ダウンロード',
   'history.avgLatency': '平均レイテンシ',
   'history.trend': 'トレンド',
+  'history.compare': '比較',
+  'history.cancelCompare': '比較をキャンセル',
+  'history.compareMin': '比較には2つ以上のテスト結果が必要です。',
+  'history.testA': 'テスト A',
+  'history.testB': 'テスト B',
+  'history.runCompare': '比較',
 
   'adblock.title': '広告ブロックテスター',
   'adblock.subtitle': '複数のカテゴリーで広告ブロックの有効性をテスト',
