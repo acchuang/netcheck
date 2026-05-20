@@ -1,6 +1,7 @@
 import { appState } from '../state/shared-state';
 import { dnsState } from '../state/dns-state';
 import { speedState } from '../state/speed-state';
+import { tlsState } from '../state/tls-state';
 import { t } from '../i18n';
 import { SpeedTestHistory } from '../history';
 
@@ -81,11 +82,34 @@ export function initDashboard(): void {
   renderDashboard();
 
   appState.completedTests.subscribe(() => renderDashboard());
-  dnsState.securityChecks.subscribe(() => renderDashboard());
-  speedState.download.subscribe(() => renderDashboard());
+  dnsState.securityChecks.subscribe((checks) => {
+    if (checks.length > 0) markCompleted('dns');
+    renderDashboard();
+  });
+  speedState.download.subscribe((dl) => {
+    if (dl > 0) markCompleted('speed');
+    renderDashboard();
+  });
   speedState.upload.subscribe(() => renderDashboard());
   speedState.latency.subscribe(() => renderDashboard());
-  speedState.grade.subscribe(() => renderDashboard());
+  speedState.grade.subscribe((g) => {
+    if (g) markCompleted('speed');
+    renderDashboard();
+  });
+  dnsState.ipv6.subscribe((r) => {
+    if (r && r.ipv4Connectivity !== null) markCompleted('dns');
+  });
+  tlsState.info.subscribe((info) => {
+    if (info) markCompleted('tls');
+    renderDashboard();
+  });
+}
+
+function markCompleted(test: string): void {
+  const current = appState.completedTests.get();
+  if (!current.includes(test)) {
+    appState.completedTests.set([...current, test]);
+  }
 }
 
 function renderDashboard(): void {
@@ -97,6 +121,7 @@ function renderDashboard(): void {
 
   if (empty) {
     container.innerHTML = renderEmptyState();
+    wireActionButtons(container);
     return;
   }
 
