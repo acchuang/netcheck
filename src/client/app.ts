@@ -23,9 +23,11 @@ import { initShare } from './share';
 import { safeInit, safeInitAsync } from './error-boundary';
 import { initTooltips } from './tooltip';
 import { initDashboard } from './tabs/dashboard-tab';
+import { initTlsCheck } from './tabs/tls-tab';
 
 document.addEventListener('DOMContentLoaded', () => {
   safeInit('Dashboard', initDashboard);
+  safeInit('TLS Check', initTlsCheck);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);
@@ -54,7 +56,8 @@ function renderInitialSkeletons(): void {
 function updateMetaForTab(tab: string): void {
   const tabNames: Record<string, string> = {
     dashboard: 'Dashboard',
-    dns: t('nav.dns'),
+    tls: 'TLS Inspector',
+  dns: t('nav.dns'),
     speed: t('nav.speed'),
     adblock: t('nav.adblock'),
     headers: t('nav.headers'),

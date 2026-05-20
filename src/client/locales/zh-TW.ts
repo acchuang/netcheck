@@ -29,6 +29,24 @@ export const zhTW = {
   'dashboard.emptyTitle': '歡迎使用 NetCheck',
   'dashboard.emptySubtitle': '執行第一次測試以查看網路總覽',
 
+  // TLS Inspector
+  'tls.title': 'TLS 檢測',
+  'tls.subtitle': '分析您的 TLS 連線與安全標頭',
+  'tls.runTest': '檢查 TLS',
+  'tls.runAgain': '再次檢查',
+  'tls.checking': '正在檢查 TLS 連線...',
+  'tls.retry': '重試',
+  'tls.error': 'TLS 檢查失敗',
+  'tls.ready': '點擊上方按鈕以檢查您的 TLS 連線。',
+  'tls.tlsGrade': 'TLS 評級',
+  'tls.protocol': '通訊協定',
+  'tls.cipher': '加密套件',
+  'tls.keyExchange': '金鑰交換',
+  'tls.forwardSecrecy': '前向保密',
+  'tls.handshake': '交握時間',
+  'tls.httpProtocol': 'HTTP 協定',
+  'tls.hsts': 'HSTS',
+
   // Onboarding
   'onboarding.text': '測試您的 DNS、廣告攔截、網速與安全標頭。點擊上方分頁開始使用。',
 

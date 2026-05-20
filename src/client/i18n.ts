@@ -42,6 +42,24 @@ const en = {
   'dashboard.emptyTitle': 'Welcome to NetCheck',
   'dashboard.emptySubtitle': 'Run your first test to see your network overview',
 
+  // TLS Inspector
+  'tls.title': 'TLS Inspector',
+  'tls.subtitle': 'Analyze your TLS connection and security headers',
+  'tls.runTest': 'Check TLS',
+  'tls.runAgain': 'Check Again',
+  'tls.checking': 'Checking TLS connection...',
+  'tls.retry': 'Retry',
+  'tls.error': 'TLS check failed',
+  'tls.ready': 'Click the button above to check your TLS connection.',
+  'tls.tlsGrade': 'TLS Grade',
+  'tls.protocol': 'Protocol',
+  'tls.cipher': 'Cipher Suite',
+  'tls.keyExchange': 'Key Exchange',
+  'tls.forwardSecrecy': 'Forward Secrecy',
+  'tls.handshake': 'Handshake Time',
+  'tls.httpProtocol': 'HTTP Protocol',
+  'tls.hsts': 'HSTS',
+
   // Onboarding
   'onboarding.text':
     'Test your DNS, ad blocker, speed, and security headers. Pick a tab above to get started.',

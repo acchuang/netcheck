@@ -2754,6 +2754,94 @@ select option {
 }
 
 /* ========================================
+   TLS Inspector
+   ======================================== */
+
+.tls-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.tls-grade-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.tls-grade-grade {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tls-grade-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.tls-details-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.tls-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.85rem;
+}
+
+.tls-detail-row:last-child {
+  border-bottom: none;
+}
+
+.tls-detail-label {
+  color: var(--text-secondary);
+}
+
+.tls-detail-value {
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tls-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.tls-placeholder {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-secondary);
+}
+
+.tls-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--error, #ff3b30);
+}
+
+@media (max-width: 640px) {
+  .tls-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
    Dashboard
    ======================================== */
 

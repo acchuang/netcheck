@@ -442,6 +442,8 @@ function handleIpCheck(request: Request): Response {
       tlsVersion: cf.tlsVersion || null,
       tlsCipher: cf.tlsCipher || null,
       clientTcpRtt: cf.clientTcpRtt || null,
+      latitude: cf.latitude || null,
+      longitude: cf.longitude || null,
     },
     { headers: corsHeaders(request) },
   );
