@@ -20,6 +20,7 @@ import { initConnectionQuality } from './connection-quality-ui';
 import { initNetworkMap } from './network-map-ui';
 import { initKeyboardShortcuts } from './a11y';
 import { initShare } from './share';
+import { initInstallPrompt } from './install-prompt';
 import { safeInit, safeInitAsync } from './error-boundary';
 import { initTooltips } from './tooltip';
 import { initDashboard } from './tabs/dashboard-tab';
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit('Network Map', initNetworkMap);
   safeInit('Keyboard Shortcuts', initKeyboardShortcuts);
   safeInit('Share', initShare);
+  safeInit('Install Prompt', initInstallPrompt);
 });
 
 function renderInitialSkeletons(): void {

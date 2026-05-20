@@ -32,7 +32,7 @@ const TEST_WEIGHTS: Record<string, number> = {
   tls: 0.05,
 };
 
-function scoreToGrade(score: number): string {
+export function scoreToGrade(score: number): string {
   for (const [threshold, grade] of GRADE_THRESHOLDS) {
     if (score >= threshold) return grade;
   }
