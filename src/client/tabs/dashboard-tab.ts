@@ -4,6 +4,7 @@ import { speedState } from '../state/speed-state';
 import { tlsState } from '../state/tls-state';
 import { t } from '../i18n';
 import { SpeedTestHistory } from '../history';
+import { getAllHistory } from '../state/history-state';
 
 const GRADE_THRESHOLDS: [number, string][] = [
   [93, 'A+'],
@@ -79,7 +80,7 @@ function computeOverallScore(): { grade: string; score: number; testsCompleted: 
 }
 
 export function initDashboard(): void {
-  renderDashboard();
+  restoreFromHistory();
 
   appState.completedTests.subscribe(() => renderDashboard());
   dnsState.securityChecks.subscribe((checks) => {
@@ -106,6 +107,32 @@ export function initDashboard(): void {
     if (info) markCompleted('tls');
     renderDashboard();
   });
+
+  renderDashboard();
+}
+
+function restoreFromHistory(): void {
+  if (speedState.download.get() > 0 || speedState.latency.get() > 0) return;
+  const v1 = getAllHistory();
+  const legacy = SpeedTestHistory.getAll();
+  let dl = 0, ul = 0, lat = 0, jit = 0, bb = 0;
+
+  if (v1.length > 0) {
+    const s = v1[v1.length - 1].speed;
+    if (s) { dl = s.download; ul = s.upload; lat = s.latency; jit = s.jitter; bb = s.bufferbloat; }
+  } else if (legacy.length > 0) {
+    const s = legacy[legacy.length - 1];
+    dl = s.download; ul = s.upload; lat = s.latency; jit = s.jitter; bb = s.bufferbloat;
+  }
+
+  if (dl > 0) {
+    speedState.download.set(dl);
+    speedState.upload.set(ul);
+    speedState.latency.set(lat);
+    speedState.jitter.set(jit);
+    speedState.bufferbloat.set(bb);
+    markCompleted('speed');
+  }
 }
 
 function markCompleted(test: string): void {
