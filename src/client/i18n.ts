@@ -24,6 +24,24 @@ const en = {
   'nav.downloadMd': 'Download Markdown',
   'nav.savePdf': 'Save as PDF',
 
+  // Dashboard
+  'dashboard.title': 'Network Overview',
+  'dashboard.subtitle': 'Your network status at a glance',
+  'dashboard.overallScore': 'Overall Score',
+  'dashboard.testsCompleted': 'tests completed',
+  'dashboard.downloadSpeed': 'Download Speed',
+  'dashboard.latency': 'Latency',
+  'dashboard.colo': 'PoP',
+  'dashboard.quickStatus': 'Quick Status',
+  'dashboard.dnsSecurity': 'DNS Security',
+  'dashboard.webrtcLeak': 'WebRTC Leak',
+  'dashboard.connection': 'Connection',
+  'dashboard.runDns': 'Run DNS Check',
+  'dashboard.runSpeed': 'Run Speed Test',
+  'dashboard.runAll': 'Run All Tests',
+  'dashboard.emptyTitle': 'Welcome to NetCheck',
+  'dashboard.emptySubtitle': 'Run your first test to see your network overview',
+
   // Onboarding
   'onboarding.text':
     'Test your DNS, ad blocker, speed, and security headers. Pick a tab above to get started.',

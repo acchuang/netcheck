@@ -22,8 +22,10 @@ import { initKeyboardShortcuts } from './a11y';
 import { initShare } from './share';
 import { safeInit, safeInitAsync } from './error-boundary';
 import { initTooltips } from './tooltip';
+import { initDashboard } from './tabs/dashboard-tab';
 
 document.addEventListener('DOMContentLoaded', () => {
+  safeInit('Dashboard', initDashboard);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);
@@ -51,6 +53,7 @@ function renderInitialSkeletons(): void {
 
 function updateMetaForTab(tab: string): void {
   const tabNames: Record<string, string> = {
+    dashboard: 'Dashboard',
     dns: t('nav.dns'),
     speed: t('nav.speed'),
     adblock: t('nav.adblock'),

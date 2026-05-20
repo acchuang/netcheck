@@ -15,17 +15,51 @@
   <!-- Favicon (inline SVG) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e6ad2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/%3E%3C/svg%3E">
 
+  <!-- SEO: robots, canonical, hreflang -->
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://netcheck-site.oilygold.workers.dev" id="canonical-link">
+  <link rel="alternate" hreflang="en" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="zh-TW" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="zh-CN" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="es" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="ja" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="ko" href="https://netcheck-site.oilygold.workers.dev/">
+  <link rel="alternate" hreflang="x-default" href="https://netcheck-site.oilygold.workers.dev/">
+
   <!-- Open Graph -->
-  <meta property="og:title" content="NetCheck — DNS &amp; Ad Block Tester">
+  <meta property="og:title" content="NetCheck — DNS &amp; Ad Block Tester" id="og-title">
   <meta property="og:description" content="Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://netcheck-site.oilygold.workers.dev">
+  <meta property="og:url" content="https://netcheck-site.oilygold.workers.dev" id="og-url">
   <meta property="og:image" content="https://netcheck-site.oilygold.workers.dev/public/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="NetCheck">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="NetCheck — DNS &amp; Ad Block Tester">
-  <meta name="twitter:description" content="Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NetCheck — DNS &amp; Ad Block Tester" id="tw-title">
+  <meta name="twitter:description" content="Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser." id="tw-desc">
+  <meta name="twitter:image" content="https://netcheck-site.oilygold.workers.dev/public/og-image.png">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "NetCheck",
+    "url": "https://netcheck-site.oilygold.workers.dev",
+    "description": "Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser.",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "browserRequirements": "Requires JavaScript"
+  }
+  </script>
 
   <!-- PWA manifest -->
   <link rel="manifest" href="/public/manifest.json">
@@ -47,7 +81,11 @@
         <span class="nav-title">NetCheck</span>
       </div>
       <div class="nav-links">
-        <a href="#dns" class="nav-link active" data-tab="dns">
+        <a href="#dashboard" class="nav-link active" data-tab="dashboard">
+          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="nav-link-text">Dashboard</span>
+        </a>
+        <a href="#dns" class="nav-link" data-tab="dns">
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           <span class="nav-link-text">DNS Check</span>
         </a>
@@ -147,8 +185,17 @@
   </nav>
 
   <main id="main" class="main">
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="section active" role="region" tabindex="-1" aria-label="Dashboard">
+      <div class="section-header">
+        <h1 class="display" id="dashboard-title">Network Overview</h1>
+        <p class="subtitle" id="dashboard-subtitle">Your network status at a glance</p>
+      </div>
+      <div id="dashboard-content" class="section-body"></div>
+    </section>
+
     <!-- DNS Check Section -->
-    <section id="dns" class="section active" role="region" tabindex="-1" aria-label="DNS Check">
+    <section id="dns" class="section" role="region" tabindex="-1" aria-label="DNS Check">
       <div class="section-header">
         <h1 class="display" id="dns-title">DNS & Network Check</h1>
         <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>

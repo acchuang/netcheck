@@ -11,6 +11,24 @@ export const zhTW = {
   'nav.downloadMd': '下載 Markdown',
   'nav.savePdf': '儲存為 PDF',
 
+  // Dashboard
+  'dashboard.title': '網路總覽',
+  'dashboard.subtitle': '一目了然的網路狀態',
+  'dashboard.overallScore': '整體評分',
+  'dashboard.testsCompleted': '項測試已完成',
+  'dashboard.downloadSpeed': '下載速度',
+  'dashboard.latency': '延遲',
+  'dashboard.colo': 'PoP',
+  'dashboard.quickStatus': '快速狀態',
+  'dashboard.dnsSecurity': 'DNS 安全性',
+  'dashboard.webrtcLeak': 'WebRTC Leak',
+  'dashboard.connection': '連線',
+  'dashboard.runDns': '執行 DNS 檢測',
+  'dashboard.runSpeed': '執行測速',
+  'dashboard.runAll': '執行所有測試',
+  'dashboard.emptyTitle': '歡迎使用 NetCheck',
+  'dashboard.emptySubtitle': '執行第一次測試以查看網路總覽',
+
   // Onboarding
   'onboarding.text': '測試您的 DNS、廣告攔截、網速與安全標頭。點擊上方分頁開始使用。',
 

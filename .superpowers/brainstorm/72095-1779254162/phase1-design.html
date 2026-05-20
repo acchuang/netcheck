@@ -1,0 +1,116 @@
+<h2>Phase 1 — Foundation</h2>
+<p class="subtitle">Infrastructure improvements that unlock everything else. Ship in ~1 week.</p>
+
+<div class="section">
+  <div class="label">Architecture: Component Extraction Pattern</div>
+  <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem">
+    <h3 style="margin-bottom:0.75rem">Current: Monolithic UI Files</h3>
+    <div style="font-family:monospace;font-size:0.8rem;background:var(--bg-primary);border-radius:6px;padding:1rem;margin-bottom:1rem;line-height:1.8">
+      <div>dns-ui.ts <span style="color:var(--error)">← 400 lines of DOM + state + fetch + render</span></div>
+      <div>speed-ui.ts <span style="color:var(--error)">← 500 lines, same pattern</span></div>
+      <div>adblock-ui.ts <span style="color:var(--error)">← 300 lines, same pattern</span></div>
+      <div style="color:var(--text-secondary)">...6 more monolithic files</div>
+    </div>
+
+    <h3 style="margin-bottom:0.75rem">Proposed: Separated Concerns</h3>
+    <div style="font-family:monospace;font-size:0.8rem;background:var(--bg-primary);border-radius:6px;padding:1rem;line-height:1.8">
+      <div><strong>src/client/state/</strong></div>
+      <div style="margin-left:1.5rem;color:var(--success)">dns-state.ts ← reactive state, no DOM</div>
+      <div style="margin-left:1.5rem;color:var(--success)">speed-state.ts ← reactive state, no DOM</div>
+      <div style="margin-left:1.5rem;color:var(--success)">shared-state.ts ← cross-tab data sharing</div>
+      <div><strong>src/client/components/</strong></div>
+      <div style="margin-left:1.5rem;color:var(--accent)">gauge.ts ← reusable gauge component</div>
+      <div style="margin-left:1.5rem;color:var(--accent)">badge.ts ← pass/warn/fail badges</div>
+      <div style="margin-left:1.5rem;color:var(--accent)">card.ts ← result card layout</div>
+      <div><strong>src/client/tabs/</strong></div>
+      <div style="margin-left:1.5rem;color:var(--text-secondary)">dns-tab.ts ← compose state + components</div>
+      <div style="margin-left:1.5rem;color:var(--text-secondary)">speed-tab.ts ← compose state + components</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Phase 1 Deliverables</div>
+  <div class="cards">
+    <div class="card" data-choice="ci" onclick="toggleSelect(this)">
+      <div class="card-image" style="background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;aspect-ratio:16/10">
+        <div style="text-align:center;padding:1rem">
+          <div style="font-size:2rem;margin-bottom:0.5rem">⚙️</div>
+          <div style="font-family:monospace;font-size:0.75rem;text-align:left;line-height:1.5;color:var(--text-secondary)">on: push<br>&nbsp;&nbsp;- lint<br>&nbsp;&nbsp;- typecheck<br>&nbsp;&nbsp;- unit tests<br>&nbsp;&nbsp;- build check</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>CI/CD Pipeline</h3>
+        <p>GitHub Actions: lint → typecheck → test → build on every push. Deploy on main branch merge.</p>
+      </div>
+    </div>
+
+    <div class="card" data-choice="lint" onclick="toggleSelect(this)">
+      <div class="card-image" style="background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;aspect-ratio:16/10">
+        <div style="text-align:center;padding:1rem">
+          <div style="font-size:2rem;margin-bottom:0.5rem">🧹</div>
+          <div style="font-family:monospace;font-size:0.75rem;text-align:left;line-height:1.5;color:var(--text-secondary)">eslint.config.js<br>prettier.config.js<br>strict TypeScript<br>consistent formatting</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>Lint & Format</h3>
+        <p>ESLint flat config + Prettier. Consistent code style, catch common errors early.</p>
+      </div>
+    </div>
+
+    <div class="card" data-choice="components" onclick="toggleSelect(this)">
+      <div class="card-image" style="background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;aspect-ratio:16/10">
+        <div style="text-align:center;padding:1rem">
+          <div style="font-size:2rem;margin-bottom:0.5rem">🧩</div>
+          <div style="font-family:monospace;font-size:0.75rem;text-align:left;line-height:1.5;color:var(--text-secondary)">components/<br>&nbsp;&nbsp;gauge.ts<br>&nbsp;&nbsp;badge.ts<br>&nbsp;&nbsp;card.ts<br>&nbsp;&nbsp;progress.ts</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>Shared Components</h3>
+        <p>Extract reusable UI pieces (gauges, badges, cards, progress bars) into stateless render functions.</p>
+      </div>
+    </div>
+
+    <div class="card" data-choice="state" onclick="toggleSelect(this)">
+      <div class="card-image" style="background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;aspect-ratio:16/10">
+        <div style="text-align:center;padding:1rem">
+          <div style="font-size:2rem;margin-bottom:0.5rem">📊</div>
+          <div style="font-family:monospace;font-size:0.75rem;text-align:left;line-height:1.5;color:var(--text-secondary)">state/<br>&nbsp;&nbsp;observable.ts<br>&nbsp;&nbsp;dns-state.ts<br>&nbsp;&nbsp;speed-state.ts<br>&nbsp;&nbsp;shared.ts</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3>State Management</h3>
+        <p>Lightweight observable pattern. Each tab owns its state. Cross-tab sharing via a shared store.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem">
+  <div class="label">Key Decision: No Framework</div>
+  <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:1.25rem">
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:0.5rem"><strong>Keeping vanilla TypeScript with a thin reactive layer.</strong> No React, no Preact, no Lit. Here's why:</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+      <div>
+        <div style="font-size:0.8rem;font-weight:600;color:var(--success);margin-bottom:0.5rem">Why No Framework?</div>
+        <ul style="font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-left:1.25rem">
+          <li>Zero bundle size increase</li>
+          <li>No supply chain dependencies</li>
+          <li>Fits Cloudflare Workers constraints</li>
+          <li>Current code already works — don't burn it down</li>
+          <li>Observable pattern adds ~100 LOC total</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:0.8rem;font-weight:600;color:var(--accent);margin-bottom:0.5rem">What We Add Instead</div>
+        <ul style="font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-left:1.25rem">
+          <li><code>observable.ts</code> — tiny pub/sub reactive primitive</li>
+          <li><code>createState()</code> — wraps data + subscribers</li>
+          <li><code>derive()</code> — computed values from other state</li>
+          <li><code>auto-render</code> — UI re-renders when state changes</li>
+          <li>Familiar mental model, no learning curve</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

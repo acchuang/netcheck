@@ -1,0 +1,82 @@
+<h2>NetCheck — Current State & Enhancement Opportunities</h2>
+<p class="subtitle">8 tabs · Vanilla TypeScript SPA · Cloudflare Workers · Zero data collection</p>
+
+<div class="section">
+  <div class="label">Current Feature Tabs</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem">
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">🔍</div>
+      <div style="font-weight:600;font-size:0.85rem">DNS Check</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">IP, resolvers, leaks</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">⚡</div>
+      <div style="font-weight:600;font-size:0.85rem">Speed Test</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">Down/up/latency/jitter</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">🛡️</div>
+      <div style="font-weight:600;font-size:0.85rem">Ad Block Test</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">35 tests, 7 categories</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">🔒</div>
+      <div style="font-weight:600;font-size:0.85rem">Headers</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">Security header scan</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">👆</div>
+      <div style="font-weight:600;font-size:0.85rem">Fingerprint</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">6-cat uniqueness score</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">📶</div>
+      <div style="font-weight:600;font-size:0.85rem">Quality</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">TLS, timing, stability</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">🌏</div>
+      <div style="font-weight:600;font-size:0.85rem">Network Map</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">Global latency map</div>
+    </div>
+    <div style="background:var(--bg-tertiary);border-radius:8px;padding:0.75rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:0.25rem">ℹ️</div>
+      <div style="font-weight:600;font-size:0.85rem">About</div>
+      <div style="font-size:0.7rem;color:var(--text-secondary)">Documentation</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Enhancement Opportunity Areas</div>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="ux" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>UX & Design Polish</h3>
+        <p>Dashboard-style overview, better navigation (sidebar?), animated transitions, improved mobile experience, onboarding refinements, results comparison, shareable report links</p>
+      </div>
+    </div>
+    <div class="option" data-choice="features" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>New Features & Tools</h3>
+        <p>WebSocket latency test, IPv6 readiness check, TLS certificate inspector, traceroute visualization, bandwidth monitoring over time, leak test for DNS over HTTPS</p>
+      </div>
+    </div>
+    <div class="option" data-choice="infra" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Infrastructure & DX</h3>
+        <p>CI/CD pipeline (GitHub Actions), ESLint + Prettier, component architecture refactor, unit test coverage, E2E test expansion, performance budget</p>
+      </div>
+    </div>
+    <div class="option" data-choice="all" onclick="toggleSelect(this)">
+      <div class="letter">D</div>
+      <div class="content">
+        <h3>All of the Above</h3>
+        <p>Comprehensive enhancement across UX, features, and infrastructure — a holistic upgrade</p>
+      </div>
+    </div>
+  </div>
+</div>
