@@ -81,42 +81,67 @@
         <span class="nav-title">NetCheck</span>
       </div>
       <div class="nav-links">
-        <a href="#dashboard" class="nav-link active" data-tab="dashboard">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span class="nav-link-text">Dashboard</span>
-        </a>
-        <a href="#dns" class="nav-link" data-tab="dns">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span class="nav-link-text">DNS Check</span>
-        </a>
-        <a href="#speed" class="nav-link" data-tab="speed">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span class="nav-link-text">Speed Test</span>
-        </a>
-        <a href="#adblock" class="nav-link" data-tab="adblock">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span class="nav-link-text">Ad Block Test</span>
-        </a>
-        <a href="#headers" class="nav-link" data-tab="headers">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-          <span class="nav-link-text">Headers</span>
-        </a>
-        <a href="#fingerprint" class="nav-link" data-tab="fingerprint">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-          <span class="nav-link-text" id="nav-fingerprint-text">Fingerprint</span>
-        </a>
-        <a href="#quality" class="nav-link" data-tab="quality">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          <span class="nav-link-text" id="nav-quality-text">Quality</span>
-        </a>
-        <a href="#network" class="nav-link" data-tab="network">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span class="nav-link-text" id="nav-network-text">Network</span>
-        </a>
-        <a href="#about" class="nav-link" data-tab="about">
-          <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span class="nav-link-text" id="nav-about-text">About</span>
-        </a>
+        <div class="nav-category">
+          <span class="nav-category-label">Overview</span>
+          <div class="nav-category-links">
+            <a href="#dashboard" class="nav-link active" data-tab="dashboard">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span class="nav-link-text">Dashboard</span>
+            </a>
+          </div>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-label">Security</span>
+          <div class="nav-category-links">
+            <a href="#dns" class="nav-link" data-tab="dns">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span class="nav-link-text">DNS Check</span>
+            </a>
+            <a href="#adblock" class="nav-link" data-tab="adblock">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span class="nav-link-text">Ad Block Test</span>
+            </a>
+            <a href="#headers" class="nav-link" data-tab="headers">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <span class="nav-link-text">Headers</span>
+            </a>
+          </div>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-label">Performance</span>
+          <div class="nav-category-links">
+            <a href="#speed" class="nav-link" data-tab="speed">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span class="nav-link-text">Speed Test</span>
+            </a>
+            <a href="#quality" class="nav-link" data-tab="quality">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              <span class="nav-link-text" id="nav-quality-text">Quality</span>
+            </a>
+          </div>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-label">Privacy</span>
+          <div class="nav-category-links">
+            <a href="#fingerprint" class="nav-link" data-tab="fingerprint">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              <span class="nav-link-text" id="nav-fingerprint-text">Fingerprint</span>
+            </a>
+          </div>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-label">Explore</span>
+          <div class="nav-category-links">
+            <a href="#network" class="nav-link" data-tab="network">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span class="nav-link-text" id="nav-network-text">Network</span>
+            </a>
+            <a href="#about" class="nav-link" data-tab="about">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span class="nav-link-text" id="nav-about-text">About</span>
+            </a>
+          </div>
+        </div>
       </div>
       <div class="nav-actions">
         <div class="export-dropdown" id="lang-dropdown">
