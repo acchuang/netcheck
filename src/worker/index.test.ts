@@ -177,7 +177,7 @@ describe('checkRateLimit', () => {
   });
 
   function makeRequest(path: string, ip = '1.2.3.4'): Request {
-    return new Request(`https://netcheck-site.oilygold.workers.dev${path}`, {
+    return new Request(`https://netcheck.oilygold.xyz${path}`, {
       headers: { 'cf-connecting-ip': ip },
     });
   }
@@ -241,7 +241,7 @@ describe('corsHeaders', () => {
   it('returns the production origin for unknown origins', () => {
     const headers = corsHeaders();
     expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck-site.oilygold.workers.dev',
+      'https://netcheck.oilygold.xyz',
     );
   });
 
@@ -255,11 +255,11 @@ describe('corsHeaders', () => {
 
   it('allows the production workers.dev origin', () => {
     const req = new Request('https://example.com', {
-      headers: { Origin: 'https://netcheck-site.oilygold.workers.dev' },
+      headers: { Origin: 'https://netcheck.oilygold.xyz' },
     });
     const headers = corsHeaders(req);
     expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck-site.oilygold.workers.dev',
+      'https://netcheck.oilygold.xyz',
     );
   });
 
@@ -277,7 +277,7 @@ describe('corsHeaders', () => {
     });
     const headers = corsHeaders(req);
     expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck-site.oilygold.workers.dev',
+      'https://netcheck.oilygold.xyz',
     );
   });
 
@@ -374,7 +374,7 @@ function makeKvMock(initialValue?: string): KVNamespace {
 describe('checkRateLimitKV', () => {
   it('returns null when under limit', async () => {
     const kv = makeKvMock('5');
-    const req = new Request('https://netcheck-site.oilygold.workers.dev/api/ip', {
+    const req = new Request('https://netcheck.oilygold.xyz/api/ip', {
       headers: { 'cf-connecting-ip': '1.2.3.4' },
     });
     const result = await checkRateLimitKV(req, kv);
@@ -383,7 +383,7 @@ describe('checkRateLimitKV', () => {
 
   it('returns 429 when at limit', async () => {
     const kv = makeKvMock(String(RATE_LIMIT_MAX));
-    const req = new Request('https://netcheck-site.oilygold.workers.dev/api/ip', {
+    const req = new Request('https://netcheck.oilygold.xyz/api/ip', {
       headers: { 'cf-connecting-ip': '1.2.3.4' },
     });
     const result = await checkRateLimitKV(req, kv);
@@ -393,7 +393,7 @@ describe('checkRateLimitKV', () => {
 
   it('returns null when KV key does not exist', async () => {
     const kv = makeKvMock(); // no value
-    const req = new Request('https://netcheck-site.oilygold.workers.dev/api/ip', {
+    const req = new Request('https://netcheck.oilygold.xyz/api/ip', {
       headers: { 'cf-connecting-ip': '1.2.3.4' },
     });
     const result = await checkRateLimitKV(req, kv);
@@ -403,7 +403,7 @@ describe('checkRateLimitKV', () => {
   it('uses speed test limit for speedtest routes', async () => {
     const kv = makeKvMock('60'); // at speed burst limit
     const req = new Request(
-      'https://netcheck-site.oilygold.workers.dev/api/speedtest/down?bytes=1024',
+      'https://netcheck.oilygold.xyz/api/speedtest/down?bytes=1024',
       {
         headers: { 'cf-connecting-ip': '5.6.7.8' },
       },
@@ -415,7 +415,7 @@ describe('checkRateLimitKV', () => {
 
   it('includes CORS headers in KV rate limit response', async () => {
     const kv = makeKvMock(String(RATE_LIMIT_MAX));
-    const req = new Request('https://netcheck-site.oilygold.workers.dev/api/ip', {
+    const req = new Request('https://netcheck.oilygold.xyz/api/ip', {
       headers: { 'cf-connecting-ip': '1.2.3.4' },
     });
     const result = await checkRateLimitKV(req, kv);

@@ -35,7 +35,7 @@
 - [ ] **Step 3:** Configure CORS on each bucket:
 ```json
 [{
-  "AllowedOrigins": ["https://netcheck-site.oilygold.workers.dev", "http://localhost:8787"],
+  "AllowedOrigins": ["https://netcheck.oilygold.xyz", "http://localhost:8787"],
   "AllowedMethods": ["GET"]
 }]
 ```
@@ -44,12 +44,12 @@
 
 | Subdomain | R2 Bucket |
 |---|---|
-| `wnam-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-wnam |
-| `enam-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-enam |
-| `weur-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-weur |
-| `eeur-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-eeur |
-| `apac-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-apac |
-| `oc-ping.netcheck-site.oilygold.workers.dev` | netcheck-ping-oc |
+| `wnam-ping.netcheck.oilygold.xyz` | netcheck-ping-wnam |
+| `enam-ping.netcheck.oilygold.xyz` | netcheck-ping-enam |
+| `weur-ping.netcheck.oilygold.xyz` | netcheck-ping-weur |
+| `eeur-ping.netcheck.oilygold.xyz` | netcheck-ping-eeur |
+| `apac-ping.netcheck.oilygold.xyz` | netcheck-ping-apac |
+| `oc-ping.netcheck.oilygold.xyz` | netcheck-ping-oc |
 
 > **Note:** The simplest approach is enabling r2.dev public access on each bucket. The URLs will be `https://pub-<hash>.r2.dev/ping.json`. Record these URLs.
 

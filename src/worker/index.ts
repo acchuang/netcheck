@@ -1200,7 +1200,7 @@ async function handleMapProbes(request: Request): Promise<Response> {
 export function corsHeaders(request?: Request): Record<string, string> {
   const origin = request?.headers.get('Origin') || '';
   const allowed = [
-    'https://netcheck-site.oilygold.workers.dev',
+    'https://netcheck.oilygold.xyz',
     'https://7b64681b.netcheck-site.pages.dev',
     'http://localhost:8787',
     'http://127.0.0.1:8787',

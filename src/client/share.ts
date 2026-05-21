@@ -111,7 +111,7 @@ export function buildSummary(): string {
   }
 
   parts.push('');
-  parts.push('—— via NetCheck (netcheck-site.oilygold.workers.dev)');
+  parts.push('—— via NetCheck (netcheck.oilygold.xyz)');
   return parts.join('\n');
 }
 

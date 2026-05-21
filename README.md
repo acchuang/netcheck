@@ -2,7 +2,7 @@
 
 Network diagnostics, security checks, and browser privacy — all in one tool, all running locally in your browser.
 
-**Live:** [netcheck-site.oilygold.workers.dev](https://netcheck-site.oilygold.workers.dev)
+**Live:** [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)
 
 ## Features
 
