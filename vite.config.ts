@@ -9,4 +9,7 @@ export default defineConfig({
       configPath: "./wrangler.toml",
     }),
   ],
+  build: {
+    minify: "esbuild",
+  },
 });

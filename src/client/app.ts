@@ -1,9 +1,4 @@
 import './app.css';
-import { DnsCheck } from './dns-check';
-import { AdBlockTest } from './adblock-test';
-import { FilterListDetector } from './filter-lists';
-import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from './speed-test';
-import { SpeedTestHistory } from './history';
 import { ReportExporter } from './export-report';
 import { t } from './i18n';
 import { renderSkeletonRows } from './ui-utils';

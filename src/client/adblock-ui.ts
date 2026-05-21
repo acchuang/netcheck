@@ -1,6 +1,5 @@
 import { AdBlockTest } from './adblock-test';
 import { t } from './i18n';
-import { setBadge, renderSkeletonRows } from './ui-utils';
 import { affiliate } from './affiliates';
 import { CnameChecker } from './adblock-cname';
 

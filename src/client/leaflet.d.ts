@@ -30,7 +30,9 @@ export interface Polyline extends Layer {
   addTo(map: Map): Polyline;
 }
 
-export interface Icon {}
+export interface Icon {
+  addTo(map: Map): Icon;
+}
 
 export interface L {
   map(element: string | HTMLElement, options?: Record<string, unknown>): Map;

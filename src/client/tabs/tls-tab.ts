@@ -2,7 +2,6 @@ import { tlsState, runTlsCheck } from '../state/tls-state';
 import { t } from '../i18n';
 import { appState } from '../state/shared-state';
 import { renderBadge } from '../components/badge';
-import { renderCard } from '../components/card';
 import type { TlsInfo } from '../state/tls-state';
 
 const GRADE_COLORS: Record<string, string> = {

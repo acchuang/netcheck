@@ -22,7 +22,7 @@ function csp(): string {
   ].join('; ');
 }
 
-function securityHeaders(request?: Request): Record<string, string> {
+function securityHeaders(_request?: Request): Record<string, string> {
   return {
     'Content-Security-Policy': csp(),
     'X-Content-Type-Options': 'nosniff',
@@ -1434,7 +1434,7 @@ async function handleDnsBenchmark(request: Request): Promise<Response> {
     let pathTiming = { networkRtt: 0, processingTime: 0, total: 0 };
     try {
       const start = Date.now();
-      const res = await fetch(`https://${r.host}/dns-query?name=${coldDomain}&type=A`, {
+      const _res = await fetch(`https://${r.host}/dns-query?name=${coldDomain}&type=A`, {
         headers: { Accept: 'application/dns-json' },
         signal: AbortSignal.timeout(4000),
       });

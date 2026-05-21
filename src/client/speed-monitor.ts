@@ -1,6 +1,5 @@
 import { SpeedTest, type SpeedTestResults } from './speed-test';
 import { SpeedTestHistory } from './history';
-import { addGraphPoint, drawSpeedGraph } from './speed-graph';
 import { t } from './i18n';
 import { announce } from './a11y';
 

@@ -8,8 +8,6 @@ import { SpeedMonitor, type MonitorDuration } from './speed-monitor';
 
 import { gradeKeys, renderSpeedSuggestions, updateServerBadge } from './speed-suggestions';
 import { onLocaleChange } from './locale-events';
-import { formatColo } from './cf-pops';
-import { announce, announceProgress } from './a11y';
 
 export function initSpeedTest(): void {
   document.getElementById('speed-start-btn')!.addEventListener('click', runSpeedTest);

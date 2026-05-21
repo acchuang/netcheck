@@ -379,7 +379,7 @@ export async function runDnsAudit(): Promise<void> {
 }
 
 function renderDnsSuggestions({
-  resolvers,
+  resolvers: _resolvers,
   securityChecks,
   reachable,
 }: {

@@ -1,5 +1,3 @@
-import { t } from './i18n';
-
 const CNAME_PROBES: { name: string; domain: string; category: string }[] = [
   { name: 'Google Analytics', domain: 'www.google-analytics.com', category: 'Analytics' },
   { name: 'Facebook Pixel', domain: 'connect.facebook.net', category: 'Social' },

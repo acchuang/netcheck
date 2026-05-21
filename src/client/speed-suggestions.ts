@@ -1,6 +1,6 @@
-import { SpeedTest, type SpeedTestResults } from './speed-test';
+import { type SpeedTestResults } from './speed-test';
 import { t } from './i18n';
-import { formatColo, CF_POPS, haversineKm } from './cf-pops';
+import { CF_POPS, haversineKm } from './cf-pops';
 import { affiliate } from './affiliates';
 
 export const gradeKeys: Record<string, string> = {

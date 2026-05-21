@@ -99,10 +99,8 @@ it('returns C for TLSv1.2 + weak cipher + no FS + HSTS', () => {
     expect(computeTlsGrade('TLSv1.2', 'TLS_RSA_WITH_RC4_128_SHA', false, 'Enabled')).toBe('C');
   });
 
-  it('returns D for TLSv1.0 + AES_128 + no FS + no HSTS', () => {
-    // 10 (v1.0) + 20 (aes_128) + 0 + 0 = 30 → F
-    // Actually 30 < 40 so F. Let's test D:
-    // TLSv1.2 + weak + FS = 30+10+20 = 60 → D
+  it('returns D for TLSv1.2 + weak cipher + no FS + no HSTS (score 40)', () => {
+    // 30 (v1.2) + 10 (weak RC4) + 0 (no FS) + 0 (no HSTS) = 40 → D
     expect(computeTlsGrade('TLSv1.2', 'TLS_RSA_WITH_RC4_128_SHA', false, null)).toBe('D');
   });
 

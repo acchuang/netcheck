@@ -10,7 +10,7 @@ describe('ConnectionQuality.computeScore', () => {
     serverTcpRtt: 30,
   };
 
-  const decentTls: TlsInfo = {
+  const _decentTls: TlsInfo = {
     version: 'TLS 1.2',
     cipher: 'AEAD-AES128-GCM-SHA256',
     httpProtocol: 'HTTP/1.1',
@@ -35,7 +35,7 @@ describe('ConnectionQuality.computeScore', () => {
     lossPercent: 0,
   };
 
-  const fairStability: StabilityResults = {
+  const _fairStability: StabilityResults = {
     min: 10,
     max: 30,
     mean: 18,
@@ -46,7 +46,7 @@ describe('ConnectionQuality.computeScore', () => {
     lossPercent: 3,
   };
 
-  const poorStability: StabilityResults = {
+  const _poorStability: StabilityResults = {
     min: 50,
     max: 200,
     mean: 100,
@@ -65,7 +65,7 @@ describe('ConnectionQuality.computeScore', () => {
     dataSaver: false,
   };
 
-  const mediumConnection: ConnectionInfo = {
+  const _mediumConnection: ConnectionInfo = {
     type: 'wifi',
     effectiveType: '3g',
     downlinkMbps: 5,

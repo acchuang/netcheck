@@ -1,4 +1,3 @@
-import { announce } from './a11y';
 import { t } from './i18n';
 
 interface BenchmarkScenario {

@@ -146,7 +146,7 @@ function renderDashboard(): void {
   const container = document.getElementById('dashboard-content');
   if (!container) return;
 
-  const { grade, score, testsCompleted } = computeOverallScore();
+  const { grade, score: _score, testsCompleted } = computeOverallScore();
   const empty = testsCompleted === 0;
 
   if (empty) {
@@ -174,7 +174,7 @@ function renderDashboard(): void {
         )
       : 0;
 
-  let statsHtml = `
+  const statsHtml = `
     <div class="dashboard-stats">
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.overallScore', 'Overall Score')}</div>
@@ -203,7 +203,7 @@ function renderDashboard(): void {
 
   const checks = dnsState.securityChecks.get();
   const webrtcLeak = dnsState.webrtcLeak.get();
-  const adBlockScore = 0;
+  const _adBlockScore = 0;
   const hasDns = appState.completedTests.get().includes('dns');
 
   let statusHtml = `<div class="dashboard-quick-status">
@@ -224,7 +224,7 @@ function renderDashboard(): void {
 
   const hasSpeed = appState.completedTests.get().includes('speed');
   if (hasSpeed) {
-    const spdGrade = speedState.grade.get();
+    const _spdGrade = speedState.grade.get();
     const conn = dnsState.ipData.get()?.httpProtocol || '—';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.connection', 'Connection')}</span>
@@ -234,7 +234,7 @@ function renderDashboard(): void {
 
   statusHtml += `</div></div>`;
 
-  let actionsHtml = `<div class="dash-actions">
+  const actionsHtml = `<div class="dash-actions">
     <button class="btn btn-primary" data-action="run-dns">${t('dashboard.runDns', 'Run DNS Check')}</button>
     <button class="btn btn-primary" data-action="run-speed">${t('dashboard.runSpeed', 'Run Speed Test')}</button>
     <button class="btn btn-secondary" data-action="run-all">${t('dashboard.runAll', 'Run All Tests')}</button>

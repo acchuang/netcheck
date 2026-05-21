@@ -1,10 +1,10 @@
 import { t } from './i18n';
 
-let pollInterval: ReturnType<typeof setInterval> | null = null;
+let _pollInterval: ReturnType<typeof setInterval> | null = null;
 
 export function initAnalytics(): void {
   fetchAnalytics();
-  pollInterval = setInterval(fetchAnalytics, 60_000);
+  _pollInterval = setInterval(fetchAnalytics, 60_000);
 }
 
 function formatCount(n: number): string {

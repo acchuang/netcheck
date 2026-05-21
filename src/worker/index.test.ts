@@ -8,7 +8,6 @@ import {
   validateTargetUrl,
   rateLimitMap,
   RATE_LIMIT_MAX,
-  RATE_LIMIT_KV_PREFIX,
   RATE_LIMIT_SPEED_BURST,
 } from './index';
 
