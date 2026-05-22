@@ -19,8 +19,8 @@ async function fetchAnalytics(): Promise<void> {
   try {
     const res = await fetch('/api/analytics');
     if (!res.ok) return;
-    const data: { activeNow: number; uniqueToday: number } = await res.json();
-    badge.innerHTML = `<span class="analytics-dot"></span> ${formatCount(data.activeNow)} ${t('analytics.activeNow')} · ${formatCount(data.uniqueToday)} ${t('analytics.uniqueToday')}`;
+    const data: { activeNow: number; uniqueToday: number; totalUnique: number } = await res.json();
+    badge.innerHTML = `<span class="analytics-dot"></span> ${formatCount(data.activeNow)} ${t('analytics.activeNow')} · ${formatCount(data.uniqueToday)} ${t('analytics.uniqueToday')} · ${formatCount(data.totalUnique)} ${t('analytics.total')}`;
   } catch {
     badge.textContent = '';
   }

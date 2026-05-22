@@ -498,6 +498,7 @@ const en = {
   // Analytics
   'analytics.activeNow': 'online',
   'analytics.uniqueToday': 'visitors today',
+  'analytics.total': 'total',
 
   // Fingerprint
   'nav.fingerprint': 'Fingerprint',

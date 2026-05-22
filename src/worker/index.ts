@@ -349,18 +349,21 @@ async function trackVisitor(request: Request, env: Env): Promise<void> {
     const minuteKey = `active:${Math.floor(now / 60000)}`;
     const dayKey = `unique:${new Date(now).toISOString().slice(0, 10)}`;
 
-    const [minuteData, dayData] = await Promise.all([
+    const [minuteData, dayData, totalData] = await Promise.all([
       env.ANALYTICS.get(minuteKey, 'json') as Promise<Record<string, number> | null>,
       env.ANALYTICS.get(dayKey, 'json') as Promise<Record<string, number> | null>,
+      env.ANALYTICS.get('total:visitors', 'json') as Promise<Record<string, number> | null>,
     ]);
 
     const minuteMap = minuteData || {};
     const dayMap = dayData || {};
+    const totalMap = totalData || {};
 
     const isNewMinute = !(fingerprint in minuteMap);
     const isNewDay = !(fingerprint in dayMap);
+    const isNewTotal = !(fingerprint in totalMap);
 
-    if (isNewMinute || isNewDay) {
+    if (isNewMinute || isNewDay || isNewTotal) {
       const writes: Promise<void>[] = [];
       if (isNewMinute) {
         minuteMap[fingerprint] = now;
@@ -373,6 +376,10 @@ async function trackVisitor(request: Request, env: Env): Promise<void> {
         writes.push(
           env.ANALYTICS.put(dayKey, JSON.stringify(dayMap), { expirationTtl: 86400 * 2 }),
         );
+      }
+      if (isNewTotal) {
+        totalMap[fingerprint] = now;
+        writes.push(env.ANALYTICS.put('total:visitors', JSON.stringify(totalMap)));
       }
       await Promise.all(writes);
     }
@@ -388,13 +395,14 @@ async function handleAnalytics(env: Env, request: Request): Promise<Response> {
     const prevMinute = currentMinute - 1;
     const today = new Date(now).toISOString().slice(0, 10);
 
-    const [currentData, prevData, todayData] = await Promise.all([
+    const [currentData, prevData, todayData, totalData] = await Promise.all([
       env.ANALYTICS.get(`active:${currentMinute}`, 'json') as Promise<Record<
         string,
         number
       > | null>,
       env.ANALYTICS.get(`active:${prevMinute}`, 'json') as Promise<Record<string, number> | null>,
       env.ANALYTICS.get(`unique:${today}`, 'json') as Promise<Record<string, number> | null>,
+      env.ANALYTICS.get('total:visitors', 'json') as Promise<Record<string, number> | null>,
     ]);
 
     const currentMap = currentData || {};
@@ -410,15 +418,22 @@ async function handleAnalytics(env: Env, request: Request): Promise<Response> {
     const todayMap = todayData || {};
     const uniqueToday = Object.keys(todayMap).length || 1;
 
+    const totalMap = totalData || {};
+    const totalUnique = Object.keys(totalMap).length || 1;
+
     return Response.json(
       {
         activeNow,
         uniqueToday,
+        totalUnique,
       },
       { headers: { ...corsHeaders(request), 'Cache-Control': 'public, max-age=30' } },
     );
   } catch {
-    return Response.json({ activeNow: 1, uniqueToday: 1 }, { headers: corsHeaders(request) });
+    return Response.json(
+      { activeNow: 1, uniqueToday: 1, totalUnique: 1 },
+      { headers: corsHeaders(request) },
+    );
   }
 }
 

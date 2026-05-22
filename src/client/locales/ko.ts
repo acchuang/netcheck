@@ -480,6 +480,7 @@ export const ko = {
   'footer.privacyBadge': '100% 클라이언트 사이드 — 브라우저 외부로 데이터가 나가지 않습니다',
   'analytics.activeNow': '온라인',
   'analytics.uniqueToday': '오늘 방문자',
+  'analytics.total': '전체',
   'nav.fingerprint': '핑거프린트',
   'fp.title': '브라우저 핑거프린트',
   'fp.subtitle': '브라우저가 어떤 정보를 노출하는지 확인하세요. 데이터는 기기를 떠나지 않습니다.',

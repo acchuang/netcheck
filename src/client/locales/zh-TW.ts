@@ -514,6 +514,7 @@ export const zhTW = {
   // Analytics
   'analytics.activeNow': '在線',
   'analytics.uniqueToday': '今日訪客',
+  'analytics.total': '總計',
 
   // Fingerprint
   'nav.fingerprint': '指紋',

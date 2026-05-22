@@ -473,6 +473,7 @@ export const zhCN = {
   'footer.privacyBadge': '100% 客户端处理 — 数据不会离开您的浏览器',
   'analytics.activeNow': '在线',
   'analytics.uniqueToday': '今日访客',
+  'analytics.total': '总计',
   'nav.fingerprint': '指纹',
   'fp.title': '浏览器指纹',
   'fp.subtitle': '查看您的浏览器暴露了哪些信息。数据不会离开您的设备。',

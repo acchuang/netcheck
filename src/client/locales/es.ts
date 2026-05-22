@@ -502,6 +502,7 @@ export const es = {
   'footer.privacyBadge': '100% lado del cliente — ningún dato sale de tu navegador',
   'analytics.activeNow': 'en línea',
   'analytics.uniqueToday': 'visitantes hoy',
+  'analytics.total': 'total',
   'nav.fingerprint': 'Huella digital',
   'fp.title': 'Huella digital del navegador',
   'fp.subtitle': 'Mira lo que tu navegador revela sobre ti. Ningún dato sale de tu dispositivo.',

@@ -490,6 +490,7 @@ export const ja = {
   'footer.privacyBadge': '100% クライアントサイド — データはブラウザから流出しません',
   'analytics.activeNow': 'オンライン',
   'analytics.uniqueToday': '今日の訪問者',
+  'analytics.total': '合計',
   'nav.fingerprint': 'フィンガープリント',
   'fp.title': 'ブラウザフィンガープリント',
   'fp.subtitle':
