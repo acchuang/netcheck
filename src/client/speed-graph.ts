@@ -6,9 +6,6 @@ export const speedGraphData: {
   upload: [],
 };
 
-let cachedW = 0;
-let cachedH = 0;
-
 export function addGraphPoint(phase: 'download' | 'upload', time: number, value: number): void {
   speedGraphData[phase].push({ time, value });
 }
@@ -29,9 +26,6 @@ export function drawSpeedGraph(): void {
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  cachedW = rect.width;
-  cachedH = rect.height;
-
   const w = rect.width;
   const h = rect.height;
   const pad = { top: 8, right: 12, bottom: 20, left: 40 };
