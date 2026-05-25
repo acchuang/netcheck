@@ -487,7 +487,7 @@ export const ja = {
   'footer.text':
     'NetCheck — DNS と広告ブロックの診断。すべてのテストはブラウザ内でローカルに実行されます。',
   'footer.privacy': 'プライバシー',
-  'footer.privacyBadge': '100% クライアントサイド — データはブラウザから流出しません',
+  'footer.privacyBadge': 'クライアントサイド診断 — AI 分析は Cloudflare AI を使用（オプトイン、ログなし）',
   'analytics.activeNow': 'オンライン',
   'analytics.uniqueToday': '今日の訪問者',
   'analytics.total': '合計',

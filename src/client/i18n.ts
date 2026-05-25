@@ -493,7 +493,7 @@ const en = {
   // Footer
   'footer.text': 'NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.',
   'footer.privacy': 'Privacy',
-  'footer.privacyBadge': '100% client-side — no data leaves your browser',
+  'footer.privacyBadge': 'Client-side diagnostics — AI analysis uses Cloudflare AI (opt-in, no logs)',
 
   // Analytics
   'analytics.activeNow': 'online',

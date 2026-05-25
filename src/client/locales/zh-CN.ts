@@ -470,7 +470,7 @@ export const zhCN = {
   'headers.corp.desc': '控制哪些源可以嵌入此资源',
   'footer.text': 'NetCheck — DNS 与广告拦截诊断。所有测试均在您的浏览器中本地运行。',
   'footer.privacy': '隐私',
-  'footer.privacyBadge': '100% 客户端处理 — 数据不会离开您的浏览器',
+  'footer.privacyBadge': '客户端诊断 — AI 分析使用 Cloudflare AI（可选，无日志记录）',
   'analytics.activeNow': '在线',
   'analytics.uniqueToday': '今日访客',
   'analytics.total': '总计',

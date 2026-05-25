@@ -509,7 +509,7 @@ export const zhTW = {
   // Footer
   'footer.text': 'NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。',
   'footer.privacy': '隱私',
-  'footer.privacyBadge': '100% 客戶端 — 無資料離開您的瀏覽器',
+  'footer.privacyBadge': '客戶端診斷 — AI 分析使用 Cloudflare AI（可選，無日誌記錄）',
 
   // Analytics
   'analytics.activeNow': '在線',

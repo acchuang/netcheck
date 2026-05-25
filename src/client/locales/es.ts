@@ -499,7 +499,7 @@ export const es = {
   'footer.text':
     'NetCheck — Diagnósticos DNS y de bloqueo de anuncios. Todas las pruebas se ejecutan localmente en tu navegador.',
   'footer.privacy': 'Privacidad',
-  'footer.privacyBadge': '100% lado del cliente — ningún dato sale de tu navegador',
+  'footer.privacyBadge': 'Diagnóstico local — análisis IA vía Cloudflare AI (opcional, sin registros)',
   'analytics.activeNow': 'en línea',
   'analytics.uniqueToday': 'visitantes hoy',
   'analytics.total': 'total',

@@ -477,7 +477,7 @@ export const ko = {
   'headers.corp.desc': '어떤 오리진이 이 리소스를 임베드할 수 있는지 제어',
   'footer.text': 'NetCheck — DNS 및 광고 차단 진단. 모든 테스트는 브라우저에서 로컬로 실행됩니다.',
   'footer.privacy': '개인정보',
-  'footer.privacyBadge': '100% 클라이언트 사이드 — 브라우저 외부로 데이터가 나가지 않습니다',
+  'footer.privacyBadge': '클라이언트 진단 — AI 분석은 Cloudflare AI 사용 (선택 사항, 로그 없음)',
   'analytics.activeNow': '온라인',
   'analytics.uniqueToday': '오늘 방문자',
   'analytics.total': '전체',
