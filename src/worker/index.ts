@@ -6,6 +6,7 @@ interface Env {
   PING_EEUR: R2Bucket;
   PING_APAC: R2Bucket;
   PING_OC: R2Bucket;
+  AI: any;
 }
 
 function csp(): string {
@@ -143,6 +144,11 @@ export default {
         trackVisitor(request, env).catch(() => {});
         return withSecurityHeaders(await handleAdBlockSubmit(env, request), request);
       }
+    }
+
+    if (url.pathname === '/api/ai/analyze' && request.method === 'POST') {
+      trackVisitor(request, env).catch(() => {});
+      return withSecurityHeaders(await handleAiAnalyze(request, env), request);
     }
 
     if (url.pathname === '/robots.txt') {
@@ -1549,5 +1555,64 @@ async function handleAdBlockSubmit(env: Env, request: Request): Promise<Response
     return Response.json({ ok: true }, { headers: corsHeaders(request) });
   } catch {
     return Response.json({ ok: false }, { headers: corsHeaders(request) });
+  }
+}
+
+// ─── AI Analysis ─────────────────────────────────────────────────
+
+const aiRateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const AI_RATE_LIMIT_MAX = 10;
+const AI_RATE_LIMIT_WINDOW = 60_000;
+
+function checkAiRateLimit(request: Request): Response | null {
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const now = Date.now();
+  const entry = aiRateLimitMap.get(ip);
+
+  if (!entry || now - entry.windowStart > AI_RATE_LIMIT_WINDOW) {
+    aiRateLimitMap.set(ip, { count: 1, windowStart: now });
+    return null;
+  }
+
+  entry.count++;
+  if (entry.count > AI_RATE_LIMIT_MAX) {
+    return Response.json(
+      { error: 'AI rate limit exceeded', retryAfter: Math.ceil((AI_RATE_LIMIT_WINDOW - (now - entry.windowStart)) / 1000) },
+      { status: 429, headers: { ...corsHeaders(), 'Retry-After': '60' } },
+    );
+  }
+
+  return null;
+}
+
+async function handleAiAnalyze(request: Request, env: Env): Promise<Response> {
+  const rl = checkAiRateLimit(request);
+  if (rl) return rl;
+
+  try {
+    const body = (await request.json()) as { prompt: string };
+    if (!body.prompt || typeof body.prompt !== 'string') {
+      return Response.json(
+        { error: 'Missing prompt' },
+        { status: 400, headers: corsHeaders(request) },
+      );
+    }
+
+    const result = (await env.AI.run('@cf/meta/llama-3.2-3b-instruct', {
+      messages: [{ role: 'user', content: body.prompt }],
+      max_tokens: 1024,
+      temperature: 0.7,
+    })) as { response: string };
+
+    return Response.json(
+      { analysis: result.response },
+      { headers: corsHeaders(request) },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'AI analysis failed';
+    return Response.json(
+      { error: msg },
+      { status: 500, headers: corsHeaders(request) },
+    );
   }
 }

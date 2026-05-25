@@ -85,6 +85,7 @@ const tabShortcuts: Record<string, string> = {
   '6': 'quality',
   '7': 'network',
   '8': 'about',
+  '9': 'ai-analysis',
 };
 
 function hideExport(): void {

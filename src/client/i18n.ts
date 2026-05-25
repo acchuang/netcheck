@@ -620,6 +620,29 @@ const en = {
     '{0} of {1} categories have unblocked trackers. Consider adding more filter lists or switching to a more comprehensive ad blocker.',
   'adblock.suggestPerfect': 'All trackers and ads blocked. Your ad blocker is working perfectly.',
   'adblock.uncertain': 'Uncertain',
+
+  // AI Analysis
+  'ai.title': 'AI Analysis',
+  'ai.subtitle': 'AI-powered insights into your network health',
+  'ai.analyze': 'Analyze My Results',
+  'ai.analyzing': 'Analyzing your results...',
+  'ai.complete': 'Analysis complete',
+  'ai.error': 'Analysis failed',
+  'ai.downloading': 'Downloading AI model',
+  'ai.using': 'Using',
+  'ai.analysisMode': 'Mode',
+  'ai.modeCloud': 'Cloud AI',
+  'ai.modeLocal': 'On-Device AI',
+  'ai.modeCloudDesc': 'Fast, detailed analysis via Cloudflare AI',
+  'ai.modeLocalDesc': 'Private, runs entirely in your browser',
+  'ai.cloudNote': 'Results are sent to Cloudflare for processing. No data is stored.',
+  'ai.emptyTitle': 'Run diagnostics first',
+  'ai.emptyBody': 'Run DNS, Speed, or TLS tests to get AI-powered insights into your network configuration.',
+  'ai.privacyTitle': 'Cloud AI Privacy Notice',
+  'ai.privacyBody': 'Cloud AI sends your test results to Cloudflare for analysis. No data is stored or logged. Only your network test metrics (IP, speed, DNS config, TLS details) are sent — no personal data. You can also use On-Device AI which runs entirely in your browser.',
+  'ai.privacyAccept': 'Continue with Cloud AI',
+  'ai.privacyUseLocal': 'Use On-Device AI Instead',
+  'nav.ai': 'AI Analysis',
 } as const;
 
 export type Translations = Record<keyof typeof en, string>;
@@ -846,6 +869,10 @@ function applyStaticTranslations(): void {
     { selector: '#network-title', key: 'network.title' },
     { selector: '#network-subtitle', key: 'network.subtitle' },
     { selector: '#network-run-btn', key: 'network.runTest' },
+
+    // AI Analysis
+    { selector: '#ai-title', key: 'ai.title' },
+    { selector: '#ai-subtitle', key: 'ai.subtitle' },
 
     // About
     { selector: '#about-title', key: 'about.title' },
