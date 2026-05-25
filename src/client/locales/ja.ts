@@ -598,5 +598,9 @@ export const ja = {
   'ai.privacyBody': 'クラウド AI はテスト結果を Cloudflare に送信して分析します。データは保存または記録されません。ネットワークテスト指標（IP、速度、DNS 設定、TLS 詳細）のみが送信され、個人データは含まれません。ブラウザ内で完全に実行されるローカル AI も使用できます。',
   'ai.privacyAccept': 'クラウド AI を続行',
   'ai.privacyUseLocal': 'ローカル AI を使用',
+  'ai.downloadPromptTitle': 'AI モデルをダウンロード',
+  'ai.downloadPromptBody': 'ローカル AI は言語モデルのダウンロード（約 23 MB）が必要です。完全にブラウザ内で実行され、プライバシーを保護します。ダウンロードは 1 回のみで、以降はキャッシュされます。',
+  'ai.downloadConfirm': 'ダウンロードして分析',
+  'ai.downloadCancel': 'キャンセル',
   'nav.ai': 'AI 分析',
 } satisfies Translations;

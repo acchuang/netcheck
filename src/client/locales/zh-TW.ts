@@ -618,5 +618,9 @@ export const zhTW = {
   'ai.privacyBody': '雲端 AI 會將您的測試結果傳送到 Cloudflare 進行分析。不會儲存或記錄任何資料。僅傳送您的網路測試指標（IP、速度、DNS 配置、TLS 詳細資訊）—— 不包含個人資料。您也可以使用完全在本機運行的本機 AI。',
   'ai.privacyAccept': '繼續使用雲端 AI',
   'ai.privacyUseLocal': '改用本機 AI',
+  'ai.downloadPromptTitle': '下載 AI 模型',
+  'ai.downloadPromptBody': '本機 AI 需要下載語言模型（約 23 MB）。模型完全在瀏覽器中運行以保護隱私。只需下載一次，之後會快取以供未來使用。',
+  'ai.downloadConfirm': '下載並分析',
+  'ai.downloadCancel': '取消',
   'nav.ai': 'AI 分析',
 } satisfies Translations;

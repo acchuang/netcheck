@@ -610,5 +610,9 @@ export const es = {
   'ai.privacyBody': 'La IA en la nube envía los resultados a Cloudflare para su análisis. No se almacenan ni registran datos. Solo se envían métricas de red (IP, velocidad, DNS, TLS) — sin datos personales. También puedes usar la IA local que funciona completamente en tu navegador.',
   'ai.privacyAccept': 'Continuar con IA en la Nube',
   'ai.privacyUseLocal': 'Usar IA Local',
+  'ai.downloadPromptTitle': 'Descargar Modelo IA',
+  'ai.downloadPromptBody': 'La IA local requiere descargar un modelo de lenguaje (~23 MB). Se ejecuta completamente en tu navegador para máxima privacidad. La descarga ocurre una vez y el modelo se almacena en caché.',
+  'ai.downloadConfirm': 'Descargar y Analizar',
+  'ai.downloadCancel': 'Cancelar',
   'nav.ai': 'Análisis IA',
 } satisfies Translations;

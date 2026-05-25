@@ -578,5 +578,9 @@ export const zhCN = {
   'ai.privacyBody': '云端 AI 会将您的测试结果发送到 Cloudflare 进行分析。不会存储或记录任何数据。仅发送您的网络测试指标（IP、速度、DNS 配置、TLS 详细信息）—— 不包含个人数据。您也可以使用完全在本机运行的本机 AI。',
   'ai.privacyAccept': '继续使用云端 AI',
   'ai.privacyUseLocal': '改用本机 AI',
+  'ai.downloadPromptTitle': '下载 AI 模型',
+  'ai.downloadPromptBody': '本机 AI 需要下载语言模型（约 23 MB）。模型完全在浏览器中运行以保护隐私。只需下载一次，之后会缓存以供未来使用。',
+  'ai.downloadConfirm': '下载并分析',
+  'ai.downloadCancel': '取消',
   'nav.ai': 'AI 分析',
 } satisfies Translations;

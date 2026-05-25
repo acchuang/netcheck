@@ -642,6 +642,10 @@ const en = {
   'ai.privacyBody': 'Cloud AI sends your test results to Cloudflare for analysis. No data is stored or logged. Only your network test metrics (IP, speed, DNS config, TLS details) are sent — no personal data. You can also use On-Device AI which runs entirely in your browser.',
   'ai.privacyAccept': 'Continue with Cloud AI',
   'ai.privacyUseLocal': 'Use On-Device AI Instead',
+  'ai.downloadPromptTitle': 'Download AI Model',
+  'ai.downloadPromptBody': 'On-Device AI requires downloading a language model (~23 MB). This runs entirely in your browser for full privacy. The download happens once and the model is cached for future use.',
+  'ai.downloadConfirm': 'Download & Analyze',
+  'ai.downloadCancel': 'Cancel',
   'nav.ai': 'AI Analysis',
 } as const;
 

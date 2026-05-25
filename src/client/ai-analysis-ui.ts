@@ -31,18 +31,25 @@ function render(): void {
     return;
   }
 
-  const { mode, loading, result, consentGiven, modelReady, modelDownloadProgress } = {
+  const { mode, loading, result, consentGiven, modelReady, modelDownloadProgress, modelConfirming } = {
     mode: aiState.mode.get(),
     loading: aiState.loading.get(),
     result: aiState.result.get(),
     consentGiven: aiState.consentGiven.get(),
     modelReady: aiState.modelReady.get(),
     modelDownloadProgress: aiState.modelDownloadProgress.get(),
+    modelConfirming: aiState.modelConfirming.get(),
   };
 
   if (!consentGiven && mode === 'cloud') {
     container.innerHTML = renderConsentBanner();
     wireConsent(container);
+    return;
+  }
+
+  if (modelConfirming) {
+    container.innerHTML = renderDownloadPrompt();
+    wireDownloadPrompt(container);
     return;
   }
 
@@ -101,6 +108,27 @@ function renderConsentBanner(): string {
     </div>`;
 }
 
+function renderDownloadPrompt(): string {
+  return `
+    <div class="ai-consent">
+      <div class="ai-consent-card">
+        <div class="ai-consent-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="40" height="40">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <h3 class="ai-consent-title">${t('ai.downloadPromptTitle')}</h3>
+        <p class="ai-consent-body">${t('ai.downloadPromptBody')}</p>
+        <div class="ai-consent-actions">
+          <button class="btn btn-primary" data-action="confirm-download">${t('ai.downloadConfirm')}</button>
+          <button class="btn btn-secondary" data-action="cancel-download">${t('ai.downloadCancel')}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderLoading(isLocal: boolean, downloading: boolean, label: string): string {
   const bar = downloading
     ? `<div class="ai-progress-bar"><div class="ai-progress-fill" style="width:${aiState.modelDownloadProgress.get()}%"></div></div>`
@@ -117,7 +145,6 @@ function renderLoading(isLocal: boolean, downloading: boolean, label: string): s
 
 function renderMain(mode: string, result: string): string {
   const resultHtml = result ? renderResult(result) : '';
-  const localReady = mode === 'local' && !aiState.modelReady.get();
 
   return `
     <div class="ai-main">
@@ -139,11 +166,11 @@ function renderMain(mode: string, result: string): string {
         </button>
       </div>
 
-      <button class="btn btn-primary ai-analyze-btn" id="ai-analyze-btn" ${localReady ? 'disabled' : ''}>
-        ${localReady ? t('ai.downloading') + '...' : t('ai.analyze')}
+      <button class="btn btn-primary ai-analyze-btn" id="ai-analyze-btn">
+        ${t('ai.analyze')}
       </button>
 
-      ${mode === 'cloud' ? '<p class="ai-cloud-note">' + t('ai.cloudNote') + '</p>' : ''}
+      ${mode === 'cloud' ? '<p class="ai-cloud-note">' + t('ai.cloudNote') + '</p>' : '<p class="ai-cloud-note">' + t('ai.modeLocalDesc') + '</p>'}
 
       ${resultHtml ? '<div class="ai-result">' + resultHtml + '</div>' : ''}
     </div>`;
@@ -189,6 +216,37 @@ function wireConsent(container: HTMLElement): void {
       localStorage.setItem(CONSENT_KEY, 'true');
       aiState.consentGiven.set(true);
       aiState.mode.set('local');
+      aiState.modelConfirming.set(true);
+      render();
+    });
+}
+
+function wireDownloadPrompt(container: HTMLElement): void {
+  container.querySelector<HTMLButtonElement>('[data-action="confirm-download"]')
+    ?.addEventListener('click', async () => {
+      aiState.modelConfirming.set(false);
+      aiState.loading.set(true);
+      aiState.result.set('');
+      render();
+
+      try {
+        announce(t('ai.downloading') || 'Downloading AI model...');
+        aiState.result.set(await analyzeWithLocal());
+        announce(t('ai.complete') || 'Analysis complete');
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error';
+        aiState.result.set(`**${t('ai.error')}**: ${msg}`);
+        announce(t('ai.error') || 'Analysis failed');
+      } finally {
+        aiState.loading.set(false);
+        render();
+      }
+    });
+
+  container.querySelector<HTMLButtonElement>('[data-action="cancel-download"]')
+    ?.addEventListener('click', () => {
+      aiState.modelConfirming.set(false);
+      aiState.mode.set('cloud');
       render();
     });
 }
@@ -199,6 +257,13 @@ function wireAnalyze(container: HTMLElement): void {
 
   btn.addEventListener('click', async () => {
     const mode = aiState.mode.get();
+
+    if (mode === 'local' && !aiState.modelReady.get()) {
+      aiState.modelConfirming.set(true);
+      render();
+      return;
+    }
+
     aiState.loading.set(true);
     aiState.result.set('');
     render();
@@ -239,6 +304,7 @@ function wireModeToggle(container: HTMLElement): void {
 
       aiState.mode.set(mode);
       aiState.result.set('');
+      aiState.modelConfirming.set(false);
       render();
     });
   });

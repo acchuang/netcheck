@@ -587,5 +587,9 @@ export const ko = {
   'ai.privacyBody': '클라우드 AI는 테스트 결과를 Cloudflare로 전송하여 분석합니다. 데이터는 저장되거나 기록되지 않습니다. 네트워크 테스트 지표(IP, 속도, DNS 구성, TLS 세부 정보)만 전송되며 개인 데이터는 포함되지 않습니다. 브라우저에서 완전히 실행되는 로컬 AI를 사용할 수도 있습니다.',
   'ai.privacyAccept': '클라우드 AI 계속',
   'ai.privacyUseLocal': '로컬 AI 사용',
+  'ai.downloadPromptTitle': 'AI 모델 다운로드',
+  'ai.downloadPromptBody': '로컬 AI는 언어 모델 다운로드(약 23 MB)가 필요합니다. 완전히 브라우저에서 실행되어 개인정보를 보호합니다. 한 번만 다운로드하면 이후 캐시됩니다.',
+  'ai.downloadConfirm': '다운로드 및 분석',
+  'ai.downloadCancel': '취소',
   'nav.ai': 'AI 분석',
 } satisfies Translations;
