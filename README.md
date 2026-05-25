@@ -1,6 +1,6 @@
 # NetCheck
 
-Network diagnostics, security checks, and browser privacy — all in one tool, all running locally in your browser.
+Network diagnostics, security checks, browser privacy, and AI-powered analysis — all in one tool.
 
 **Live:** [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)
 
@@ -10,6 +10,13 @@ Network diagnostics, security checks, and browser privacy — all in one tool, a
 - Overall network score at a glance (weighted across DNS, speed, headers, ad block, quality, fingerprint, TLS)
 - Your IP address and location shown in real time
 - Latest download speed and latency cards — auto-populated as tests complete
+
+### AI Analysis
+- AI-powered insights into your network health
+- **Cloud AI** (default): instant analysis via Cloudflare Workers AI — no download needed
+- **On-Device AI**: optional private mode using local LLM — runs entirely in your browser
+- One-time privacy consent before first cloud use
+- Analyzes results from DNS, Speed, TLS, Ad Block, Headers, Fingerprint, and Connection Quality
 
 ### DNS Check
 - Public IP address detection with geolocation, ISP/ASN, and Cloudflare PoP
@@ -75,6 +82,7 @@ Network diagnostics, security checks, and browser privacy — all in one tool, a
 - **KV Storage:** Cloudflare KV for visitor analytics
 - **Design:** Geist font, violet accent (#7c5cfc), noise texture, dark theme with frosted-glass mobile nav
 - **Bundle:** ~90KB JS, ~13KB CSS gzipped
+- **AI:** Cloudflare Workers AI (Llama-3.2-3B) + optional on-device Transformers.js
 
 ## Project Structure
 
@@ -104,6 +112,11 @@ netcheck-site/
 │   │   ├── network-map-ui.ts  # Leaflet map rendering
 │   │   ├── share.ts           # Share summary builder
 │   │   ├── export-report.ts   # Markdown/PDF report exporter
+│   │   ├── ai-analysis-ui.ts  # AI Analysis tab UI (cloud + local modes)
+│   │   ├── ai-cloud.ts        # Cloud AI engine (Workers AI)
+│   │   ├── ai-local.ts        # On-device AI engine (Transformers.js)
+│   │   ├── ai-collector.ts    # Test results data collector
+│   │   ├── ai-prompt.ts       # LLM prompt builder
 │   │   ├── history.ts         # Legacy speed history store
 │   │   ├── i18n.ts            # Internationalization system
 │   │   ├── locales/           # Translation files (zh-TW, zh-CN, es, ja, ko)
