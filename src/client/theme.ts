@@ -29,6 +29,7 @@ function apply(animate = false): void {
     const svg = btn.querySelector('svg');
     if (svg) svg.innerHTML = ICONS[current];
     btn.title = `Theme: ${current}`;
+    btn.setAttribute('data-tooltip', `Theme: ${current}`);
   }
 }
 

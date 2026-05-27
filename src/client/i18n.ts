@@ -777,7 +777,7 @@ function applyStaticTranslations(): void {
     { selector: ".nav-link[data-tab='quality'] .nav-link-text", key: 'nav.quality' },
     { selector: ".nav-link[data-tab='network'] .nav-link-text", key: 'nav.network' },
     { selector: ".nav-link[data-tab='about'] .nav-link-text", key: 'nav.about' },
-    { selector: '#export-btn', key: 'nav.exportReport', attr: 'title' },
+    { selector: '#export-btn', key: 'nav.exportReport', attr: 'data-tooltip' },
     { selector: '#export-markdown-text', key: 'nav.downloadMd' },
     { selector: '#export-pdf-text', key: 'nav.savePdf' },
     { selector: '#lang-toggle', key: 'nav.lang', attr: 'title' },

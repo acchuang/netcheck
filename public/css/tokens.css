@@ -106,10 +106,10 @@
 
 /* ── Shadows (tinted, never pure black) ── */
 :root {
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(8, 9, 10, 0.3);
+  --shadow-md: 0 4px 16px rgba(8, 9, 10, 0.4);
+  --shadow-lg: 0 8px 32px rgba(8, 9, 10, 0.5);
+  --shadow-xl: 0 20px 60px rgba(8, 9, 10, 0.6);
   --shadow-accent: 0 0 40px rgba(124, 92, 252, 0.2);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
@@ -171,8 +171,8 @@
   --surface-elevated: var(--gray-850);
 
   --text-primary: var(--gray-100);
-  --text-secondary: var(--gray-500);
-  --text-muted: #565960;
+  --text-secondary: var(--gray-400);
+  --text-muted: #71747c;
 
   --border-subtle: color-mix(in srgb, var(--gray-700) 60%, transparent);
   --border-default: var(--gray-700);
@@ -188,10 +188,10 @@
 
   color-scheme: dark;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(8, 9, 10, 0.3);
+  --shadow-md: 0 4px 16px rgba(8, 9, 10, 0.4);
+  --shadow-lg: 0 8px 32px rgba(8, 9, 10, 0.5);
+  --shadow-xl: 0 20px 60px rgba(8, 9, 10, 0.6);
 }
 
 /* ========================================
@@ -205,8 +205,8 @@
   --surface-elevated: #ffffff;
 
   --text-primary: #1a1a1e;
-  --text-secondary: #6b6f76;
-  --text-muted: #9ca0a8;
+  --text-secondary: #5b5f67;
+  --text-muted: #8b8f96;
 
   --border-subtle: color-mix(in srgb, var(--gray-200) 75%, transparent);
   --border-default: var(--gray-200);

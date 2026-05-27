@@ -165,7 +165,7 @@
       </div>
        <div class="nav-toolbar">
          <div class="nav-toolbar-item" id="lang-dropdown">
-           <button class="nav-toolbar-btn" id="lang-toggle" title="Language">
+           <button class="nav-toolbar-btn" id="lang-toggle" data-tooltip="Language" aria-label="Change language">
              <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                <circle cx="12" cy="12" r="10"/>
                <line x1="2" y1="12" x2="22" y2="12"/>
@@ -182,13 +182,13 @@
              <button class="nav-toolbar-option" data-lang="ko" role="menuitem">한국어</button>
            </div>
          </div>
-         <button class="nav-toolbar-btn" id="theme-toggle" title="Theme: dark">
+         <button class="nav-toolbar-btn" id="theme-toggle" data-tooltip="Theme: dark" aria-label="Toggle theme">
            <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
            </svg>
          </button>
           <div class="nav-toolbar-item">
-            <button class="nav-toolbar-btn" id="export-btn" title="Export Report">
+            <button class="nav-toolbar-btn" id="export-btn" data-tooltip="Export Report" aria-label="Export report">
               <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
@@ -201,7 +201,7 @@
             </div>
           </div>
           <div class="nav-toolbar-item">
-            <button class="nav-toolbar-btn" id="share-btn" title="Copy results" aria-label="Copy summary of current results">
+            <button class="nav-toolbar-btn" id="share-btn" data-tooltip="Copy results" aria-label="Copy summary of current results">
               <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="18" cy="5" r="3"/>
                 <circle cx="6" cy="12" r="3"/>
@@ -517,7 +517,7 @@
               <option value="10">Monitor 10 min</option>
               <option value="30">Monitor 30 min</option>
             </select>
-            <button class="btn btn-primary" id="speed-monitor-btn">Monitor</button>
+            <button class="btn btn-secondary" id="speed-monitor-btn">Monitor</button>
           </div>
           <div class="hidden" id="speed-monitor-bar" style="margin-top:8px">
             <div style="display:flex;align-items:center;gap:8px">
