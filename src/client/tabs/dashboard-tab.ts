@@ -150,7 +150,7 @@ function renderDashboard(): void {
   const empty = testsCompleted === 0;
 
   if (empty) {
-    container.innerHTML = renderEmptyState();
+    container.innerHTML = renderSkeletonCards();
     wireActionButtons(container);
     return;
   }
@@ -162,7 +162,7 @@ function renderDashboard(): void {
   const location = dnsState.ipData.get()
     ? [dnsState.ipData.get()!.city, dnsState.ipData.get()!.country].filter(Boolean).join(', ')
     : '';
-  const colo = dnsState.ipData.get()?.colo || '—';
+  const colo = dnsState.ipData.get()?.colo || '\u2014';
   const history = SpeedTestHistory.getAll();
   const lastTest = history.length > 0 ? history[history.length - 1] : null;
   const trendPercent =
@@ -178,24 +178,24 @@ function renderDashboard(): void {
     <div class="dashboard-stats">
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.overallScore', 'Overall Score')}</div>
-        <div class="dash-stat-value" style="color:${gradeColor}">${grade || '—'}</div>
+        <div class="dash-stat-value" style="color:${gradeColor}">${grade || '\u2014'}</div>
         <div class="dash-stat-sub">${testsCompleted} ${t('dashboard.testsCompleted', 'tests completed')}</div>
       </div>
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.yourIp', 'Your IP')}</div>
-        <div class="dash-stat-value${ip ? ' dash-stat-mono' : ''}">${ip || '—'}</div>
-        <div class="dash-stat-sub">${location || '—'}</div>
+        <div class="dash-stat-value${ip ? ' dash-stat-mono' : ''}">${ip || '\u2014'}</div>
+        <div class="dash-stat-sub">${location || '\u2014'}</div>
       </div>
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.downloadSpeed', 'Download Speed')}</div>
-        <div class="dash-stat-value">${download > 0 ? `${Math.round(download)} <span class="dash-stat-unit">Mbps</span>` : '—'}</div>
+        <div class="dash-stat-value">${download > 0 ? `${Math.round(download)} <span class="dash-stat-unit">Mbps</span>` : '\u2014'}</div>
         <div class="dash-stat-sub${trendPercent > 0 ? ' dash-stat-up' : trendPercent < 0 ? ' dash-stat-down' : ''}">
-          ${trendPercent !== 0 ? `${trendPercent > 0 ? '↑' : '↓'} ${Math.abs(trendPercent)}%` : '—'}
+          ${trendPercent !== 0 ? `${trendPercent > 0 ? '\u2191' : '\u2193'} ${Math.abs(trendPercent)}%` : '\u2014'}
         </div>
       </div>
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.latency', 'Latency')}</div>
-        <div class="dash-stat-value">${latency > 0 ? `${latency.toFixed(1)} <span class="dash-stat-unit">ms</span>` : '—'}</div>
+        <div class="dash-stat-value">${latency > 0 ? `${latency.toFixed(1)} <span class="dash-stat-unit">ms</span>` : '\u2014'}</div>
         <div class="dash-stat-sub">${t('dashboard.colo', 'PoP')}: ${colo}</div>
       </div>
     </div>
@@ -203,8 +203,10 @@ function renderDashboard(): void {
 
   const checks = dnsState.securityChecks.get();
   const webrtcLeak = dnsState.webrtcLeak.get();
-  const _adBlockScore = 0;
-  const hasDns = appState.completedTests.get().includes('dns');
+  const completed = appState.completedTests.get();
+  const hasDns = completed.includes('dns');
+  const hasTls = completed.includes('tls');
+  const tlsInfo = tlsState.info.get();
 
   let statusHtml = `<div class="dashboard-quick-status">
     <h3 class="dash-section-title">${t('dashboard.quickStatus', 'Quick Status')}</h3>
@@ -214,18 +216,45 @@ function renderDashboard(): void {
     const dnsSecPass = checks.filter((c) => c.status === 'pass').length;
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.dnsSecurity', 'DNS Security')}</span>
-      <span class="dash-status-value ${dnsSecPass === checks.length ? 'status-pass' : 'status-warn'}">${dnsSecPass === checks.length ? '✓' : '△'} ${dnsSecPass}/${checks.length}</span>
+      <span class="dash-status-value ${dnsSecPass === checks.length ? 'status-pass' : 'status-warn'}">${dnsSecPass === checks.length ? '\u2713' : '\u25B3'} ${dnsSecPass}/${checks.length}</span>
     </div>`;
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.webrtcLeak', 'WebRTC Leak')}</span>
-      <span class="dash-status-value ${webrtcLeak === false ? 'status-pass' : webrtcLeak === true ? 'status-fail' : ''}">${webrtcLeak === false ? '✓ No leak' : webrtcLeak === true ? '✗ Leak detected' : '—'}</span>
+      <span class="dash-status-value ${webrtcLeak === false ? 'status-pass' : webrtcLeak === true ? 'status-fail' : ''}">${webrtcLeak === false ? '\u2713 No leak' : webrtcLeak === true ? '\u2717 Leak detected' : '\u2014'}</span>
     </div>`;
   }
 
-  const hasSpeed = appState.completedTests.get().includes('speed');
+  if (completed.includes('adblock')) {
+    const scoreEl = document.getElementById('score-number');
+    const score = scoreEl ? parseInt(scoreEl.textContent ?? '0', 10) : 0;
+    const cls = score >= 80 ? 'status-pass' : score >= 50 ? 'status-warn' : 'status-fail';
+    statusHtml += `<div class="dash-status-item">
+      <span class="dash-status-label">${t('dashboard.adblockScore', 'Ad Block')}</span>
+      <span class="dash-status-value ${cls}">${score}/100</span>
+    </div>`;
+  }
+
+  if (completed.includes('headers')) {
+    const gradeEl = document.getElementById('headers-grade');
+    const grade = gradeEl?.textContent?.trim() ?? '';
+    const cls = grade === 'A' ? 'status-pass' : grade === 'B' || grade === 'C' ? 'status-warn' : grade ? 'status-fail' : '';
+    statusHtml += `<div class="dash-status-item">
+      <span class="dash-status-label">${t('dashboard.headersGrade', 'Headers')}</span>
+      <span class="dash-status-value ${cls}">${grade || '\u2014'}</span>
+    </div>`;
+  }
+
+  if (hasTls && tlsInfo) {
+    const cls = tlsInfo.protocol === 'TLSv1.3' ? 'status-pass' : tlsInfo.protocol === 'TLSv1.2' ? 'status-warn' : 'status-fail';
+    statusHtml += `<div class="dash-status-item">
+      <span class="dash-status-label">${t('dashboard.tlsVersion', 'TLS Version')}</span>
+      <span class="dash-status-value ${cls}">${tlsInfo.protocol}</span>
+    </div>`;
+  }
+
+  const hasSpeed = completed.includes('speed');
   if (hasSpeed) {
-    const _spdGrade = speedState.grade.get();
-    const conn = dnsState.ipData.get()?.httpProtocol || '—';
+    const conn = dnsState.ipData.get()?.httpProtocol || '\u2014';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.connection', 'Connection')}</span>
       <span class="dash-status-value">${conn}</span>
@@ -234,27 +263,93 @@ function renderDashboard(): void {
 
   statusHtml += `</div></div>`;
 
+  const miniChartHtml = renderMiniChart(history);
+
   const actionsHtml = `<div class="dash-actions">
     <button class="btn btn-primary" data-action="run-dns">${t('dashboard.runDns', 'Run DNS Check')}</button>
     <button class="btn btn-primary" data-action="run-speed">${t('dashboard.runSpeed', 'Run Speed Test')}</button>
     <button class="btn btn-secondary" data-action="run-all">${t('dashboard.runAll', 'Run All Tests')}</button>
   </div>`;
 
-  container.innerHTML = statsHtml + statusHtml + actionsHtml;
+  container.innerHTML = statsHtml + statusHtml + miniChartHtml + actionsHtml;
 
   wireActionButtons(container);
 }
 
-function renderEmptyState(): string {
+function renderMiniChart(history: { ts: number; download: number }[]): string {
+  if (history.length < 2) return '';
+
+  const now = Date.now();
+  const cutoff = now - 7 * 24 * 60 * 60 * 1000;
+  const recent = history.filter((e) => e.ts >= cutoff);
+
+  if (recent.length < 2) return '';
+
+  const byDay = new Map<string, number>();
+  for (const e of recent) {
+    const day = new Date(e.ts).toISOString().slice(0, 10);
+    byDay.set(day, Math.max(byDay.get(day) ?? 0, e.download));
+  }
+
+  const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  if (days.length < 2) return '';
+
+  const maxSpeed = Math.max(...days.map((d) => d[1]), 1);
+
+  let barsHtml = '';
+  for (const [day, speed] of days) {
+    const pct = (speed / maxSpeed) * 100;
+    const dateLabel = new Date(day + 'T00:00:00').toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+    barsHtml += `<div class="history-bar history-bar-day" title="${dateLabel}: ${Math.round(speed)} Mbps" style="--bar-height: ${pct}%">
+      <div class="history-bar-fill"></div>
+    </div>`;
+  }
+
+  const firstDay = days[0][0];
+  const lastDay = days[days.length - 1][0];
+
   return `
-    <div class="dashboard-empty">
-      <div class="dashboard-empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
+    <div class="dashboard-mini-chart">
+      <h3 class="dash-section-title">${t('dashboard.recentSpeed', 'Recent Speed Tests')}</h3>
+      <div class="history-chart-bars">
+        ${barsHtml}
       </div>
+      <div class="history-chart-labels">
+        <span>${new Date(firstDay + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+        <span>${new Date(lastDay + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderSkeletonCards(): string {
+  return `
+    <div class="dashboard-stats">
+      <div class="dash-stat-card dash-skeleton">
+        <div class="skeleton-block" style="width:60%;height:1.75rem;"></div>
+        <div class="skeleton-block dash-skel-large" style="width:40%;height:2.25rem;margin-top:0.5rem;"></div>
+        <div class="skeleton-block" style="width:80%;height:0.75rem;margin-top:0.25rem;"></div>
+      </div>
+      <div class="dash-stat-card dash-skeleton">
+        <div class="skeleton-block" style="width:50%;height:1.75rem;"></div>
+        <div class="skeleton-block dash-skel-large" style="width:70%;height:2.25rem;margin-top:0.5rem;"></div>
+        <div class="skeleton-block" style="width:60%;height:0.75rem;margin-top:0.25rem;"></div>
+      </div>
+      <div class="dash-stat-card dash-skeleton">
+        <div class="skeleton-block" style="width:55%;height:1.75rem;"></div>
+        <div class="skeleton-block dash-skel-large" style="width:35%;height:2.25rem;margin-top:0.5rem;"></div>
+        <div class="skeleton-block" style="width:45%;height:0.75rem;margin-top:0.25rem;"></div>
+      </div>
+      <div class="dash-stat-card dash-skeleton">
+        <div class="skeleton-block" style="width:45%;height:1.75rem;"></div>
+        <div class="skeleton-block dash-skel-large" style="width:50%;height:2.25rem;margin-top:0.5rem;"></div>
+        <div class="skeleton-block" style="width:55%;height:0.75rem;margin-top:0.25rem;"></div>
+      </div>
+    </div>
+    <div class="dashboard-empty-cta">
       <h2 class="dashboard-empty-title">${t('dashboard.emptyTitle', 'Welcome to NetCheck')}</h2>
       <p class="dashboard-empty-subtitle">${t('dashboard.emptySubtitle', 'Run your first test to see your network overview')}</p>
       <div class="dash-actions">
@@ -262,7 +357,8 @@ function renderEmptyState(): string {
         <button class="btn btn-primary" data-action="run-speed">${t('dashboard.runSpeed', 'Run Speed Test')}</button>
         <button class="btn btn-secondary" data-action="run-all">${t('dashboard.runAll', 'Run All Tests')}</button>
       </div>
-    </div>`;
+    </div>
+  `;
 }
 
 function wireActionButtons(container: HTMLElement): void {

@@ -4,5 +4,18 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.test.ts", "src/client/locales/**"],
+      thresholds: {
+        "src/client/state/": {
+          statements: 100,
+          branches: 100,
+          functions: 100,
+          lines: 100,
+        },
+      },
+    },
   },
 });

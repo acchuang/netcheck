@@ -1,5 +1,6 @@
 import { t } from './i18n';
 import { setBadge, renderSkeletonRows } from './ui-utils';
+import { appState } from './state/shared-state';
 
 interface HeaderCheckResult {
   name: string;
@@ -129,4 +130,9 @@ async function runHeadersCheck(): Promise<void> {
   scanInProgress = false;
   btn.disabled = false;
   btn.textContent = t('headers.scan');
+
+  const current = appState.completedTests.get();
+  if (!current.includes('headers')) {
+    appState.completedTests.set([...current, 'headers']);
+  }
 }

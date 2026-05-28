@@ -8,6 +8,7 @@ import {
 import { t } from './i18n';
 import { renderSkeletonRows } from './ui-utils';
 import { announce, announceProgress } from './a11y';
+import { appState } from './state/shared-state';
 import { onLocaleChange } from './locale-events';
 
 type ProgressState =
@@ -208,6 +209,11 @@ async function runQualityTest(): Promise<void> {
   syncQualityUi();
   const sectionEl = document.getElementById('quality');
   if (sectionEl) sectionEl.setAttribute('aria-busy', 'false');
+
+  const current = appState.completedTests.get();
+  if (!current.includes('quality')) {
+    appState.completedTests.set([...current, 'quality']);
+  }
 }
 
 function renderConnectionInfo(info: ConnectionInfo | null, skeleton?: boolean): void {

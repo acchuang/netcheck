@@ -11,6 +11,7 @@ export interface TlsInfo {
   hstsMaxAge: number | null;
   hstsIncludeSubdomains: boolean;
   hstsPreload: boolean;
+  ocspStapling: string;
   grade: string;
 }
 
@@ -124,6 +125,7 @@ export async function runTlsCheck(): Promise<void> {
       hstsMaxAge,
       hstsIncludeSubdomains,
       hstsPreload,
+      ocspStapling: 'Unknown (not detectable client-side)',
       grade: computeTlsGrade(protocol, cipher, forwardSecrecy, hstsStatus),
     };
 

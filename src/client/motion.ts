@@ -4,11 +4,17 @@ export function initMotion(): void {
   initCounterAnimations();
 }
 
+export const prefersReducedMotion = (): boolean =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function initCounterAnimations(): void {
+  if (prefersReducedMotion()) return;
+
   const statValues = document.querySelectorAll<HTMLElement>('.dash-stat-value, .speed-value');
   statValues.forEach((el) => {
     if (el.dataset.animated) return;
     inView(el, () => {
+      if (prefersReducedMotion()) return;
       el.dataset.animated = 'true';
       const text = el.textContent?.trim() ?? '';
       const numMatch = text.match(/^([\d.]+)/);

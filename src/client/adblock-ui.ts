@@ -2,6 +2,7 @@ import { AdBlockTest } from './adblock-test';
 import { t } from './i18n';
 import { affiliate } from './affiliates';
 import { CnameChecker } from './adblock-cname';
+import { appState } from './state/shared-state';
 
 interface AdblockScore {
   score: number;
@@ -198,6 +199,8 @@ export async function runAdBlockTests(): Promise<void> {
 
   renderAdblockSuggestions(score, AdBlockTest.results);
 
+  markCompleted('adblock');
+
   // Community ranking
   loadCommunityStats(score.score);
 
@@ -300,4 +303,11 @@ function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]
     .join('');
 
   section.classList.add('visible');
+}
+
+function markCompleted(test: string): void {
+  const current = appState.completedTests.get();
+  if (!current.includes(test)) {
+    appState.completedTests.set([...current, test]);
+  }
 }

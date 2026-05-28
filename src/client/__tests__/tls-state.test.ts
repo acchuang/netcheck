@@ -26,6 +26,7 @@ describe('tlsState', () => {
       hstsMaxAge: 31536000,
       hstsIncludeSubdomains: true,
       hstsPreload: false,
+      ocspStapling: 'Unknown (not detectable client-side)',
       grade: 'A+',
     });
     const info = tlsState.info.get()!;

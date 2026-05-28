@@ -2,6 +2,7 @@ import { getAllHistory, clearHistory, downloadHistoryCsv, type HistoryEntry } fr
 import { SpeedTestHistory } from '../history';
 import { t } from '../i18n';
 import { observable } from '../state/observable';
+import { compareState, computeDiff, diffClass } from '../state/compare-state';
 
 export const historyState = {
   entries: observable<HistoryEntry[]>([]),
@@ -202,6 +203,7 @@ function renderStats(entries: HistoryEntry[]): void {
 function toggleCompareMode(): void {
   compareMode = !compareMode;
   selectedForCompare = [];
+  compareState.selectedIds.set(null);
   const compareBtn = document.getElementById('history-compare-btn');
   if (compareBtn) {
     compareBtn.textContent = compareMode
@@ -240,6 +242,7 @@ function renderComparison(): void {
     const a = entries.find((e) => e.id === selectedForCompare[0]);
     const b = entries.find((e) => e.id === selectedForCompare[1]);
     if (a && b) {
+      compareState.selectedIds.set([selectedForCompare[0], selectedForCompare[1]]);
       diffHtml = renderDiff(a, b);
     }
   }
@@ -275,32 +278,7 @@ function renderComparison(): void {
 }
 
 function renderDiff(a: HistoryEntry, b: HistoryEntry): string {
-  const fmt = (v: number | undefined, unit: string) =>
-    v !== undefined ? `${v} ${unit}` : '—';
-  const diff = (va: number | undefined, vb: number | undefined) => {
-    if (va === undefined || vb === undefined) return '';
-    const d = vb - va;
-    if (d === 0) return '<span class="diff-same">0</span>';
-    const pct = va !== 0 ? Math.round((d / va) * 100) : 0;
-    return d > 0
-      ? `<span class="diff-up">+${Math.round(d)} (${pct > 0 ? '+' : ''}${pct}%)</span>`
-      : `<span class="diff-down">${Math.round(d)} (${pct}%)</span>`;
-  };
-
-  const rows = [
-    { label: 'Download', aVal: a.speed?.download, bVal: b.speed?.download, unit: 'Mbps' },
-    { label: 'Upload', aVal: a.speed?.upload, bVal: b.speed?.upload, unit: 'Mbps' },
-    { label: 'Latency', aVal: a.speed?.latency, bVal: b.speed?.latency, unit: 'ms' },
-    { label: 'Jitter', aVal: a.speed?.jitter, bVal: b.speed?.jitter, unit: 'ms' },
-    { label: 'Bufferbloat', aVal: a.speed?.bufferbloat, bVal: b.speed?.bufferbloat, unit: 'ms' },
-  ];
-
-  if (a.dns && b.dns) {
-    rows.push({ label: 'DNS Security', aVal: a.dns.security, bVal: b.dns.security, unit: '/100' });
-  }
-  if (a.tls && b.tls) {
-    rows.push({ label: 'TLS Grade', aVal: undefined, bVal: undefined, unit: '' });
-  }
+  const rows = computeDiff(a, b);
 
   const dateA = new Date(a.timestamp).toLocaleString();
   const dateB = new Date(b.timestamp).toLocaleString();
@@ -313,9 +291,9 @@ function renderDiff(a: HistoryEntry, b: HistoryEntry): string {
       <tbody>
         ${rows.map((r) => `<tr>
           <td>${r.label}</td>
-          <td>${fmt(r.aVal, r.unit)}</td>
-          <td>${fmt(r.bVal, r.unit)}</td>
-          <td>${diff(r.aVal, r.bVal)}</td>
+          <td>${r.valueA}</td>
+          <td>${r.valueB}</td>
+          <td><span class="${diffClass(r.diff)}">${r.diff}</span></td>
         </tr>`).join('')}
       </tbody>
     </table>

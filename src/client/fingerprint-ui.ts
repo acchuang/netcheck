@@ -1,6 +1,7 @@
 import { FingerprintDetector } from './fingerprint';
 import { t } from './i18n';
 import { affiliate } from './affiliates';
+import { appState } from './state/shared-state';
 
 export function initFingerprint(): void {
   document.getElementById('fp-start-btn')?.addEventListener('click', runFingerprintScan);
@@ -130,4 +131,9 @@ async function runFingerprintScan(): Promise<void> {
   btn.disabled = false;
   btn.textContent = t('fp.scan');
   section.setAttribute('aria-busy', 'false');
+
+  const current = appState.completedTests.get();
+  if (!current.includes('fingerprint')) {
+    appState.completedTests.set([...current, 'fingerprint']);
+  }
 }

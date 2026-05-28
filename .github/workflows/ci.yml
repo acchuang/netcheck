@@ -20,6 +20,19 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx lhci autorun --collect.url=https://netcheck.oilygold.xyz --collect.numberOfRuns=1 --assert.preset=lighthouse:recommended --upload.target=temporary-public-storage || true
+
   deploy:
     needs: check
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

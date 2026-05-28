@@ -70,6 +70,10 @@ function renderTlsInfo(info: TlsInfo): string {
           <span class="tls-detail-label">${t('tls.hsts', 'HSTS')}</span>
           <span class="tls-detail-value">${hstsBadge}</span>
         </div>
+        <div class="tls-detail-row">
+          <span class="tls-detail-label">${t('tls.ocsp', 'OCSP Stapling')}</span>
+          <span class="tls-detail-value">${info.ocspStapling}</span>
+        </div>
       </div>
     </div>
   `;
