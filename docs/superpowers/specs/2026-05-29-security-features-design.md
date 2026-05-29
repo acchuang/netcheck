@@ -8,7 +8,7 @@
 
 Add 4 new security features and deepen 3 existing tabs, following the existing netcheck pattern (Worker API + client-side checks, A+ to F grading, 6-language i18n).
 
-**Nav bar changes:** Security category gets 2 new tabs: Breach Check and Cert Transparency. Existing tabs (Headers, Email, TLS, Fingerprint) get expanded content inline.
+**Nav bar changes:** Security category gets 1 new tab (Cert Transparency). Privacy category gets 1 new tab (Breach Check). Existing tabs (Headers, Email, TLS, Fingerprint) get expanded content inline.
 
 ---
 
@@ -32,7 +32,7 @@ When a user scans a URL in the Headers tab, the CSP header gets deep-parsed inst
 - Overly permissive `frame-src` or `form-action` → medium severity
 - `report-uri` or `report-to` presence → info (positive finding)
 
-**Scoring:** CSP gets a sub-grade (A+ to F) based on findings. The overall headers grade weights CSP more heavily (currently 1 of 10 headers; change to weighted).
+**Scoring:** CSP gets a sub-grade (A+ to F) based on findings. The overall headers grade weights CSP as 3 of 10 equivalent headers (30% weight on the CSP sub-grade score, remaining 9 headers share 70%). Formula: `(cspSubScore * 0.3) + (otherHeadersScore * 0.7)` → map to letter grade using existing thresholds.
 
 **UI:** New card below existing headers results showing CSP breakdown — directive list, issues with severity badges, remediation suggestions.
 
@@ -47,9 +47,10 @@ Users check if a password has appeared in known data breaches via HIBP k-anonymi
 - SHA-1 hash via `crypto.subtle.digest('SHA-1', ...)`
 - Send first 5 chars of hash to `https://api.pwnedpasswords.com/range/{prefix}`
 - Match full hash locally; full password never leaves browser
+- **CSP requirement:** Add `https://api.pwnedpasswords.com` to `connect-src` in both the worker's `csp()` function (`src/worker/index.ts`) and the HTML `<meta>` CSP tag (`index.html`)
 
 **UI:**
-- New "Breach Check" tab under Security
+- New "Breach Check" tab under Privacy
 - Password input with show/hide toggle
 - Result: "Found X times in data breaches" or "Not found"
 - Severity: 0 = safe, 1-99 = low, 100-9999 = medium, 10000+ = high
@@ -76,7 +77,7 @@ Users check if a password has appeared in known data breaches via HIBP k-anonymi
 
 **Implementation:**
 - Extends `/api/email-security?domain=...` with two more DNS lookups + one HTTPS fetch
-- Total score goes from 100 to 110pts, normalize to 100 for letter grade
+- Base score remains 100pts (SPF/DKIM/DMARC). BIMI and MTA-STS scored as bonus on top: max base 100, bonuses can push to 110. Letter grade uses base score only (no silent downgrade). Bonus shown as "extra credit" in UI.
 
 **UI:** Two new cards after DMARC, same layout as existing SPF/DKIM/DMARC cards.
 
@@ -101,7 +102,7 @@ Users enter a domain and see all certificates ever issued for it via crt.sh.
 - Summary card: total certs, active, expired, unique issuers
 - Cert table: issuer, common name, validity, status
 - Warnings: unexpected issuers, recently issued certs, unrecognized wildcard subdomains
-- HSTS preload check (bundled list or query chromium.googlesource.com)
+- HSTS preload check: runs server-side in the worker using a bundled list of HSTS preloaded domains (no client-side external query)
 
 **Edge cases:**
 - crt.sh slow/down → 10s timeout, retry button, link to crt.sh
@@ -121,7 +122,7 @@ Currently TLS only inspects the connection to netcheck itself. Add ability to ch
 - Three checks:
   1. HTTPS redirect: fetch `http://<domain>`, check redirect to `https://`
   2. HSTS: parse `Strict-Transport-Security` from HTTPS response
-  3. Protocol detection: check HTTP/2/3 indicators, measure timing
+  3. Protocol detection: dropped — CF Workers `fetch()` does not expose the negotiated HTTP protocol, and HTTP/2 pseudo-headers (`:status`) are also not exposed. No reliable indirect signal exists, so protocol detection is omitted entirely.
 - SSRF protection: reuse existing private IP blocking from headers check
 
 **UI:**
@@ -129,7 +130,7 @@ Currently TLS only inspects the connection to netcheck itself. Add ability to ch
 - Three new cards: HTTPS Redirect, HSTS Policy, Connection Summary
 - Target URL gets its own A+ to F grade
 
-**Scoring:** HTTPS available (30pts), proper redirect (20pts), HSTS present (20pts), HSTS strength (15pts), modern protocol (15pts).
+**Scoring:** HTTPS available (40pts), proper redirect (25pts), HSTS present (20pts), HSTS strength (15pts). No protocol detection points (removed due to Worker API limitation).
 
 ---
 
@@ -141,8 +142,8 @@ Adds a "Privacy Exposure" section checking which browser APIs are accessible tha
 - Entirely client-side — no worker endpoint
 
 **Checks:**
-1. WebRTC IP leak (move from DNS tab or show in both)
-2. Battery API (`navigator.getBattery()`) — deprecated, privacy-invasive
+1. WebRTC IP leak (show in both DNS and Fingerprint tabs — keep existing DNS check, add to Fingerprint as well)
+2. Battery API (`navigator.getBattery()`) — may be `unavailable` in Firefox/Safari
 3. Device memory (`navigator.deviceMemory`)
 4. Bluetooth API (`navigator.bluetooth`)
 5. USB API (`navigator.usb`)
@@ -158,7 +159,7 @@ Adds a "Privacy Exposure" section checking which browser APIs are accessible tha
 - Accessible APIs without permission = higher deduction
 - APIs requiring explicit permission = smaller deduction
 
-**UI:** New "Privacy Exposure" section below fingerprint results. Each API: name, status (available/blocked/permission required), risk level, what it reveals, remediation tip.
+**UI:** New "Privacy Exposure" section below fingerprint results. Each API: name, status (available/blocked/permission required/unavailable), risk level, what it reveals, remediation tip. `unavailable` = API doesn't exist in this browser (not a risk). `blocked` = exists but denied. `available` = exists and accessible without permission (highest risk). `permission required` = exists but needs user consent.
 
 ---
 
@@ -194,7 +195,7 @@ Independently validate DNSSEC chain of trust instead of just reading the AD flag
 **Edge cases:**
 - No DNSSEC → clearly show "not signed"
 - Parent zone missing DS → flag as misconfiguration
-- CPU time limits → fall back to TLD-only validation if full chain times out
+- Wall-clock timeout: 5s overall via `AbortSignal.timeout(5000)` on all DoH fetches. Limit to 2 sequential DoH calls max (TLD DS + domain DNSKEY). No dynamic CPU-time detection — just enforce the wall-clock limit.
 
 ---
 
@@ -204,3 +205,4 @@ Independently validate DNSSEC chain of trust instead of just reading the AD flag
 - **About page:** Update About page cards for all 7 features
 - **Dashboard score:** Password Breach and Cert Transparency not scored in dashboard (informational). CSP, BIMI/MTA-STS, target TLS, privacy exposure, DNSSEC enhance existing tab scores that feed into dashboard.
 - **Export:** All new results included in share/export output
+- **CSP synchronization:** Any `connect-src` changes must be applied to both the worker's `csp()` function (`src/worker/index.ts`) and the HTML `<meta>` CSP tag (`index.html`)
