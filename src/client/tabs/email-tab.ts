@@ -1,4 +1,4 @@
-import { emailState, runEmailCheck, type EmailSecurityResult } from '../state/email-state';
+import { emailState, runEmailCheck, type EmailSecurityResult, type BimiResult, type MtaStsResult } from '../state/email-state';
 import { t } from '../i18n';
 import { renderBadge } from '../components/badge';
 import type { SecurityStatus } from '../types';
@@ -64,6 +64,28 @@ function renderResult(info: EmailSecurityResult): string {
     ? `<div class="email-record-detail">${t('emailSecurity.policy', 'Policy')}: ${info.dmarc.policy}${info.dmarc.subdomainPolicy ? ` | ${t('emailSecurity.subdomainPolicy', 'Subdomain Policy')}: ${info.dmarc.subdomainPolicy}` : ''}</div>`
     : '';
 
+  const bimiBadge = renderBadge({
+    status: info.bimi.present ? 'pass' : 'fail',
+    label: info.bimi.present ? t('emailSecurity.present', 'Present') : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+  const bimiExtra = info.bimi.present
+    ? `<div class="email-record-detail">${info.bimi.logoUrl ? `Logo: ${info.bimi.logoUrl}` : ''}${info.bimi.vmcUrl ? ` | VMC: ${info.bimi.vmcUrl}` : ''}</div>`
+    : '';
+
+  const mtaStsBadge = renderBadge({
+    status: info.mtaSts.present ? (info.mtaSts.mode === 'enforce' ? 'pass' : 'warn') : 'fail',
+    label: info.mtaSts.present
+      ? info.mtaSts.mode === 'enforce'
+        ? 'Enforce'
+        : info.mtaSts.mode === 'testing'
+          ? 'Testing'
+          : 'None'
+      : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+  const mtaStsExtra = info.mtaSts.present
+    ? `<div class="email-record-detail">${info.mtaSts.mode ? `Mode: ${info.mtaSts.mode}` : ''}${info.mtaSts.maxAge ? ` | Max Age: ${info.mtaSts.maxAge}s` : ''}</div>`
+    : '';
+
   return `
     <div class="email-results">
       <div class="email-grade-card">
@@ -92,6 +114,20 @@ function renderResult(info: EmailSecurityResult): string {
             ${dmarcBadge}
           </div>
           ${dmarcPolicy}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header">
+            <span class="email-card-title">BIMI Record</span>
+            ${bimiBadge}
+          </div>
+          ${bimiExtra}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header">
+            <span class="email-card-title">MTA-STS</span>
+            ${mtaStsBadge}
+          </div>
+          ${mtaStsExtra}
         </div>
       </div>
       <div class="email-recommendations">
@@ -135,6 +171,31 @@ function renderEmailRecommendations(info: EmailSecurityResult): string {
       title: 'Upgrade DMARC to quarantine or reject',
       desc: 'Your DMARC policy is set to "none", which only monitors. Upgrade for real protection.',
       fixes: ['Change p=none to p=quarantine or p=reject in your DMARC record'],
+    });
+  }
+
+  if (!info.bimi.present) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      title: 'Add a BIMI record',
+      desc: 'BIMI displays your brand logo in supported email clients, increasing trust and visibility.',
+      fixes: ['Add TXT record at default._bimi: v=BIMI1; l=https://example.com/logo.svg'],
+    });
+  }
+
+  if (!info.mtaSts.present) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      title: 'Set up MTA-STS',
+      desc: 'MTA-STS enforces TLS for SMTP connections, preventing downgrade attacks on email in transit.',
+      fixes: ['Add TXT record at _mta-sts: v=STSv1; id=20260101;', 'Create https://mta-sts.example/.well-known/mta-sts.txt with mode: enforce'],
+    });
+  } else if (info.mtaSts.mode === 'testing') {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      title: 'Upgrade MTA-STS to enforce mode',
+      desc: 'Your MTA-STS policy is in testing mode. Upgrade to enforce for real TLS protection.',
+      fixes: ['Change mode: testing to mode: enforce in your mta-sts.txt policy'],
     });
   }
 

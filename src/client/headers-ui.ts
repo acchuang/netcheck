@@ -2,6 +2,22 @@ import { t } from './i18n';
 import { setBadge, renderSkeletonRows } from './ui-utils';
 import { appState } from './state/shared-state';
 
+interface CspIssue {
+  severity: 'high' | 'medium' | 'low' | 'info';
+  directive: string;
+  value: string;
+  message: string;
+}
+
+interface CspAnalysis {
+  present: boolean;
+  raw: string | null;
+  directives: { name: string; values: string[] }[];
+  issues: CspIssue[];
+  score: number;
+  grade: string;
+}
+
 interface HeaderCheckResult {
   name: string;
   key: string;
@@ -16,6 +32,7 @@ interface HeadersResponse {
   grade: string;
   score: { present: number; total: number };
   checks: HeaderCheckResult[];
+  cspAnalysis: CspAnalysis;
   server: string | null;
   poweredBy: string | null;
   error?: string;
@@ -123,6 +140,53 @@ async function runHeadersCheck(): Promise<void> {
       `;
       checkResults.appendChild(div);
     });
+
+    const cspContainer = document.getElementById('csp-analysis-results')!;
+    if (data.cspAnalysis && data.cspAnalysis.present) {
+      const severityColors: Record<string, string> = {
+        high: 'var(--red)',
+        medium: 'var(--amber)',
+        low: 'var(--accent)',
+        info: 'var(--emerald)',
+      };
+      const severityLabels: Record<string, string> = {
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+        info: 'Info',
+      };
+      const csp = data.cspAnalysis;
+      cspContainer.innerHTML = `
+        <div class="csp-analysis-card">
+          <div class="csp-analysis-header">
+            <span class="csp-analysis-title">Content Security Policy Analysis</span>
+            <span class="speed-grade" style="color:${csp.grade.startsWith('A') ? 'var(--emerald)' : csp.grade === 'B' ? 'var(--accent)' : csp.grade === 'C' ? 'var(--amber)' : 'var(--red)'}; font-size:1.5rem">${csp.grade}</span>
+          </div>
+          <div class="csp-score-bar">
+            <div class="csp-score-fill" style="width:${csp.score}%;background:${csp.score >= 85 ? 'var(--emerald)' : csp.score >= 55 ? 'var(--amber)' : 'var(--red)'}"></div>
+            <span class="csp-score-label">${csp.score}/100</span>
+          </div>
+          ${csp.issues.length > 0 ? `
+            <div class="csp-issues">
+              <h4 class="csp-issues-title">Findings</h4>
+              ${csp.issues.map((issue) => `
+                <div class="csp-issue-item">
+                  <span class="csp-issue-severity" style="background:${severityColors[issue.severity]}20;color:${severityColors[issue.severity]}">${severityLabels[issue.severity]}</span>
+                  <span class="csp-issue-directive">${issue.directive}</span>
+                  <span class="csp-issue-message">${issue.message}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p class="info-muted" style="margin-top:8px">CSP is well-configured with no significant issues.</p>'}
+        </div>
+      `;
+    } else if (data.cspAnalysis) {
+      cspContainer.innerHTML = `
+        <div class="csp-analysis-card">
+          <p class="info-muted">No Content-Security-Policy header found. Adding a strict CSP is one of the most effective ways to prevent XSS attacks.</p>
+        </div>
+      `;
+    }
   } catch {
     checkResults.innerHTML = `<p class="info-muted">${t('headers.error')}</p>`;
   }

@@ -25,13 +25,31 @@ export interface DmarcResult {
   valid: boolean;
 }
 
+export interface BimiResult {
+  present: boolean;
+  logoUrl: string | null;
+  vmcUrl: string | null;
+  valid: boolean;
+}
+
+export interface MtaStsResult {
+  present: boolean;
+  mode: string | null;
+  maxAge: number | null;
+  mxPatterns: string[];
+  valid: boolean;
+}
+
 export interface EmailSecurityResult {
   domain: string;
   spf: SpfResult;
   dkim: DkimResult;
   dmarc: DmarcResult;
+  bimi: BimiResult;
+  mtaSts: MtaStsResult;
   grade: string;
   score: number;
+  bonusScore: number;
 }
 
 export function parseSpf(raw: string): {

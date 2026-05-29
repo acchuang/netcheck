@@ -2384,6 +2384,92 @@ select option {
   flex-shrink: 0;
 }
 
+.csp-analysis-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.csp-analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.csp-analysis-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.csp-score-bar {
+  position: relative;
+  height: 8px;
+  background: var(--surface-tertiary);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.csp-score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.csp-score-label {
+  position: absolute;
+  right: 0;
+  top: -20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.csp-issues-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.csp-issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.csp-issue-item:last-child {
+  border-bottom: none;
+}
+
+.csp-issue-severity {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.csp-issue-directive {
+  font-family: "Berkeley Mono", "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.csp-issue-message {
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
 /* Fingerprint */
 .fp-score-card {
   display: flex;
@@ -3711,4 +3797,107 @@ select option {
 .ai-result strong {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.breach-input-area {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.breach-password-wrap {
+  display: flex;
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.breach-password-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-family: "Berkeley Mono", "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 14px;
+}
+
+.breach-password-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn-icon {
+  padding: 8px;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.breach-result-card {
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-secondary);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.breach-result-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.breach-result-count {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.breach-result-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.breach-result-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.breach-result-error {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.breach-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--text-secondary);
+}
+
+.breach-privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
 }

@@ -16,7 +16,7 @@ function csp(): string {
     "style-src 'self' 'unsafe-inline' https://rsms.me https://unpkg.com",
     "font-src 'self' https://rsms.me",
     "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com",
-    "connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com",
+    "connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com https://api.pwnedpasswords.com",
     "frame-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -757,6 +757,117 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
   }
 }
 
+interface CspDirective {
+  name: string;
+  values: string[];
+}
+
+interface CspIssue {
+  severity: 'high' | 'medium' | 'low' | 'info';
+  directive: string;
+  value: string;
+  message: string;
+}
+
+interface CspAnalysis {
+  present: boolean;
+  raw: string | null;
+  directives: CspDirective[];
+  issues: CspIssue[];
+  score: number;
+  grade: string;
+}
+
+function parseCsp(cspHeader: string | null): CspAnalysis {
+  if (!cspHeader) {
+    return { present: false, raw: null, directives: [], issues: [], score: 0, grade: 'F' };
+  }
+
+  const directives: CspDirective[] = cspHeader.split(';').map((part) => {
+    const trimmed = part.trim();
+    const spaceIdx = trimmed.indexOf(' ');
+    if (spaceIdx === -1) {
+      return { name: trimmed.toLowerCase(), values: [] };
+    }
+    return {
+      name: trimmed.substring(0, spaceIdx).toLowerCase(),
+      values: trimmed
+        .substring(spaceIdx + 1)
+        .split(/\s+/)
+        .filter(Boolean),
+    };
+  });
+
+  const issues: CspIssue[] = [];
+  const findDirective = (name: string) => directives.find((d) => d.name === name);
+  const getValues = (name: string) => findDirective(name)?.values ?? [];
+
+  const scriptSrc = getValues('script-src');
+  const styleSrc = getValues('style-src');
+  const defaultSrc = getValues('default-src');
+  const objectSrc = getValues('object-src');
+  const frameSrc = getValues('frame-src');
+  const formAction = getValues('form-action');
+
+  if (scriptSrc.includes("'unsafe-inline'")) {
+    issues.push({ severity: 'high', directive: 'script-src', value: "'unsafe-inline'", message: 'Allows inline scripts — vulnerable to XSS attacks' });
+  }
+  if (scriptSrc.includes("'unsafe-eval'")) {
+    issues.push({ severity: 'high', directive: 'script-src', value: "'unsafe-eval'", message: 'Allows eval() — vulnerable to code injection' });
+  }
+  if (scriptSrc.includes('*')) {
+    issues.push({ severity: 'high', directive: 'script-src', value: '*', message: 'Wildcard source — scripts can load from any origin' });
+  }
+  if (scriptSrc.some((v) => v === 'data:' || v === 'blob:')) {
+    issues.push({ severity: 'high', directive: 'script-src', value: 'data:/blob:', message: 'Allows data: or blob: URIs in scripts — XSS vector' });
+  }
+  if (styleSrc.includes("'unsafe-inline'")) {
+    issues.push({ severity: 'medium', directive: 'style-src', value: "'unsafe-inline'", message: 'Allows inline styles — potential CSS-based attacks' });
+  }
+  if (!findDirective('default-src')) {
+    issues.push({ severity: 'medium', directive: 'default-src', value: '', message: 'Missing default-src — fallback behavior is browser-dependent' });
+  }
+  if (!findDirective('frame-ancestors')) {
+    issues.push({ severity: 'low', directive: 'frame-ancestors', value: '', message: 'Missing frame-ancestors — relies on X-Frame-Options instead' });
+  }
+  if (frameSrc.includes('*') || defaultSrc.includes('*')) {
+    issues.push({ severity: 'medium', directive: 'frame-src', value: '*', message: 'Wildcard frame source — can embed any external content' });
+  }
+  if (formAction.includes('*') || (formAction.length === 0 && defaultSrc.includes('*'))) {
+    issues.push({ severity: 'medium', directive: 'form-action', value: '*', message: 'Wildcard form action — forms can submit to any URL' });
+  }
+  if (objectSrc.length > 0 && (objectSrc.includes('*') || objectSrc.includes('data:'))) {
+    issues.push({ severity: 'high', directive: 'object-src', value: objectSrc.join(' '), message: 'Permissive object-src — allows plugin content' });
+  }
+  if (findDirective('report-uri') || findDirective('report-to')) {
+    issues.push({ severity: 'info', directive: 'reporting', value: '', message: 'CSP violation reporting is configured (positive)' });
+  }
+
+  let score = 100;
+  for (const issue of issues) {
+    switch (issue.severity) {
+      case 'high':
+        score -= 25;
+        break;
+      case 'medium':
+        score -= 15;
+        break;
+      case 'low':
+        score -= 5;
+        break;
+      case 'info':
+        score += 0;
+        break;
+    }
+  }
+  score = Math.max(0, Math.min(100, score));
+
+  const grade =
+    score >= 93 ? 'A+' : score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+
+  return { present: true, raw: cspHeader, directives, issues, score, grade };
+}
+
 function buildHeadersResponse(res: Response, targetUrl: string, request: Request): Response {
   const headers: Record<string, string> = {};
   for (const [key, value] of res.headers) {
@@ -776,8 +887,27 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
 
   const present = checks.filter((c) => c.present).length;
   const total = checks.length;
+
+  const cspAnalysis = parseCsp(headers['content-security-policy'] || null);
+
+  const otherHeadersScore = total > 1 ? ((present - (cspAnalysis.present ? 1 : 0)) / (total - 1)) * 100 : 0;
+  const cspWeight = 0.3;
+  const otherWeight = 0.7;
+  const weightedScore = cspAnalysis.present
+    ? cspWeight * cspAnalysis.score + otherWeight * otherHeadersScore
+    : otherHeadersScore;
   const grade =
-    present >= 8 ? 'A' : present >= 6 ? 'B' : present >= 4 ? 'C' : present >= 2 ? 'D' : 'F';
+    weightedScore >= 93
+      ? 'A+'
+      : weightedScore >= 85
+        ? 'A'
+        : weightedScore >= 70
+          ? 'B'
+          : weightedScore >= 55
+            ? 'C'
+            : weightedScore >= 40
+              ? 'D'
+              : 'F';
 
   return Response.json(
     {
@@ -786,6 +916,7 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
       grade,
       score: { present, total },
       checks,
+      cspAnalysis,
       server: headers['server'] || null,
       poweredBy: headers['x-powered-by'] || null,
     },
@@ -1777,7 +1908,100 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
     /* leave as not present */
   }
 
+  interface BimiData {
+    present: boolean;
+    logoUrl: string | null;
+    vmcUrl: string | null;
+    valid: boolean;
+  }
+
+  interface MtaStsData {
+    present: boolean;
+    mode: string | null;
+    maxAge: number | null;
+    mxPatterns: string[];
+    valid: boolean;
+  }
+
+  const bimi: BimiData = { present: false, logoUrl: null, vmcUrl: null, valid: false };
+  const mtaSts: MtaStsData = { present: false, mode: null, maxAge: null, mxPatterns: [], valid: false };
+
+  try {
+    const bimiRes = await fetch(
+      `${dohBase}?name=default._bimi.${encodeURIComponent(domain)}&type=TXT`,
+      { headers: { Accept: 'application/dns-json' } },
+    );
+    const bimiJson = (await bimiRes.json()) as { Answer?: { data: string }[] };
+    if (bimiJson.Answer) {
+      for (const a of bimiJson.Answer) {
+        const raw = (a.data || '').replace(/^"|"$/g, '').replace(/""/g, '"');
+        if (raw.includes('v=BIMI1')) {
+          bimi.present = true;
+          bimi.valid = true;
+          const tags = raw.split(';').map((t) => t.trim());
+          for (const tag of tags) {
+            const [key, ...valParts] = tag.split('=');
+            const val = valParts.join('=');
+            if (key === 'l') bimi.logoUrl = val || null;
+            else if (key === 'a') bimi.vmcUrl = val || null;
+          }
+          break;
+        }
+      }
+    }
+  } catch {
+    /* leave as not present */
+  }
+
+  try {
+    const mtaStsRes = await fetch(
+      `${dohBase}?name=_mta-sts.${encodeURIComponent(domain)}&type=TXT`,
+      { headers: { Accept: 'application/dns-json' } },
+    );
+    const mtaStsJson = (await mtaStsRes.json()) as { Answer?: { data: string }[] };
+    if (mtaStsJson.Answer) {
+      for (const a of mtaStsJson.Answer) {
+        const raw = (a.data || '').replace(/^"|"$/g, '').replace(/""/g, '"');
+        if (raw.includes('v=STSv1')) {
+          mtaSts.present = true;
+          mtaSts.valid = true;
+          const tags = raw.split(';').map((t) => t.trim());
+          for (const tag of tags) {
+            const [key, ...valParts] = tag.split('=');
+            const val = valParts.join('=');
+            if (key === 'id') { /* version id, not needed */ }
+          }
+        }
+      }
+    }
+  } catch {
+    /* leave as not present */
+  }
+
+  if (mtaSts.present) {
+    try {
+      const policyRes = await fetch(`https://mta-sts.${domain}/.well-known/mta-sts.txt`, {
+        signal: AbortSignal.timeout(5000),
+        headers: { 'User-Agent': 'NetCheck/1.0' },
+      });
+      if (policyRes.ok) {
+        const policyText = await policyRes.text();
+        const lines = policyText.split('\n').map((l) => l.trim());
+        for (const line of lines) {
+          const [key, ...valParts] = line.split(':');
+          const val = valParts.join(':').trim();
+          if (key === 'mode') mtaSts.mode = val || null;
+          else if (key === 'max_age') mtaSts.maxAge = parseInt(val, 10) || null;
+          else if (key === 'mx') mtaSts.mxPatterns.push(val);
+        }
+      }
+    } catch {
+      /* policy fetch failed */
+    }
+  }
+
   let score = 0;
+  let bonusScore = 0;
   if (spf.present && spf.valid && spf.mechanisms.length > 0) score += 35;
   else if (spf.present) score += 20;
   if (dkim.found) score += 35;
@@ -1785,6 +2009,16 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
     score += 25;
     if (dmarc.policy === 'reject') score += 5;
     else if (dmarc.policy === 'quarantine') score += 3;
+  }
+
+  if (bimi.present) {
+    bonusScore += bimi.logoUrl ? 5 : 3;
+    if (bimi.vmcUrl) bonusScore += 3;
+  }
+  if (mtaSts.present) {
+    if (mtaSts.mode === 'enforce') bonusScore += 5;
+    else if (mtaSts.mode === 'testing') bonusScore += 3;
+    else bonusScore += 1;
   }
 
   const thresholds: [number, string][] = [
@@ -1804,7 +2038,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   }
 
   return Response.json(
-    { domain, spf, dkim, dmarc, grade, score },
+    { domain, spf, dkim, dmarc, bimi, mtaSts, grade, score, bonusScore },
     { headers: corsHeaders(request) },
   );
 }
