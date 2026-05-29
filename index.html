@@ -129,6 +129,10 @@
               <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               <span class="nav-link-text">Email Security</span>
             </a>
+            <a href="#cert-transparency" class="nav-link" data-tab="cert-transparency">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+              <span class="nav-link-text">Cert Transparency</span>
+            </a>
           </div>
         </div>
         <div class="nav-category">
@@ -734,6 +738,16 @@
           <p>Click the button above to check your TLS connection.</p>
         </div>
       </div>
+
+      <div class="tls-target-section">
+        <h3 class="dash-section-title" style="margin-bottom:8px">Check a Target Domain</h3>
+        <p class="info-muted" style="margin-bottom:12px">Analyze TLS configuration for any website.</p>
+        <div class="headers-input-wrap">
+          <input type="text" id="tls-target-domain-input" class="headers-url-input" placeholder="Enter a domain (e.g., github.com)">
+          <button class="btn btn-primary" id="tls-target-check-btn">Check Domain</button>
+        </div>
+        <div id="tls-target-results"></div>
+      </div>
     </section>
 
     <!-- Browser Fingerprint Section -->
@@ -768,6 +782,13 @@
         <h2 class="suggestions-title" id="fp-protection-title">Protection Tips</h2>
         <p class="suggestions-subtitle" id="fp-protection-subtitle"></p>
         <div class="suggestions-grid" id="fp-suggestions-grid"></div>
+      </div>
+
+      <div class="privacy-exposure-section" style="margin-top:32px">
+        <h3 class="dash-section-title" style="margin-bottom:8px">Privacy Exposure</h3>
+        <p class="info-muted" style="margin-bottom:12px">Check which browser APIs are accessible and could leak privacy-sensitive information.</p>
+        <button class="btn btn-primary" id="privacy-exposure-btn">Check Privacy Exposure</button>
+        <div id="privacy-exposure-results" style="margin-top:16px"></div>
       </div>
     </section>
 
@@ -1181,6 +1202,19 @@
         <button class="btn btn-primary" id="email-check-btn">Check Email Security</button>
       </div>
       <div id="email-content"></div>
+    </section>
+
+    <!-- Certificate Transparency Section -->
+    <section class="section" id="cert-transparency">
+      <div class="section-header">
+        <h2 class="section-title">Certificate Transparency</h2>
+        <p class="section-subtitle">Discover all certificates issued for a domain via CT logs.</p>
+        <div class="headers-input-wrap" style="margin-top:12px">
+          <input type="text" id="ct-domain-input" class="headers-url-input" placeholder="Enter a domain (e.g., google.com)">
+          <button class="btn btn-primary" id="ct-check-btn">Search CT Logs</button>
+        </div>
+      </div>
+      <div id="ct-content"></div>
     </section>
 
     <!-- HTTP/3 Section -->

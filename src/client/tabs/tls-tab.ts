@@ -13,6 +13,19 @@ const GRADE_COLORS: Record<string, string> = {
   F: 'var(--grade-f, #dc2626)',
 };
 
+interface TlsTargetResult {
+  domain: string;
+  httpsAvailable: boolean;
+  redirectsToHttps: boolean;
+  redirectChain: string[];
+  hsts: { present: boolean; maxAge: number | null; includeSubDomains: boolean; preload: boolean } | null;
+  grade: string;
+  score: number;
+  error?: string;
+}
+
+let targetScanInProgress = false;
+
 function renderTlsInfo(info: TlsInfo): string {
   const protocolBadge = renderBadge({
     status: info.protocol === 'TLSv1.3' ? 'pass' : info.protocol === 'TLSv1.2' ? 'pass' : 'fail',
@@ -114,9 +127,112 @@ export function initTlsCheck(): void {
     });
   }
 
+  initTlsTargetCheck();
+
   tlsState.info.subscribe(() => renderTlsContent(container));
   tlsState.error.subscribe(() => renderTlsContent(container));
   tlsState.loading.subscribe(() => renderTlsContent(container));
+}
+
+function initTlsTargetCheck(): void {
+  const btn = document.getElementById('tls-target-check-btn') as HTMLButtonElement;
+  const input = document.getElementById('tls-target-domain-input') as HTMLInputElement;
+
+  if (!btn || !input) return;
+
+  btn.addEventListener('click', runTlsTargetCheck);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') runTlsTargetCheck();
+  });
+}
+
+async function runTlsTargetCheck(): Promise<void> {
+  if (targetScanInProgress) return;
+  targetScanInProgress = true;
+
+  const input = document.getElementById('tls-target-domain-input') as HTMLInputElement;
+  const domain = input.value.trim();
+  if (!domain) {
+    targetScanInProgress = false;
+    return;
+  }
+
+  const btn = document.getElementById('tls-target-check-btn') as HTMLButtonElement;
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+
+  const container = document.getElementById('tls-target-results')!;
+  container.innerHTML = '<div class="breach-loading"><div class="spinner"></div><p>Checking target domain...</p></div>';
+
+  try {
+    const res = await fetch(`/api/tls/check?domain=${encodeURIComponent(domain)}`);
+    const data: TlsTargetResult = await res.json();
+
+    if (data.error) {
+      container.innerHTML = `
+        <div class="csp-analysis-card">
+          <p class="info-muted">${data.error}</p>
+        </div>
+      `;
+      return;
+    }
+
+    const hstsInfo = data.hsts
+      ? `<div class="csp-analysis-card" style="margin-top:12px">
+          <h4 class="csp-issues-title">HSTS Policy</h4>
+          <div class="csp-issue-item">
+            <span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">PRESENT</span>
+            <span class="csp-issue-message">max-age: ${data.hsts.maxAge ? Math.round(data.hsts.maxAge / 86400) + ' days' : 'unknown'}</span>
+          </div>
+          ${data.hsts.includeSubDomains ? '<div class="csp-issue-item"><span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">INCLUDE</span><span class="csp-issue-message">includeSubDomains enabled</span></div>' : ''}
+          ${data.hsts.preload ? '<div class="csp-issue-item"><span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">PRELOAD</span><span class="csp-issue-message">HSTS preload enabled</span></div>' : ''}
+        </div>`
+      : '<div class="csp-analysis-card" style="margin-top:12px"><p class="info-muted">No HSTS header found.</p></div>';
+
+    container.innerHTML = `
+      <div class="tls-target-results">
+        <div class="tls-target-grade">
+          <div class="speed-grade" style="color:${GRADE_COLORS[data.grade] || 'var(--text-secondary)'}; font-size:2.5rem">${data.grade}</div>
+          <div style="font-size:12px;color:var(--text-secondary)">Target: ${data.domain}</div>
+        </div>
+        <div class="ct-summary-grid">
+          <div class="ct-summary-card">
+            <div class="ct-summary-number" style="color:${data.httpsAvailable ? 'var(--emerald)' : 'var(--red)'}">${data.httpsAvailable ? 'Yes' : 'No'}</div>
+            <div class="ct-summary-label">HTTPS</div>
+          </div>
+          <div class="ct-summary-card">
+            <div class="ct-summary-number" style="color:${data.redirectsToHttps ? 'var(--emerald)' : 'var(--amber)'}">${data.redirectsToHttps ? 'Yes' : 'No'}</div>
+            <div class="ct-summary-label">HTTP→HTTPS</div>
+          </div>
+          <div class="ct-summary-card">
+            <div class="ct-summary-number" style="color:${data.hsts?.present ? 'var(--emerald)' : 'var(--red)'}">${data.hsts?.present ? 'Yes' : 'No'}</div>
+            <div class="ct-summary-label">HSTS</div>
+          </div>
+          <div class="ct-summary-card">
+            <div class="ct-summary-number">${data.score}/100</div>
+            <div class="ct-summary-label">Score</div>
+          </div>
+        </div>
+        ${data.redirectChain.length > 0 ? `
+          <div class="csp-analysis-card" style="margin-top:12px">
+            <h4 class="csp-issues-title">Redirect Chain</h4>
+            ${data.redirectChain.map((r) => `<div class="csp-issue-item"><span class="csp-issue-message" style="font-family:'Berkeley Mono','SF Mono',monospace;font-size:12px">${r}</span></div>`).join('')}
+          </div>
+        ` : ''}
+        ${hstsInfo}
+      </div>
+    `;
+  } catch {
+    container.innerHTML = `
+      <div class="csp-analysis-card">
+        <p class="info-muted">Failed to check target domain TLS.</p>
+      </div>
+    `;
+  } finally {
+    targetScanInProgress = false;
+    btn.disabled = false;
+    btn.textContent = 'Check Domain';
+  }
 }
 
 function renderTlsContent(container: HTMLElement): void {

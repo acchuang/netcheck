@@ -3901,3 +3901,78 @@ select option {
   color: var(--text-tertiary);
   line-height: 1.4;
 }
+
+.ct-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ct-summary-card {
+  text-align: center;
+  padding: 16px 8px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.ct-summary-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ct-summary-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ct-table-wrap {
+  overflow-x: auto;
+}
+
+.ct-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ct-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 2px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ct-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ct-cell-issuer {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ct-cell-cn {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headers-input-wrap {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}

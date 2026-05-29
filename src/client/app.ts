@@ -29,6 +29,8 @@ import { initEmailSecurity } from './tabs/email-tab';
 import { initHttp3Test } from './tabs/http3-tab';
 import { initCookieAudit } from './tabs/cookie-tab';
 import { initBreachCheck } from './breach-check';
+import { initCertTransparency } from './cert-transparency';
+import { initPrivacyExposure } from './privacy-exposure';
 
 document.addEventListener('DOMContentLoaded', () => {
     safeInit('Dashboard', initDashboard);
@@ -39,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     safeInit('HTTP/3 Test', initHttp3Test);
     safeInit('Cookie Audit', initCookieAudit);
     safeInit('Breach Check', initBreachCheck);
+    safeInit('Cert Transparency', initCertTransparency);
+  safeInit('Privacy Exposure', initPrivacyExposure);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);

@@ -155,6 +155,14 @@ export default {
       return withSecurityHeaders(await handleEmailSecurity(request), request);
     }
 
+    if (url.pathname === '/api/cert-transparency') {
+      return withSecurityHeaders(await handleCertTransparency(request), request);
+    }
+
+    if (url.pathname === '/api/tls/check') {
+      return withSecurityHeaders(await handleTlsTargetCheck(request), request);
+    }
+
     if (url.pathname === '/robots.txt') {
       const robots = ['User-agent: *', 'Allow: /', `Sitemap: ${url.origin}/sitemap.xml`].join('\n');
       return withSecurityHeaders(
@@ -2041,4 +2049,205 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
     { domain, spf, dkim, dmarc, bimi, mtaSts, grade, score, bonusScore },
     { headers: corsHeaders(request) },
   );
+}
+
+async function handleCertTransparency(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const domain = url.searchParams.get('domain')?.trim().toLowerCase();
+
+  if (!domain) {
+    return Response.json({ error: 'Missing ?domain= parameter' }, { status: 400, headers: corsHeaders(request) });
+  }
+
+  if (isPrivateHostname(domain)) {
+    return Response.json({ error: 'Invalid domain' }, { status: 400, headers: corsHeaders(request) });
+  }
+
+  try {
+    const ctRes = await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`, {
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'NetCheck/1.0' },
+    });
+
+    if (!ctRes.ok) {
+      return Response.json(
+        { domain, error: `crt.sh returned status ${ctRes.status}`, certs: [], summary: { total: 0, active: 0, expired: 0, issuers: 0 } },
+        { headers: corsHeaders(request) },
+      );
+    }
+
+    const raw = (await ctRes.json()) as {
+      issuer_ca_id: number;
+      issuer_name: string;
+      common_name: string;
+      name_value: string;
+      not_before: string;
+      not_after: string;
+      serial_number: string;
+    }[];
+
+    const now = new Date();
+    const seenFingerprints = new Set<string>();
+    const certs: {
+      issuer: string;
+      commonName: string;
+      names: string;
+      notBefore: string;
+      notAfter: string;
+      status: 'active' | 'expired';
+      isWildcard: boolean;
+    }[] = [];
+
+    for (const c of raw.slice(0, 200)) {
+      const fingerprint = `${c.issuer_name}|${c.common_name}|${c.serial_number}`;
+      if (seenFingerprints.has(fingerprint)) continue;
+      seenFingerprints.add(fingerprint);
+
+      const notAfter = new Date(c.not_after);
+      const status = notAfter > now ? 'active' : 'expired';
+      const isWildcard = c.common_name.startsWith('*.') || c.name_value.includes('*.');
+
+      certs.push({
+        issuer: c.issuer_name,
+        commonName: c.common_name,
+        names: c.name_value,
+        notBefore: c.not_before,
+        notAfter: c.not_after,
+        status,
+        isWildcard,
+      });
+    }
+
+    const active = certs.filter((c) => c.status === 'active');
+    const expired = certs.filter((c) => c.status === 'expired');
+    const issuers = new Set(certs.map((c) => c.issuer)).size;
+    const wildcardCerts = certs.filter((c) => c.isWildcard);
+
+    const recentCerts = active.filter((c) => {
+      const notBefore = new Date(c.notBefore);
+      const diffDays = (now.getTime() - notBefore.getTime()) / (1000 * 60 * 60 * 24);
+      return diffDays <= 30;
+    });
+
+    const trustIndicators: string[] = [];
+    if (issuers <= 2) trustIndicators.push('Few issuers — consistent certificate authority');
+    if (recentCerts.length > 3) trustIndicators.push(`${recentCerts.length} certificates issued in the last 30 days — investigate if unexpected`);
+    if (wildcardCerts.length > 5) trustIndicators.push('Multiple wildcard certificates — broad subdomain coverage');
+
+    return Response.json(
+      {
+        domain,
+        certs: certs.slice(0, 100),
+        totalInDb: raw.length,
+        summary: {
+          total: certs.length,
+          active: active.length,
+          expired: expired.length,
+          issuers,
+          wildcardCount: wildcardCerts.length,
+          recentlyIssued: recentCerts.length,
+        },
+        trustIndicators,
+      },
+      { headers: corsHeaders(request) },
+    );
+  } catch (err) {
+    const msg = err instanceof Error && err.name === 'TimeoutError' ? 'crt.sh request timed out' : 'Failed to fetch certificate transparency data';
+    return Response.json(
+      { domain, error: msg, certs: [], summary: { total: 0, active: 0, expired: 0, issuers: 0 } },
+      { headers: corsHeaders(request) },
+    );
+  }
+}
+
+async function handleTlsTargetCheck(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const domain = url.searchParams.get('domain')?.trim().toLowerCase();
+
+  if (!domain) {
+    return Response.json({ error: 'Missing ?domain= parameter' }, { status: 400, headers: corsHeaders(request) });
+  }
+
+  if (isPrivateHostname(domain)) {
+    return Response.json({ error: 'Invalid domain' }, { status: 400, headers: corsHeaders(request) });
+  }
+
+  const result: {
+    domain: string;
+    httpsAvailable: boolean;
+    redirectsToHttps: boolean;
+    redirectChain: string[];
+    hsts: { present: boolean; maxAge: number | null; includeSubDomains: boolean; preload: boolean } | null;
+    grade: string;
+    score: number;
+    error?: string;
+  } = {
+    domain,
+    httpsAvailable: false,
+    redirectsToHttps: false,
+    redirectChain: [],
+    hsts: null,
+    grade: 'F',
+    score: 0,
+  };
+
+  try {
+    const httpRes = await fetch(`http://${domain}/`, {
+      redirect: 'manual',
+      signal: AbortSignal.timeout(8000),
+      headers: { 'User-Agent': 'NetCheck/1.0' },
+    });
+
+    if (httpRes.status >= 300 && httpRes.status < 400) {
+      const location = httpRes.headers.get('location') || '';
+      result.redirectChain.push(`http://${domain} → ${location}`);
+      if (location.startsWith('https://')) {
+        result.redirectsToHttps = true;
+      }
+    }
+  } catch {
+    /* HTTP not available, expected for HTTPS-only domains */
+  }
+
+  try {
+    const httpsRes = await fetch(`https://${domain}/`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000),
+      headers: { 'User-Agent': 'NetCheck/1.0' },
+    });
+
+    result.httpsAvailable = true;
+
+    const hstsHeader = httpsRes.headers.get('strict-transport-security');
+    if (hstsHeader) {
+      const maxAgeMatch = hstsHeader.match(/max-age=(\d+)/i);
+      result.hsts = {
+        present: true,
+        maxAge: maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : null,
+        includeSubDomains: hstsHeader.toLowerCase().includes('includesubdomains'),
+        preload: hstsHeader.toLowerCase().includes('preload'),
+      };
+    }
+
+    let score = 0;
+    if (result.httpsAvailable) score += 40;
+    if (result.redirectsToHttps) score += 25;
+    if (result.hsts?.present) score += 20;
+    if ((result.hsts?.maxAge ?? 0) >= 31536000) score += 10;
+    if (result.hsts?.includeSubDomains) score += 5;
+    if (result.hsts?.preload) score += 5;
+
+    result.score = Math.min(100, score);
+    const grade =
+      score >= 93 ? 'A+' : score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+    result.grade = grade;
+  } catch {
+    if (!result.httpsAvailable && !result.redirectsToHttps) {
+      result.error = 'Domain does not support HTTPS';
+      result.grade = 'F';
+      result.score = 0;
+    }
+  }
+
+  return Response.json(result, { headers: corsHeaders(request) });
 }
