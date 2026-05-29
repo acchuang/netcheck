@@ -447,9 +447,9 @@ body.nav-open .nav-overlay {
   padding: 56px var(--spacing-page, clamp(1.5rem, 5vw, 3rem)) 100px;
 }
 
-/* Sections */
+/* Sections — display control handled by app.css (glass transitions) */
 .section {
-  display: none;
+  display: block;
 }
 
 .section.active {

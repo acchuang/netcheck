@@ -156,6 +156,7 @@ function renderDashboard(): void {
   }
 
   const gradeColor = GRADE_COLORS[grade] || 'var(--text-secondary)';
+  const gradeAplus = grade === 'A+';
   const download = speedState.download.get();
   const latency = speedState.latency.get();
   const ip = dnsState.ipData.get()?.ip || '';
@@ -178,7 +179,7 @@ function renderDashboard(): void {
     <div class="dashboard-stats">
       <div class="dash-stat-card">
         <div class="dash-stat-label">${t('dashboard.overallScore', 'Overall Score')}</div>
-        <div class="dash-stat-value" style="color:${gradeColor}">${grade || '\u2014'}</div>
+        <div class="dash-stat-value${gradeAplus ? ' grade-gradient-a-plus' : ''}"${gradeAplus ? '' : ` style="color:${gradeColor}"`}>${grade || '\u2014'}</div>
         <div class="dash-stat-sub">${testsCompleted} ${t('dashboard.testsCompleted', 'tests completed')}</div>
       </div>
       <div class="dash-stat-card">

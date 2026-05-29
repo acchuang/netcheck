@@ -255,6 +255,27 @@ function initTabs(): void {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeNav();
   });
+
+  // Category collapse/expand
+  document.querySelectorAll('.nav-category-label').forEach((label) => {
+    label.addEventListener('click', () => {
+      const category = label.parentElement! as HTMLElement;
+      category.classList.toggle('collapsed');
+      try {
+        const indices: number[] = [];
+        document.querySelectorAll('.nav-category').forEach((c, i) => {
+          if (c.classList.contains('collapsed')) indices.push(i);
+        });
+        localStorage.setItem('netcheck-nav-collapsed', JSON.stringify(indices));
+      } catch { /* quota / private browsing */ }
+    });
+  });
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('netcheck-nav-collapsed') || '[]');
+    const cats = document.querySelectorAll('.nav-category');
+    saved.forEach((i: number) => { if (cats[i]) cats[i].classList.add('collapsed'); });
+  } catch { /* */ }
 }
 
 initTheme();

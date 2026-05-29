@@ -192,6 +192,18 @@
   --shadow-md: 0 4px 16px rgba(8, 9, 10, 0.4);
   --shadow-lg: 0 8px 32px rgba(8, 9, 10, 0.5);
   --shadow-xl: 0 20px 60px rgba(8, 9, 10, 0.6);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-bg-active: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(12px);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  --glass-border-accent: rgba(124, 92, 252, 0.25);
+  --shadow-glass: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-glass-elevated: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --gradient-bar: linear-gradient(90deg, #7c5cfc, #2dd4bf);
 }
 
 /* ========================================
@@ -226,6 +238,18 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
+
+  /* Glass */
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-bg-hover: rgba(0, 0, 0, 0.05);
+  --glass-bg-active: rgba(0, 0, 0, 0.07);
+  --glass-blur: blur(12px);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-hover: rgba(0, 0, 0, 0.10);
+  --glass-border-accent: rgba(124, 92, 252, 0.25);
+  --shadow-glass: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-glass-elevated: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --gradient-bar: linear-gradient(90deg, #7c5cfc, #2dd4bf);
 }
 
 /* ── Progressive enhancement fallbacks ── */
