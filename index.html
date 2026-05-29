@@ -333,6 +333,25 @@
             </div>
           </div>
         </div>
+
+        <!-- DNSSEC Chain Validation Card -->
+        <div class="card card-wide" id="dnssec-card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <h2 class="card-title">DNSSEC Chain Validation</h2>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" style="margin-bottom:12px">Independently validate DNSSEC chain of trust for any domain.</p>
+            <div class="headers-input-wrap" style="margin-bottom:12px">
+              <input type="text" id="dnssec-domain-input" class="headers-url-input" placeholder="Enter a domain (e.g., cloudflare.com)">
+              <button class="btn btn-primary" id="dnssec-check-btn">Validate DNSSEC</button>
+            </div>
+            <div id="dnssec-results"></div>
+          </div>
+        </div>
       </div>
 
       <!-- IPv6 Readiness Card -->

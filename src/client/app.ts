@@ -31,6 +31,7 @@ import { initCookieAudit } from './tabs/cookie-tab';
 import { initBreachCheck } from './breach-check';
 import { initCertTransparency } from './cert-transparency';
 import { initPrivacyExposure } from './privacy-exposure';
+import { initDnssecValidation } from './dnssec-validation';
 
 document.addEventListener('DOMContentLoaded', () => {
     safeInit('Dashboard', initDashboard);
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     safeInit('Breach Check', initBreachCheck);
     safeInit('Cert Transparency', initCertTransparency);
   safeInit('Privacy Exposure', initPrivacyExposure);
+  safeInit('DNSSEC Validation', initDnssecValidation);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);
