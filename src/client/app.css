@@ -688,6 +688,7 @@ main { position: relative; min-height: 100vh; }
   transition: transform 200ms ease;
   opacity: 0.5;
 }
+.nav-category-chevron svg { pointer-events: none; }
 .nav-category.collapsed .nav-category-chevron { transform: rotate(90deg); }
 .nav-category.collapsed .nav-category-links { display: none; }
 .nav-category-label { cursor: pointer; user-select: none; }
