@@ -1,5 +1,8 @@
 import { aiState } from './state/ai-state';
 import { appState } from './state/shared-state';
+import { dnsState } from './state/dns-state';
+import { speedState } from './state/speed-state';
+import { tlsState } from './state/tls-state';
 import { collectTestResults } from './ai-collector';
 import { analyzeWithCloud } from './ai-cloud';
 import { analyzeWithLocal } from './ai-local';
@@ -65,6 +68,7 @@ function render(): void {
   container.innerHTML = renderMain(mode, result);
   wireAnalyze(container);
   wireModeToggle(container);
+  wireCopy(container);
 }
 
 function renderEmptyState(): string {
@@ -144,7 +148,10 @@ function renderLoading(isLocal: boolean, downloading: boolean, label: string): s
 }
 
 function renderMain(mode: string, result: string): string {
-  const resultHtml = result ? renderResult(result) : '';
+  const readiness = renderReadinessPills();
+  const summary = result ? renderSummaryCards() : '';
+  const resultHtml = result ? renderAccordionResult(result) : '';
+  const controls = result ? renderResultControls() : '';
 
   return `
     <div class="ai-main">
@@ -167,29 +174,198 @@ function renderMain(mode: string, result: string): string {
       </div>
 
       <button class="btn btn-primary ai-analyze-btn" id="ai-analyze-btn">
-        ${t('ai.analyze')}
+        ${result ? t('ai.reanalyze', 'Analyze Again') : t('ai.analyze')}
       </button>
 
       ${mode === 'cloud' ? '<p class="ai-cloud-note">' + t('ai.cloudNote') + '</p>' : '<p class="ai-cloud-note">' + t('ai.modeLocalDesc') + '</p>'}
 
+      ${readiness}
+
+      ${summary ? '<div class="ai-summary-cards">' + summary + '</div>' : ''}
+
       ${resultHtml ? '<div class="ai-result">' + resultHtml + '</div>' : ''}
+
+      ${controls}
     </div>`;
 }
 
-function renderResult(markdown: string): string {
-  let html = markdown
+function renderReadinessPills(): string {
+  const completed = appState.completedTests.get();
+  const testNames: { key: string; label: string }[] = [
+    { key: 'dns', label: 'DNS' },
+    { key: 'speed', label: 'Speed' },
+    { key: 'tls', label: 'TLS' },
+    { key: 'adblock', label: 'Ad Block' },
+    { key: 'headers', label: 'Headers' },
+    { key: 'fingerprint', label: 'Fingerprint' },
+    { key: 'quality', label: 'Quality' },
+  ];
+
+  const pillsHtml = testNames
+    .map((t) => {
+      const done = completed.includes(t.key);
+      return `<span class="ai-readiness-pill ${done ? 'ai-readiness-done' : 'ai-readiness-pending'}">${done ? '\u2713' : '\u2014'} ${t.label}</span>`;
+    })
+    .join('');
+
+  const remaining = testNames.length - completed.length;
+  const tip = remaining > 0
+    ? `<p class="ai-readiness-tip">${t('ai.readinessTip', 'Run more tests for a better analysis.')} (${remaining} ${t('ai.remaining', 'remaining')})</p>`
+    : '<p class="ai-readiness-tip">All tests complete — ready for comprehensive analysis.</p>';
+
+  return `
+    <div class="ai-readiness">
+      <h3 class="dash-section-title">${t('ai.dataAvailable', 'Available Test Data')}</h3>
+      <div class="ai-readiness-pills">${pillsHtml}</div>
+      ${tip}
+    </div>
+  `;
+}
+
+function renderSummaryCards(): string {
+  const completed = appState.completedTests.get();
+  const dl = speedState.download.get();
+  const speedGrade = speedState.grade.get();
+  const dnsChecks = dnsState.securityChecks.get();
+  const dnsPassCount = dnsChecks.filter((c) => c.status === 'pass').length;
+  const tlsInfo = tlsState.info.get();
+
+  const cards: { label: string; value: string; sub: string }[] = [];
+
+  if (completed.length > 0) {
+    cards.push({
+      label: t('ai.cards.overall', 'Overall'),
+      value: `${completed.length} ${t('ai.cards.tests', 'tests')}`,
+      sub: t('ai.cards.analyzed', 'analyzed'),
+    });
+  }
+
+  if (completed.includes('speed') && dl > 0) {
+    cards.push({
+      label: t('ai.cards.speed', 'Speed'),
+      value: `${Math.round(dl)} Mbps`,
+      sub: `${t('ai.cards.grade', 'Grade')}: ${speedGrade}`,
+    });
+  }
+
+  if (completed.includes('dns') && dnsChecks.length > 0) {
+    const webrtc = dnsState.webrtcLeak.get();
+    cards.push({
+      label: t('ai.cards.dns', 'DNS'),
+      value: `${dnsPassCount}/${dnsChecks.length} pass`,
+      sub: webrtc === false ? 'No WebRTC leak' : webrtc === true ? 'Leak detected' : '',
+    });
+  }
+
+  if (completed.includes('tls') && tlsInfo) {
+    cards.push({
+      label: t('ai.cards.tls', 'TLS'),
+      value: tlsInfo.protocol,
+      sub: `${t('ai.cards.cipher', 'Grade')}: ${tlsInfo.grade}`,
+    });
+  }
+
+  if (cards.length === 0) return '';
+
+  return cards
+    .map(
+      (c) => `
+    <div class="dash-stat-card">
+      <div class="dash-stat-label">${c.label}</div>
+      <div class="dash-stat-value">${c.value}</div>
+      <div class="dash-stat-sub">${c.sub}</div>
+    </div>`,
+    )
+    .join('');
+}
+
+function renderAccordionResult(markdown: string): string {
+  const sections = parseMarkdownSections(markdown);
+  if (sections.length === 0) {
+    return `<div class="ai-result-text">${renderInlineMarkdown(markdown)}</div>`;
+  }
+
+  const sectionHtml = sections
+    .map(
+      (s, i) => `
+    <div class="test-category ${i === 0 ? 'open' : ''}">
+      <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
+        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="test-category-name">${s.title}</span>
+      </div>
+      <div class="test-category-body">
+        <div class="ai-result-text">${renderInlineMarkdown(s.body)}</div>
+      </div>
+    </div>`,
+    )
+    .join('');
+
+  return `<div class="ai-accordion">${sectionHtml}</div>`;
+}
+
+function parseMarkdownSections(
+  markdown: string,
+): { title: string; body: string }[] {
+  const lines = markdown.split('\n');
+  const sections: { title: string; body: string }[] = [];
+  let currentTitle = '';
+  let currentBody: string[] = [];
+
+  for (const line of lines) {
+    const hMatch = line.match(/^\*{1,2}([^*]+)\*{1,2}:?\s*$/);
+    const h2Match = line.match(/^#{1,3}\s+(.+)/);
+
+    if (h2Match) {
+      if (currentTitle || currentBody.length > 0) {
+        sections.push({ title: currentTitle || 'Overview', body: currentBody.join('\n') });
+      }
+      currentTitle = h2Match[1];
+      currentBody = [];
+    } else if (hMatch) {
+      if (currentTitle || currentBody.length > 0) {
+        sections.push({ title: currentTitle || 'Overview', body: currentBody.join('\n') });
+      }
+      currentTitle = hMatch[1];
+      currentBody = [];
+    } else {
+      currentBody.push(line);
+    }
+  }
+
+  if (currentTitle || currentBody.length > 0) {
+    sections.push({ title: currentTitle || 'Overview', body: currentBody.join('\n') });
+  }
+
+  return sections;
+}
+
+function renderInlineMarkdown(text: string): string {
+  let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  html = html.replace(/^### (.+)$/gm, '<h3 class="ai-result-h3">$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2 class="ai-result-h2">$1</h2>');
   html = html.replace(/^\*\*(.+?)\*\*:?\s*/gm, '<strong>$1</strong>: ');
   html = html.replace(/^\*\*(.+?)\*\*$/gm, '<strong>$1</strong>');
   html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
   html = html.replace(/(<li>[\s\S]*?<\/li>)+/g, '<ul>$&</ul>');
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
 
   return html;
+}
+
+function renderResultControls(): string {
+  return `
+    <div class="ai-controls">
+      <button class="btn btn-secondary" id="ai-copy-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        ${t('ai.copyResult', 'Copy Result')}
+      </button>
+    </div>
+  `;
 }
 
 function wireEmptyLinks(container: HTMLElement): void {
@@ -307,5 +483,22 @@ function wireModeToggle(container: HTMLElement): void {
       aiState.modelConfirming.set(false);
       render();
     });
+  });
+}
+
+function wireCopy(container: HTMLElement): void {
+  const btn = container.querySelector<HTMLButtonElement>('#ai-copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const result = aiState.result.get();
+    try {
+      await navigator.clipboard.writeText(result);
+      btn.textContent = t('ai.copied', 'Copied!');
+    } catch {
+      btn.textContent = t('ai.copyFailed', 'Copy failed');
+    }
+    setTimeout(() => {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ${t('ai.copyResult', 'Copy Result')}`;
+    }, 2000);
   });
 }
