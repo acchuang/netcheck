@@ -144,7 +144,7 @@ export async function runAdBlockTests(): Promise<void> {
   AdBlockTest.results.forEach((cat) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
     const catEl = createCategoryWithResults(cat.name, cat.tests, blocked);
-    catEl.classList.add('stagger-glass');
+    catEl.classList.add('stagger-item');
     categoriesEl.appendChild(catEl);
   });
 
@@ -285,7 +285,7 @@ function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]
       }).join('');
 
       return `
-      <div class="suggestion-card category-advice stagger-glass">
+      <div class="suggestion-card category-advice stagger-item">
         <div class="suggestion-top">
           <div class="suggestion-icon-svg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>
