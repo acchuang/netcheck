@@ -25,12 +25,18 @@ import { initTlsCheck } from './tabs/tls-tab';
 import { initHistory } from './tabs/history-tab';
 import { initAiAnalysis } from './ai-analysis-ui';
 import { refreshHistory } from './tabs/history-tab';
+import { initEmailSecurity } from './tabs/email-tab';
+import { initHttp3Test } from './tabs/http3-tab';
+import { initCookieAudit } from './tabs/cookie-tab';
 
 document.addEventListener('DOMContentLoaded', () => {
     safeInit('Dashboard', initDashboard);
     safeInit('TLS Check', initTlsCheck);
     safeInit('History', initHistory);
     safeInit('AI Analysis', initAiAnalysis);
+    safeInit('Email Security', initEmailSecurity);
+    safeInit('HTTP/3 Test', initHttp3Test);
+    safeInit('Cookie Audit', initCookieAudit);
   safeInit('Tabs', initTabs);
   safeInit('Tooltips', initTooltips);
   safeInit('Skeletons', renderInitialSkeletons);
@@ -72,6 +78,9 @@ function updateMetaForTab(tab: string): void {
     network: t('nav.network'),
     about: t('nav.about'),
     'ai-analysis': t('nav.ai'),
+    'email-security': 'Email Security',
+    http3: 'HTTP/3 Test',
+    cookies: 'Cookie Audit',
   };
   const tabName = tabNames[tab] || tab;
   const title = `NetCheck — ${tabName}`;

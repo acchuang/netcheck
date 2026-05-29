@@ -125,6 +125,10 @@
               <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
               <span class="nav-link-text">TLS</span>
             </a>
+            <a href="#email-security" class="nav-link" data-tab="email-security">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <span class="nav-link-text">Email Security</span>
+            </a>
           </div>
         </div>
         <div class="nav-category">
@@ -138,6 +142,10 @@
               <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
               <span class="nav-link-text" id="nav-quality-text">Quality</span>
             </a>
+            <a href="#http3" class="nav-link" data-tab="http3">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              <span class="nav-link-text">HTTP/3</span>
+            </a>
           </div>
         </div>
         <div class="nav-category">
@@ -146,6 +154,10 @@
             <a href="#fingerprint" class="nav-link" data-tab="fingerprint">
               <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
               <span class="nav-link-text" id="nav-fingerprint-text">Fingerprint</span>
+            </a>
+            <a href="#cookies" class="nav-link" data-tab="cookies">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1"/><circle cx="16" cy="10" r="1"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/></svg>
+              <span class="nav-link-text">Cookie Audit</span>
             </a>
           </div>
         </div>
@@ -1072,6 +1084,39 @@
         <p class="subtitle" id="ai-subtitle">AI-powered insights into your network health</p>
       </div>
       <div id="ai-content" class="section-body"></div>
+    </section>
+
+    <!-- Email Security Section -->
+    <section class="section" id="email-security">
+      <div class="section-header">
+        <h2 class="section-title">Email Security</h2>
+        <p class="section-subtitle" data-i18n="emailSecurity.desc">Check SPF, DKIM, and DMARC records for any domain.</p>
+      </div>
+      <div class="email-input-row">
+        <input type="text" id="email-domain-input" class="check-input" placeholder="example.com" aria-label="Domain to check">
+        <button class="btn btn-primary" id="email-check-btn">Check Email Security</button>
+      </div>
+      <div id="email-content"></div>
+    </section>
+
+    <!-- HTTP/3 Section -->
+    <section class="section" id="http3">
+      <div class="section-header">
+        <h2 class="section-title">HTTP/3 Test</h2>
+        <p class="section-subtitle" data-i18n="http3.desc">Test HTTP/3 (QUIC) connectivity and performance.</p>
+        <button class="btn btn-primary" id="http3-run-btn" style="margin-top:0.75rem">Test HTTP/3 Connectivity</button>
+      </div>
+      <div id="http3-content"></div>
+    </section>
+
+    <!-- Cookie Audit Section -->
+    <section class="section" id="cookies">
+      <div class="section-header">
+        <h2 class="section-title">Cookie Audit</h2>
+        <p class="section-subtitle" data-i18n="cookie.desc">Analyze cookies stored by this site for privacy and security.</p>
+        <button class="btn btn-primary" id="cookie-audit-btn" style="margin-top:0.75rem">Audit Cookies</button>
+      </div>
+      <div id="cookie-content"></div>
     </section>
 
   <footer class="footer">
