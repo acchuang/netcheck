@@ -105,12 +105,12 @@ Inspired by Global Radio's region cards — each feature category gets a distinc
 
 | Token | Size | Weight | Usage |
 |---|---|---|---|
-| `--text-hero` | 3.5rem–6rem | 800 | Page hero headings |
-| `--text-display` | 2.5rem | 800 | Section titles, large metrics |
-| `--text-heading` | 1.5rem | 700 | Card headings |
+| `--text-hero` | 3.5rem | 800 | Page hero headings (desktop: 4.5rem at 768px+, mobile: 3rem at <768px) |
+| `--text-display` | 2.5rem | 800 | Section titles, large metrics (mobile: 2rem) |
+| `--text-heading` | 1.5rem | 700 | Card headings (mobile: 1.25rem) |
 | `--text-body` | 0.875rem | 400 | Body text |
-| `--text-mono` | 0.625rem–0.75rem | 500 | Labels, metadata, tags |
-| `--text-label` | 0.5rem–0.625rem | 600 | Uppercase category labels |
+| `--text-mono` | 0.75rem | 500 | Labels, metadata, tags (0.625rem for tiny badges) |
+| `--text-label` | 0.625rem | 600 | Uppercase category labels |
 
 ### Typography Rules
 
@@ -118,7 +118,7 @@ Inspired by Global Radio's region cards — each feature category gets a distinc
 - Mono font for all metadata, labels, tags, and secondary information
 - Display/inter font for headings and primary content
 - Dramatic contrast between hero sizes and body sizes
-- No Geist `font-feature-settings` unless Inter supports equivalents
+- Drop all Geist-specific `font-feature-settings` — Inter uses standard kerning/ligatures via `font-variant-ligatures`
 
 ## Layout
 
@@ -224,7 +224,7 @@ Inspired by Global Radio's region cards — each feature category gets a distinc
 - Border thickness: 3px
 - Color: category accent
 - Center number: display font, 700 weight
-- No gradient fill, no animation (or subtle on load only)
+- No gradient fill, no continuous animation — score appears with a single ease-out scale transition on mount
 
 ### Buttons
 
@@ -272,7 +272,7 @@ The following current design elements are dropped:
 - **Inset shadows** on cards
 - **Translucent borders** (color-mix approach → solid #1a1a1a)
 - **Spring animation** on sidebar indicator (simple border-color transition)
-- **Staggered card animations** (simplify or remove)
+- **Staggered card animations** — removed (cards appear immediately, no incremental delays)
 - **Geist font** CDN link
 
 ## File Changes
@@ -292,7 +292,9 @@ The following current design elements are dropped:
 | `index.html` | Font CDN links updated (Inter + JetBrains Mono), header markup restructured |
 | `src/client/theme.ts` | Light/dark token toggling adapted for new token structure |
 | `src/client/app.ts` | Toolbar repositioning from bottom → top header, sidebar restyling logic |
-| `src/client/components/*.ts` | Class name updates where tokens changed (badge, card, progress factories) |
+| `src/client/components/badge.ts` | Status badge class names and color references updated per new tokens |
+| `src/client/components/card.ts` | Card class names and structure updated per new card spec |
+| `src/client/components/progress.ts` | Progress bar class names updated for 3px flat bars |
 | `src/client/ui-utils.ts` | Animation/dom helpers adapted |
 
 ### No Changes
@@ -326,15 +328,17 @@ Light theme mirrors dark with inverted surfaces:
 - Status colors remain consistent across themes
 - Category accent colors remain consistent
 
-## Spec Review Checklist
+## Print Styles
 
-- [ ] All current features remain functional — no breaking changes to logic
-- [ ] All 15+ tabs verified visually
-- [ ] Dark theme complete
-- [ ] Light theme complete
-- [ ] Responsive (768px, 480px breakpoints)
-- [ ] Print styles updated
-- [ ] Reduced-motion support maintained
-- [ ] PWA/manifest unaffected
-- [ ] i18n (6 languages) unaffected
-- [ ] Tests pass (or snapshot tests updated)
+Print styles are updated to match the new flat design:
+- Hide lime accent borders and background colors
+- Use black-on-white text with mono font for data tables
+- Hide interactive elements (top header buttons, sidebar)
+- Show full card data in simplified linear layout
+
+## Reduced Motion
+
+Motion support adapted for the new design:
+- `prefers-reduced-motion: reduce` disables all card mount animations and score ring transitions
+- Removes button hover glow transitions
+- Progress bars and status indicators appear at final state without transitions
