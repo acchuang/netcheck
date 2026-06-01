@@ -124,7 +124,7 @@ function renderMapResults(results: MapResults): void {
     userMarker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif">
         <strong>${t('network.yourLocation') || 'Your Location'}</strong><br>
-        <span style="font-size:12px;color:#888">${results.userColo}</span>
+        <span style="font-size:12px;color:var(--text-muted)">${results.userColo}</span>
       </div>`,
     );
     bounds.push([results.userLat, results.userLon]);
@@ -156,16 +156,16 @@ function renderMapResults(results: MapResults): void {
     const latencyText = probe.latency != null ? `${probe.latency}ms` : '—';
     const closestBadge =
       probe.id === closest?.id
-        ? `<span style="background:#5e6ad2;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t('network.closest') || 'Closest'}</span>`
+        ? `<span style="background:var(--accent);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t('network.closest') || 'Closest'}</span>`
         : '';
     const estimateLabel = !probe.measured
-      ? `<br><span style="font-size:10px;color:#999">⏱ ${t('network.estimated')}</span>`
+      ? `<br><span style="font-size:10px;color:var(--text-muted)">⏱ ${t('network.estimated')}</span>`
       : '';
 
     marker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
         <strong>${probe.name} (${probe.id})${closestBadge}</strong><br>
-        <span style="font-size:12px;color:#888">${probe.city}, ${probe.country}</span><br>
+        <span style="font-size:12px;color:var(--text-muted)">${probe.city}, ${probe.country}</span><br>
         <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span>
         ${estimateLabel}
       </div>`,

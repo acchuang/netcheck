@@ -177,9 +177,11 @@ function initTabs(): void {
     const vpW = window.innerWidth;
     const panelH = panel.offsetHeight || 200;
     const panelW = panel.offsetWidth || 160;
-    const sidebarW = vpW >= 769 ? 180 : (vpW >= 641 ? 180 : 0);
-    const left = Math.min(sidebarW + 8, vpW - panelW - 8);
-    const top = Math.max(8, Math.min(r.top, vpH - panelH - 8));
+    const isHeader = trigger.closest('.nav-header-tools') !== null;
+    const left = isHeader
+      ? Math.max(8, Math.min(r.left, vpW - panelW - 8))
+      : Math.min((vpW >= 769 ? 180 : (vpW >= 641 ? 180 : 0)) + 8, vpW - panelW - 8);
+    const top = Math.max(8, Math.min(r.bottom + 4, vpH - panelH - 8));
     panel.style.top = `${Math.round(top)}px`;
     panel.style.left = `${Math.round(left)}px`;
   }
@@ -228,8 +230,7 @@ function initTabs(): void {
       e.stopPropagation();
       const shareMenu = document.getElementById('share-menu');
       const sharePreview = document.getElementById('share-preview');
-      const shareCopyBtn = document.getElementById('share-copy-btn');
-      if (shareMenu && sharePreview && shareCopyBtn) {
+      if (shareMenu && sharePreview) {
         const wasOpen = shareMenu.classList.contains('open');
         document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
         if (!wasOpen) {
@@ -238,6 +239,33 @@ function initTabs(): void {
           positionToolbarPanel(shareBtnHeader, shareMenu);
         }
       }
+    });
+  }
+
+  const shareCopyBtn = document.getElementById('share-copy-btn');
+  if (shareCopyBtn) {
+    shareCopyBtn.addEventListener('click', async () => {
+      const sharePreview = document.getElementById('share-preview');
+      const text = sharePreview?.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      shareCopyBtn.textContent = t('share.copied') || 'Copied!';
+      shareBtnHeader?.classList.add('nav-toolbar-btn-copied');
+      setTimeout(() => {
+        shareCopyBtn.textContent = t('share.copy') || 'Copy to clipboard';
+        shareBtnHeader?.classList.remove('nav-toolbar-btn-copied');
+        document.getElementById('share-menu')?.classList.remove('open');
+      }, 1500);
     });
   }
 

@@ -117,8 +117,8 @@
   --surface-elevated: var(--gray-850);
 
   --text-primary: var(--gray-100);
-  --text-secondary: #666666;
-  --text-muted: #4a4a4a;
+  --text-secondary: #B0B0A0;
+  --text-muted: #888877;
 
   --border-default: #1a1a1a;
   --border-accent: var(--status-pass);
@@ -126,6 +126,15 @@
 
   --accent: var(--accent-lime);
   --accent-glow: rgba(200, 255, 0, 0.12);
+
+  /* Legacy aliases (used in inline styles) */
+  --red: var(--accent-rose);
+  --emerald: var(--accent-green);
+  --amber: var(--accent-amber);
+  --brand: var(--accent-lime);
+  --brand-glow: rgba(200, 255, 0, 0.15);
+  --brand-500: #9EC200;
+  --text-tertiary: #888877;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -144,20 +153,42 @@
   --surface-tertiary: #E8E8E3;
   --surface-elevated: #F0F0EB;
 
-  --text-primary: #0A0A0A;
-  --text-secondary: #555555;
-  --text-muted: #888888;
+  --text-primary: #1A1A10;
+  --text-secondary: #444433;
+  --text-muted: #666655;
 
-  --border-default: #e0e0d8;
-  --border-accent: var(--status-pass);
-  --border-hover: #ccccbb;
+  --border-default: #8F8F7F;
+  --border-accent: #3B6B00;
+  --border-hover: #6B6B58;
 
-  --accent: var(--accent-lime);
-  --accent-glow: rgba(200, 255, 0, 0.08);
+  --accent: #3B6B00;
+  --accent-glow: rgba(59, 107, 0, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --status-pass: #228B22;
+  --status-warn: #946B00;
+  --status-fail: #CC1F3D;
+  --status-neutral: #666655;
+
+  --accent-lime: #5A8A00;
+  --accent-cyan: #007699;
+  --accent-orange: #B35700;
+  --accent-rose: #CC1F3D;
+  --accent-purple: #782BC9;
+  --accent-green: #228B22;
+  --accent-amber: #946B00;
+
+  /* Legacy aliases (used in inline styles) */
+  --red: var(--accent-rose);
+  --emerald: var(--accent-green);
+  --amber: var(--accent-amber);
+  --brand: #3B6B00;
+  --brand-glow: rgba(59, 107, 0, 0.12);
+  --brand-500: #4D8C00;
+  --text-tertiary: #666655;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 
   color-scheme: light;
 }
