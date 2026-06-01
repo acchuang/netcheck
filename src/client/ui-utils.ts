@@ -21,9 +21,7 @@ export function animateNumber(
   requestAnimationFrame(tick);
 }
 
-export function pulseValue(el: HTMLElement): void {
-  el.classList.add('updating');
-  setTimeout(() => el.classList.remove('updating'), 150);
+export function pulseValue(_el: HTMLElement): void {
 }
 
 export function setBadge(id: string, status: string, text: string): void {

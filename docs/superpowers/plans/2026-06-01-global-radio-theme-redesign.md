@@ -2829,21 +2829,24 @@ Add to the `DOMContentLoaded` handler (after the existing init calls):
     }
   });
 
-  document.getElementById('share-btn-header')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const shareMenu = document.getElementById('share-menu');
-    const sharePreview = document.getElementById('share-preview');
-    const shareCopyBtn = document.getElementById('share-copy-btn');
-    if (shareMenu && sharePreview && shareCopyBtn) {
-      const wasOpen = shareMenu.classList.contains('open');
-      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
-      if (!wasOpen) {
-        sharePreview.textContent = buildSummary();
-        shareMenu.classList.add('open');
-        positionToolbarPanel(shareBtn, shareMenu); // shareBtn defined below
+  const shareBtn = document.getElementById('share-btn-header') as HTMLElement;
+  if (shareBtn) {
+    shareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const shareMenu = document.getElementById('share-menu');
+      const sharePreview = document.getElementById('share-preview');
+      const shareCopyBtn = document.getElementById('share-copy-btn');
+      if (shareMenu && sharePreview && shareCopyBtn) {
+        const wasOpen = shareMenu.classList.contains('open');
+        document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+        if (!wasOpen) {
+          sharePreview.textContent = buildSummary();
+          shareMenu.classList.add('open');
+          positionToolbarPanel(shareBtn, shareMenu);
+        }
       }
-    }
-  });
+    });
+  }
 ```
 
 - [ ] **Step 2: Keep existing export and share panel logic (for backward compatibility)**

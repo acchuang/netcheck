@@ -2,18 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://rsms.me https://unpkg.com; font-src 'self' https://rsms.me; img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com https://api.pwnedpasswords.com; frame-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://cloudflare-dns.com https://dns.google https://dns.quad9.net https://dns.adguard-dns.com https://dns.mullvad.net https://dns.nextdns.io https://unpkg.com https://api.pwnedpasswords.com; frame-src 'self'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="NetCheck — Test your DNS, ad blocker, network speed, and security headers. All tests run locally in your browser.">
-  <meta name="theme-color" content="#08090a" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F5F5F0" media="(prefers-color-scheme: light)">
   <script>
     (function(){var t=localStorage.getItem("netcheck-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}else{t=t==="light"?"light":"dark"}document.documentElement.setAttribute("data-theme",t)})();
   </script>
   <title>NetCheck — DNS & Ad Block Tester</title>
 
   <!-- Favicon (inline SVG) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e6ad2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C8FF00' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/%3E%3C/svg%3E">
 
   <!-- SEO: robots, canonical, hreflang -->
   <meta name="robots" content="index, follow">
@@ -64,13 +64,31 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="/public/manifest.json">
 
-  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/tokens.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1/dist/geist-sans/style/css.min.css">
   <link rel="stylesheet" href="/public/css/styles.css">
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
+  <header class="nav-header">
+    <div class="nav-header-brand">
+      <div class="nav-header-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <span class="nav-header-title">NetCheck</span>
+    </div>
+    <div class="nav-header-tools" id="nav-header-tools">
+      <button class="nav-header-btn" id="lang-toggle-header">EN</button>
+      <button class="nav-header-btn" id="theme-toggle-header">DARK</button>
+      <button class="nav-header-btn" id="export-btn-header">Export</button>
+      <button class="nav-header-btn" id="share-btn-header">Share</button>
+    </div>
+  </header>
   <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">
     <svg class="nav-burger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="3" y1="6" x2="21" y2="6"/>
@@ -81,13 +99,6 @@
   <div class="nav-overlay" id="nav-overlay"></div>
   <nav class="nav">
     <div class="nav-inner">
-      <div class="nav-brand">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <polyline points="9 12 11 14 15 10"/>
-        </svg>
-        <span class="nav-title">NetCheck</span>
-      </div>
       <div class="nav-links">
         <div class="nav-category">
           <span class="nav-category-label">Overview</span>
@@ -183,63 +194,28 @@
           </div>
         </div>
       </div>
-       <div class="nav-toolbar">
-         <div class="nav-toolbar-item" id="lang-dropdown">
-           <button class="nav-toolbar-btn" id="lang-toggle" data-tooltip="Language" aria-label="Change language">
-             <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-               <circle cx="12" cy="12" r="10"/>
-               <line x1="2" y1="12" x2="22" y2="12"/>
-               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-             </svg>
-             <span class="nav-toolbar-badge" id="lang-label">EN</span>
-           </button>
-           <div class="nav-toolbar-panel" id="lang-menu" role="menu" aria-label="Language menu">
-             <button class="nav-toolbar-option" data-lang="en" role="menuitem">English</button>
-             <button class="nav-toolbar-option" data-lang="zh-TW" role="menuitem">繁體中文</button>
-             <button class="nav-toolbar-option" data-lang="zh-CN" role="menuitem">简体中文</button>
-             <button class="nav-toolbar-option" data-lang="es" role="menuitem">Español</button>
-             <button class="nav-toolbar-option" data-lang="ja" role="menuitem">日本語</button>
-             <button class="nav-toolbar-option" data-lang="ko" role="menuitem">한국어</button>
-           </div>
-         </div>
-         <button class="nav-toolbar-btn" id="theme-toggle" data-tooltip="Theme: dark" aria-label="Toggle theme">
-           <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-           </svg>
-         </button>
-          <div class="nav-toolbar-item">
-            <button class="nav-toolbar-btn" id="export-btn" data-tooltip="Export Report" aria-label="Export report">
-              <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </button>
-            <div class="nav-toolbar-panel" id="export-menu">
-              <button class="nav-toolbar-option" data-format="markdown" id="export-markdown-text">Download Markdown</button>
-              <button class="nav-toolbar-option" data-format="pdf" id="export-pdf-text">Save as PDF</button>
-            </div>
-          </div>
-          <div class="nav-toolbar-item">
-            <button class="nav-toolbar-btn" id="share-btn" data-tooltip="Copy results" aria-label="Copy summary of current results">
-              <svg class="nav-toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="5" r="3"/>
-                <circle cx="6" cy="12" r="3"/>
-                <circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-            </button>
-            <div class="nav-toolbar-panel" id="share-menu">
-              <div class="share-panel-content">
-                <pre id="share-preview" class="share-preview"></pre>
-                <button class="nav-toolbar-option share-copy-btn" id="share-copy-btn">Copy to clipboard</button>
-              </div>
-          </div>
-        </div>
-      </div>
     </div>
   </nav>
+
+  <!-- Dropdown panels (positioned via JS, shared by header buttons) -->
+  <div class="nav-toolbar-panel" id="lang-menu" role="menu" aria-label="Language menu">
+    <button class="nav-toolbar-option" data-lang="en" role="menuitem">English</button>
+    <button class="nav-toolbar-option" data-lang="zh-TW" role="menuitem">繁體中文</button>
+    <button class="nav-toolbar-option" data-lang="zh-CN" role="menuitem">简体中文</button>
+    <button class="nav-toolbar-option" data-lang="es" role="menuitem">Español</button>
+    <button class="nav-toolbar-option" data-lang="ja" role="menuitem">日本語</button>
+    <button class="nav-toolbar-option" data-lang="ko" role="menuitem">한국어</button>
+  </div>
+  <div class="nav-toolbar-panel" id="export-menu">
+    <button class="nav-toolbar-option" data-format="markdown" id="export-markdown-text">Download Markdown</button>
+    <button class="nav-toolbar-option" data-format="pdf" id="export-pdf-text">Save as PDF</button>
+  </div>
+  <div class="nav-toolbar-panel" id="share-menu">
+    <div class="share-panel-content">
+      <pre id="share-preview" class="share-preview"></pre>
+      <button class="nav-toolbar-option share-copy-btn" id="share-copy-btn">Copy to clipboard</button>
+    </div>
+  </div>
 
   <main id="main" class="main">
     <!-- Dashboard Section -->
