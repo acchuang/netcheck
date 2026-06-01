@@ -1,77 +1,39 @@
 /* ========================================
-   NetCheck Bold Design Tokens
+   NetCheck Global Radio Design Tokens
    ======================================== */
 
-/* ── Bold Color Palette ── */
+/* ── Raw color palette ── */
 :root {
   --gray-0: #ffffff;
-  --gray-50: #f8f9fa;
-  --gray-100: #f1f3f5;
-  --gray-200: #e9ecef;
-  --gray-300: #dee2e6;
-  --gray-400: #ced4da;
-  --gray-500: #8b8f96;
-  --gray-600: #6b6f76;
-  --gray-700: #3d4048;
-  --gray-800: #262830;
-  --gray-850: #1a1c22;
-  --gray-900: #141618;
-  --gray-950: #08090a;
+  --gray-50: #F5F5F0;
+  --gray-100: #E3E3D3;
+  --gray-200: #CCCCBB;
+  --gray-300: #AAAA99;
+  --gray-400: #888877;
+  --gray-500: #666655;
+  --gray-600: #4a4a3a;
+  --gray-700: #333322;
+  --gray-800: #1a1a11;
+  --gray-850: #111111;
+  --gray-900: #0D0D0D;
+  --gray-950: #0A0A0A;
   --gray-1000: #000000;
 }
 
-/* ── Brand (Bold violet, shifted from muted indigo) ── */
+/* ── Category accent colors ── */
 :root {
-  --brand-50: #f3f0ff;
-  --brand-100: #e5deff;
-  --brand-200: #d0c4ff;
-  --brand-300: #b09dff;
-  --brand-400: #977cff;
-  --brand-500: #7c5cfc;
-  --brand-600: #6d47f0;
-  --brand-700: #5a36d4;
-  --brand-800: #4a2bae;
-  --brand-900: #3b2389;
-  --brand-950: #220f52;
-}
+  --accent-lime: #C8FF00;
+  --accent-cyan: #00C2FF;
+  --accent-orange: #FF6B35;
+  --accent-rose: #FF4D6A;
+  --accent-purple: #A855F7;
+  --accent-green: #22C55E;
+  --accent-amber: #FFB800;
 
-/* ── Status colors ── */
-:root {
-  --green-50: #e6faf0;
-  --green-100: #c4f2db;
-  --green-200: #9de8c1;
-  --green-300: #6dd9a4;
-  --green-400: #2dd4bf;
-  --green-500: #22b89e;
-  --green-600: #1e9b5e;
-  --green-700: #177e4c;
-  --green-800: #13653d;
-  --green-900: #105233;
-  --green-950: #082e1c;
-
-  --amber-50: #fff9eb;
-  --amber-100: #fff0cc;
-  --amber-200: #ffe099;
-  --amber-300: #ffcd5c;
-  --amber-400: #fbbf24;
-  --amber-500: #f59e0b;
-  --amber-600: #d97706;
-  --amber-700: #b45309;
-  --amber-800: #92400e;
-  --amber-900: #78350f;
-  --amber-950: #451a03;
-
-  --red-50: #fef2f2;
-  --red-100: #fee2e2;
-  --red-200: #fecaca;
-  --red-300: #fca5a5;
-  --red-400: #f87171;
-  --red-500: #ef4444;
-  --red-600: #dc2626;
-  --red-700: #b91c1c;
-  --red-800: #991b1b;
-  --red-900: #7f1d1d;
-  --red-950: #450a0a;
+  --status-pass: var(--accent-lime);
+  --status-warn: var(--accent-amber);
+  --status-fail: var(--accent-rose);
+  --status-neutral: #4a4a4a;
 }
 
 /* ── Spacing scale ── */
@@ -82,49 +44,39 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
-  --space-7: 28px;
   --space-8: 32px;
-  --space-9: 36px;
   --space-10: 40px;
-  --space-11: 44px;
   --space-12: 48px;
-  --space-13: 52px;
-  --space-14: 56px;
-  --space-15: 60px;
-  --space-16: 64px;
 }
 
-/* ── Radius scale (softer for bold feel) ── */
+/* ── Radius scale ── */
 :root {
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 }
 
-/* ── Shadows (tinted, never pure black) ── */
+/* ── Shadows ── */
 :root {
-  --shadow-sm: 0 1px 3px rgba(8, 9, 10, 0.3);
-  --shadow-md: 0 4px 16px rgba(8, 9, 10, 0.4);
-  --shadow-lg: 0 8px 32px rgba(8, 9, 10, 0.5);
-  --shadow-xl: 0 20px 60px rgba(8, 9, 10, 0.6);
-  --shadow-accent: 0 0 40px rgba(124, 92, 252, 0.2);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(200, 255, 0, 0.15);
+  --shadow-glow-hover: 0 0 20px rgba(200, 255, 0, 0.3);
 }
 
-/* ── Type scale (Bigger, Bolder) ── */
+/* ── Type scale ── */
 :root {
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-md: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 2rem;
-  --text-3xl: 2.75rem;
-  --text-display: 3.5rem;
+  --text-hero: 3.5rem;
+  --text-display: 2.5rem;
+  --text-heading: 1.5rem;
+  --text-body: 0.875rem;
+  --text-mono: 0.75rem;
+  --text-mono-sm: 0.625rem;
+  --text-mono-xs: 0.5rem;
 }
 
 /* ── Leading ── */
@@ -132,32 +84,26 @@
   --leading-tight: 1.1;
   --leading-snug: 1.3;
   --leading-normal: 1.5;
-  --leading-relaxed: 1.7;
 }
 
 /* ── Transitions ── */
 :root {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --duration-120: 120ms;
   --duration-150: 150ms;
   --duration-200: 200ms;
-  --duration-400: 400ms;
-  --duration-600: 600ms;
-  --duration-800: 800ms;
+  --duration-300: 300ms;
 }
 
 /* ── Layout ── */
 :root {
   --page-px: clamp(1rem, 5vw, 2.5rem);
   --container-max: 1200px;
-  --sidebar-width: 220px;
+  --sidebar-width: 180px;
+  --header-height: 48px;
   --gap-sm: var(--space-2);
-  --gap-md: var(--space-4);
+  --gap-md: var(--space-3);
   --gap-lg: var(--space-6);
   --card-p: var(--space-5);
-  --btn-h: 44px;
 }
 
 /* ========================================
@@ -167,31 +113,25 @@
 [data-theme="dark"] {
   --surface-primary: var(--gray-950);
   --surface-secondary: var(--gray-900);
-  --surface-tertiary: var(--gray-800);
+  --surface-tertiary: #0f0f0f;
   --surface-elevated: var(--gray-850);
 
   --text-primary: var(--gray-100);
-  --text-secondary: var(--gray-400);
-  --text-muted: #71747c;
+  --text-secondary: #666666;
+  --text-muted: #4a4a4a;
 
-  --border-subtle: color-mix(in srgb, var(--gray-700) 60%, transparent);
-  --border-default: var(--gray-700);
-  --border-accent: rgba(124, 92, 252, 0.3);
+  --border-default: #1a1a1a;
+  --border-accent: var(--status-pass);
+  --border-hover: var(--gray-850);
 
-  --brand: var(--brand-500);
-  --brand-glow: color-mix(in srgb, var(--brand) 25%, transparent);
+  --accent: var(--accent-lime);
+  --accent-glow: rgba(200, 255, 0, 0.12);
 
-  --status-pass: var(--green-400);
-  --status-warn: var(--amber-400);
-  --status-fail: var(--red-400);
-  --status-progress: var(--brand-400);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
 
   color-scheme: dark;
-
-  --shadow-sm: 0 1px 3px rgba(8, 9, 10, 0.3);
-  --shadow-md: 0 4px 16px rgba(8, 9, 10, 0.4);
-  --shadow-lg: 0 8px 32px rgba(8, 9, 10, 0.5);
-  --shadow-xl: 0 20px 60px rgba(8, 9, 10, 0.6);
 }
 
 /* ========================================
@@ -199,44 +139,25 @@
    ======================================== */
 
 [data-theme="light"] {
-  --surface-primary: #f5f5f7;
-  --surface-secondary: #ffffff;
-  --surface-tertiary: #eeeef0;
-  --surface-elevated: #ffffff;
+  --surface-primary: #F5F5F0;
+  --surface-secondary: #FFFFFF;
+  --surface-tertiary: #E8E8E3;
+  --surface-elevated: #F0F0EB;
 
-  --text-primary: #1a1a1e;
-  --text-secondary: #5b5f67;
-  --text-muted: #8b8f96;
+  --text-primary: #0A0A0A;
+  --text-secondary: #555555;
+  --text-muted: #888888;
 
-  --border-subtle: color-mix(in srgb, var(--gray-200) 75%, transparent);
-  --border-default: var(--gray-200);
-  --border-accent: rgba(124, 92, 252, 0.3);
+  --border-default: #e0e0d8;
+  --border-accent: var(--status-pass);
+  --border-hover: #ccccbb;
 
-  --brand: var(--brand-600);
-  --brand-glow: color-mix(in srgb, var(--brand) 15%, transparent);
-
-  --status-pass: var(--green-600);
-  --status-warn: var(--amber-600);
-  --status-fail: var(--red-600);
-  --status-progress: var(--brand-600);
-
-  color-scheme: light;
+  --accent: var(--accent-lime);
+  --accent-glow: rgba(200, 255, 0, 0.08);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
-}
 
-/* ── Progressive enhancement fallbacks ── */
-
-@supports not (background: color-mix(in srgb, black 50%, transparent)) {
-  [data-theme="dark"] {
-    --border-subtle: var(--gray-700);
-    --brand-glow: rgba(124, 92, 252, 0.25);
-  }
-  [data-theme="light"] {
-    --border-subtle: var(--gray-200);
-    --brand-glow: rgba(124, 92, 252, 0.15);
-  }
+  color-scheme: light;
 }
