@@ -1,6 +1,7 @@
 import { SpeedTest, type SpeedTestResults, type SpeedGrade } from './speed-test';
-import { AdBlockTest } from './adblock-test';
-import { FilterListDetector } from './filter-lists';
+import { adblockState } from './state/adblock-state';
+import { headersState } from './state/headers-state';
+import { speedState } from './state/speed-state';
 
 interface AdBlockTestResult {
   name: string;
@@ -77,6 +78,17 @@ interface HeadersData {
   checks: HeaderCheckItem[];
 }
 
+interface CookieData {
+  grade: string;
+  totalCount: number;
+  totalSizeBytes: number;
+  secureCount: number;
+  securePercentage: number;
+  categoryBreakdown: Record<string, number>;
+  entries: Array<{ name: string; category: string; sizeBytes: number; prefix: string }>;
+  audited: boolean;
+}
+
 interface ReportData {
   timestamp: string;
   date: string;
@@ -84,6 +96,7 @@ interface ReportData {
   speed: SpeedData;
   adblock: AdBlockData;
   headers: HeadersData;
+  cookies: CookieData;
 }
 
 export const ReportExporter = {
@@ -123,37 +136,46 @@ export const ReportExporter = {
     });
 
     // Speed
-    const sr: SpeedTestResults = SpeedTest.results;
+    const speedDl = speedState.download.get();
+    const speedUl = speedState.upload.get();
+    const speedLat = speedState.latency.get();
+    const speedJit = speedState.jitter.get();
+    const speedBb = speedState.bufferbloat.get();
     const speed: SpeedData = {
-      download: sr.download,
-      upload: sr.upload,
-      latency: sr.latency,
-      jitter: sr.jitter,
+      download: speedDl > 0 ? speedDl : null,
+      upload: speedUl > 0 ? speedUl : null,
+      latency: speedLat > 0 ? speedLat : null,
+      jitter: speedJit > 0 ? speedJit : null,
       grade:
-        sr.download != null
-          ? SpeedTest.getGrade(sr.download, sr.upload, sr.latency, sr.jitter, sr.bufferbloat)
+        speedDl > 0
+          ? SpeedTest.getGrade(speedDl, speedUl, speedLat, speedJit, speedBb)
           : null,
-      tested: sr.download != null,
+      tested: speedDl > 0,
     };
 
     // Ad Block
     const adblock: AdBlockData = { score: null, results: [], filterLists: [] };
-    if (AdBlockTest.results.length > 0) {
-      adblock.score = AdBlockTest.getScore();
-      adblock.results = AdBlockTest.results;
+    const abResults = adblockState.results.get();
+    if (abResults.length > 0) {
+      const abScore = adblockState.score.get();
+      const abBlocked = adblockState.totalBlocked.get();
+      const abTotal = adblockState.totalTests.get();
+      adblock.score = { score: abScore, total: abTotal, blocked: abBlocked, passed: abTotal - abBlocked };
+      adblock.results = abResults;
     }
-    if (FilterListDetector.results.length > 0) {
-      adblock.filterLists = FilterListDetector.results;
+    const abFilterLists = adblockState.filterLists.get();
+    if (abFilterLists.length > 0) {
+      adblock.filterLists = abFilterLists;
     }
 
     // Headers
     const headers: HeadersData = { url: '', grade: '', score: '', scanned: false, checks: [] };
-    const headersUrl = (document.getElementById('headers-url-input') as HTMLInputElement)?.value;
+    const headersUrl = headersState.url.get();
     if (headersUrl) {
       headers.url = headersUrl;
       headers.scanned = true;
-      headers.grade = document.getElementById('headers-grade')?.textContent || '';
-      headers.score = document.getElementById('headers-score')?.textContent || '';
+      headers.grade = headersState.grade.get();
+      headers.score = String(headersState.score.get());
       document.querySelectorAll('#headers-check-results .dns-check-item').forEach((item) => {
         const label = item.querySelector('.check-label')?.textContent?.trim() || '';
         const desc = item.querySelector('.check-sublabel')?.textContent?.trim() || '';
@@ -167,6 +189,40 @@ export const ReportExporter = {
       });
     }
 
+    const cookies: CookieData = { grade: '', totalCount: 0, totalSizeBytes: 0, secureCount: 0, securePercentage: 0, categoryBreakdown: {}, entries: [], audited: false };
+    const cookieGradeEl = document.querySelector('.cookie-grade-grade');
+    if (cookieGradeEl) {
+      cookies.audited = true;
+      cookies.grade = cookieGradeEl.textContent?.trim() || '';
+      const stats = document.querySelectorAll('.cookie-stat');
+      if (stats[0]) cookies.totalCount = parseInt(stats[0].querySelector('.cookie-stat-value')?.textContent || '0', 10) || 0;
+      if (stats[1]) cookies.totalSizeBytes = 0;
+      if (stats[2]) {
+        const secureText = stats[2].querySelector('.cookie-stat-value')?.textContent || '';
+        const secureMatch = secureText.match(/^(\d+)/);
+        cookies.secureCount = secureMatch ? parseInt(secureMatch[1], 10) : 0;
+        const pctMatch = secureText.match(/\((\d+)%\)/);
+        cookies.securePercentage = pctMatch ? parseInt(pctMatch[1], 10) : 0;
+      }
+      document.querySelectorAll('.cookie-table tbody tr').forEach((row) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 4) {
+          cookies.entries.push({
+            name: cells[0].textContent?.trim() || '',
+            category: cells[1].textContent?.trim() || '',
+            sizeBytes: 0,
+            prefix: cells[3].textContent?.trim() || '',
+          });
+        }
+      });
+      const legendItems = document.querySelectorAll('.cookie-legend-item');
+      legendItems.forEach((item) => {
+        const text = item.textContent?.trim() || '';
+        const match = text.match(/^(\w+):\s*(\d+)/);
+        if (match) cookies.categoryBreakdown[match[1]] = parseInt(match[2], 10);
+      });
+    }
+
     return {
       timestamp: new Date().toISOString(),
       date: new Date().toLocaleString(),
@@ -174,6 +230,7 @@ export const ReportExporter = {
       speed,
       adblock,
       headers,
+      cookies,
     };
   },
 
@@ -287,6 +344,39 @@ export const ReportExporter = {
         ln(`| ${h.label} | ${icon} | ${h.value || '\u2014'} |`);
       });
       ln();
+    }
+
+    // Cookies
+    if (data.cookies.audited) {
+      ln('## Cookie Audit');
+      ln();
+      ln(`**Grade:** **${data.cookies.grade}**`);
+      ln();
+      ln('| Metric | Value |');
+      ln('|--------|-------|');
+      ln(`| Total Cookies | ${data.cookies.totalCount} |`);
+      ln(`| Secure Prefix | ${data.cookies.secureCount} (${data.cookies.securePercentage}%) |`);
+      ln();
+
+      if (Object.keys(data.cookies.categoryBreakdown).length > 0) {
+        ln('### Category Breakdown');
+        ln('| Category | Count |');
+        ln('|----------|-------|');
+        for (const [cat, count] of Object.entries(data.cookies.categoryBreakdown)) {
+          ln(`| ${cat} | ${count} |`);
+        }
+        ln();
+      }
+
+      if (data.cookies.entries.length > 0) {
+        ln('### Cookie Details');
+        ln('| Name | Category | Prefix |');
+        ln('|------|----------|--------|');
+        data.cookies.entries.forEach((e) => {
+          ln(`| ${e.name} | ${e.category} | ${e.prefix} |`);
+        });
+        ln();
+      }
     }
 
     ln('---');
