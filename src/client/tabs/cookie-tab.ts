@@ -84,7 +84,7 @@ function renderResult(info: CookieAuditResult): string {
         </div>
       </div>
       <table class="cookie-table">
-        <thead><tr><th>Name</th><th>${t('cookie.category', 'Category')}</th><th>Size</th><th>Prefix</th></tr></thead>
+        <thead><tr><th>${t('cookie.name')}</th><th>${t('cookie.category')}</th><th>${t('cookie.sizeColumn')}</th><th>${t('cookie.prefix')}</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
       <div class="cookie-note">
@@ -100,25 +100,25 @@ function renderResult(info: CookieAuditResult): string {
 function renderCookieRecommendations(info: CookieAuditResult): string {
   const advCount = info.categoryBreakdown.advertising || 0;
   if (advCount === 0 && info.securePercentage >= 75 && info.totalCount <= 10) {
-    return '<div class="suggestion-card"><div class="suggestion-top"><div class="suggestion-icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 12 11.5 14.5 16 9.5"/><circle cx="12" cy="12" r="10"/></svg></div><div class="suggestion-info"><div class="suggestion-name">All good</div></div></div><div class="suggestion-desc">Your cookie usage is minimal and secure.</div></div>';
+    return `<div class="suggestion-card"><div class="suggestion-top"><div class="suggestion-icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 12 11.5 14.5 16 9.5"/><circle cx="12" cy="12" r="10"/></svg></div><div class="suggestion-info"><div class="suggestion-name">${t('cookie.allGood')}</div></div></div><div class="suggestion-desc">${t('cookie.allGoodDesc')}</div></div>`;
   }
   const items: { title: string; desc: string }[] = [];
   if (advCount > 0) {
     items.push({
-      title: 'Reduce tracking cookies',
-      desc: `${advCount} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.`,
+      title: t('cookie.reduceTracking'),
+      desc: t('cookie.reduceTrackingDesc', advCount),
     });
   }
   if (info.totalCount > 25) {
     items.push({
-      title: 'High cookie count',
-      desc: `${info.totalCount} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.`,
+      title: t('cookie.highCount'),
+      desc: t('cookie.highCountDesc', info.totalCount),
     });
   }
   if (info.securePercentage < 50) {
     items.push({
-      title: 'Low secure prefix usage',
-      desc: `Only ${info.securePercentage}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.`,
+      title: t('cookie.lowSecure'),
+      desc: t('cookie.lowSecureDesc', info.securePercentage),
     });
   }
   if (items.length === 0) return '';
@@ -169,7 +169,13 @@ function renderCookieContent(container: HTMLElement): void {
   }
 
   if (error && !result) {
-    container.innerHTML = `<div class="cookie-error"><p>${t('cookie.error', 'Cookie audit failed')}: ${error}</p></div>`;
+    container.innerHTML = `<div class="cookie-error"><p>${t('cookie.error', 'Cookie audit failed')}: ${error}</p><button class="btn btn-primary" id="cookie-retry-btn" style="margin-top:0.5rem">${t('cookie.retry', 'Retry')}</button></div>`;
+    const retryBtn = document.getElementById('cookie-retry-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        await runCookieAudit();
+      });
+    }
     return;
   }
 

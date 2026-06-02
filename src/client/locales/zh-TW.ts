@@ -195,6 +195,17 @@ export const zhTW = {
   'cookie.secure': '帶有 Secure 前綴的 Cookie',
   'cookie.category': '類別分佈',
   'cookie.retry': '重試',
+  'cookie.name': 'Name',
+  'cookie.sizeColumn': 'Size',
+  'cookie.prefix': 'Prefix',
+  'cookie.allGood': 'All good',
+  'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
+  'cookie.reduceTracking': 'Reduce tracking cookies',
+  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.highCount': 'High cookie count',
+  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.lowSecure': 'Low secure prefix usage',
+  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   // DNS section
   'dns.title': 'DNS 與網路檢測',
