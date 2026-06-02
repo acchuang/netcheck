@@ -1,4 +1,6 @@
+import { t } from './i18n';
 import { appState } from './state/shared-state';
+import { certTransparencyState } from './state/cert-transparency-state';
 
 export interface CtCert {
   issuer: string;
@@ -28,8 +30,6 @@ interface CtResponse {
   error?: string;
 }
 
-let scanInProgress = false;
-
 export function initCertTransparency(): void {
   const btn = document.getElementById('ct-check-btn') as HTMLButtonElement;
   const input = document.getElementById('ct-domain-input') as HTMLInputElement;
@@ -43,36 +43,45 @@ export function initCertTransparency(): void {
 }
 
 async function runCtCheck(): Promise<void> {
-  if (scanInProgress) return;
-  scanInProgress = true;
+  if (certTransparencyState.loading.get()) return;
+  certTransparencyState.loading.set(true);
 
   const input = document.getElementById('ct-domain-input') as HTMLInputElement;
   const domain = input.value.trim();
   if (!domain) {
-    scanInProgress = false;
+    certTransparencyState.loading.set(false);
     return;
   }
 
+  certTransparencyState.domain.set(domain);
+
   const btn = document.getElementById('ct-check-btn') as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = 'Searching...';
+  btn.textContent = t('certTransparency.searching');
 
   const container = document.getElementById('ct-content')!;
-  container.innerHTML = '<div class="breach-loading"><div class="spinner"></div><p>Searching certificate transparency logs...</p></div>';
+  container.innerHTML = `<div class="breach-loading"><div class="spinner"></div><p>${t('certTransparency.searchingDesc')}</p></div>`;
 
   try {
     const res = await fetch(`/api/cert-transparency?domain=${encodeURIComponent(domain)}`);
     const data: CtResponse = await res.json();
 
     if (data.error) {
+      certTransparencyState.error.set(data.error);
       container.innerHTML = `
         <div class="csp-analysis-card">
           <p class="info-muted">${data.error}</p>
-          <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px">Search on crt.sh</a>
+          <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px">${t('certTransparency.searchOnCrtsh')}</a>
         </div>
       `;
       return;
     }
+
+    certTransparencyState.summary.set(data.summary);
+    certTransparencyState.certs.set(data.certs);
+    certTransparencyState.trustIndicators.set(data.trustIndicators);
+    certTransparencyState.totalInDb.set(data.totalInDb);
+    certTransparencyState.error.set(null);
 
     const s = data.summary;
 
@@ -81,40 +90,40 @@ async function runCtCheck(): Promise<void> {
         <div class="ct-summary-grid">
           <div class="ct-summary-card">
             <div class="ct-summary-number">${s.total}</div>
-            <div class="ct-summary-label">Total Certs</div>
+            <div class="ct-summary-label">${t('certTransparency.totalCerts')}</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number" style="color:var(--emerald)">${s.active}</div>
-            <div class="ct-summary-label">Active</div>
+            <div class="ct-summary-label">${t('certTransparency.active')}</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number" style="color:var(--text-tertiary)">${s.expired}</div>
-            <div class="ct-summary-label">Expired</div>
+            <div class="ct-summary-label">${t('certTransparency.expired')}</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number">${s.issuers}</div>
-            <div class="ct-summary-label">Issuers</div>
+            <div class="ct-summary-label">${t('certTransparency.issuers')}</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number" style="color:${s.wildcardCount > 5 ? 'var(--amber)' : 'var(--text-primary)'}">${s.wildcardCount}</div>
-            <div class="ct-summary-label">Wildcards</div>
+            <div class="ct-summary-label">${t('certTransparency.wildcards')}</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number" style="color:${s.recentlyIssued > 3 ? 'var(--red)' : 'var(--emerald)'}">${s.recentlyIssued}</div>
-            <div class="ct-summary-label">Last 30 Days</div>
+            <div class="ct-summary-label">${t('certTransparency.last30Days')}</div>
           </div>
         </div>
         ${data.trustIndicators.length > 0 ? `
           <div class="csp-analysis-card" style="margin-top:16px">
-            <h4 class="csp-issues-title">Trust Indicators</h4>
+            <h4 class="csp-issues-title">${t('certTransparency.trustIndicators')}</h4>
             ${data.trustIndicators.map((ind) => `<div class="csp-issue-item"><span class="csp-issue-message">${ind}</span></div>`).join('')}
           </div>
         ` : ''}
         ${s.recentlyIssued > 3 ? `
           <div class="csp-analysis-card" style="margin-top:8px;border-color:var(--amber)">
             <div class="csp-issue-item">
-              <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">WARNING</span>
-              <span class="csp-issue-message">${s.recentlyIssued} certificates issued in the last 30 days. Investigate if unexpected.</span>
+              <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">${t('certTransparency.warning')}</span>
+              <span class="csp-issue-message">${t('certTransparency.recentlyIssued', String(s.recentlyIssued))}</span>
             </div>
           </div>
         ` : ''}
@@ -122,18 +131,18 @@ async function runCtCheck(): Promise<void> {
           <table class="ct-table">
             <thead>
               <tr>
-                <th>Issuer</th>
-                <th>Common Name</th>
-                <th>Status</th>
-                <th>Valid From</th>
-                <th>Valid Until</th>
+                <th>${t('certTransparency.issuer')}</th>
+                <th>${t('certTransparency.commonName')}</th>
+                <th>${t('certTransparency.status')}</th>
+                <th>${t('certTransparency.validFrom')}</th>
+                <th>${t('certTransparency.validUntil')}</th>
               </tr>
             </thead>
             <tbody>
               ${data.certs.map((c) => `
                 <tr class="ct-row">
                   <td class="ct-cell ct-cell-issuer">${c.issuer}</td>
-                  <td class="ct-cell ct-cell-cn">${c.commonName}${c.isWildcard ? ' <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:10px">WILDCARD</span>' : ''}</td>
+                  <td class="ct-cell ct-cell-cn">${c.commonName}${c.isWildcard ? ` <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:10px">${t('certTransparency.wildcard')}</span>` : ''}</td>
                   <td class="ct-cell"><span class="csp-issue-severity" style="background:${c.status === 'active' ? 'var(--emerald)' : 'var(--text-tertiary)'}20;color:${c.status === 'active' ? 'var(--emerald)' : 'var(--text-tertiary)'}">${c.status.toUpperCase()}</span></td>
                   <td class="ct-cell">${new Date(c.notBefore).toLocaleDateString()}</td>
                   <td class="ct-cell">${new Date(c.notAfter).toLocaleDateString()}</td>
@@ -142,7 +151,7 @@ async function runCtCheck(): Promise<void> {
             </tbody>
           </table>
         </div>
-        ${data.totalInDb > 100 ? `<p class="info-muted" style="margin-top:8px">Showing 100 of ${data.totalInDb} certificates. <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer">View all on crt.sh</a></p>` : ''}
+        ${data.totalInDb > 100 ? `<p class="info-muted" style="margin-top:8px">${t('certTransparency.showingCerts', String(data.totalInDb))} <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer">${t('certTransparency.viewAll')}</a></p>` : ''}
       </div>
     `;
 
@@ -151,15 +160,16 @@ async function runCtCheck(): Promise<void> {
       appState.completedTests.set([...current, 'cert-transparency']);
     }
   } catch {
+    certTransparencyState.error.set(t('certTransparency.error'));
     container.innerHTML = `
       <div class="csp-analysis-card">
-        <p class="info-muted">Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.</p>
-        <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px">Search on crt.sh</a>
+        <p class="info-muted">${t('certTransparency.error')}</p>
+        <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px">${t('certTransparency.searchOnCrtsh')}</a>
       </div>
     `;
   } finally {
-    scanInProgress = false;
+    certTransparencyState.loading.set(false);
     btn.disabled = false;
-    btn.textContent = 'Search CT Logs';
+    btn.textContent = t('certTransparency.search');
   }
 }
