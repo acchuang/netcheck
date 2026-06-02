@@ -141,16 +141,18 @@ export async function runAdBlockTests(): Promise<void> {
 
   await AdBlockTest.runAll();
 
+  const results = adblockState.results.get();
+  const score = adblockState.score.get();
+
   categoriesEl.innerHTML = '';
-  AdBlockTest.results.forEach((cat) => {
+  results.forEach((cat) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
     const catEl = createCategoryWithResults(cat.name, cat.tests, blocked);
     catEl.classList.add('stagger-item');
     categoriesEl.appendChild(catEl);
   });
 
-  const score = AdBlockTest.getScore();
-  document.getElementById('score-number')!.textContent = String(score.score);
+  document.getElementById('score-number')!.textContent = String(score);
 
   // CNAME tracking check
   const cnameSection = document.getElementById('cname-section');
@@ -175,15 +177,15 @@ export async function runAdBlockTests(): Promise<void> {
 
   const ring = document.getElementById('score-ring-fill') as unknown as SVGCircleElement;
   const circumference = 2 * Math.PI * 54;
-  ring.style.strokeDashoffset = String(circumference - (score.score / 100) * circumference);
+  ring.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
 
-  if (score.score >= 80) {
+  if (score >= 80) {
     ring.style.stroke = 'var(--emerald)';
     document.getElementById('score-summary')!.textContent = t('adblock.excellent');
-  } else if (score.score >= 50) {
+  } else if (score >= 50) {
     ring.style.stroke = 'var(--accent)';
     document.getElementById('score-summary')!.textContent = t('adblock.good');
-  } else if (score.score >= 20) {
+  } else if (score >= 20) {
     ring.style.stroke = 'var(--amber)';
     document.getElementById('score-summary')!.textContent = t('adblock.basic');
   } else {
@@ -193,17 +195,17 @@ export async function runAdBlockTests(): Promise<void> {
 
   document.getElementById('score-detail')!.textContent = t(
     'adblock.scoreDetail',
-    score.blocked,
-    score.total,
-    AdBlockTest.results.length,
+    adblockState.totalBlocked.get(),
+    adblockState.totalTests.get(),
+    results.length,
   );
 
-  renderAdblockSuggestions(score, AdBlockTest.results);
+  renderAdblockSuggestions({ score, total: adblockState.totalTests.get(), blocked: adblockState.totalBlocked.get(), passed: adblockState.totalTests.get() - adblockState.totalBlocked.get() }, results);
 
   markCompleted('adblock');
 
   // Community ranking
-  loadCommunityStats(score.score);
+  loadCommunityStats(score);
 
   const sectionEl = document.getElementById('adblock');
   if (sectionEl) sectionEl.setAttribute('aria-busy', 'false');

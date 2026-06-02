@@ -134,10 +134,7 @@ export const FilterListDetector = {
     },
   ] as FilterListDefinition[],
 
-  results: [] as FilterListResult[],
-
   async runAll(): Promise<FilterListResult[]> {
-    this.results = [];
     const container: HTMLDivElement = document.createElement('div');
     container.id = 'filter-list-test-container';
     container.style.cssText =
@@ -166,11 +163,11 @@ export const FilterListDetector = {
       return listResult;
     });
 
-    this.results = await Promise.all(listPromises);
-    adblockState.filterLists.set(this.results);
+    const results = await Promise.all(listPromises);
+    adblockState.filterLists.set(results);
 
     container.remove();
-    return this.results;
+    return results;
   },
 
   runTest(test: FilterTest, container: HTMLDivElement): Promise<{ blocked: boolean }> {
@@ -242,11 +239,12 @@ export const FilterListDetector = {
   },
 
   getSummary(): FilterListSummary {
-    const detected = this.results.filter((r) => r.detected && r.special !== 'acceptableAds');
-    const acceptableAds = this.results.find((r) => r.special === 'acceptableAds');
+    const results = adblockState.filterLists.get();
+    const detected = results.filter((r) => r.detected && r.special !== 'acceptableAds');
+    const acceptableAds = results.find((r) => r.special === 'acceptableAds');
     return {
       detected,
-      total: this.results.filter((r) => r.special !== 'acceptableAds').length,
+      total: results.filter((r) => r.special !== 'acceptableAds').length,
       acceptableAdsEnabled: acceptableAds?.detected || false,
     };
   },

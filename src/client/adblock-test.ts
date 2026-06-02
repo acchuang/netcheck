@@ -49,13 +49,6 @@ export interface CategoryResult {
   tests: TestWithResult[];
 }
 
-export interface Score {
-  score: number;
-  total: number;
-  blocked: number;
-  passed: number;
-}
-
 import { adblockState } from './state/adblock-state';
 
 export const AdBlockTest = {
@@ -190,10 +183,7 @@ export const AdBlockTest = {
     },
   ] as Category[],
 
-  results: [] as CategoryResult[],
-
   async runAll(): Promise<CategoryResult[]> {
-    this.results = [];
     adblockState.loading.set(true);
     adblockState.results.set([]);
     const container = document.createElement('div');
@@ -212,16 +202,30 @@ export const AdBlockTest = {
       return catResults;
     });
 
-    this.results = await Promise.all(categoryPromises);
-    adblockState.results.set(this.results);
-    const score = this.getScore();
+    const results = await Promise.all(categoryPromises);
+    adblockState.results.set(results);
+
+    let total = 0;
+    let blocked = 0;
+    for (const cat of results) {
+      for (const test of cat.tests) {
+        total++;
+        if (test.blocked) blocked++;
+      }
+    }
+    const score = {
+      score: total > 0 ? Math.round((blocked / total) * 100) : 0,
+      total,
+      blocked,
+      passed: total - blocked,
+    };
     adblockState.score.set(score.score);
     adblockState.totalBlocked.set(score.blocked);
     adblockState.totalTests.set(score.total);
     adblockState.loading.set(false);
 
     container.remove();
-    return this.results;
+    return results;
   },
 
   runTest(test: Test, container: HTMLDivElement): Promise<TestResult> {
@@ -362,24 +366,5 @@ export const AdBlockTest = {
       clearTimeout(timeout);
       resolve({ blocked: hidden });
     });
-  },
-
-  getScore(): Score {
-    let total = 0;
-    let blocked = 0;
-
-    for (const cat of this.results) {
-      for (const test of cat.tests) {
-        total++;
-        if (test.blocked) blocked++;
-      }
-    }
-
-    return {
-      score: total > 0 ? Math.round((blocked / total) * 100) : 0,
-      total,
-      blocked,
-      passed: total - blocked,
-    };
   },
 };

@@ -34,7 +34,8 @@ export async function runFilterListDetection(): Promise<void> {
       (summary.acceptableAdsEnabled ? t('filter.acceptableAds') : '');
   }
 
-  grid.innerHTML = FilterListDetector.results
+  const results = adblockState.filterLists.get();
+  grid.innerHTML = results
     .map((list) => {
       let dotClass: string, badgeClass: string, badgeText: string;
       if (list.special === 'acceptableAds') {
