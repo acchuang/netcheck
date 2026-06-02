@@ -128,7 +128,7 @@ export const adblockState = {
 };
 ```
 
-Note: Import the `CategoryResult` type from `adblock-test.ts` and `FilterListResult` from `filter-lists.ts`. If these types are not exported, export them first.
+Note: Import the `CategoryResult` type from `adblock-test.ts` and `FilterListResult` from `filter-lists.ts`. If these types are not exported, export them first. Also export `CtCert` from `cert-transparency.ts` and `CspIssue`/`HeaderCheckResult` from `headers-ui.ts` so the state modules can import them.
 
 - [ ] **Step 4: Export types from source modules if needed**
 
@@ -182,7 +182,7 @@ Expected: FAIL — module not found
 
 - [ ] **Step 3: Identify headers types from headers-ui.ts**
 
-Read `src/client/headers-ui.ts` and find the `SecurityCheck` interface and any CSP analysis type. Use the existing `SecurityCheck` from `src/client/types.ts` (already exported). Define `CspAnalysis` type if not already defined.
+Read `src/client/headers-ui.ts` and find the `HeaderCheckResult` and `CspAnalysis` interfaces. Export them from `headers-ui.ts` if not already exported. The `CspAnalysis` has fields `present`, `raw`, `directives`, `issues`, `score`, `grade` — NOT `findings`/`hasCsp`/`summary`. Use `HeaderCheckResult` (NOT `SecurityCheck`) for the `checks` observable.
 
 - [ ] **Step 4: Write the state module**
 
@@ -191,17 +191,35 @@ Read `src/client/headers-ui.ts` and find the `SecurityCheck` interface and any C
 import { observable } from './observable';
 import type { SecurityCheck } from '../types';
 
+export interface CspIssue {
+  severity: string;
+  directive: string;
+  value: string;
+  description: string;
+}
+
 export interface CspAnalysis {
-  findings: Array<{ severity: string; directive: string; value: string; description: string }>;
-  hasCsp: boolean;
-  summary: string;
+  present: boolean;
+  raw: string | null;
+  directives: { name: string; values: string[] }[];
+  issues: CspIssue[];
+  score: number;
+  grade: string;
+}
+
+export interface HeaderCheckResult {
+  name: string;
+  key: string;
+  desc: string;
+  value: string;
+  present: boolean;
 }
 
 export const headersState = {
   url: observable<string>(''),
   grade: observable<string>(''),
   score: observable<number>(0),
-  checks: observable<SecurityCheck[]>([]),
+  checks: observable<HeaderCheckResult[]>([]),
   cspAnalysis: observable<CspAnalysis | null>(null),
   loading: observable<boolean>(false),
 };
@@ -326,8 +344,8 @@ const defaultScore: QualityScore = {
   grade: '—',
   label: 'Unknown',
   factors: {
-    tls: 'unavailable',
-    serverRtt: 'unavailable',
+    tls: 'fail',
+    serverRtt: 'fail',
     connectionType: 'unavailable',
     stability: 'unavailable',
   },
@@ -362,7 +380,7 @@ git commit -m "feat: add qualityState observable module with tests"
 
 ### Task 5: Create remaining state modules (breach, cert-transparency, dnssec-validation, privacy-exposure, network-map)
 
-This task creates 5 state modules in sequence. Each follows the same pattern: write test → verify fail → write module → verify pass → commit.
+This task creates 5 state modules in sequence. Each gets its own commit.
 
 **Files:**
 - Create: `src/client/state/breach-state.ts`, `src/client/state/cert-transparency-state.ts`, `src/client/state/dnssec-validation-state.ts`, `src/client/state/privacy-exposure-state.ts`, `src/client/state/network-map-state.ts`
@@ -377,6 +395,7 @@ import { observable } from './observable';
 export const breachState = {
   found: observable<boolean>(false),
   count: observable<number>(0),
+  error: observable<string | null>(null),
   loading: observable<boolean>(false),
 };
 ```
@@ -392,6 +411,7 @@ describe('breachState', () => {
   it('has correct initial values', () => {
     expect(breachState.found.get()).toBe(false);
     expect(breachState.count.get()).toBe(0);
+    expect(breachState.error.get()).toBeNull();
     expect(breachState.loading.get()).toBe(false);
   });
 });
@@ -415,7 +435,7 @@ export interface CtSummary {
 export const certTransparencyState = {
   domain: observable<string>(''),
   summary: observable<CtSummary | null>(null),
-  certs: observable<any[]>([]),
+  certs: observable<CtCert[]>([]),
   trustIndicators: observable<string[]>([]),
   totalInDb: observable<number>(0),
   error: observable<string | null>(null),
@@ -430,9 +450,9 @@ export const certTransparencyState = {
 import { observable } from './observable';
 
 export interface DnssecChainStep {
-  label: string;
-  status: 'pass' | 'fail' | 'warn';
-  detail: string;
+  step: string;
+  status: 'pass' | 'fail' | 'skip';
+  details: string;
 }
 
 export interface DsRecord {
@@ -451,7 +471,7 @@ export interface DnskeyRecord {
 
 export const dnssecValidationState = {
   domain: observable<string>(''),
-  status: observable<'secure' | 'insecure' | 'bogus' | 'error'>('insecure'),
+  status: observable<'secure' | 'insecure' | 'bogus' | 'error'>('insecure'),  // lowercase normalized from API's uppercase
   adFlag: observable<boolean>(false),
   chain: observable<DnssecChainStep[]>([]),
   dsRecord: observable<DsRecord | null>(null),
@@ -470,9 +490,10 @@ import { observable } from './observable';
 export interface PrivacyCheck {
   name: string;
   api: string;
-  status: 'accessible' | 'blocked' | 'permission' | 'unavailable';
+  status: 'available' | 'blocked' | 'permission' | 'unavailable';
   risk: 'high' | 'medium' | 'low';
-  detail: string;
+  reveals: string;
+  tip: string;
 }
 
 export const privacyExposureState = {
@@ -506,11 +527,19 @@ Follow the same pattern for each test file. Verify initial values match the obse
 Run: `npx vitest run src/client/__tests__/*-state.test.ts`
 Expected: ALL PASS
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 9: Commit each state module separately**
 
 ```bash
-git add src/client/state/breach-state.ts src/client/state/cert-transparency-state.ts src/client/state/dnssec-validation-state.ts src/client/state/privacy-exposure-state.ts src/client/state/network-map-state.ts src/client/__tests__/breach-state.test.ts src/client/__tests__/cert-transparency-state.test.ts src/client/__tests__/dnssec-validation-state.test.ts src/client/__tests__/privacy-exposure-state.test.ts src/client/__tests__/network-map-state.test.ts src/client/cert-transparency.ts src/client/dnssec-validation.ts
-git commit -m "feat: add breach, cert-transparency, dnssec, privacy, network-map state modules"
+git add src/client/state/breach-state.ts src/client/__tests__/breach-state.test.ts
+git commit -m "feat: add breachState observable module with tests"
+git add src/client/state/cert-transparency-state.ts src/client/__tests__/cert-transparency-state.test.ts src/client/cert-transparency.ts
+git commit -m "feat: add certTransparencyState observable module with tests"
+git add src/client/state/dnssec-validation-state.ts src/client/__tests__/dnssec-validation-state.test.ts src/client/dnssec-validation.ts
+git commit -m "feat: add dnssecValidationState observable module with tests"
+git add src/client/state/privacy-exposure-state.ts src/client/__tests__/privacy-exposure-state.test.ts
+git commit -m "feat: add privacyExposureState observable module with tests"
+git add src/client/state/network-map-state.ts src/client/__tests__/network-map-state.test.ts
+git commit -m "feat: add networkMapState observable module with tests"
 ```
 
 ---
@@ -721,7 +750,7 @@ git commit -m "feat: dual-write quality data to qualityState"
 **Files:**
 - Modify: `src/client/breach-check.ts`
 
-This tool has no `scanInProgress` flag (it uses button disabled state). Add `breachState` writes and replace all hardcoded English strings with `t()` calls.
+This tool has no `scanInProgress` flag (it uses button disabled state). Add `breachState` writes, add `error` observable writes for error cases, and replace all hardcoded English strings with `t()` calls. Note: `breach-check.ts` already imports `t` from `./i18n` (line 1) — don't add a duplicate import. The `getSeverity()` helper stays as a local function; severity is derived from `breachState.count`, not stored in state.
 
 - [ ] **Step 1: Add i18n keys to src/client/i18n.ts**
 
@@ -873,7 +902,7 @@ git commit -m "feat: migrate dnssec validation to dnssecValidationState + add i1
 'privacyExposure.testingDesc': 'Detecting privacy exposure...',
 'privacyExposure.score': 'Privacy Exposure Score',
 'privacyExposure.highRisk': 'High Risk Exposures',
-'privacyExposure.accessible': 'Accessible',
+'privacyExposure.available': 'Available',
 'privacyExposure.blocked': 'Blocked',
 'privacyExposure.permission': 'Requires Permission',
 'privacyExposure.unavailable': 'Not Available',
@@ -897,7 +926,7 @@ git commit -m "feat: migrate dnssec validation to dnssecValidationState + add i1
 
 - [ ] **Step 3: Add state writes + i18n**
 
-Remove `import { scoreToGrade } from './tabs/dashboard-tab';` — use a local `scoreToGrade` function instead (to break the circular dependency), or import from a shared utility.
+Remove `import { scoreToGrade } from './tabs/dashboard-tab';` — copy the `scoreToGrade` function locally into `privacy-exposure.ts` (it's a simple grade lookup table) to break the circular dependency between privacy-exposure and dashboard-tab.
 
 Write results to `privacyExposureState` observables. Replace hardcoded strings with `t()` calls.
 
