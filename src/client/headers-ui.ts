@@ -1,6 +1,7 @@
 import { t } from './i18n';
 import { setBadge, renderSkeletonRows } from './ui-utils';
 import { appState } from './state/shared-state';
+import { headersState } from './state/headers-state';
 
 export interface CspIssue {
   severity: 'high' | 'medium' | 'low' | 'info';
@@ -38,7 +39,7 @@ interface HeadersResponse {
   error?: string;
 }
 
-let scanInProgress = false;
+
 
 export function initHeadersCheck(): void {
   const btn = document.getElementById('headers-check-btn')!;
@@ -51,13 +52,14 @@ export function initHeadersCheck(): void {
 }
 
 async function runHeadersCheck(): Promise<void> {
-  if (scanInProgress) return;
-  scanInProgress = true;
+  if (headersState.loading.get()) return;
+  headersState.loading.set(true);
 
   const input = document.getElementById('headers-url-input') as HTMLInputElement;
   const url = input.value.trim();
+  headersState.url.set(url);
   if (!url) {
-    scanInProgress = false;
+    headersState.loading.set(false);
     return;
   }
 
@@ -83,6 +85,7 @@ async function runHeadersCheck(): Promise<void> {
     const gradeEl = document.getElementById('headers-grade')!;
     gradeEl.textContent = data.grade;
     gradeEl.className = 'speed-grade';
+    headersState.grade.set(data.grade);
 
     const gradeColors: Record<string, string> = {
       A: 'var(--emerald)',
@@ -98,6 +101,7 @@ async function runHeadersCheck(): Promise<void> {
       data.score.present,
       data.score.total,
     );
+    headersState.score.set(data.score.present);
 
     const serverParts: string[] = [];
     if (data.server) serverParts.push(`Server: ${data.server}`);
@@ -140,6 +144,9 @@ async function runHeadersCheck(): Promise<void> {
       `;
       checkResults.appendChild(div);
     });
+
+    headersState.checks.set(data.checks);
+    headersState.cspAnalysis.set(data.cspAnalysis);
 
     const cspContainer = document.getElementById('csp-analysis-results')!;
     if (data.cspAnalysis && data.cspAnalysis.present) {
@@ -191,7 +198,7 @@ async function runHeadersCheck(): Promise<void> {
     checkResults.innerHTML = `<p class="info-muted">${t('headers.error')}</p>`;
   }
 
-  scanInProgress = false;
+  headersState.loading.set(false);
   btn.disabled = false;
   btn.textContent = t('headers.scan');
 
