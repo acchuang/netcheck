@@ -1,6 +1,6 @@
 import { appState } from './state/shared-state';
 
-interface CtCert {
+export interface CtCert {
   issuer: string;
   commonName: string;
   names: string;
