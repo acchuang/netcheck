@@ -1,11 +1,21 @@
-import { scoreToGrade } from './tabs/dashboard-tab';
+import { t } from './i18n';
+import { privacyExposureState } from './state/privacy-exposure-state';
+import type { PrivacyCheck } from './state/privacy-exposure-state';
 
-interface PrivacyCheck {
-  name: string;
-  status: 'available' | 'blocked' | 'permission' | 'unavailable';
-  risk: 'high' | 'medium' | 'low';
-  reveals: string;
-  tip: string;
+const GRADE_THRESHOLDS: [number, string][] = [
+  [93, 'A+'],
+  [90, 'A'],
+  [80, 'B'],
+  [70, 'C'],
+  [60, 'D'],
+  [0, 'F'],
+];
+
+function scoreToGrade(score: number): string {
+  for (const [threshold, grade] of GRADE_THRESHOLDS) {
+    if (score >= threshold) return grade;
+  }
+  return 'F';
 }
 
 async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: number; grade: string }> {
@@ -13,6 +23,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
 
   const testApi = async (
     name: string,
+    api: string,
     test: () => Promise<'available' | 'blocked' | 'permission' | 'unavailable'>,
     risk: 'high' | 'medium' | 'low',
     reveals: string,
@@ -20,14 +31,15 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   ) => {
     try {
       const status = await test();
-      checks.push({ name, status, risk, reveals, tip });
+      checks.push({ name, api, status, risk, reveals, tip });
     } catch {
-      checks.push({ name, status: 'unavailable', risk, reveals, tip });
+      checks.push({ name, api, status: 'unavailable', risk, reveals, tip });
     }
   };
 
   await testApi(
-    'WebRTC IP Leak',
+    t('privacyExposure.api.webrtc'),
+    'webrtc',
     async () => {
       try {
         const pc = new RTCPeerConnection({ iceServers: [] });
@@ -52,7 +64,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Battery API',
+    t('privacyExposure.api.battery'),
+    'battery',
     async () => {
       if (!('getBattery' in navigator)) return 'unavailable';
       try {
@@ -68,7 +81,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Device Memory',
+    t('privacyExposure.api.deviceMemory'),
+    'deviceMemory',
     async () => {
       if (!('deviceMemory' in navigator)) return 'unavailable';
       return (navigator as any).deviceMemory ? 'available' : 'blocked';
@@ -79,7 +93,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Bluetooth API',
+    t('privacyExposure.api.bluetooth'),
+    'bluetooth',
     async () => {
       if (!('bluetooth' in navigator)) return 'unavailable';
       return 'permission';
@@ -90,7 +105,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'USB API',
+    t('privacyExposure.api.usb'),
+    'usb',
     async () => {
       if (!('usb' in navigator)) return 'unavailable';
       return 'permission';
@@ -101,7 +117,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Serial API',
+    t('privacyExposure.api.serial'),
+    'serial',
     async () => {
       if (!('serial' in navigator)) return 'unavailable';
       return 'permission';
@@ -112,7 +129,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Gamepad API',
+    t('privacyExposure.api.gamepad'),
+    'gamepad',
     async () => {
       if (!('getGamepads' in navigator)) return 'unavailable';
       try {
@@ -128,7 +146,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Geolocation',
+    t('privacyExposure.api.geolocation'),
+    'geolocation',
     async () => {
       if (!('geolocation' in navigator)) return 'unavailable';
       try {
@@ -153,7 +172,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Notifications',
+    t('privacyExposure.api.notifications'),
+    'notifications',
     async () => {
       if (!('Notification' in window)) return 'unavailable';
       if (Notification.permission === 'granted') return 'available';
@@ -166,7 +186,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Media Devices',
+    t('privacyExposure.api.mediaDevices'),
+    'mediaDevices',
     async () => {
       if (!('mediaDevices' in navigator)) return 'unavailable';
       try {
@@ -182,7 +203,8 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
   );
 
   await testApi(
-    'Clipboard API',
+    t('privacyExposure.api.clipboard'),
+    'clipboard',
     async () => {
       if (!('clipboard' in navigator)) return 'unavailable';
       return 'permission';
@@ -212,16 +234,16 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  available: { label: 'Accessible', color: 'var(--red)' },
-  blocked: { label: 'Blocked', color: 'var(--emerald)' },
-  permission: { label: 'Requires Permission', color: 'var(--amber)' },
-  unavailable: { label: 'Not Available', color: 'var(--text-tertiary)' },
+  available: { label: t('privacyExposure.status.available'), color: 'var(--red)' },
+  blocked: { label: t('privacyExposure.status.blocked'), color: 'var(--emerald)' },
+  permission: { label: t('privacyExposure.status.permission'), color: 'var(--amber)' },
+  unavailable: { label: t('privacyExposure.status.unavailable'), color: 'var(--text-tertiary)' },
 };
 
 const RISK_LABELS: Record<string, { label: string; color: string }> = {
-  high: { label: 'High', color: 'var(--red)' },
-  medium: { label: 'Medium', color: 'var(--amber)' },
-  low: { label: 'Low', color: 'var(--accent)' },
+  high: { label: t('privacyExposure.risk.high'), color: 'var(--red)' },
+  medium: { label: t('privacyExposure.risk.medium'), color: 'var(--amber)' },
+  low: { label: t('privacyExposure.risk.low'), color: 'var(--accent)' },
 };
 
 export async function runPrivacyExposure(): Promise<void> {
@@ -231,12 +253,21 @@ export async function runPrivacyExposure(): Promise<void> {
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Checking...';
+    btn.textContent = t('privacyExposure.checking');
   }
 
-  container.innerHTML = '<div class="breach-loading"><div class="spinner"></div><p>Detecting privacy exposure...</p></div>';
+  privacyExposureState.loading.set(true);
+
+  container.innerHTML = `<div class="breach-loading"><div class="spinner"></div><p>${t('privacyExposure.checkingDesc')}</p></div>`;
 
   const result = await checkPrivacyExposure();
+
+  privacyExposureState.score.set(result.score);
+  privacyExposureState.grade.set(result.grade);
+  privacyExposureState.checks.set(result.checks);
+
+  const highRiskCount = result.checks.filter((c) => c.status === 'available' && c.risk === 'high').length;
+  privacyExposureState.riskLevel.set(highRiskCount > 0 ? 'high' : result.score >= 80 ? 'low' : 'medium');
 
   const gradeColors: Record<string, string> = {
     'A+': 'var(--emerald)', A: 'var(--emerald)', B: 'var(--accent)',
@@ -247,7 +278,7 @@ export async function runPrivacyExposure(): Promise<void> {
     <div class="privacy-exposure-results">
       <div class="tls-target-grade">
         <div class="speed-grade" style="color:${gradeColors[result.grade] || 'var(--text-secondary)'}; font-size:2.5rem">${result.grade}</div>
-        <div style="font-size:12px;color:var(--text-secondary)">Privacy Exposure Score</div>
+        <div style="font-size:12px;color:var(--text-secondary)">${t('privacyExposure.score')}</div>
       </div>
       <div class="csp-analysis-card" style="margin-top:16px">
         <div class="csp-score-bar">
@@ -273,7 +304,7 @@ export async function runPrivacyExposure(): Promise<void> {
       </div>
       ${result.checks.filter((c) => c.status === 'available' && c.risk === 'high').length > 0 ? `
         <div class="csp-analysis-card" style="margin-top:12px;border-color:var(--red)">
-          <h4 class="csp-issues-title">High Risk Exposures</h4>
+          <h4 class="csp-issues-title">${t('privacyExposure.highRiskExposures')}</h4>
           ${result.checks
             .filter((c) => c.status === 'available' && c.risk === 'high')
             .map((c) => `<div class="csp-issue-item"><span class="csp-issue-message">${c.name}: ${c.tip}</span></div>`)
@@ -285,8 +316,10 @@ export async function runPrivacyExposure(): Promise<void> {
 
   if (btn) {
     btn.disabled = false;
-    btn.textContent = 'Check Privacy Exposure';
+    btn.textContent = t('privacyExposure.check');
   }
+
+  privacyExposureState.loading.set(false);
 }
 
 export function initPrivacyExposure(): void {
