@@ -2,6 +2,7 @@ import { FingerprintDetector } from './fingerprint';
 import { t } from './i18n';
 import { affiliate } from './affiliates';
 import { appState } from './state/shared-state';
+import { fingerprintState } from './state/fingerprint-state';
 
 export function initFingerprint(): void {
   document.getElementById('fp-start-btn')?.addEventListener('click', runFingerprintScan);
@@ -137,3 +138,53 @@ async function runFingerprintScan(): Promise<void> {
     appState.completedTests.set([...current, 'fingerprint']);
   }
 }
+
+fingerprintState.uniquenessScore.subscribe((score) => {
+  const el = document.getElementById('fp-score-number');
+  if (el) el.textContent = String(score);
+  const ring = document.getElementById('fp-score-ring');
+  if (ring) {
+    const circumference = 2 * Math.PI * 54;
+    ring.style.strokeDasharray = String(circumference);
+    ring.style.strokeDashoffset = String(circumference * (1 - score / 100));
+    ring.style.stroke =
+      score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--emerald)';
+  }
+  const summary = document.getElementById('fp-score-summary');
+  if (summary) {
+    if (score < 40) summary.textContent = t('fp.lowUniqueness');
+    else if (score < 70) summary.textContent = t('fp.mediumUniqueness');
+    else summary.textContent = t('fp.highUniqueness');
+  }
+});
+
+fingerprintState.categories.subscribe((categories) => {
+  const container = document.getElementById('fp-categories');
+  if (!container || categories.length === 0) return;
+  container.innerHTML = '';
+  categories.forEach((cat) => {
+    if (cat.items.length === 0) return;
+    const div = document.createElement('div');
+    div.className = 'test-category open';
+    const itemsHtml = cat.items
+      .map(
+        (item) => `
+      <div class="fp-category-item">
+        <div class="fp-item-entropy ${item.entropy}"></div>
+        <span class="fp-item-label">${t(item.i18nKey) || item.label}</span>
+        <span class="fp-item-value" title="${item.value}">${item.value}</span>
+      </div>
+    `,
+      )
+      .join('');
+    div.innerHTML = `
+      <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
+        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="test-category-name">${t(cat.i18nKey) || cat.name}</span>
+        <span class="test-category-score">${cat.items.length} ${t(cat.i18nKey) || cat.name}</span>
+      </div>
+      <div class="test-category-body">${itemsHtml}</div>
+    `;
+    container.appendChild(div);
+  });
+});

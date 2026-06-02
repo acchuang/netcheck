@@ -1,3 +1,5 @@
+import { fingerprintState } from './state/fingerprint-state';
+
 export interface FingerprintCategory {
   name: string;
   i18nKey: string;
@@ -38,6 +40,7 @@ export const FingerprintDetector = {
 
   async runAll(): Promise<FingerprintResult> {
     this.results = [];
+    fingerprintState.loading.set(true);
 
     const categories: FingerprintCategory[] = [
       await this.detectCanvas(),
@@ -63,6 +66,11 @@ export const FingerprintDetector = {
     });
 
     const uniquenessScore = Math.min(100, Math.round((totalBits / 50) * 100));
+
+    fingerprintState.uniquenessScore.set(uniquenessScore);
+    fingerprintState.totalEntropy.set(totalBits);
+    fingerprintState.categories.set(categories);
+    fingerprintState.loading.set(false);
 
     return { categories, totalEntropy: totalBits, uniquenessScore };
   },
