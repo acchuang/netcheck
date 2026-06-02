@@ -2,6 +2,8 @@ import { appState } from '../state/shared-state';
 import { dnsState } from '../state/dns-state';
 import { speedState } from '../state/speed-state';
 import { tlsState } from '../state/tls-state';
+import { adblockState } from '../state/adblock-state';
+import { headersState } from '../state/headers-state';
 import { t } from '../i18n';
 import { SpeedTestHistory } from '../history';
 import { getAllHistory } from '../state/history-state';
@@ -107,6 +109,8 @@ export function initDashboard(): void {
     if (info) markCompleted('tls');
     renderDashboard();
   });
+  adblockState.score.subscribe(() => renderDashboard());
+  headersState.grade.subscribe(() => renderDashboard());
 
   renderDashboard();
 }
@@ -225,8 +229,7 @@ function renderDashboard(): void {
   }
 
   if (completed.includes('adblock')) {
-    const scoreEl = document.getElementById('score-number');
-    const score = scoreEl ? parseInt(scoreEl.textContent ?? '0', 10) : 0;
+    const score = adblockState.score.get();
     const cls = score >= 80 ? 'status-pass' : score >= 50 ? 'status-warn' : 'status-fail';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.adblockScore', 'Ad Block')}</span>
@@ -235,8 +238,7 @@ function renderDashboard(): void {
   }
 
   if (completed.includes('headers')) {
-    const gradeEl = document.getElementById('headers-grade');
-    const grade = gradeEl?.textContent?.trim() ?? '';
+    const grade = headersState.grade.get();
     const cls = grade === 'A' ? 'status-pass' : grade === 'B' || grade === 'C' ? 'status-warn' : grade ? 'status-fail' : '';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.headersGrade', 'Headers')}</span>
