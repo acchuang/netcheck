@@ -2,6 +2,10 @@ import { dnsState } from './state/dns-state';
 import { speedState } from './state/speed-state';
 import { tlsState } from './state/tls-state';
 import { appState } from './state/shared-state';
+import { headersState } from './state/headers-state';
+import { adblockState } from './state/adblock-state';
+import { fingerprintState } from './state/fingerprint-state';
+import { qualityState } from './state/quality-state';
 import { getAllHistory } from './state/history-state';
 
 export interface TestResultsPayload {
@@ -79,28 +83,27 @@ export function collectTestResults(): TestResultsPayload {
   const tlsInfo = tlsState.info.get();
 
   let headersData: TestResultsPayload['headers'] = null;
-  const headersGrade = document.getElementById('headers-grade')?.textContent?.trim();
-  const headersScore = document.getElementById('headers-score')?.textContent?.trim();
-  const headersUrl = (document.getElementById('headers-url') as HTMLInputElement)?.value?.trim();
+  const headersGrade = headersState.grade.get();
+  const headersScore = headersState.score.get();
+  const headersUrl = headersState.url.get();
   if (headersGrade && headersScore && headersUrl) {
-    headersData = { grade: headersGrade, score: headersScore, url: headersUrl };
+    headersData = { grade: headersGrade, score: String(headersScore), url: headersUrl };
   }
 
   let adblockData: TestResultsPayload['adblock'] = null;
-  const abScore = document.getElementById('score-number')?.textContent?.trim();
-  const abBlocked = document.getElementById('adblock-total-blocked')?.textContent?.trim();
-  if (abScore) {
-    adblockData = { score: parseInt(abScore, 10) || 0, blocked: parseInt(abBlocked || '', 10) || 0 };
+  const abScore = adblockState.score.get();
+  const abBlocked = adblockState.totalBlocked.get();
+  if (abScore > 0 || abBlocked > 0) {
+    adblockData = { score: abScore, blocked: abBlocked };
   }
 
   let fpData: TestResultsPayload['fingerprint'] = null;
-  const fpScore = document.getElementById('fp-score-number')?.textContent?.trim();
-  if (fpScore) {
-    fpData = { uniquenessScore: parseInt(fpScore, 10) || 0, totalEntropy: 0 };
+  const fpScore = fingerprintState.uniquenessScore.get();
+  if (fpScore > 0) {
+    fpData = { uniquenessScore: fpScore, totalEntropy: fingerprintState.totalEntropy.get() };
   }
 
-  const qualityGrade = document.getElementById('quality-grade')?.textContent?.trim() || '';
-  const qualityLabel = document.getElementById('quality-grade-label')?.textContent?.trim() || '';
+  const qualityScore = qualityState.score.get();
 
   const history = getAllHistory();
   let historyData: TestResultsPayload['history'] = null;
@@ -177,8 +180,8 @@ export function collectTestResults(): TestResultsPayload {
     adblock: adblockData,
     fingerprint: fpData,
     quality: {
-      grade: qualityGrade,
-      label: qualityLabel,
+      grade: qualityScore.grade,
+      label: qualityScore.label,
       connectionType: null,
       stability: null,
     },
