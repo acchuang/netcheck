@@ -2,14 +2,14 @@ import { t } from './i18n';
 import { setBadge, renderSkeletonRows } from './ui-utils';
 import { appState } from './state/shared-state';
 
-interface CspIssue {
+export interface CspIssue {
   severity: 'high' | 'medium' | 'low' | 'info';
   directive: string;
   value: string;
   message: string;
 }
 
-interface CspAnalysis {
+export interface CspAnalysis {
   present: boolean;
   raw: string | null;
   directives: { name: string; values: string[] }[];
@@ -18,7 +18,7 @@ interface CspAnalysis {
   grade: string;
 }
 
-interface HeaderCheckResult {
+export interface HeaderCheckResult {
   name: string;
   key: string;
   desc: string;
