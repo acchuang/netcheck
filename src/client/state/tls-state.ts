@@ -66,6 +66,7 @@ export const tlsState = {
   info: observable<TlsInfo | null>(null),
   loading: observable<boolean>(false),
   error: observable<string | null>(null),
+  targetLoading: observable<boolean>(false),
 };
 
 export async function runTlsCheck(): Promise<void> {

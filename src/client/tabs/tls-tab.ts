@@ -24,7 +24,7 @@ interface TlsTargetResult {
   error?: string;
 }
 
-let targetScanInProgress = false;
+
 
 function renderTlsInfo(info: TlsInfo): string {
   const protocolBadge = renderBadge({
@@ -147,13 +147,13 @@ function initTlsTargetCheck(): void {
 }
 
 async function runTlsTargetCheck(): Promise<void> {
-  if (targetScanInProgress) return;
-  targetScanInProgress = true;
+  if (tlsState.targetLoading.get()) return;
+  tlsState.targetLoading.set(true);
 
   const input = document.getElementById('tls-target-domain-input') as HTMLInputElement;
   const domain = input.value.trim();
   if (!domain) {
-    targetScanInProgress = false;
+    tlsState.targetLoading.set(false);
     return;
   }
 
@@ -229,7 +229,7 @@ async function runTlsTargetCheck(): Promise<void> {
       </div>
     `;
   } finally {
-    targetScanInProgress = false;
+    tlsState.targetLoading.set(false);
     btn.disabled = false;
     btn.textContent = 'Check Domain';
   }
