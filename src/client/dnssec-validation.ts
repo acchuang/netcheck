@@ -1,4 +1,4 @@
-interface DnssecChainStep {
+export interface DnssecChainStep {
   step: string;
   status: 'pass' | 'fail' | 'skip';
   details: string;
