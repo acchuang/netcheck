@@ -1,5 +1,5 @@
 import { t } from './i18n';
-import { appState } from './state/shared-state';
+
 import { dnssecValidationState } from './state/dnssec-validation-state';
 import type { DnssecChainStep } from './state/dnssec-validation-state';
 

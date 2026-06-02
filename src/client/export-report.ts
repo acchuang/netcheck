@@ -1,4 +1,4 @@
-import { SpeedTest, type SpeedTestResults, type SpeedGrade } from './speed-test';
+import { SpeedTest, type SpeedGrade } from './speed-test';
 import { adblockState } from './state/adblock-state';
 import { headersState } from './state/headers-state';
 import { speedState } from './state/speed-state';

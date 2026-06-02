@@ -2,6 +2,10 @@ name = "netcheck-site"
 compatibility_date = "2025-04-01"
 main = "src/worker/index.ts"
 
+routes = [
+  { pattern = "netcheck.oilygold.xyz", custom_domain = true }
+]
+
 [ai]
 binding = "AI"
 

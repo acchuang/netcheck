@@ -1,4 +1,3 @@
-import { qualityState } from './state/quality-state';
 
 export interface ConnectionInfo {
   type: string | null;

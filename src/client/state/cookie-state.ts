@@ -1,5 +1,6 @@
 import { observable } from './observable';
 import { scoreToGrade } from '../tabs/dashboard-tab';
+import { appState } from './shared-state';
 
 export interface CookieEntry {
   name: string;
@@ -131,6 +132,7 @@ export async function runCookieAudit(): Promise<void> {
       securePercentage,
       grade: scoreToGrade(score),
     });
+    appState.completedTests.set([...appState.completedTests.get(), 'cookies']);
   } catch (e) {
     cookieState.error.set(e instanceof Error ? e.message : 'Cookie audit failed');
   } finally {

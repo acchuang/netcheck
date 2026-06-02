@@ -124,7 +124,7 @@ export function initBreachCheck(): void {
       if (!current.includes('breach')) {
         appState.completedTests.set([...current, 'breach']);
       }
-    } catch (err) {
+    } catch {
       breachState.error.set(t('breachCheck.error'));
       results.innerHTML = `
         <div class="breach-result-card breach-result-error">
