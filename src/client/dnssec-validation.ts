@@ -1,8 +1,7 @@
-export interface DnssecChainStep {
-  step: string;
-  status: 'pass' | 'fail' | 'skip';
-  details: string;
-}
+import { t } from './i18n';
+import { appState } from './state/shared-state';
+import { dnssecValidationState } from './state/dnssec-validation-state';
+import type { DnssecChainStep } from './state/dnssec-validation-state';
 
 interface DnssecResult {
   domain: string;
@@ -14,8 +13,6 @@ interface DnssecResult {
   hashVerified: boolean | null;
   error?: string;
 }
-
-let scanInProgress = false;
 
 export function initDnssecValidation(): void {
   const btn = document.getElementById('dnssec-check-btn') as HTMLButtonElement;
@@ -30,28 +27,31 @@ export function initDnssecValidation(): void {
 }
 
 async function runDnssecCheck(): Promise<void> {
-  if (scanInProgress) return;
-  scanInProgress = true;
+  if (dnssecValidationState.loading.get()) return;
+  dnssecValidationState.loading.set(true);
 
   const input = document.getElementById('dnssec-domain-input') as HTMLInputElement;
   const domain = input.value.trim();
   if (!domain) {
-    scanInProgress = false;
+    dnssecValidationState.loading.set(false);
     return;
   }
 
+  dnssecValidationState.domain.set(domain);
+
   const btn = document.getElementById('dnssec-check-btn') as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = 'Validating...';
+  btn.textContent = t('dnssecValidation.validating');
 
   const container = document.getElementById('dnssec-results')!;
-  container.innerHTML = '<div class="breach-loading"><div class="spinner"></div><p>Validating DNSSEC chain of trust...</p></div>';
+  container.innerHTML = `<div class="breach-loading"><div class="spinner"></div><p>${t('dnssecValidation.validatingDesc')}</p></div>`;
 
   try {
     const res = await fetch(`/api/dns/dnssec-validate?domain=${encodeURIComponent(domain)}`);
     const data: DnssecResult = await res.json();
 
     if (data.error) {
+      dnssecValidationState.error.set(data.error);
       container.innerHTML = `
         <div class="csp-analysis-card">
           <p class="info-muted">${data.error}</p>
@@ -60,11 +60,34 @@ async function runDnssecCheck(): Promise<void> {
       return;
     }
 
+    const statusLower = data.status.toLowerCase() as 'secure' | 'insecure' | 'bogus' | 'error';
+    dnssecValidationState.status.set(statusLower);
+    dnssecValidationState.adFlag.set(data.adFlag);
+    dnssecValidationState.chain.set(data.chain);
+    dnssecValidationState.error.set(null);
+
+    if (data.dsRecord) {
+      dnssecValidationState.dsRecord.set({
+        present: data.dsRecord.present,
+        algorithm: data.dsRecord.algorithm != null ? String(data.dsRecord.algorithm) : undefined,
+        digestType: data.dsRecord.digestType != null ? String(data.dsRecord.digestType) : undefined,
+        keyTag: data.dsRecord.keyTag ?? undefined,
+      });
+    }
+    if (data.dnskeyRecord) {
+      dnssecValidationState.dnskeyRecord.set({
+        present: data.dnskeyRecord.present,
+        algorithm: data.dnskeyRecord.algorithm != null ? String(data.dnskeyRecord.algorithm) : undefined,
+        keyTag: data.dnskeyRecord.keyTag ?? undefined,
+        flags: data.dnskeyRecord.flags ?? undefined,
+      });
+    }
+
     const statusConfig: Record<string, { color: string; icon: string; label: string }> = {
-      SECURE: { color: 'var(--emerald)', icon: '<polyline points="9 12 11 14 15 10"/>', label: 'SECURE — Chain of trust validated' },
-      INSECURE: { color: 'var(--amber)', icon: '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', label: 'INSECURE — Domain is not DNSSEC-signed' },
-      BOGUS: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: 'BOGUS — Chain of trust is broken' },
-      ERROR: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: 'ERROR — Validation failed' },
+      SECURE: { color: 'var(--emerald)', icon: '<polyline points="9 12 11 14 15 10"/>', label: t('dnssecValidation.secure') },
+      INSECURE: { color: 'var(--amber)', icon: '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', label: t('dnssecValidation.insecure') },
+      BOGUS: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: t('dnssecValidation.bogus') },
+      ERROR: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: t('dnssecValidation.errorStatus') },
     };
 
     const sc = statusConfig[data.status] || statusConfig.ERROR;
@@ -83,7 +106,7 @@ async function runDnssecCheck(): Promise<void> {
         </div>
 
         <div class="dnssec-chain" style="margin-bottom:16px">
-          <h4 class="csp-issues-title">Trust Chain</h4>
+          <h4 class="csp-issues-title">${t('dnssecValidation.trustChain')}</h4>
           ${data.chain.map((step) => {
             const stepColors: Record<string, string> = { pass: 'var(--emerald)', fail: 'var(--red)', skip: 'var(--amber)' };
             const stepIcons: Record<string, string> = {
@@ -108,29 +131,30 @@ async function runDnssecCheck(): Promise<void> {
         ${data.adFlag ? `
           <div class="csp-analysis-card">
             <div class="csp-issue-item">
-              <span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">RESOLVER</span>
-              <span class="csp-issue-message">Cloudflare's resolver also validated this domain (AD flag = true)</span>
+              <span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">${t('dnssecValidation.resolver')}</span>
+              <span class="csp-issue-message">${t('dnssecValidation.adFlagTrue')}</span>
             </div>
           </div>
         ` : `
           <div class="csp-analysis-card">
             <div class="csp-issue-item">
-              <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">RESOLVER</span>
-              <span class="csp-issue-message">Cloudflare's resolver did not set the AD flag for this domain</span>
+              <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">${t('dnssecValidation.resolver')}</span>
+              <span class="csp-issue-message">${t('dnssecValidation.adFlagFalse')}</span>
             </div>
           </div>
         `}
       </div>
     `;
   } catch {
+    dnssecValidationState.error.set(t('dnssecValidation.error'));
     container.innerHTML = `
       <div class="csp-analysis-card">
-        <p class="info-muted">DNSSEC validation failed. The server may be temporarily unavailable.</p>
+        <p class="info-muted">${t('dnssecValidation.error')}</p>
       </div>
     `;
   } finally {
-    scanInProgress = false;
+    dnssecValidationState.loading.set(false);
     btn.disabled = false;
-    btn.textContent = 'Validate DNSSEC';
+    btn.textContent = t('dnssecValidation.validate');
   }
 }
