@@ -1,5 +1,9 @@
 import { t } from './i18n';
 import { onLocaleChange } from './locale-events';
+import { adblockState } from './state/adblock-state';
+import { fingerprintState } from './state/fingerprint-state';
+import { qualityState } from './state/quality-state';
+import { headersState } from './state/headers-state';
 
 function elText(id: string): string {
   return document.getElementById(id)?.textContent?.trim() || '';
@@ -48,7 +52,7 @@ export function buildSummary(): string {
     const lines = [
       metricLine(
         t('share.metric.score'),
-        document.getElementById('score-number')?.textContent?.trim() || '—',
+        String(adblockState.score.get()) || '—',
         '/100',
       ),
       metricLine(
@@ -66,15 +70,15 @@ export function buildSummary(): string {
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'headers') {
     const lines = [
-      metricLine(elText('headers-grade-title'), elText('headers-grade')),
-      metricLine(t('share.metric.score'), elText('headers-score')),
+      metricLine(t('dashboard.headersGrade', 'Headers'), headersState.grade.get()),
+      metricLine(t('share.metric.score'), String(headersState.score.get())),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'fingerprint') {
     const lines = [
       metricLine(
         elText('fp-uniqueness-label'),
-        document.getElementById('fp-score-number')?.textContent?.trim() || '—',
+        String(fingerprintState.uniquenessScore.get()) || '—',
       ),
       metricLine(
         t('share.metric.summary'),
@@ -83,9 +87,8 @@ export function buildSummary(): string {
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'quality') {
-    const grade = [elText('quality-grade'), elText('quality-grade-label')]
-      .filter(Boolean)
-      .join(' ');
+    const qs = qualityState.score.get();
+    const grade = [qs.grade, qs.label].filter(Boolean).join(' ');
     const tlsText = elText('quality-tls-info');
     const serverRtt = tlsText.match(/(\d+)\s*ms/)?.[0] || '—';
     const lines = [
@@ -99,6 +102,18 @@ export function buildSummary(): string {
       metricLine(t('share.metric.grade'), grade),
       metricLine(t('tls.protocol'), elText('tls-protocol')),
       metricLine(t('tls.cipher'), elText('tls-cipher')),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
+  } else if (activeTab === 'cookies') {
+    const gradeEl = document.querySelector('.cookie-grade-grade');
+    const totalEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(1) .cookie-stat-value');
+    const sizeEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(2) .cookie-stat-value');
+    const secureEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(3) .cookie-stat-value');
+    const lines = [
+      metricLine(t('cookie.grade'), gradeEl?.textContent?.trim() || '—'),
+      metricLine(t('cookie.total'), totalEl?.textContent?.trim() || '—'),
+      metricLine(t('cookie.size'), sizeEl?.textContent?.trim() || '—'),
+      metricLine(t('cookie.secure'), secureEl?.textContent?.trim() || '—'),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'history') {
