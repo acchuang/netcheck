@@ -10,7 +10,7 @@ NetCheck has 20+ tools/tabs, but only DNS, Speed, TLS, Email, History, Cookie, D
 
 1. **i18n gaps** — Breach Check, Cert Transparency, DNSSEC Validation, and Privacy Exposure use hardcoded English
 2. **DOM coupling** — Dashboard, AI Collector, Share, and Export-Report read data from DOM IDs instead of state
-3. **State inconsistency** — Some tools use observable state, others use static class properties or `scanInProgress` flags
+3. **State inconsistency** — Some tools use observable state, others use module-level object properties or `scanInProgress` flags
 4. **CSS class sharing** — Tools borrow each other's CSS classes (`breach-loading`, `csp-analysis-card`, `tls-target-grade`)
 
 This design addresses all four problems in Phase 1 (Foundation). Later phases will address dashboard scoring, worker extraction, and test coverage.
@@ -42,15 +42,15 @@ New modules to create:
 
 | Module | File | Key Observables | Replaces |
 |---|---|---|---|
-| `adblockState` | `state/adblock-state.ts` | `score`, `totalBlocked`, `totalTests`, `results`, `categoryScores`, `filterLists`, `loading` | `AdBlockTest.results`, `AdBlockTest.getScore()`, `FilterListDetector.results`, DOM reads of `#score-number`, `#adblock-total-blocked` |
-| `headersState` | `state/headers-state.ts` | `url`, `grade`, `score`, `checks`, `cspAnalysis`, `loading`, `scanInProgress` | DOM reads of `#headers-grade`, `#headers-score`, `#headers-url`, module-level `scanInProgress` flag |
-| `fingerprintState` | `state/fingerprint-state.ts` | `score`, `uniquenessLevel`, `categories`, `loading` | DOM reads of `#fp-score-number`, `#fp-uniqueness-label`, `#fp-score-summary` |
-| `qualityState` | `state/quality-state.ts` | `grade`, `gradeLabel`, `effectiveType`, `connectionInfo`, `timing`, `stabilityTest`, `loading` | DOM reads of `#quality-grade`, `#quality-grade-label`, `#quality-score-title`, `#quality-tls-info` |
-| `breachState` | `state/breach-state.ts` | `passwordHash`, `count`, `severity`, `loading` | module-level mutable state in `breach-check.ts` |
-| `certTransparencyState` | `state/cert-transparency-state.ts` | `domain`, `totalCerts`, `activeCerts`, `expiredCerts`, `wildcardCerts`, `recentCerts`, `trustIndicators`, `certs`, `loading` | module-level mutable state in `cert-transparency.ts` |
-| `dnssecValidationState` | `state/dnssec-validation-state.ts` | `domain`, `status`, `chainSteps`, `dsRecords`, `dnskeyRecords`, `loading` | module-level mutable state in `dnssec-validation.ts` |
-| `privacyExposureState` | `state/privacy-exposure-state.ts` | `score`, `grade`, `riskLevel`, `apiResults`, `loading` | module-level mutable state in `privacy-exposure.ts` |
-| `networkMapState` | `state/network-map-state.ts` | `probes`, `latencies`, `regionLatencies`, `loading` | module-level mutable state in `network-map.ts` |
+| `adblockState` | `state/adblock-state.ts` | `score`, `totalBlocked`, `totalTests`, `results`, `categoryScores`, `filterLists`, `loading` | `AdBlockTest.results` (object property), `AdBlockTest.getScore()` (object method), DOM reads of `#score-number`; `FilterListDetector.results` maps to `filterLists`, `#adblock-total-blocked` is a missing DOM ID — observable fixes this |
+| `headersState` | `state/headers-state.ts` | `url`, `grade`, `score`, `checks`, `cspAnalysis`, `loading` | DOM reads of `#headers-grade`, `#headers-score`; `#headers-url-input` (AI collector has bug reading `#headers-url`); module-level `scanInProgress` flag becomes `loading` |
+| `fingerprintState` | `state/fingerprint-state.ts` | `uniquenessScore`, `totalEntropy`, `categories`, `loading` | DOM reads of `#fp-score-number` (maps to `uniquenessScore`), `#fp-uniqueness-label`, `#fp-score-summary` |
+| `qualityState` | `state/quality-state.ts` | `score`, `grade`, `gradeLabel`, `effectiveType`, `connectionInfo`, `tlsInfo`, `timing`, `stabilityTest`, `isRunning`, `isRunningStability`, `hasRun`, `loading` | DOM reads of `#quality-grade`, `#quality-grade-label`; mirrors `connection-quality-ui.ts` local state object shape |
+| `breachState` | `state/breach-state.ts` | `found`, `count`, `loading` | module-level mutable state in `breach-check.ts`; `found` and `count` match actual return type; `severity` is derived, not stored |
+| `certTransparencyState` | `state/cert-transparency-state.ts` | `domain`, `summary`, `certs` (up to 100), `trustIndicators`, `totalInDb`, `error`, `loading` | module-level mutable state in `cert-transparency.ts`; `summary` is `CtSummary` object (total/active/expired/wildcardCount/recentlyIssued) set atomically, not flattened |
+| `dnssecValidationState` | `state/dnssec-validation-state.ts` | `domain`, `status`, `adFlag`, `chain`, `dsRecord`, `dnskeyRecord`, `error`, `loading` | module-level mutable state in `dnssec-validation.ts`; singular objects `dsRecord`/`dnskeyRecord`, not arrays |
+| `privacyExposureState` | `state/privacy-exposure-state.ts` | `score`, `grade`, `riskLevel`, `checks`, `loading` | `privacy-exposure.ts` is purely functional — `checkPrivacyExposure()` returns `PrivacyCheck[]`, mapped to `checks`; no existing `scanInProgress` flag |
+| `networkMapState` | `state/network-map-state.ts` | `results`, `loading` | module-level mutable state in `network-map.ts`; `results` is `MapResults \| null`; Leaflet objects (`map`, `userMarker`, etc.) stay as module-level DOM resources, not observables |
 
 Modules that already have observable state (no changes needed):
 - `dnsState`, `speedState`, `tlsState`, `emailState`, `http3State`, `cookieState`, `appState` (shared-state.ts)
@@ -61,22 +61,25 @@ For each tool with module-level mutable state:
 
 1. Create state module with observables
 2. Update the tool's `run()` or `init()` function to call `.set()` on observables as results arrive
-3. Update the tool's UI module to subscribe to observables instead of reading from static properties or DOM
-4. Remove the old static properties and `scanInProgress` flags
-5. Verify the tool still works identically
+3. **Dual-write during transition:** During steps 2-10, each tool must write to **both** DOM and observables until consumers are migrated in step 11. This prevents stale DOM reads by consumers that haven't been rewired yet.
+4. Update the tool's UI module to subscribe to observables instead of reading from static properties or DOM
+5. Remove the old properties and `scanInProgress` flags (only after consumers are migrated)
+6. Verify the tool still works identically
 
 Example — `adblock-test.ts` migration:
 
 ```typescript
-// Before:
-export class AdBlockTest {
-  static results: AdBlockResult[] = [];
-  static getScore(): AdBlockScore { /* ... */ }
-}
+// Before: AdBlockTest is an export const object with mutable properties
+export const AdBlockTest = {
+  results: [] as AdBlockResult[],
+  getScore(): AdBlockScore { /* ... */ }
+};
 
 // After: AdBlockTest.run() calls adblockState.score.set(score), etc.
-// AdBlockTest class is simplified to just the test-run logic
+// AdBlockTest object is simplified to just the test-run logic
 // UI reads from adblockState.score.get()
+// Note: adblockState.results maps to AdBlockTest.results,
+//       adblockState.filterLists maps to FilterListDetector.results
 ```
 
 ### 1.3 Subscription Pattern in UI
@@ -104,7 +107,7 @@ Replace DOM reads with observable reads:
 
 | Current Read | Replacement |
 |---|---|
-| `document.getElementById('score-number')?.textContent` | `adblockState.score.get()` |
+| `document.getElementById('score-number')?.textContent` | `adblockState.score.get()` (also fixes: `#adblock-total-blocked` doesn't exist in HTML) |
 | `document.getElementById('headers-grade')?.textContent` | `headersState.grade.get()` |
 | `document.getElementById('headers-score')?.textContent` | `headersState.score.get()` |
 
@@ -118,7 +121,7 @@ Replace 8 DOM reads:
 |---|---|
 | `document.getElementById('headers-grade')?.textContent` | `headersState.grade.get()` |
 | `document.getElementById('headers-score')?.textContent` | `headersState.score.get()` |
-| `document.getElementById('headers-url')?.value` | `headersState.url.get()` |
+| `document.getElementById('headers-url')?.value` | `headersState.url.get()` (also fixes bug: actual DOM ID is `headers-url-input`) |
 | `document.getElementById('score-number')?.textContent` | `adblockState.score.get()` |
 | `document.getElementById('adblock-total-blocked')?.textContent` | `adblockState.totalBlocked.get()` |
 | `document.getElementById('fp-score-number')?.textContent` | `fingerprintState.score.get()` |
@@ -157,8 +160,7 @@ Add keys to `src/client/i18n.ts` (English source) and all 5 locale files (`zh-TW
 **Privacy Exposure** (~20 keys):
 - `privacyExposure.title`, `privacyExposure.test`, `privacyExposure.testing`, `privacyExposure.riskLevel`, `privacyExposure.score`, `privacyExposure.grade`, `privacyExposure.high`, `privacyExposure.medium`, `privacyExposure.low`, `privacyExposure.api.webrtc`, `privacyExposure.api.battery`, etc.
 
-**Cookie Audit** (~10 missing keys):
-- `cookieAudit.title`, `cookieAudit.total`, `cookieAudit.size`, `cookieAudit.secure`, `cookieAudit.category`, etc.
+**Cookie Audit** — audit existing `cookie.*` i18n keys in `i18n.ts` before adding new ones; extend the existing `cookie.*` namespace rather than creating a new `cookieAudit.*` namespace to avoid duplication.
 
 ### 3.2 Application Pattern
 
@@ -216,7 +218,7 @@ Classes to extract:
 |---|---|---|
 | `breach-loading` | breach-check, cert-transparency, dnssec-validation, privacy-exposure | `scan-loading` |
 | `csp-analysis-card` | headers-ui, cert-transparency, dnssec-validation, privacy-exposure | `analysis-card` |
-| `tls-target-grade` | tls-tab, quality-ui | `grade-badge` |
+| `tls-target-grade` | tls-tab, quality-ui (inline styles only, no CSS rule) | `grade-badge` (new shared class, not extraction — captures common inline grade styling) |
 
 ---
 
@@ -226,15 +228,15 @@ Classes to extract:
 
 | Module | Current Pattern | Migration Target |
 |---|---|---|
-| `adblock-test.ts` | `static results: AdBlockResult[]`, `static getScore()` | `adblockState.results`, `adblockState.score` |
-| `filter-lists.ts` | `static results: FilterListResult[]` | `adblockState.filterLists` |
-| `speed-test.ts` | `static results: SpeedTestResults` | Already has `speedState` observables; remove static properties |
+| `adblock-test.ts` | `results` property (object literal, not static class), `getScore()` method | `adblockState.results`, `adblockState.score` |
+| `filter-lists.ts` | `results` property (object literal, not static class) | `adblockState.filterLists` (note: different module from AdBlockTest) |
+| `speed-test.ts` | `results` property, `getGrade()` method (object literals, not static class) | Already has `speedState` observables; remove old object properties |
 | `breach-check.ts` | `let scanInProgress = false` | `breachState.loading` |
 | `cert-transparency.ts` | `let scanInProgress = false` | `certTransparencyState.loading` |
 | `dnssec-validation.ts` | `let scanInProgress = false` | `dnssecValidationState.loading` |
 | `privacy-exposure.ts` | module-level result variables | `privacyExposureState.*` |
-| `headers-ui.ts` | `let scanInProgress = false` | `headersState.scanInProgress` |
-| `network-map.ts` | `let map`, `let userMarker`, etc. | `networkMapState.*` |
+| `headers-ui.ts` | `let scanInProgress = false` | `headersState.loading` |
+| `network-map.ts` | `let lastResults`, `let map`, etc. | `networkMapState.results` for data; Leaflet objects (`map`, `userMarker`) stay as module-level DOM resources |
 
 ### 5.2 `scanInProgress` Pattern
 
@@ -306,11 +308,11 @@ Each step is one commit. Never refactor multiple tools in the same commit.
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Observable migration breaks UI rendering | Medium | Migrate one tool at a time, verify visually after each |
+| Observable migration breaks UI rendering | Medium | Migrate one tool at a time, verify visually after each; dual-write pattern prevents stale reads during transition |
 | i18n key typos or missing translations | Low | TypeScript `satisfies Translations` enforces key completeness |
 | CSS extraction changes visual appearance | Low | Visual comparison per tool after extraction |
-| Dashboard temporarily shows stale data during migration | Medium | Dashboard subscribes to observables; auto-updates on change |
-| Large state module surface area | Low | Each module follows identical pattern; repetitive not complex |
+| Dashboard temporarily shows stale data during migration | Medium | Dual-write pattern: tools write to both DOM and observables until consumers are fully migrated |
+| Module-level state shape mismatches existing code | Medium | Thorough audit of actual data models per tool (see §1.1 corrected shapes); each module verified against source before migration |
 
 ---
 
@@ -319,3 +321,25 @@ Each step is one commit. Never refactor multiple tools in the same commit.
 - **Phase 2 — Scoring:** Implement real scoring for adblock, headers, fingerprint, quality, and TLS in `computeOverallScore()`
 - **Phase 3 — Worker Extraction:** Split `worker/index.ts` (2440 lines) into separate handler modules
 - **Phase 4 — Tests:** Add unit tests for tools that lack them
+
+---
+
+## 9. Known Bugs Fixed by This Migration
+
+These bugs exist in the current codebase and will be resolved as a side effect of the observable migration:
+
+| Bug | Location | Fix |
+|---|---|---|
+| `#headers-url` DOM ID doesn't exist (should be `#headers-url-input`) | `ai-collector.ts:84` | `headersState.url.get()` replaces the broken DOM read |
+| `#adblock-total-blocked` DOM ID doesn't exist | `ai-collector.ts:91` | `adblockState.totalBlocked.get()` replaces the broken DOM read |
+| `#score-value` DOM ID doesn't exist for dashboard overall score | `share.ts:24` | Dashboard overall score read from `computeOverallScore()` or `appState` |
+| `privacy-exposure.ts` has no loading state flag | `privacy-exposure.ts` | `privacyExposureState.loading` provides explicit loading state |
+| `tls-tab.ts` has `let targetScanInProgress = false` | `tls-tab.ts:27` | Should be added to `tlsState` or a new `tlsTargetState` loading observable |
+
+---
+
+## 10. Additional Notes
+
+- **`derive()` utility:** The `observable.ts` module exports `derive()` for computed observables. Phase 1 uses manual `.set()` calls for simplicity. Phase 2 may convert computed values (e.g., `breachState.severity` from `breachState.count`, `adblockState.score` from `adblockState.results`) to use `derive()`.
+- **TLS target scan:** `tls-tab.ts` has a `targetScanInProgress` flag (line 27) that should also be migrated. Add `targetLoading: observable<boolean>(false)` to `tlsState` or create a separate `tlsTargetState`.
+- **Speed test module:** `SpeedTest.results` and `SpeedTest.getGrade()` are object literals (not static class methods as originally described). `export-report.ts:138` still reads from these directly and should be migrated to `speedState` observables.
