@@ -1,3 +1,5 @@
+import { networkMapState } from './state/network-map-state';
+
 export interface ProbeDef {
   id: string;
   name: string;
@@ -113,20 +115,28 @@ export const NetworkMap = {
   },
 
   async run(): Promise<MapResults> {
-    const data = await this.fetchProbes();
-    const regionLatencies = await this.measureRegionLatencies();
+    networkMapState.loading.set(true);
+    try {
+      const data = await this.fetchProbes();
+      const regionLatencies = await this.measureRegionLatencies();
 
-    const probes = data.probes.map((p) => {
-      const estimated = this.estimateProbeLatency(p, regionLatencies, data.userLat, data.userLon);
-      return { ...p, latency: estimated, measured: false, colo: null };
-    });
+      const probes = data.probes.map((p) => {
+        const estimated = this.estimateProbeLatency(p, regionLatencies, data.userLat, data.userLon);
+        return { ...p, latency: estimated, measured: false, colo: null };
+      });
 
-    return {
-      userColo: data.userColo,
-      userLat: data.userLat,
-      userLon: data.userLon,
-      probes,
-    };
+      const results: MapResults = {
+        userColo: data.userColo,
+        userLat: data.userLat,
+        userLon: data.userLon,
+        probes,
+      };
+
+      networkMapState.results.set(results);
+      return results;
+    } finally {
+      networkMapState.loading.set(false);
+    }
   },
 
   getLatencyColor(latency: number | null): string {

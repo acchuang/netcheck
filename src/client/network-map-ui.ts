@@ -1,4 +1,5 @@
 import { NetworkMap, type MapResults } from './network-map';
+import { networkMapState } from './state/network-map-state';
 import { t } from './i18n';
 import { onLocaleChange } from './locale-events';
 import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from './leaflet';
@@ -321,6 +322,14 @@ function renderResults(results: MapResults): void {
 
   grid.innerHTML = html;
 }
+
+networkMapState.results.subscribe((val) => {
+  if (val) {
+    lastResults = val;
+    renderResults(val);
+    renderMapResults(val);
+  }
+});
 
 onLocaleChange(() => {
   if (lastResults) {
