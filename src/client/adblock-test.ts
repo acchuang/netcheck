@@ -37,19 +37,19 @@ interface TestResult {
   uncertain?: boolean;
 }
 
-type TestWithResult = Test & TestResult;
+export type TestWithResult = Test & TestResult;
 
 interface Category {
   name: string;
   tests: Test[];
 }
 
-interface CategoryResult {
+export interface CategoryResult {
   name: string;
   tests: TestWithResult[];
 }
 
-interface Score {
+export interface Score {
   score: number;
   total: number;
   blocked: number;

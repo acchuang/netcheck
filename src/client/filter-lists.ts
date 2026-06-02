@@ -24,7 +24,7 @@ interface FilterListDefinition {
   special?: string;
 }
 
-interface FilterListResult {
+export interface FilterListResult {
   name: string;
   desc: string;
   tests: FilterTestResult[];
