@@ -38,6 +38,8 @@ interface FilterListSummary {
   acceptableAdsEnabled: boolean;
 }
 
+import { adblockState } from './state/adblock-state';
+
 export const FilterListDetector = {
   lists: [
     {
@@ -165,6 +167,7 @@ export const FilterListDetector = {
     });
 
     this.results = await Promise.all(listPromises);
+    adblockState.filterLists.set(this.results);
 
     container.remove();
     return this.results;

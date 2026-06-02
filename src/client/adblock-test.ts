@@ -56,6 +56,8 @@ export interface Score {
   passed: number;
 }
 
+import { adblockState } from './state/adblock-state';
+
 export const AdBlockTest = {
   categories: [
     {
@@ -192,6 +194,8 @@ export const AdBlockTest = {
 
   async runAll(): Promise<CategoryResult[]> {
     this.results = [];
+    adblockState.loading.set(true);
+    adblockState.results.set([]);
     const container = document.createElement('div');
     container.id = 'adblock-test-container';
     container.style.cssText =
@@ -209,6 +213,12 @@ export const AdBlockTest = {
     });
 
     this.results = await Promise.all(categoryPromises);
+    adblockState.results.set(this.results);
+    const score = this.getScore();
+    adblockState.score.set(score.score);
+    adblockState.totalBlocked.set(score.blocked);
+    adblockState.totalTests.set(score.total);
+    adblockState.loading.set(false);
 
     container.remove();
     return this.results;

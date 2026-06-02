@@ -3,6 +3,7 @@ import { t } from './i18n';
 import { affiliate } from './affiliates';
 import { CnameChecker } from './adblock-cname';
 import { appState } from './state/shared-state';
+import { adblockState } from './state/adblock-state';
 
 interface AdblockScore {
   score: number;
@@ -311,3 +312,42 @@ function markCompleted(test: string): void {
     appState.completedTests.set([...current, test]);
   }
 }
+
+adblockState.results.subscribe((results) => {
+  const categoriesEl = document.getElementById('test-categories');
+  if (!categoriesEl || results.length === 0) return;
+  categoriesEl.innerHTML = '';
+  results.forEach((cat) => {
+    const blocked = cat.tests.filter((t) => t.blocked).length;
+    const catEl = createCategoryWithResults(cat.name, cat.tests, blocked);
+    catEl.classList.add('stagger-item');
+    categoriesEl.appendChild(catEl);
+  });
+});
+
+adblockState.score.subscribe((score) => {
+  const el = document.getElementById('score-number');
+  if (el) el.textContent = String(score);
+  const ring = document.getElementById('score-ring-fill') as unknown as SVGCircleElement;
+  if (ring) {
+    const circumference = 2 * Math.PI * 54;
+    ring.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
+  }
+  if (score >= 80) {
+    if (ring) ring.style.stroke = 'var(--emerald)';
+    const el = document.getElementById('score-summary');
+    if (el) el.textContent = t('adblock.excellent');
+  } else if (score >= 50) {
+    if (ring) ring.style.stroke = 'var(--accent)';
+    const el = document.getElementById('score-summary');
+    if (el) el.textContent = t('adblock.good');
+  } else if (score >= 20) {
+    if (ring) ring.style.stroke = 'var(--amber)';
+    const el = document.getElementById('score-summary');
+    if (el) el.textContent = t('adblock.basic');
+  } else {
+    if (ring) ring.style.stroke = 'var(--red)';
+    const el = document.getElementById('score-summary');
+    if (el) el.textContent = t('adblock.minimal');
+  }
+});

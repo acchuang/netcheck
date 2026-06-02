@@ -1,5 +1,6 @@
 import { FilterListDetector } from './filter-lists';
 import { t } from './i18n';
+import { adblockState } from './state/adblock-state';
 
 function renderFilterListSkeletons(container: HTMLElement, count: number): void {
   container.innerHTML = Array.from(
@@ -58,3 +59,48 @@ export async function runFilterListDetection(): Promise<void> {
     })
     .join('');
 }
+
+adblockState.filterLists.subscribe((lists) => {
+  const grid = document.getElementById('filter-list-grid');
+  const subtitle = document.getElementById('filter-list-subtitle');
+  if (!grid || lists.length === 0) return;
+
+  const detected = lists.filter((r) => r.detected && r.special !== 'acceptableAds');
+  const acceptableAds = lists.find((r) => r.special === 'acceptableAds');
+  const total = lists.filter((r) => r.special !== 'acceptableAds').length;
+
+  if (subtitle) {
+    if (detected.length === 0) {
+      subtitle.textContent = t('filter.noneDetected');
+    } else {
+      subtitle.textContent =
+        t('filter.detected', detected.length, total) +
+        (acceptableAds?.detected ? t('filter.acceptableAds') : '');
+    }
+  }
+
+  grid.innerHTML = lists
+    .map((list) => {
+      let dotClass: string, badgeClass: string, badgeText: string;
+      if (list.special === 'acceptableAds') {
+        dotClass = list.detected ? 'warning' : 'active';
+        badgeClass = list.detected ? 'warning' : 'active';
+        badgeText = list.detected ? t('filter.enabled') : t('filter.disabled');
+      } else {
+        dotClass = list.detected ? 'active' : 'inactive';
+        badgeClass = list.detected ? 'active' : 'inactive';
+        badgeText = list.detected ? t('filter.found') : t('filter.notFound');
+      }
+
+      return `
+      <div class="filter-list-item stagger-item ${list.detected && list.special !== 'acceptableAds' ? 'detected' : 'not-detected'}">
+        <div class="filter-list-dot ${dotClass}"></div>
+        <div class="filter-list-info">
+          <div class="filter-list-name">${list.name}</div>
+          <div class="filter-list-desc">${list.desc}</div>
+        </div>
+        <span class="filter-list-badge ${badgeClass}">${badgeText}</span>
+      </div>`;
+    })
+    .join('');
+});
