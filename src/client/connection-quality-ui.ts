@@ -10,6 +10,7 @@ import { renderSkeletonRows } from './ui-utils';
 import { announce, announceProgress } from './a11y';
 import { appState } from './state/shared-state';
 import { onLocaleChange } from './locale-events';
+import { qualityState } from './state/quality-state';
 
 type ProgressState =
   | { mode: 'idle' }
@@ -140,10 +141,17 @@ async function runQualityTest(): Promise<void> {
 
   state.isRunning = true;
   state.hasRun = true;
+  qualityState.isRunning.set(true);
+  qualityState.hasRun.set(true);
+  qualityState.loading.set(true);
   state.connectionInfo = null;
   state.tlsInfo = null;
   state.timing = null;
   state.stability = null;
+  qualityState.connectionInfo.set(null);
+  qualityState.tlsInfo.set(null);
+  qualityState.timing.set(null);
+  qualityState.stabilityTest.set(null);
   syncQualityUi();
 
   renderConnectionInfo(null, true);
@@ -156,21 +164,25 @@ async function runQualityTest(): Promise<void> {
   announceProgress(t('quality.progressGathering'));
   const connectionInfo = ConnectionQuality.getConnectionInfo();
   state.connectionInfo = connectionInfo;
+  qualityState.connectionInfo.set(connectionInfo);
   renderConnectionInfo(connectionInfo, false);
 
   setProgress({ mode: 'fetchingTls' });
   announceProgress(t('quality.progressFetchingTls'));
   const tlsInfo = await ConnectionQuality.fetchTlsInfo();
   state.tlsInfo = tlsInfo;
+  qualityState.tlsInfo.set(tlsInfo);
   renderTlsInfo(tlsInfo, false);
 
   setProgress({ mode: 'running' });
   announceProgress(t('quality.running'));
   const timing = await ConnectionQuality.measureTiming();
   state.timing = timing;
+  qualityState.timing.set(timing);
   renderTimingBreakdown(timing, false);
 
   renderFinalScore(tlsInfo, null, connectionInfo);
+  qualityState.score.set(ConnectionQuality.computeScore(tlsInfo, null, connectionInfo));
   setProgress({ mode: 'ready' });
   announce(`${t('quality.title')}: ${t('quality.progressReady')}`);
 
@@ -178,6 +190,7 @@ async function runQualityTest(): Promise<void> {
     if (stabilityListenerCleanup) stabilityListenerCleanup();
     const handler = async () => {
       state.isRunningStability = true;
+      qualityState.isRunningStability.set(true);
       syncQualityUi();
 
       setProgress({ mode: 'pinging' });
@@ -189,8 +202,11 @@ async function runQualityTest(): Promise<void> {
 
       state.stability = stability;
       state.isRunningStability = false;
+      qualityState.stabilityTest.set(stability);
+      qualityState.isRunningStability.set(false);
       renderStability(stability);
       renderFinalScore(tlsInfo, stability, connectionInfo);
+      qualityState.score.set(ConnectionQuality.computeScore(tlsInfo, stability, connectionInfo));
       setProgress({ mode: 'stability-done' });
       announce(
         `${t('quality.progressStabilityDone')}: ${stability.min}ms / ${stability.max}ms / ${stability.mean}ms / ${stability.jitter}ms / ${stability.lossPercent}%`,
@@ -206,6 +222,8 @@ async function runQualityTest(): Promise<void> {
   }
 
   state.isRunning = false;
+  qualityState.isRunning.set(false);
+  qualityState.loading.set(false);
   syncQualityUi();
   const sectionEl = document.getElementById('quality');
   if (sectionEl) sectionEl.setAttribute('aria-busy', 'false');
