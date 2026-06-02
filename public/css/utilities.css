@@ -1,0 +1,22 @@
+.breach-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--text-secondary);
+}
+
+.csp-analysis-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.grade-badge {
+  font-weight: 800;
+  text-align: center;
+  line-height: 1;
+}
