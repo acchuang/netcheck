@@ -189,13 +189,18 @@ async function runHeadersCheck(): Promise<void> {
         qualityHtml = `<span class="${cls}"${note} style="font-size:11px;margin-left:8px;white-space:nowrap">${check.quality.toUpperCase()}</span>`;
       }
 
+      let infoHtml = '';
+      if ((check.key === 'server' || check.key === 'x-powered-by') && check.present) {
+        infoHtml = `<span style="font-size:11px;color:var(--amber);margin-left:4px;white-space:nowrap">ℹ️ Info disclosure</span>`;
+      }
+
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
           <span class="check-label">${t(check.name)}</span>
           <span class="check-sublabel">${t(check.desc)}</span>
         </div>
-        ${valueHtml}${qualityHtml}
+        ${valueHtml}${qualityHtml}${infoHtml}
       `;
       checkResults.appendChild(div);
     });

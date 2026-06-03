@@ -1209,6 +1209,27 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
     }
   }
 
+  const infoHeaders: Array<{ key: string; name: string }> = [
+    { key: 'server', name: 'Server' },
+    { key: 'x-powered-by', name: 'X-Powered-By' },
+  ];
+  for (const ih of infoHeaders) {
+    const value = headers[ih.key];
+    if (value) {
+      suggestions.push({
+        header: ih.key,
+        severity: 'info',
+        message: `${ih.name} header reveals server technology: "${value.substring(0, 50)}${value.length > 50 ? '…' : ''}"`,
+        fix: ih.key === 'server'
+          ? 'Remove or minimize the Server header via your web server configuration'
+          : 'Remove the X-Powered-By header: app.disable("x-powered-by") (Express), or add corresponding middleware',
+        url: ih.key === 'server'
+          ? 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server'
+          : 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Powered-By',
+      });
+    }
+  }
+
   return Response.json(
     {
       url: targetUrl,
