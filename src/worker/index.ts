@@ -836,16 +836,30 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
         }
       }
       // For redirects, re-fetch the safe redirect target
-      const finalRes = await fetch(targetUrl, {
+        const finalRes = await fetch(targetUrl, {
         method: 'GET',
         redirect: 'follow',
         signal: AbortSignal.timeout(8000),
         headers: { 'User-Agent': 'NetCheck Security Scanner/1.0' },
       });
-      return buildHeadersResponse(finalRes, targetUrl, request);
+      return buildHeadersResponse(finalRes, targetUrl, request, { present: false, url: null, content: null, error: null });
     }
 
-    return buildHeadersResponse(res, targetUrl, request);
+    let securityTxt: { present: boolean; url: string | null; content: string | null; error: string | null } = { present: false, url: null, content: null, error: null };
+    try {
+      const secTxtUrl = new URL('/.well-known/security.txt', new URL(targetUrl).origin);
+      const secTxtRes = await fetch(secTxtUrl.toString(), { signal: AbortSignal.timeout(5000) });
+      if (secTxtRes.ok) {
+        const content = await secTxtRes.text();
+        securityTxt = { present: true, url: secTxtUrl.toString(), content: content.substring(0, 2000), error: null };
+      } else {
+        securityTxt = { present: false, url: null, content: null, error: `HTTP ${secTxtRes.status}` };
+      }
+    } catch {
+      securityTxt = { present: false, url: null, content: null, error: 'Not found' };
+    }
+
+    return buildHeadersResponse(res, targetUrl, request, securityTxt);
   } catch (err) {
     return Response.json(
       { error: 'Failed to fetch URL', detail: String(err) },
@@ -1043,7 +1057,7 @@ function parsePermissionsPolicy(raw: string | null): PermissionsPolicyAnalysis {
   return { present: true, raw, directives, issues, score, grade };
 }
 
-function buildHeadersResponse(res: Response, targetUrl: string, request: Request): Response {
+function buildHeadersResponse(res: Response, targetUrl: string, request: Request, securityTxt?: { present: boolean; url: string | null; content: string | null; error: string | null }): Response {
   const headers: Record<string, string> = {};
   for (const [key, value] of res.headers) {
     headers[key.toLowerCase()] = value;
@@ -1240,6 +1254,7 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
       cspAnalysis,
       permissionsPolicyAnalysis,
       suggestions,
+      securityTxt: securityTxt || { present: false, url: null, content: null, error: null },
       server: headers['server'] || null,
       poweredBy: headers['x-powered-by'] || null,
     },

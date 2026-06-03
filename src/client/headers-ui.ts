@@ -64,6 +64,7 @@ interface HeadersResponse {
   suggestions: HeaderSuggestion[];
   server: string | null;
   poweredBy: string | null;
+  securityTxt: { present: boolean; url: string | null; content: string | null; error: string | null };
   error?: string;
 }
 
@@ -290,6 +291,27 @@ async function runHeadersCheck(): Promise<void> {
           <p class="info-muted">No Permissions-Policy header found. Consider adding one to control which browser features and APIs websites can use.</p>
         </div>
       `;
+    }
+
+    const secTxtEl = document.getElementById('headers-security-txt')!;
+    if (data.securityTxt && data.securityTxt.present) {
+      secTxtEl.innerHTML = `
+        <div class="card card-compact" style="margin-top:var(--space-3)">
+          <div class="card-header"><h2 class="card-title">Security.txt</h2><span class="status-badge pass">Found</span></div>
+          <div class="card-body"><pre style="white-space:pre-wrap;font-size:12px;max-height:200px;overflow-y:auto;background:var(--surface-secondary);padding:12px;border-radius:var(--radius-md)">${data.securityTxt.content || ''}</pre></div>
+        </div>
+      `;
+      secTxtEl.classList.remove('hidden');
+    } else if (data.securityTxt && data.securityTxt.error) {
+      secTxtEl.innerHTML = `
+        <div class="card card-compact" style="margin-top:var(--space-3)">
+          <div class="card-header"><h2 class="card-title">Security.txt</h2><span class="status-badge fail">Not Found</span></div>
+          <div class="card-body"><p class="info-muted">No security.txt found at /.well-known/security.txt. This file helps security researchers report vulnerabilities.</p></div>
+        </div>
+      `;
+      secTxtEl.classList.remove('hidden');
+    } else {
+      secTxtEl.classList.add('hidden');
     }
 
     const suggestionsEl = document.getElementById('headers-suggestions')!;
