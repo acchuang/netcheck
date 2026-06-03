@@ -389,6 +389,18 @@ export const es = {
   'speed.sug.nextdns.type': 'DNS + Privacidad',
   'speed.sug.nextdns.desc':
     'DNS rápido con bloqueo integrado de anuncios/rastreadores. Reduce las solicitudes de red innecesarias que pueden mejorar la velocidad percibida.',
+  'speed.sug.packetLoss.name': 'Fiabilidad de conexión',
+  'speed.sug.packetLoss.type': 'Solución de problemas',
+  'speed.sug.packetLoss.desc':
+    'La pérdida de paquetes alta indica una conexión inestable. Verifique interferencias WiFi, cables defectuosos o problemas del ISP.',
+  'speed.sug.bufferbloat.name': 'Corrección de Bufferbloat',
+  'speed.sug.bufferbloat.type': 'Configuración del router',
+  'speed.sug.bufferbloat.desc':
+    'El bufferbloat severo significa que su router almacena demasiados datos. Habilite Smart Queue Management (SQM/CAKE) en su router.',
+  'speed.sug.jitter.name': 'Estabilidad de conexión',
+  'speed.sug.jitter.type': 'Solución de problemas',
+  'speed.sug.jitter.desc':
+    'El jitter alto causa latencia inconsistente. Intente una conexión por cable o verifique la congestión de red.',
   'speed.grade.exceptional': 'Excepcional',
   'speed.grade.excellent': 'Excelente',
   'speed.grade.veryGood': 'Muy buena',

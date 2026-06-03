@@ -403,6 +403,18 @@ export const zhTW = {
   'speed.sug.nextdns.name': 'NextDNS',
   'speed.sug.nextdns.type': 'DNA + 隱私',
   'speed.sug.nextdns.desc': '快速 DNS，內建廣告/追蹤器攔截。減少不必要的網路請求，改善體感速度。',
+  'speed.sug.packetLoss.name': '連線可靠性',
+  'speed.sug.packetLoss.type': '故障排除',
+  'speed.sug.packetLoss.desc':
+    '高丟包率表示連線不穩定。檢查WiFi干擾、網線故障或ISP問題。',
+  'speed.sug.bufferbloat.name': '緩衝膨脹修復',
+  'speed.sug.bufferbloat.type': '路由器設定',
+  'speed.sug.bufferbloat.desc':
+    '嚴重的緩衝膨脹意味著路由器排隊了過多數據。請在路由器上啟用智慧佇列管理(SQM/CAKE)。',
+  'speed.sug.jitter.name': '連線穩定性',
+  'speed.sug.jitter.type': '故障排除',
+  'speed.sug.jitter.desc':
+    '高抖動會導致延遲不一致。嘗試有線連接或檢查網絡擁塞。',
 
   // Speed grades
   'speed.grade.exceptional': '卓越',

@@ -387,6 +387,18 @@ export const zhCN = {
   'speed.sug.nextdns.type': 'DNS + 隐私',
   'speed.sug.nextdns.desc':
     '快速 DNS，内置广告和追踪器拦截。减少不必要的网络请求，可提升感知速度。',
+  'speed.sug.packetLoss.name': '连接可靠性',
+  'speed.sug.packetLoss.type': '故障排除',
+  'speed.sug.packetLoss.desc':
+    '高丢包率表示连接不稳定。检查WiFi干扰、网线故障或ISP问题。',
+  'speed.sug.bufferbloat.name': '缓冲膨胀修复',
+  'speed.sug.bufferbloat.type': '路由器设置',
+  'speed.sug.bufferbloat.desc':
+    '严重的缓冲膨胀意味着路由器排队了过多数据。请在路由器上启用智能队列管理(SQM/CAKE)。',
+  'speed.sug.jitter.name': '连接稳定性',
+  'speed.sug.jitter.type': '故障排除',
+  'speed.sug.jitter.desc':
+    '高抖动会导致延迟不一致。尝试有线连接或检查网络拥塞。',
   'speed.grade.exceptional': '卓越',
   'speed.grade.excellent': '优秀',
   'speed.grade.veryGood': '非常好',

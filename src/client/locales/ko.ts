@@ -384,6 +384,18 @@ export const ko = {
   'speed.sug.nextdns.type': 'DNS + 프라이버시',
   'speed.sug.nextdns.desc':
     '내장 광고/추적기 차단을 갖춘 빠른 DNS입니다. 불필요한 네트워크 요청을 줄여 체감 속도를 개선할 수 있습니다.',
+  'speed.sug.packetLoss.name': '연결 신뢰성',
+  'speed.sug.packetLoss.type': '문제 해결',
+  'speed.sug.packetLoss.desc':
+    '패킷 손실이 높으면 불안정한 연결을 나타냅니다. WiFi 간섭, 불량 케이블 또는 ISP 문제를 확인하세요.',
+  'speed.sug.bufferbloat.name': '버퍼블로트 수정',
+  'speed.sug.bufferbloat.type': '라우터 설정',
+  'speed.sug.bufferbloat.desc':
+    '심각한 버퍼블로트는 라우터가 너무 많은 데이터를 대기열에 넣고 있음을 의미합니다. 라우터에서 Smart Queue Management(SQM/CAKE)를 활성화하세요.',
+  'speed.sug.jitter.name': '연결 안정성',
+  'speed.sug.jitter.type': '문제 해결',
+  'speed.sug.jitter.desc':
+    '높은 지터는 일관되지 않은 지연 시간을 유발합니다. 유선 연결을 시도하거나 네트워크 혼잡을 확인하세요.',
   'speed.grade.exceptional': '최상',
   'speed.grade.excellent': '우수',
   'speed.grade.veryGood': '매우 좋음',

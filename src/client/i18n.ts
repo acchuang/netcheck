@@ -438,6 +438,18 @@ const en = {
   'speed.sug.nextdns.type': 'DNS + Privacy',
   'speed.sug.nextdns.desc':
     'Fast DNS with built-in ad/tracker blocking. Reduces unnecessary network requests which can improve perceived speed.',
+  'speed.sug.packetLoss.name': 'Connection Reliability',
+  'speed.sug.packetLoss.type': 'Troubleshooting',
+  'speed.sug.packetLoss.desc':
+    'High packet loss indicates an unstable connection. Check for WiFi interference, faulty cables, or ISP issues.',
+  'speed.sug.bufferbloat.name': 'Bufferbloat Fix',
+  'speed.sug.bufferbloat.type': 'Router Setting',
+  'speed.sug.bufferbloat.desc':
+    'Severe bufferbloat means your router queues too much data. Enable Smart Queue Management (SQM/CAKE) on your router.',
+  'speed.sug.jitter.name': 'Connection Stability',
+  'speed.sug.jitter.type': 'Troubleshooting',
+  'speed.sug.jitter.desc':
+    'High jitter causes inconsistent latency. Try a wired connection or check for network congestion.',
 
   // Speed grades
   'speed.grade.exceptional': 'Exceptional',

@@ -385,6 +385,18 @@ export const ja = {
   'speed.sug.nextdns.type': 'DNS + プライバシー',
   'speed.sug.nextdns.desc':
     '広告/トラッカーブロックを内蔵した高速 DNS。不要なネットワークリクエストを減らし、体感速度を向上させます。',
+  'speed.sug.packetLoss.name': '接続の信頼性',
+  'speed.sug.packetLoss.type': 'トラブルシューティング',
+  'speed.sug.packetLoss.desc':
+    'パケットロスが高い場合、接続が不安定です。WiFi干渉、ケーブル不良、ISPの問題を確認してください。',
+  'speed.sug.bufferbloat.name': 'バッファブロート修正',
+  'speed.sug.bufferbloat.type': 'ルーター設定',
+  'speed.sug.bufferbloat.desc':
+    '深刻なバッファブロートは、ルーターがデータをキューしすぎていることを意味します。ルーターでSmart Queue Management (SQM/CAKE)を有効にしてください。',
+  'speed.sug.jitter.name': '接続の安定性',
+  'speed.sug.jitter.type': 'トラブルシューティング',
+  'speed.sug.jitter.desc':
+    '高いジッターは一貫性のないレイテンシを引き起こします。有線接続を試すか、ネットワークの混雑を確認してください。',
   'speed.grade.exceptional': '卓越',
   'speed.grade.excellent': '優秀',
   'speed.grade.veryGood': '非常に良好',

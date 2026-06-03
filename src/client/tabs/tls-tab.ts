@@ -347,7 +347,7 @@ async function runTlsTargetCheck(): Promise<void> {
                 <div style="margin-top:8px;padding-left:16px;border-left:2px solid var(--surface-tertiary)">
                   ${data.certs.intermediates.map((int, idx) => `
                     <div style="font-size:13px;padding:4px 0;color:var(--text-secondary)">
-                      ${idx < data.certs.intermediates!.length - 1 ? '├─' : '└─'} ${int.cn}${int.organization ? ` (${int.organization})` : ''}
+                      ${idx < data.certs!.intermediates!.length - 1 ? '├─' : '└─'} ${int.cn}${int.organization ? ` (${int.organization})` : ''}
                     </div>
                   `).join('')}
                 </div>

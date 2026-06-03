@@ -26,6 +26,7 @@ interface SpeedSuggestion {
     latency: number;
     jitter: number;
     bufferbloat: number;
+    packetLoss: number;
   }) => boolean;
 }
 
@@ -86,6 +87,27 @@ const speedSuggestions: SpeedSuggestion[] = [
     url: 'https://nextdns.io',
     when: () => true,
   },
+  {
+    name: 'speed.sug.packetLoss',
+    icon: '📶',
+    tags: ['reliability', 'connection quality'],
+    url: null,
+    when: (r) => r.packetLoss > 2,
+  },
+  {
+    name: 'speed.sug.bufferbloat',
+    icon: '📉',
+    tags: ['bufferbloat fix', 'Smart Queue', 'router setting'],
+    url: 'https://openwrt.org/docs/guide-user/network/traffic-shaping/sqm',
+    when: (r) => r.bufferbloat > 50,
+  },
+  {
+    name: 'speed.sug.jitter',
+    icon: '⚡',
+    tags: ['stability', 'latency fix', 'connection quality'],
+    url: null,
+    when: (r) => r.jitter > 15,
+  },
 ];
 
 export function renderSpeedSuggestions(results: SpeedTestResults): void {
@@ -109,6 +131,8 @@ export function renderSpeedSuggestions(results: SpeedTestResults): void {
   else if (jit > 5) issues.push(t('speed.issueModJit'));
   if (bb > 30) issues.push(t('speed.bufferbloat.severe'));
   else if (bb > 15) issues.push(t('speed.bufferbloat.moderate'));
+  if (results.packetLoss !== null && results.packetLoss > 2) issues.push('High request loss');
+  else if (results.packetLoss !== null && results.packetLoss > 0) issues.push('Some request loss');
 
   if (issues.length === 0 && dl >= 100) {
     subtitle.textContent = t('speed.suggestGreat');
@@ -118,7 +142,7 @@ export function renderSpeedSuggestions(results: SpeedTestResults): void {
     subtitle.textContent = t('speed.suggestIssues', issues.join(', '));
   }
 
-  const r = { download: dl, upload: ul, latency: lat, jitter: jit, bufferbloat: bb };
+  const r = { download: dl, upload: ul, latency: lat, jitter: jit, bufferbloat: bb, packetLoss: results.packetLoss ?? 0 };
   const relevant = speedSuggestions.filter((s) => s.when(r)).slice(0, 6);
 
   const arrowSvg =
