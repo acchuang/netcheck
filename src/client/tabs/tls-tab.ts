@@ -13,6 +13,32 @@ const GRADE_COLORS: Record<string, string> = {
   F: 'var(--grade-f, #dc2626)',
 };
 
+const PROTOCOL_CLASSES: Record<string, { label: string; status: string }> = {
+  'TLSv1.3': { label: 'TLS 1.3 — Latest standard', status: 'pass' },
+  'TLSv1.2': { label: 'TLS 1.2 — Secure', status: 'pass' },
+  'TLSv1.1': { label: 'TLS 1.1 — Outdated', status: 'fail' },
+  'TLSv1.0': { label: 'TLS 1.0 — Insecure', status: 'fail' },
+  'TLSv1':   { label: 'TLS 1.0 — Insecure', status: 'fail' },
+  'SSLv3':   { label: 'SSLv3 — Insecure', status: 'fail' },
+};
+
+function classifyProtocol(protocol: string): { label: string; status: string } {
+  return PROTOCOL_CLASSES[protocol] ?? { label: protocol, status: 'warn' };
+}
+
+const CIPHER_PATTERNS: Array<{ pattern: RegExp; label: string; status: string }> = [
+  { pattern: /AES.{0,10}GCM|ChaCha20|POLY1305/i, label: 'Strong', status: 'pass' },
+  { pattern: /AES.{0,10}CBC/i, label: 'Acceptable', status: 'pass' },
+  { pattern: /3DES|RC4|NULL|EXPORT/i, label: 'Weak', status: 'fail' },
+];
+
+function classifyCipher(cipher: string): { label: string; status: string } {
+  for (const { pattern, label, status } of CIPHER_PATTERNS) {
+    if (pattern.test(cipher)) return { label, status };
+  }
+  return { label: 'Unknown', status: 'warn' };
+}
+
 interface TlsTargetResult {
   domain: string;
   httpsAvailable: boolean;
@@ -27,9 +53,16 @@ interface TlsTargetResult {
 
 
 function renderTlsInfo(info: TlsInfo): string {
+  const protocolClass = classifyProtocol(info.protocol);
   const protocolBadge = renderBadge({
-    status: info.protocol === 'TLSv1.3' ? 'pass' : info.protocol === 'TLSv1.2' ? 'pass' : 'fail',
-    label: info.protocol,
+    status: protocolClass.status,
+    label: protocolClass.label,
+  }).outerHTML;
+
+  const cipherClass = classifyCipher(info.cipher);
+  const cipherBadge = renderBadge({
+    status: cipherClass.status,
+    label: cipherClass.label,
   }).outerHTML;
 
   const fsBadge = renderBadge({
@@ -63,7 +96,7 @@ function renderTlsInfo(info: TlsInfo): string {
             </div>
             <div class="stat-item">
               <span class="stat-label">${t('tls.cipher', 'Cipher Suite')}</span>
-              <span class="stat-value">${info.cipher}</span>
+              <span class="stat-value">${info.cipher} ${cipherBadge}</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">${t('tls.keyExchange', 'Key Exchange')}</span>
