@@ -247,6 +247,7 @@ interface WorkerTlsCerts {
   key: { type: string; size: number };
   fingerprint: string;
   chainDepth: number;
+  intermediates?: Array<{ cn: string; organization?: string; fingerprint: string }>;
 }
 
 interface WorkerTlsWeakness {
@@ -296,6 +297,11 @@ function parseCertFromCrtSh(entries: any[], domain: string): WorkerTlsCerts | nu
     key: { type: keyType, size: cert.key_length ?? 0 },
     fingerprint: cert.sha256 ?? '',
     chainDepth: entries.length,
+    intermediates: entries.slice(1, 4).map((e: any) => ({
+      cn: e.common_name ?? e.name_value?.split('\n')[0] ?? '',
+      organization: e.organization ?? undefined,
+      fingerprint: e.sha256 ?? '',
+    })),
   };
 }
 

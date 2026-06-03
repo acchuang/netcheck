@@ -61,6 +61,7 @@ interface TlsCerts {
   };
   fingerprint: string;
   chainDepth: number;
+  intermediates?: Array<{ cn: string; organization?: string; fingerprint: string }>;
 }
 
 interface TlsWeakness {
@@ -337,6 +338,15 @@ async function runTlsTargetCheck(): Promise<void> {
                   <span class="stat-value">${data.certs.chainDepth}</span>
                 </div>
               </div>
+              ${data.certs.intermediates && data.certs.intermediates.length > 0 ? `
+                <div style="margin-top:8px;padding-left:16px;border-left:2px solid var(--surface-tertiary)">
+                  ${data.certs.intermediates.map((int, idx) => `
+                    <div style="font-size:13px;padding:4px 0;color:var(--text-secondary)">
+                      ${idx < data.certs.intermediates!.length - 1 ? '├─' : '└─'} ${int.cn}${int.organization ? ` (${int.organization})` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
             </div>
           </div>
         ` : ''}
