@@ -37,6 +37,22 @@ export interface HeaderSuggestion {
   url: string;
 }
 
+export interface PermissionsPolicyIssue {
+  severity: 'high' | 'medium' | 'low';
+  directive: string;
+  value: string;
+  message: string;
+}
+
+export interface PermissionsPolicyAnalysis {
+  present: boolean;
+  raw: string | null;
+  directives: { name: string; values: string[] }[];
+  issues: PermissionsPolicyIssue[];
+  score: number;
+  grade: string;
+}
+
 interface HeadersResponse {
   url: string;
   statusCode: number;
@@ -44,6 +60,7 @@ interface HeadersResponse {
   score: { present: number; total: number };
   checks: HeaderCheckResult[];
   cspAnalysis: CspAnalysis;
+  permissionsPolicyAnalysis: PermissionsPolicyAnalysis;
   suggestions: HeaderSuggestion[];
   server: string | null;
   poweredBy: string | null;
@@ -229,6 +246,43 @@ async function runHeadersCheck(): Promise<void> {
       cspContainer.innerHTML = `
         <div class="csp-analysis-card">
           <p class="info-muted">No Content-Security-Policy header found. Adding a strict CSP is one of the most effective ways to prevent XSS attacks.</p>
+        </div>
+      `;
+    }
+
+    const ppContainer = document.getElementById('permissions-policy-results')!;
+    if (data.permissionsPolicyAnalysis && data.permissionsPolicyAnalysis.present) {
+      const pp = data.permissionsPolicyAnalysis;
+      const ppSeverityColors: Record<string, string> = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--accent)' };
+      const ppSeverityLabels: Record<string, string> = { high: 'High', medium: 'Medium', low: 'Low' };
+      ppContainer.innerHTML = `
+        <div class="csp-analysis-card">
+          <div class="csp-analysis-header">
+            <span class="csp-analysis-title">Permissions Policy Analysis</span>
+            <span class="speed-grade" style="color:${pp.grade.startsWith('A') ? 'var(--emerald)' : pp.grade === 'B' ? 'var(--accent)' : pp.grade === 'C' ? 'var(--amber)' : 'var(--red)'}; font-size:1.5rem">${pp.grade}</span>
+          </div>
+          <div class="csp-score-bar">
+            <div class="csp-score-fill" style="width:${pp.score}%;background:${pp.score >= 85 ? 'var(--emerald)' : pp.score >= 55 ? 'var(--amber)' : 'var(--red)'}"></div>
+            <span class="csp-score-label">${pp.score}/100</span>
+          </div>
+          ${pp.issues.length > 0 ? `
+            <div class="csp-issues">
+              <h4 class="csp-issues-title">Findings</h4>
+              ${pp.issues.map((issue) => `
+                <div class="csp-issue-item">
+                  <span class="csp-issue-severity" style="background:${ppSeverityColors[issue.severity]}20;color:${ppSeverityColors[issue.severity]}">${ppSeverityLabels[issue.severity]}</span>
+                  <span class="csp-issue-directive">${issue.directive}</span>
+                  <span class="csp-issue-message">${issue.message}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p class="info-muted" style="margin-top:8px">Permissions-Policy is well-configured with no issues.</p>'}
+        </div>
+      `;
+    } else if (data.permissionsPolicyAnalysis) {
+      ppContainer.innerHTML = `
+        <div class="csp-analysis-card">
+          <p class="info-muted">No Permissions-Policy header found. Consider adding one to control which browser features and APIs websites can use.</p>
         </div>
       `;
     }
