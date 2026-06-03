@@ -2,6 +2,7 @@ import { tlsState, runTlsCheck } from '../state/tls-state';
 import { t } from '../i18n';
 import { appState } from '../state/shared-state';
 import { renderBadge } from '../components/badge';
+import type { SecurityStatus } from '../types';
 import type { TlsInfo } from '../state/tls-state';
 
 const GRADE_COLORS: Record<string, string> = {
@@ -13,7 +14,7 @@ const GRADE_COLORS: Record<string, string> = {
   F: 'var(--grade-f, #dc2626)',
 };
 
-const PROTOCOL_CLASSES: Record<string, { label: string; status: string }> = {
+const PROTOCOL_CLASSES: Record<string, { label: string; status: SecurityStatus }> = {
   'TLSv1.3': { label: 'TLS 1.3 — Latest standard', status: 'pass' },
   'TLSv1.2': { label: 'TLS 1.2 — Secure', status: 'pass' },
   'TLSv1.1': { label: 'TLS 1.1 — Outdated', status: 'fail' },
@@ -22,17 +23,17 @@ const PROTOCOL_CLASSES: Record<string, { label: string; status: string }> = {
   'SSLv3':   { label: 'SSLv3 — Insecure', status: 'fail' },
 };
 
-function classifyProtocol(protocol: string): { label: string; status: string } {
+function classifyProtocol(protocol: string): { label: string; status: SecurityStatus } {
   return PROTOCOL_CLASSES[protocol] ?? { label: protocol, status: 'warn' };
 }
 
-const CIPHER_PATTERNS: Array<{ pattern: RegExp; label: string; status: string }> = [
+const CIPHER_PATTERNS: Array<{ pattern: RegExp; label: string; status: SecurityStatus }> = [
   { pattern: /AES.{0,10}GCM|ChaCha20|POLY1305/i, label: 'Strong', status: 'pass' },
   { pattern: /AES.{0,10}CBC/i, label: 'Acceptable', status: 'pass' },
   { pattern: /3DES|RC4|NULL|EXPORT/i, label: 'Weak', status: 'fail' },
 ];
 
-function classifyCipher(cipher: string): { label: string; status: string } {
+function classifyCipher(cipher: string): { label: string; status: SecurityStatus } {
   for (const { pattern, label, status } of CIPHER_PATTERNS) {
     if (pattern.test(cipher)) return { label, status };
   }

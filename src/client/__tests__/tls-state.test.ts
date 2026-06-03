@@ -28,6 +28,7 @@ describe('tlsState', () => {
       hstsPreload: false,
       ocspStapling: 'Unknown (not detectable client-side)',
       grade: 'A+',
+      weaknesses: [],
     });
     const info = tlsState.info.get()!;
     expect(info.protocol).toBe('TLSv1.3');
