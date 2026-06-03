@@ -25,6 +25,16 @@ export interface HeaderCheckResult {
   desc: string;
   value: string | null;
   present: boolean;
+  quality?: 'good' | 'warn' | 'poor';
+  qualityNote?: string;
+}
+
+export interface HeaderSuggestion {
+  header: string;
+  severity: 'critical' | 'important' | 'info';
+  message: string;
+  fix: string;
+  url: string;
 }
 
 interface HeadersResponse {
@@ -34,6 +44,7 @@ interface HeadersResponse {
   score: { present: number; total: number };
   checks: HeaderCheckResult[];
   cspAnalysis: CspAnalysis;
+  suggestions: HeaderSuggestion[];
   server: string | null;
   poweredBy: string | null;
   error?: string;
@@ -111,9 +122,23 @@ async function runHeadersCheck(): Promise<void> {
 
     const passCount = data.checks.filter((c) => c.present).length;
     const failCount = data.checks.length - passCount;
+    const poorCount = data.checks.filter((c) => c.present && c.quality === 'poor').length;
+    const warnCount = data.checks.filter((c) => c.present && c.quality === 'warn').length;
     document.getElementById('headers-strip-score')!.textContent = `${data.score.present}/${data.score.total}`;
     document.getElementById('headers-strip-pass')!.textContent = `${passCount}`;
     document.getElementById('headers-strip-fail')!.textContent = `${failCount}`;
+
+    const strip = document.getElementById('headers-score-strip')!;
+    const existingPoor = strip.querySelector('[data-quality="poor"]');
+    const existingWarn = strip.querySelector('[data-quality="warn"]');
+    if (existingPoor) existingPoor.remove();
+    if (existingWarn) existingWarn.remove();
+    if (poorCount > 0) {
+      strip.insertAdjacentHTML('beforeend', `<div class="stat-item" data-quality="poor"><span class="stat-label">Poor</span><span class="stat-value" style="color:var(--red)">${poorCount}</span></div>`);
+    }
+    if (warnCount > 0) {
+      strip.insertAdjacentHTML('beforeend', `<div class="stat-item" data-quality="warn"><span class="stat-label">Warn</span><span class="stat-value" style="color:var(--amber)">${warnCount}</span></div>`);
+    }
 
     setBadge(
       'headers-status',
@@ -140,13 +165,20 @@ async function runHeadersCheck(): Promise<void> {
         ? `<span class="header-value-truncate" data-tooltip="${check.value}">${check.value}</span>`
         : `<span class="check-value" style="color:var(--red)">${t('headers.missing')}</span>`;
 
+      let qualityHtml = '';
+      if (check.present && check.quality && check.quality !== 'good') {
+        const cls = check.quality === 'poor' ? 'status-badge fail' : 'status-badge warn';
+        const note = check.qualityNote ? ` data-tooltip="${check.qualityNote.replace(/"/g, '&quot;')}"` : '';
+        qualityHtml = `<span class="${cls}"${note} style="font-size:11px;margin-left:8px;white-space:nowrap">${check.quality.toUpperCase()}</span>`;
+      }
+
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
           <span class="check-label">${t(check.name)}</span>
           <span class="check-sublabel">${t(check.desc)}</span>
         </div>
-        ${valueHtml}
+        ${valueHtml}${qualityHtml}
       `;
       checkResults.appendChild(div);
     });
@@ -199,6 +231,30 @@ async function runHeadersCheck(): Promise<void> {
           <p class="info-muted">No Content-Security-Policy header found. Adding a strict CSP is one of the most effective ways to prevent XSS attacks.</p>
         </div>
       `;
+    }
+
+    const suggestionsEl = document.getElementById('headers-suggestions')!;
+    if (data.suggestions && data.suggestions.length > 0) {
+      const severityOrder: Record<string, number> = { critical: 0, important: 1, info: 2 };
+      const sorted = [...data.suggestions].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+      suggestionsEl.innerHTML = sorted.map((s) => {
+        const color = s.severity === 'critical' ? 'var(--red)' : s.severity === 'important' ? 'var(--amber)' : 'var(--text-tertiary)';
+        return `
+          <div class="suggestion-card">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <span class="status-badge" style="background:${color}20;color:${color};border:1px solid ${color}40;flex-shrink:0;font-size:11px">${s.severity.toUpperCase()}</span>
+              <div>
+                <div style="font-size:var(--text-sm);font-weight:600;color:var(--text-primary)">${s.message}</div>
+                <code style="font-size:var(--text-xs);color:var(--text-secondary);word-break:break-all">${s.fix}</code>
+                ${s.url ? `<a href="${s.url}" target="_blank" rel="noopener" style="font-size:var(--text-xs);display:inline-block;margin-top:4px">Learn more →</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      suggestionsEl.classList.remove('hidden');
+    } else {
+      suggestionsEl.classList.add('hidden');
     }
   } catch {
     checkResults.innerHTML = `<p class="info-muted">${t('headers.error')}</p>`;
