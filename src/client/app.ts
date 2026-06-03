@@ -32,6 +32,7 @@ import { initBreachCheck } from './breach-check';
 import { initCertTransparency } from './cert-transparency';
 import { initPrivacyExposure } from './privacy-exposure';
 import { initDnssecValidation } from './dnssec-validation';
+import { initNetworkChange } from './network-change';
 
 document.addEventListener('DOMContentLoaded', () => {
     safeInit('Dashboard', initDashboard);
@@ -62,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit('Share', initShare);
   safeInit('Install Prompt', initInstallPrompt);
   safeInit('Motion', initMotion);
+  safeInit('Network Change', initNetworkChange);
 });
 
 function renderInitialSkeletons(): void {
