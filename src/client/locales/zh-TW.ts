@@ -162,6 +162,7 @@ export const zhTW = {
   'emailSecurity.algorithm': '演算法',
   'emailSecurity.policy': '策略',
   'emailSecurity.subdomainPolicy': '子網域策略',
+  'emailSecurity.warnings.title': '警告',
 
   // HTTP/3
   'http3.title': 'HTTP/3 測試',

@@ -153,6 +153,7 @@ export const zhCN = {
   'emailSecurity.algorithm': '算法',
   'emailSecurity.policy': '策略',
   'emailSecurity.subdomainPolicy': '子域名策略',
+  'emailSecurity.warnings.title': '警告',
 
   // HTTP/3
   'http3.title': 'HTTP/3 测试',

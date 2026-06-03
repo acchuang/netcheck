@@ -2346,8 +2346,21 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
 
   let score = 0;
   let bonusScore = 0;
+  const warnings: Array<{ type: string; message: string }> = [];
   if (spf.present && spf.valid && spf.mechanisms.length > 0) score += 35;
   else if (spf.present) score += 20;
+  if (spf.value && (spf.value.includes('+all') || spf.value.endsWith(' all'))) {
+    warnings.push({ type: 'spf-open', message: 'SPF ends with +all or bare "all" — allows any sender. Use -all instead.' });
+  }
+  if (spf.lookupCount > 10) {
+    warnings.push({ type: 'spf-lookup-excess', message: `SPF has ${spf.lookupCount} DNS lookups (max 10). Exceeding this causes SPF to fail.` });
+  }
+  if (dkim.found && dkim.keyLength !== null && dkim.keyLength < 256) {
+    warnings.push({ type: 'dkim-weak-key', message: `DKIM key is only ${dkim.keyLength} characters — may be too short (rsa-sha256 should be ≥1024 bits).` });
+  }
+  if (dmarc.present && dmarc.policy === 'none') {
+    warnings.push({ type: 'dmarc-monitor-only', message: 'DMARC policy is p=none — monitoring only, no enforcement. Upgrade to quarantine or reject.' });
+  }
   if (dkim.found) score += 35;
   if (dmarc.present && dmarc.valid) {
     score += 25;
@@ -2382,7 +2395,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   }
 
   return Response.json(
-    { domain, spf, dkim, dmarc, bimi, mtaSts, grade, score, bonusScore },
+    { domain, spf, dkim, dmarc, bimi, mtaSts, grade, score, bonusScore, warnings },
     { headers: corsHeaders(request) },
   );
 }

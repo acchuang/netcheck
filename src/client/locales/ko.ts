@@ -153,6 +153,7 @@ export const ko = {
   'emailSecurity.algorithm': 'Algorithm',
   'emailSecurity.policy': 'Policy',
   'emailSecurity.subdomainPolicy': 'Subdomain Policy',
+  'emailSecurity.warnings.title': '경고',
   'http3.title': 'HTTP/3 Test',
   'http3.desc': 'Test HTTP/3 (QUIC) connectivity and performance.',
   'http3.runTest': 'Test HTTP/3 Connectivity',

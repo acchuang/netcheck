@@ -177,6 +177,7 @@ const en = {
   'emailSecurity.algorithm': 'Algorithm',
   'emailSecurity.policy': 'Policy',
   'emailSecurity.subdomainPolicy': 'Subdomain Policy',
+  'emailSecurity.warnings.title': 'Warnings',
 
   // HTTP/3
   'http3.title': 'HTTP/3 Test',

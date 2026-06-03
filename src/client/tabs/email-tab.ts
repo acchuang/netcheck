@@ -1,4 +1,4 @@
-import { emailState, runEmailCheck, type EmailSecurityResult, type BimiResult, type MtaStsResult } from '../state/email-state';
+import { emailState, runEmailCheck, type EmailSecurityResult, type BimiResult, type MtaStsResult, type EmailWarning } from '../state/email-state';
 import { t } from '../i18n';
 import { renderBadge } from '../components/badge';
 import type { SecurityStatus } from '../types';
@@ -130,9 +130,31 @@ function renderResult(info: EmailSecurityResult): string {
           ${mtaStsExtra}
         </div>
       </div>
+      ${renderEmailWarnings(info.warnings, info)}
       <div class="email-recommendations">
         ${renderEmailRecommendations(info)}
       </div>
+    </div>
+  `;
+}
+
+function renderEmailWarnings(warnings: EmailWarning[], info: EmailSecurityResult): string {
+  if (!warnings || warnings.length === 0) return '';
+  const icons: Record<string, string> = {
+    'spf-open': '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    'dkim-weak-key': '<svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+    'dmarc-monitor-only': '<svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    'spf-lookup-excess': '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  };
+  return `
+    <div class="csp-analysis-card" style="margin-top:12px;border-color:var(--amber)">
+      <h4 class="csp-issues-title" style="color:var(--amber)">${t('emailSecurity.warnings.title', 'Warnings')}</h4>
+      ${warnings.map(w => `
+        <div class="csp-issue-item">
+          <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:12px">${icons[w.type] || icons['spf-open']}</span>
+          <span class="csp-issue-message" style="font-size:13px">${w.message}</span>
+        </div>
+      `).join('')}
     </div>
   `;
 }

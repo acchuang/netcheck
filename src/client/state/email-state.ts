@@ -40,6 +40,11 @@ export interface MtaStsResult {
   valid: boolean;
 }
 
+export interface EmailWarning {
+  type: 'spf-open' | 'dkim-weak-key' | 'dmarc-monitor-only' | 'spf-lookup-excess';
+  message: string;
+}
+
 export interface EmailSecurityResult {
   domain: string;
   spf: SpfResult;
@@ -50,6 +55,7 @@ export interface EmailSecurityResult {
   grade: string;
   score: number;
   bonusScore: number;
+  warnings: EmailWarning[];
 }
 
 export function parseSpf(raw: string): {
