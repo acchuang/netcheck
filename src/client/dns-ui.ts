@@ -10,6 +10,7 @@ import { onLocaleChange } from './locale-events';
 import { DnsBenchmark, renderBenchmarkHeatmap, renderPathBars } from './dns-benchmark';
 import { DnsAudit, renderHijackRows, renderEcsRows } from './dns-audit';
 import type { HijackResult, EcsResult } from './dns-audit';
+import { testDohConnectivity, renderDohRows } from './doh-test';
 
 interface IpData {
   ip?: string;
@@ -396,6 +397,17 @@ export async function runDnsAudit(): Promise<void> {
     const ecsSection = document.createElement('div');
     ecsSection.innerHTML = `<p style="font-size:13px;font-weight:600;margin:8px 0 4px;color:var(--text-secondary)">ECS Leak Detection</p>${renderEcsRows(ecsData)}`;
     securityContainer.appendChild(ecsSection);
+
+    try {
+      const dohResults = await testDohConnectivity();
+      if (dohResults.length > 0) {
+        const dohSection = document.createElement('div');
+        dohSection.innerHTML = `<p style="font-size:13px;font-weight:600;margin:8px 0 4px;color:var(--text-secondary)">DNS-over-HTTPS Connectivity</p>${renderDohRows(dohResults)}`;
+        securityContainer.appendChild(dohSection);
+      }
+    } catch {
+      // DoH test optional, don't block on failure
+    }
 
     document.getElementById('dns-benchmark-results')!.innerHTML =
       renderBenchmarkHeatmap(benchmarkData);
