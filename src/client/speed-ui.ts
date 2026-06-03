@@ -190,7 +190,7 @@ async function runSpeedTest(): Promise<void> {
     { key: 'latency', label: t('speed.factor.latency') },
     { key: 'jitter', label: t('speed.factor.jitter') },
     { key: 'bufferbloat', label: t('speed.factor.bufferbloat') },
-    { key: 'packetLoss', label: 'Packet Loss' },
+    { key: 'packetLoss', label: t('speed.factor.packetLoss') },
   ];
   factorsEl.innerHTML = factorKeys
     .map((f) => {

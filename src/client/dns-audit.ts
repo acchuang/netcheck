@@ -1,6 +1,6 @@
 import { t } from './i18n';
 
-interface HijackResult {
+export interface HijackResult {
   resolver: string;
   aRecords: string[];
   expectedARecords: string[];
@@ -9,7 +9,7 @@ interface HijackResult {
   trustScore: number;
   summary: 'clean' | 'suspicious' | 'tampered';
 }
-interface EcsResult {
+export interface EcsResult {
   resolver: string;
   ecsDetected: boolean;
   ecsPrefix: number | null;

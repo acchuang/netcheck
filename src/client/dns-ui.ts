@@ -9,6 +9,7 @@ import { affiliate } from './affiliates';
 import { onLocaleChange } from './locale-events';
 import { DnsBenchmark, renderBenchmarkHeatmap, renderPathBars } from './dns-benchmark';
 import { DnsAudit, renderHijackRows, renderEcsRows } from './dns-audit';
+import type { HijackResult, EcsResult } from './dns-audit';
 
 interface IpData {
   ip?: string;
@@ -33,6 +34,8 @@ interface DnsContext {
   hasSecurity: (name: string) => boolean;
   hasWebRtcLeak: boolean;
   reachableCount: number;
+  hijackTrustScore: number;
+  ecsRating: 'significant' | 'moderate' | 'none';
 }
 
 interface Suggestion {
@@ -115,11 +118,41 @@ const dnsSuggestions: Suggestion[] = [
     url: null,
     when: (ctx) => ctx.reachableCount < 3,
   },
+  {
+    name: 'dns.sug.hijack',
+    icon: '🛡',
+    tags: ['Privacy', 'Integrity'],
+    url: null,
+    when: (ctx) => ctx.hijackTrustScore < 70,
+  },
+  {
+    name: 'dns.sug.ecs',
+    icon: '🔒',
+    tags: ['Privacy', 'ECS'],
+    url: null,
+    when: (ctx) => ctx.ecsRating === 'significant',
+  },
+  {
+    name: 'dns.sug.noDnssec',
+    icon: '🔑',
+    tags: ['DNSSEC', 'Validation'],
+    url: 'https://dnssectest.com/',
+    when: (ctx) => !ctx.hasSecurity('DNSSEC Validation'),
+  },
+  {
+    name: 'dns.sug.slow',
+    icon: '⚡',
+    tags: ['Performance'],
+    url: 'https://1.1.1.1/',
+    when: (ctx) => ctx.slowestResolver() > 100,
+  },
 ];
 
 let lastIpData: IpData | null = null;
 let lastResolvers: ResolverResult[] = [];
 let lastSecurityChecks: SecurityCheck[] = [];
+let lastHijackData: HijackResult[] | null = null;
+let lastEcsData: EcsResult[] | null = null;
 
 function localizeSecurityName(name: string): string {
   const map: Record<string, string> = {
@@ -352,6 +385,9 @@ export async function runDnsAudit(): Promise<void> {
       DnsBenchmark.runAll(),
     ]);
 
+    lastHijackData = hijackData;
+    lastEcsData = ecsData;
+
     const securityContainer = document.getElementById('dns-security-results')!;
     const hijackSection = document.createElement('div');
     hijackSection.innerHTML = `<p style="font-size:13px;font-weight:600;margin:8px 0 4px;color:var(--text-secondary)">DNS Tampering</p>${renderHijackRows(hijackData)}`;
@@ -401,6 +437,14 @@ function renderDnsSuggestions({
     hasSecurity: (name) => securityChecks.some((c) => c.name === name && c.status === 'pass'),
     hasWebRtcLeak: securityChecks.some((c) => c.name === 'WebRTC IP Leak' && c.status === 'fail'),
     reachableCount: reachable.length,
+    hijackTrustScore: lastHijackData && lastHijackData.length > 0
+      ? Math.min(...lastHijackData.map((h) => h.trustScore))
+      : 100,
+    ecsRating: lastEcsData && lastEcsData.length > 0
+      ? lastEcsData.some((e) => e.rating === 'significant') ? 'significant'
+        : lastEcsData.some((e) => e.rating === 'moderate') ? 'moderate'
+        : 'none'
+      : 'none',
   };
 
   const issues: string[] = [];

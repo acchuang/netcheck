@@ -311,6 +311,18 @@ export const zhTW = {
   'dns.sug.multi.type': '可靠性建議',
   'dns.sug.multi.desc':
     '配置備用 DNS 解析器。主要 DNS 故障時網路不會中斷。大多數路由器支援主要＋備用設定。',
+  'dns.sug.hijack.name': '可信 DNS',
+  'dns.sug.hijack.type': '安全性',
+  'dns.sug.hijack.desc': '您的 DNS 解析器似乎正在篡改結果。請切換至不記錄日誌的受信任解析器。',
+  'dns.sug.ecs.name': 'ECS 保護',
+  'dns.sug.ecs.type': '隱私',
+  'dns.sug.ecs.desc': '您的 DNS 解析器正在透過 ECS 洩漏您的 IP 子網路。請啟用 DNS-over-HTTPS 以防止此洩漏。',
+  'dns.sug.noDnssec.name': 'DNSSEC 驗證',
+  'dns.sug.noDnssec.type': '安全性',
+  'dns.sug.noDnssec.desc': '您的解析器未驗證 DNSSEC 簽章。請切換至支援 DNSSEC 驗證的解析器。',
+  'dns.sug.slow.name': '更快的 DNS',
+  'dns.sug.slow.type': '效能',
+  'dns.sug.slow.desc': '您最慢的解析器明顯慢於替代方案。考慮切換以獲得更好的效能。',
 
   // Speed section
   'speed.title': '測速',
@@ -332,6 +344,7 @@ export const zhTW = {
   'speed.factor.latency': '延遲',
   'speed.factor.jitter': '抖動',
   'speed.factor.bufferbloat': '緩衝膨脹',
+  'speed.factor.packetLoss': '封包遺失',
   'speed.tip.download': '透過漸進式檔案傳輸測量的最大下載速度',
   'speed.tip.upload': '透過漸進式資料傳輸測量的最大上傳速度',
   'speed.tip.latency': '到最近 Cloudflare 邊緣伺服器的往返時間（20 次 ping 的中位數）',

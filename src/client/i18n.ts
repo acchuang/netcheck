@@ -328,6 +328,22 @@ const en = {
   'dns.sug.multi.type': 'Reliability Tip',
   'dns.sug.multi.desc':
     "Configure a secondary DNS resolver as fallback. If your primary goes down, your internet won't break. Most routers support primary + secondary.",
+  'dns.sug.hijack.name': 'Trusted DNS',
+  'dns.sug.hijack.type': 'Security',
+  'dns.sug.hijack.desc':
+    'Your DNS resolver appears to be tampering with results. Switch to a trusted, non-logging resolver.',
+  'dns.sug.ecs.name': 'ECS Protection',
+  'dns.sug.ecs.type': 'Privacy',
+  'dns.sug.ecs.desc':
+    'Your DNS resolver is leaking your IP subnet via ECS. Enable DNS-over-HTTPS to prevent this.',
+  'dns.sug.noDnssec.name': 'DNSSEC Validation',
+  'dns.sug.noDnssec.type': 'Security',
+  'dns.sug.noDnssec.desc':
+    'Your resolver does not validate DNSSEC signatures. Switch to a DNSSEC-validating resolver.',
+  'dns.sug.slow.name': 'Faster DNS',
+  'dns.sug.slow.type': 'Performance',
+  'dns.sug.slow.desc':
+    'Your slowest resolver is significantly slower than alternatives. Consider switching for better performance.',
 
   // Speed section
   'speed.title': 'Speed Test',
@@ -349,6 +365,7 @@ const en = {
   'speed.factor.latency': 'Latency',
   'speed.factor.jitter': 'Jitter',
   'speed.factor.bufferbloat': 'Bufferbloat',
+  'speed.factor.packetLoss': 'Packet Loss',
   'speed.tip.download': 'Maximum download speed measured via progressive file transfers',
   'speed.tip.upload': 'Maximum upload speed measured via progressive data transfers',
   'speed.tip.latency': 'Round-trip time to the nearest Cloudflare edge server (median of 20 pings)',

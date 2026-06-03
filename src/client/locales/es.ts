@@ -295,6 +295,18 @@ export const es = {
   'dns.sug.multi.type': 'Consejo de fiabilidad',
   'dns.sug.multi.desc':
     'Configura un resolutor DNS secundario como respaldo. Si el primario falla, tu internet no se caerá. La mayoría de routers soporta primario + secundario.',
+  'dns.sug.hijack.name': 'DNS de confianza',
+  'dns.sug.hijack.type': 'Seguridad',
+  'dns.sug.hijack.desc': 'Tu resolutor DNS parece estar alterando los resultados. Cambia a un resolutor de confianza que no registre consultas.',
+  'dns.sug.ecs.name': 'Protección ECS',
+  'dns.sug.ecs.type': 'Privacidad',
+  'dns.sug.ecs.desc': 'Tu resolutor DNS está filtrando tu subred IP mediante ECS. Activa DNS-over-HTTPS para evitarlo.',
+  'dns.sug.noDnssec.name': 'Validación DNSSEC',
+  'dns.sug.noDnssec.type': 'Seguridad',
+  'dns.sug.noDnssec.desc': 'Tu resolutor no valida las firmas DNSSEC. Cambia a un resolutor que valide DNSSEC.',
+  'dns.sug.slow.name': 'DNS más rápido',
+  'dns.sug.slow.type': 'Rendimiento',
+  'dns.sug.slow.desc': 'Tu resolutor más lento es significativamente más lento que las alternativas. Considera cambiar para un mejor rendimiento.',
   'speed.title': 'Test de velocidad',
   'speed.subtitle': 'Mide la velocidad de tu conexión a través de la red edge global de Cloudflare',
   'speed.testServer': 'Servidor de prueba',
@@ -314,6 +326,7 @@ export const es = {
   'speed.factor.latency': 'Latencia',
   'speed.factor.jitter': 'Jitter',
   'speed.factor.bufferbloat': 'Bufferbloat',
+  'speed.factor.packetLoss': 'Pérdida de paquetes',
   'speed.tip.download':
     'Velocidad máxima de descarga medida mediante transferencias progresivas de archivos',
   'speed.tip.upload':
