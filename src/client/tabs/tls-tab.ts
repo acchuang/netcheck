@@ -39,6 +39,35 @@ function classifyCipher(cipher: string): { label: string; status: string } {
   return { label: 'Unknown', status: 'warn' };
 }
 
+interface TlsCerts {
+  subject: {
+    cn: string;
+    sans: string[];
+    organization?: string;
+  };
+  issuer: {
+    cn: string;
+    organization?: string;
+  };
+  validity: {
+    notBefore: string;
+    notAfter: string;
+    daysRemaining: number;
+  };
+  key: {
+    type: 'RSA' | 'ECDSA' | 'Ed25519' | 'unknown';
+    size: number;
+  };
+  fingerprint: string;
+  chainDepth: number;
+}
+
+interface TlsWeakness {
+  id: string;
+  severity: 'critical' | 'high' | 'medium';
+  description: string;
+}
+
 interface TlsTargetResult {
   domain: string;
   httpsAvailable: boolean;
@@ -48,6 +77,8 @@ interface TlsTargetResult {
   grade: string;
   score: number;
   error?: string;
+  certs?: TlsCerts;
+  weaknesses?: TlsWeakness[];
 }
 
 
