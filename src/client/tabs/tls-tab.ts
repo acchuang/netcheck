@@ -78,6 +78,7 @@ interface TlsTargetResult {
   hsts: { present: boolean; maxAge: number | null; includeSubDomains: boolean; preload: boolean } | null;
   grade: string;
   score: number;
+  supportsH3: boolean;
   error?: string;
   certs?: TlsCerts;
   weaknesses?: TlsWeakness[];
@@ -292,6 +293,10 @@ async function runTlsTargetCheck(): Promise<void> {
           <div class="ct-summary-card">
             <div class="ct-summary-number" style="color:${data.hsts?.present ? 'var(--emerald)' : 'var(--red)'}">${data.hsts?.present ? 'Yes' : 'No'}</div>
             <div class="ct-summary-label">HSTS</div>
+          </div>
+          <div class="ct-summary-card">
+            <div class="ct-summary-number" style="color:${data.supportsH3 ? 'var(--emerald)' : 'var(--text-secondary)'}">${data.supportsH3 ? 'Yes' : 'No'}</div>
+            <div class="ct-summary-label">HTTP/3</div>
           </div>
           <div class="ct-summary-card">
             <div class="ct-summary-number">${data.score}/100</div>

@@ -2516,6 +2516,7 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     hsts: { present: boolean; maxAge: number | null; includeSubDomains: boolean; preload: boolean } | null;
     grade: string;
     score: number;
+    supportsH3: boolean;
     error?: string;
     certs?: WorkerTlsCerts | null;
     weaknesses?: WorkerTlsWeakness[];
@@ -2527,6 +2528,7 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     hsts: null,
     grade: 'F',
     score: 0,
+    supportsH3: false,
   };
 
   try {
@@ -2555,6 +2557,9 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     });
 
     result.httpsAvailable = true;
+
+    const altSvc = httpsRes.headers.get('alt-svc') || '';
+    result.supportsH3 = /h3[=-]/i.test(altSvc);
 
     const hstsHeader = httpsRes.headers.get('strict-transport-security');
     if (hstsHeader) {
