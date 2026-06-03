@@ -49,43 +49,47 @@ function renderTlsInfo(info: TlsInfo): string {
   const handshakeDisplay = info.handshakeTime !== null ? `${info.handshakeTime} ms` : '—';
 
   return `
-    <div class="tls-grid">
-      <div class="tls-grade-card">
-        <div class="tls-grade-grade" style="color:${GRADE_COLORS[info.grade] || 'var(--text-secondary)'}">${info.grade}</div>
-        <div class="tls-grade-label">${t('tls.tlsGrade', 'TLS Grade')}</div>
-      </div>
-      <div class="tls-details-card">
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.protocol', 'Protocol')}</span>
-          <span class="tls-detail-value">${protocolBadge}</span>
+    <div class="cards-grid">
+      <div class="card card-hero card-accent-green">
+        <div class="card-header">
+          <h2 class="card-title">${t('tls.tlsGrade', 'TLS Grade')}</h2>
+          <span class="card-grade" style="color:${GRADE_COLORS[info.grade] || 'var(--text-secondary)'}">${info.grade}</span>
         </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.cipher', 'Cipher Suite')}</span>
-          <span class="tls-detail-value">${info.cipher}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.keyExchange', 'Key Exchange')}</span>
-          <span class="tls-detail-value">${info.keyExchange}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.forwardSecrecy', 'Forward Secrecy')}</span>
-          <span class="tls-detail-value">${fsBadge}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.handshake', 'Handshake Time')}</span>
-          <span class="tls-detail-value">${handshakeDisplay}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.httpProtocol', 'HTTP Protocol')}</span>
-          <span class="tls-detail-value">${info.httpProtocol}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.hsts', 'HSTS')}</span>
-          <span class="tls-detail-value">${hstsBadge}</span>
-        </div>
-        <div class="tls-detail-row">
-          <span class="tls-detail-label">${t('tls.ocsp', 'OCSP Stapling')}</span>
-          <span class="tls-detail-value">${info.ocspStapling}</span>
+        <div class="card-body">
+          <div class="stat-strip">
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.protocol', 'Protocol')}</span>
+              <span class="stat-value">${protocolBadge}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.cipher', 'Cipher Suite')}</span>
+              <span class="stat-value">${info.cipher}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.keyExchange', 'Key Exchange')}</span>
+              <span class="stat-value">${info.keyExchange}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.forwardSecrecy', 'Forward Secrecy')}</span>
+              <span class="stat-value">${fsBadge}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.handshake', 'Handshake Time')}</span>
+              <span class="stat-value">${handshakeDisplay}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.httpProtocol', 'HTTP Protocol')}</span>
+              <span class="stat-value">${info.httpProtocol}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.hsts', 'HSTS')}</span>
+              <span class="stat-value">${hstsBadge}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">${t('tls.ocsp', 'OCSP Stapling')}</span>
+              <span class="stat-value">${info.ocspStapling}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
