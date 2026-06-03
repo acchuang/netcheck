@@ -67,9 +67,40 @@ export const FingerprintDetector = {
 
     const uniquenessScore = Math.min(100, Math.round((totalBits / 50) * 100));
 
+    const signalValues = categories
+      .flatMap((cat) => cat.items.map((item) => item.value))
+      .join('|');
+    const currentHash = await hashString(signalValues);
+
+    const STORE_KEY = 'netcheck_fp_hash';
+    const STORE_DATE_KEY = 'netcheck_fp_date';
+    let drift = 0;
+    let previousDate: string | null = null;
+    try {
+      const prev = localStorage.getItem(STORE_KEY);
+      if (prev && prev !== currentHash) {
+        const prevValues = categories.length;
+        const changedValues = categories
+          .flatMap((cat) => cat.items)
+          .filter((_, i) => {
+            const prevSignals = prev.split('|');
+            const currSignals = signalValues.split('|');
+            return i < prevSignals.length && i < currSignals.length && prevSignals[i] !== currSignals[i];
+          }).length;
+        drift = prevValues > 0 ? Math.round((changedValues / prevValues) * 100) : 0;
+      }
+      previousDate = localStorage.getItem(STORE_DATE_KEY);
+      localStorage.setItem(STORE_KEY, currentHash);
+      localStorage.setItem(STORE_DATE_KEY, new Date().toISOString());
+    } catch {
+      /* localStorage unavailable */
+    }
+
     fingerprintState.uniquenessScore.set(uniquenessScore);
     fingerprintState.totalEntropy.set(totalBits);
     fingerprintState.categories.set(categories);
+    fingerprintState.fpDrift.set(drift);
+    fingerprintState.fpDriftDate.set(previousDate);
     fingerprintState.loading.set(false);
 
     return { categories, totalEntropy: totalBits, uniquenessScore };

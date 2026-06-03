@@ -47,6 +47,22 @@ async function runFingerprintScan(): Promise<void> {
   const totalSignals = result.categories.reduce((sum, cat) => sum + cat.items.length, 0);
   document.getElementById('fp-score-detail')!.textContent = t('fp.signals', totalSignals);
 
+  const driftInfo = document.getElementById('fp-drift-info');
+  const driftBadge = document.getElementById('fp-drift-badge');
+  const driftText = document.getElementById('fp-drift-text');
+  const drift = fingerprintState.fpDrift.get();
+  const driftDate = fingerprintState.fpDriftDate.get();
+  if (driftInfo && driftBadge && driftText && drift > 0) {
+    const driftClass = drift <= 10 ? 'drift-low' : drift <= 30 ? 'drift-medium' : 'drift-high';
+    driftBadge.className = `fp-drift-badge ${driftClass}`;
+    driftBadge.textContent = `${drift}% ${t('fp.drift.label', 'drift')}`;
+    const dateStr = driftDate ? new Date(driftDate).toLocaleDateString() : '';
+    driftText.textContent = dateStr ? t('fp.drift.since', `Since ${dateStr}`) : t('fp.drift.changed', 'Fingerprint changed from previous scan');
+    driftInfo.classList.remove('hidden');
+  } else if (driftInfo) {
+    driftInfo.classList.add('hidden');
+  }
+
   const container = document.getElementById('fp-categories')!;
   container.innerHTML = '';
   result.categories.forEach((cat) => {

@@ -6,4 +6,6 @@ export const fingerprintState = {
   totalEntropy: observable<number>(0),
   categories: observable<FingerprintCategory[]>([]),
   loading: observable<boolean>(false),
+  fpDrift: observable<number>(0),
+  fpDriftDate: observable<string | null>(null),
 };

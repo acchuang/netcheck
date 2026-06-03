@@ -772,6 +772,27 @@ body.nav-open .nav-overlay {
   text-align: center;
 }
 
+.fp-drift-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--text-secondary);
+  justify-content: center;
+}
+.fp-drift-info.hidden { display: none; }
+.fp-drift-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+.fp-drift-badge.drift-low { background: var(--emerald)20; color: var(--emerald); }
+.fp-drift-badge.drift-medium { background: var(--amber)20; color: var(--amber); }
+.fp-drift-badge.drift-high { background: var(--red)20; color: var(--red); }
+
 /* ========================================
    Buttons
    ======================================== */
