@@ -670,9 +670,9 @@
       </div>
 
       <div id="headers-results" class="hidden">
-        <div class="cards-grid cards-grid-2">
-          <!-- Grade Card -->
-          <div class="card">
+        <div class="cards-grid cards-grid--asymmetric">
+          <!-- Grade Card (Hero) -->
+          <div class="card card-hero card-accent-cyan">
             <div class="card-header">
               <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -688,11 +688,25 @@
                   <p class="info-muted" id="headers-server-info"></p>
                 </div>
               </div>
+              <div class="stat-strip" id="headers-score-strip">
+                <div class="stat-item">
+                  <span class="stat-label" id="headers-strip-score-label">Score</span>
+                  <span class="stat-value" id="headers-strip-score">—</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label" id="headers-strip-pass-label">Pass</span>
+                  <span class="stat-value" id="headers-strip-pass">—</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label" id="headers-strip-fail-label">Missing</span>
+                  <span class="stat-value" id="headers-strip-fail">—</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Info Card -->
-          <div class="card">
+          <!-- Info Card (Compact) -->
+          <div class="card card-compact">
             <div class="card-header">
               <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>

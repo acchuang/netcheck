@@ -109,6 +109,12 @@ async function runHeadersCheck(): Promise<void> {
     serverParts.push(`HTTP ${data.statusCode}`);
     document.getElementById('headers-server-info')!.textContent = serverParts.join(' · ');
 
+    const passCount = data.checks.filter((c) => c.present).length;
+    const failCount = data.checks.length - passCount;
+    document.getElementById('headers-strip-score')!.textContent = `${data.score.present}/${data.score.total}`;
+    document.getElementById('headers-strip-pass')!.textContent = `${passCount}`;
+    document.getElementById('headers-strip-fail')!.textContent = `${failCount}`;
+
     setBadge(
       'headers-status',
       data.grade === 'A' || data.grade === 'B' ? 'done' : data.grade === 'C' ? 'done' : 'error',
