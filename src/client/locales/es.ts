@@ -792,4 +792,10 @@ export const es = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': 'No Rastrear',
+  'privacyExposure.api.dnt.reveals': 'Señal de preferencia de rastreo (puede usarse para huella digital)',
+  'privacyExposure.api.dnt.tip': 'DNT está obsoleto; desactívelo para evitar añadir una señal de huella digital',
+  'privacyExposure.api.gpc': 'Control Global de Privacidad',
+  'privacyExposure.api.gpc.reveals': 'Señal de preferencia de privacidad (puede usarse para huella digital)',
+  'privacyExposure.api.gpc.tip': 'GPC está bien intencionado pero añade unicidad de huella digital; considere su modelo de amenaza',
 } satisfies Translations;

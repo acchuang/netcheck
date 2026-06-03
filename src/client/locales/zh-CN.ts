@@ -765,4 +765,10 @@ export const zhCN = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': '请勿追踪',
+  'privacyExposure.api.dnt.reveals': '追踪偏好信号（可能被用于指纹识别）',
+  'privacyExposure.api.dnt.tip': 'DNT已弃用；禁用它以避免添加指纹信号',
+  'privacyExposure.api.gpc': '全局隐私控制',
+  'privacyExposure.api.gpc.reveals': '隐私偏好信号（可能被用于指纹识别）',
+  'privacyExposure.api.gpc.tip': 'GPC意图良好但增加了指纹唯一性；请考虑您的威胁模型',
 } satisfies Translations;

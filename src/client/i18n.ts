@@ -836,6 +836,12 @@ const en = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': 'Do Not Track',
+  'privacyExposure.api.dnt.reveals': 'Tracking preference signal (can be used for fingerprinting)',
+  'privacyExposure.api.dnt.tip': 'DNT is deprecated; disable it to avoid adding a fingerprinting signal',
+  'privacyExposure.api.gpc': 'Global Privacy Control',
+  'privacyExposure.api.gpc.reveals': 'Privacy preference signal (can be used for fingerprinting)',
+  'privacyExposure.api.gpc.tip': 'GPC is well-intentioned but adds fingerprint uniqueness; consider your threat model',
 } as const;
 
 export type Translations = Record<keyof typeof en, string>;

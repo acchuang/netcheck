@@ -780,4 +780,10 @@ export const ja = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': 'Do Not Track',
+  'privacyExposure.api.dnt.reveals': 'トラッキング preference signal (フィンガープリントに利用される可能性)',
+  'privacyExposure.api.dnt.tip': 'DNTは非推奨です；フィンガープリント信号を避けるため無効にしてください',
+  'privacyExposure.api.gpc': 'グローバルプライバシーコントロール',
+  'privacyExposure.api.gpc.reveals': 'プライバシー preference signal (フィンガープリントに利用される可能性)',
+  'privacyExposure.api.gpc.tip': 'GPCは善意ですが、フィンガープリントの一意性を増やします；脅威モデルを考慮してください',
 } satisfies Translations;

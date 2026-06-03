@@ -769,4 +769,10 @@ export const ko = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': '추적 금지',
+  'privacyExposure.api.dnt.reveals': '추적 선호도 신호 (핑거프린팅에 사용될 수 있음)',
+  'privacyExposure.api.dnt.tip': 'DNT는 더 이상 사용되지 않습니다; 핑거프린팅 신호를 피하려면 비활성화하세요',
+  'privacyExposure.api.gpc': '글로벌 개인정보 보호 제어',
+  'privacyExposure.api.gpc.reveals': '개인정보 보호 선호도 신호 (핑거프린팅에 사용될 수 있음)',
+  'privacyExposure.api.gpc.tip': 'GPC는 좋은 의도이지만 핑거프린트 고유성을 추가합니다; 위협 모델을 고려하세요',
 } satisfies Translations;

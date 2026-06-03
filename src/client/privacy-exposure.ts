@@ -214,6 +214,30 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     'Deny clipboard permission when prompted',
   );
 
+  await testApi(
+    t('privacyExposure.api.dnt'),
+    'dnt',
+    async () => {
+      const dnt = (navigator as any).doNotTrack;
+      return dnt === '1' ? 'blocked' : 'available';
+    },
+    'low',
+    t('privacyExposure.api.dnt.reveals'),
+    t('privacyExposure.api.dnt.tip'),
+  );
+
+  await testApi(
+    t('privacyExposure.api.gpc'),
+    'gpc',
+    async () => {
+      const gpc = (navigator as any).globalPrivacyControl;
+      return gpc === true ? 'blocked' : 'available';
+    },
+    'low',
+    t('privacyExposure.api.gpc.reveals'),
+    t('privacyExposure.api.gpc.tip'),
+  );
+
   let score = 100;
   for (const check of checks) {
     if (check.status === 'available') {

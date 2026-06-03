@@ -804,4 +804,10 @@ export const zhTW = {
   'privacyExposure.api.notifications': 'Notifications',
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
+  'privacyExposure.api.dnt': '請勿追蹤',
+  'privacyExposure.api.dnt.reveals': '追蹤偏好信號（可能被用於指紋識別）',
+  'privacyExposure.api.dnt.tip': 'DNT已棄用；禁用它以避免添加指紋信號',
+  'privacyExposure.api.gpc': '全域隱私控制',
+  'privacyExposure.api.gpc.reveals': '隱私偏好信號（可能被用於指紋識別）',
+  'privacyExposure.api.gpc.tip': 'GPC意圖良好但增加了指紋唯一性；請考慮您的威脅模型',
 } satisfies Translations;
