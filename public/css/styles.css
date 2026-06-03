@@ -502,6 +502,83 @@ body.nav-open .nav-overlay {
   margin-left: auto;
 }
 
+.card-hero {
+  grid-column: 1 / -1;
+}
+
+.card-hero .card-header {
+  padding: var(--space-6) var(--space-6) 0;
+}
+
+.card-hero .card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.card-hero .card-body {
+  padding: var(--space-6);
+}
+
+.card-hero-value {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.card-hero-value .unit {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: var(--space-1);
+}
+
+.card-compact .card-header {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+.card-compact .card-body {
+  padding: var(--space-3);
+}
+
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+  padding: var(--space-3) 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--text-primary);
+}
+
+.cards-grid--asymmetric > :first-child {
+  grid-column: 1 / -1;
+}
+
 /* ========================================
    Badges & Tags
    ======================================== */
@@ -1948,6 +2025,10 @@ body.nav-open .nav-overlay {
   .cookie-summary {
     flex-direction: column;
   }
+
+  .stat-strip {
+    gap: var(--space-3) var(--space-4);
+  }
 }
 
 @media (max-width: 480px) {
@@ -2018,6 +2099,15 @@ body.nav-open .nav-overlay {
   .section {
     display: block !important;
     margin-bottom: 16px;
+  }
+
+  .card-hero,
+  .card-compact {
+    break-inside: avoid;
+  }
+
+  .stat-strip {
+    display: none;
   }
 }
 
