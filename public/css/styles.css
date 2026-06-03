@@ -1078,6 +1078,16 @@ body.nav-open .nav-overlay {
 }
 
 .speed-progress-fill.download { background: var(--accent-cyan); }
+
+.speed-histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 32px;
+  margin-top: var(--space-2);
+  width: 100%;
+}
+.speed-histogram.hidden { display: none; }
 .speed-progress-fill.upload { background: var(--accent-orange); }
 .speed-progress-fill.latency { background: var(--accent-lime); }
 .speed-progress-fill.jitter { background: var(--accent-amber); }

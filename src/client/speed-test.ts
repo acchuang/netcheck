@@ -22,6 +22,7 @@ export interface SpeedTestResults {
   connectionInfo: ConnectionInfo | null;
   avgRtt: number | null;
   pingJitter: number | null;
+  rawPings: number[];
 }
 
 export interface SpeedGrade {
@@ -226,6 +227,7 @@ export const SpeedTest = {
     connectionInfo: null,
     avgRtt: null,
     pingJitter: null,
+    rawPings: [],
   } as SpeedTestResults,
 
   async run(onProgress?: ProgressCallback): Promise<SpeedTestResults> {
@@ -247,6 +249,7 @@ export const SpeedTest = {
       connectionInfo: null,
       avgRtt: null,
       pingJitter: null,
+      rawPings: [],
     };
     const cb: ProgressCallback = onProgress || (() => {});
 
@@ -314,6 +317,7 @@ export const SpeedTest = {
         pings.length > 1 ? Math.round((jitterSum / (pings.length - 1)) * 10) / 10 : 0;
     }
     this.results.packetLoss = pingsSent > 0 ? Math.round(((pingsSent - pingsReceived) / pingsSent) * 1000) / 10 : null;
+    this.results.rawPings = pings;
 
     cb('latency', 100, this.results);
 

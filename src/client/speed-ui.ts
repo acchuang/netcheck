@@ -136,6 +136,27 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById('speed-bufferbloat')!.textContent =
     results.bufferbloat !== null ? String(Math.round(results.bufferbloat)) : '—';
 
+  const jitterHistEl = document.getElementById('speed-jitter-histogram');
+  if (jitterHistEl && results.rawPings.length > 0) {
+    const pings = results.rawPings;
+    const min = Math.min(...pings);
+    const max = Math.max(...pings);
+    const buckets = 8;
+    const range = max - min || 1;
+    const counts = new Array(buckets).fill(0);
+    for (const p of pings) {
+      const idx = Math.min(buckets - 1, Math.floor(((p - min) / range) * buckets));
+      counts[idx]++;
+    }
+    const maxCount = Math.max(...counts);
+    jitterHistEl.innerHTML = counts.map((c) =>
+      `<div style="flex:1;height:${maxCount > 0 ? (c / maxCount) * 100 : 0}%;background:var(--accent);border-radius:1px;min-height:2px"></div>`
+    ).join('');
+    jitterHistEl.classList.remove('hidden');
+  } else if (jitterHistEl) {
+    jitterHistEl.classList.add('hidden');
+  }
+
   if (results.bufferbloat !== null) {
     const bbBar = document.getElementById('speed-bufferbloat-bar') as HTMLElement;
     const bbPct = Math.min(100, (results.bufferbloat / 100) * 100);

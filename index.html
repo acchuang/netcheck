@@ -505,11 +505,12 @@
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-jitter-label" data-tooltip="Variation in latency — lower is better for gaming and video calls">Jitter</div>
             <div class="speed-gauge-value" id="speed-jitter">—</div>
-            <div class="speed-gauge-unit">ms</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
-            </div>
-          </div>
+             <div class="speed-gauge-unit">ms</div>
+             <div class="speed-progress-bar">
+               <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
+             </div>
+             <div id="speed-jitter-histogram" class="speed-histogram hidden" aria-label="Ping distribution histogram"></div>
+           </div>
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="How much latency increases when the connection is under load">Bufferbloat</div>
             <div class="speed-gauge-value" id="speed-bufferbloat">—</div>
