@@ -584,20 +584,27 @@
         <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
       </div>
 
-      <div class="score-card">
-        <div class="score-ring">
-          <svg viewBox="0 0 120 120">
-            <circle class="score-ring-bg" cx="60" cy="60" r="54" />
-            <circle class="score-ring-fill" id="score-ring-fill" cx="60" cy="60" r="54" />
-          </svg>
-          <div class="score-value">
-            <span class="score-number" id="score-number">—</span>
-            <span class="score-label">/ 100</span>
-          </div>
+      <div class="card card-hero card-accent-lime">
+        <div class="card-header">
+          <h2 class="card-title" id="adblock-score-title">Ad Block Score</h2>
         </div>
-        <div class="score-meta">
-          <p class="score-summary" id="score-summary">Running tests...</p>
-          <p class="score-detail" id="score-detail"></p>
+        <div class="card-body">
+          <div class="score-card">
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="score-ring-bg" cx="60" cy="60" r="54" />
+                <circle class="score-ring-fill" id="score-ring-fill" cx="60" cy="60" r="54" />
+              </svg>
+              <div class="score-value">
+                <span class="score-number" id="score-number">—</span>
+                <span class="score-label">/ 100</span>
+              </div>
+            </div>
+            <div class="score-meta">
+              <p class="score-summary" id="score-summary">Running tests...</p>
+              <p class="score-detail" id="score-detail"></p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -769,20 +776,27 @@
         <p class="subtitle" id="fp-subtitle">See what your browser reveals about you. No data leaves your device.</p>
       </div>
 
-      <div class="fp-score-card" id="fp-score-card" style="display:none">
-        <div class="score-ring">
-          <svg viewBox="0 0 120 120">
-            <circle class="score-ring-bg" cx="60" cy="60" r="54"/>
-            <circle class="score-ring-fill" id="fp-score-ring" cx="60" cy="60" r="54"/>
-          </svg>
-          <div class="score-value">
-            <span class="score-number" id="fp-score-number">—</span>
-            <span class="score-label" id="fp-uniqueness-label">Uniqueness</span>
-          </div>
+      <div class="card card-hero card-accent-rose" id="fp-score-card" style="display:none">
+        <div class="card-header">
+          <h2 class="card-title" id="fp-score-title">Fingerprint Uniqueness</h2>
         </div>
-        <div class="score-meta">
-          <p class="score-summary" id="fp-score-summary"></p>
-          <p class="score-detail" id="fp-score-detail"></p>
+        <div class="card-body">
+          <div class="score-card">
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="score-ring-bg" cx="60" cy="60" r="54"/>
+                <circle class="score-ring-fill" id="fp-score-ring" cx="60" cy="60" r="54"/>
+              </svg>
+              <div class="score-value">
+                <span class="score-number" id="fp-score-number">—</span>
+                <span class="score-label" id="fp-uniqueness-label">Uniqueness</span>
+              </div>
+            </div>
+            <div class="score-meta">
+              <p class="score-summary" id="fp-score-summary"></p>
+              <p class="score-detail" id="fp-score-detail"></p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -812,8 +826,8 @@
       </div>
 
       <div class="cards-grid">
-        <!-- Quality Score Card -->
-        <div class="card score-card" id="quality-score-card">
+        <!-- Quality Score Card (Hero) -->
+        <div class="card card-hero card-accent-cyan" id="quality-score-card">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
