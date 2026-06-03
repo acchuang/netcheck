@@ -47,9 +47,11 @@ interface TlsCerts {
 ```
 
 **Worker changes** (`src/worker/index.ts`):
-- In the `/api/tls/check` handler, after the existing fetch to the target URL, make a follow-up fetch to `https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`
-- Parse the first (most recent) entry for subject, issuer, validity, key info
+- Reuse the existing `handleCertTransparency` handler's crt.sh fetch logic — call or extract its parsing into a shared utility rather than duplicating the crt.sh request
+- In the `/api/tls/check` handler, after the existing fetch, call the shared cert lookup for the target domain
+- Parse the most recent crt.sh entry for subject, issuer, validity, key info
 - Add a `certs` field to the `TlsTargetResult` response
+- Cache crt.sh results in an in-memory `Map<string, { data: TlsCerts; expires: number }>` with 5-minute TTL (matches the existing `rateLimitMap` pattern for in-memory caches)
 
 **Client changes** (`src/client/tabs/tls-tab.ts`):
 - Extend `TlsTargetResult` interface to include `certs` field
@@ -85,14 +87,12 @@ interface TlsCerts {
     description: string;
   }
   ```
-- After fetching target, check response headers for `cf-tls-version` and known weak cipher patterns
-- For CT-sourced certs, check key size, validity, self-signed status, SHA-1 in chain
+- After fetching target, check certificate data (from crt.sh) for key size, validity, self-signed status, SHA-1 in chain
+- For auto-detected connection, check TLS version and cipher from `/api/ip` response (`cf-tls-version`, `cf-tls-cipher` headers)
+- Note: Cloudflare Workers' `fetch()` does not expose negotiated TLS protocol/cipher for target domains, so weakness detection for target domains is limited to cert-related issues only (key size, validity, self-signed, SHA-1). Protocol/cipher weaknesses for target domains are inferred from the cert data, not from an actual TLS handshake.
 - Compute final grade: `Math.max(0, additiveScore - totalPenalties)`
 
-**Client changes** (`src/client/tabs/tls-tab.ts`):
-- If `weaknesses` array is non-empty, render them above or below the stat-strip as `status-badge fail` items with descriptions
-- Recalculate displayed grade using the penalized score
-- For the auto-detected connection, weaknesses are limited to what the browser API reveals (TLS version, cipher from `/api/ip`)
+**Auto-detected connection**: Weaknesses limited to what the browser API reveals (TLS version, cipher from `/api/ip`). Cert-related weaknesses (self-signed, SHA-1, expired, small key) are only available for target domain checks via the CT API.
 
 ### 3. Protocol & Cipher Classification
 
@@ -165,9 +165,10 @@ Quality checks per header:
 
 **Client changes** (`src/client/headers-ui.ts`):
 - Render quality badges next to pass/fail badges:
-  - `good` → existing `status-badge pass` (green)
-  - `warn` → `status-badge warn` (amber) with tooltip/note
-  - `poor` → `status-badge fail` (red) even though header is present
+- `good` → existing `status-badge pass` (green)
+- `warn` → `status-badge warn` (amber) with tooltip/note
+- `poor` → `status-badge fail` (red) even though header is present
+- If value parsing fails (e.g., HSTS `max-age=0`), default to `'warn'` — the header exists but may be misconfigured
 
 **Solution Part B — Fix suggestions**:
 
@@ -183,7 +184,7 @@ interface HeaderSuggestion {
 }
 ```
 
-**Worker changes**: Add `suggestions` array to `HeadersResponse`.
+**Worker changes**: Add `suggestions` array to `HeadersResponse`. Also update the `HeaderCheckResult` interface in `headers-ui.ts` (client-side) to include `quality?: 'good' | 'warn' | 'poor'` and `qualityNote?: string` fields matching the worker response.
 
 **Client changes**: Render a `suggestions-section` below the header analysis card, matching the existing `suggestions-grid` pattern from DNS.
 
@@ -205,11 +206,13 @@ interface SpeedTestResults {
 Track during latency test:
 - Count pings sent vs successfully received
 - `packetLoss = ((sentCount - receivedCount) / sentCount) * 100`
+- Note: This is an **HTTP request loss rate**, not true ICMP packet loss. A failed fetch could be due to CORS, DNS, timeout, or server errors — not just packet loss. The metric is labeled "request loss" in the UI to be accurate, though colloquially referred to as "packet loss"
 
 **Client changes** (`src/client/speed-ui.ts`):
 - Add a new gauge row for packet loss between jitter and bufferbloat
 - Display as percentage with quality classification:
   - 0% → `status-badge pass`; 0-2% → `status-badge warn`; > 2% → `status-badge fail`
+- Add `packetLoss` to the `SpeedGrade` factors and `getGrade()` counting (0% = pass, 0-2% = warn, > 2% = fail)
 
 **Solution Part B — Separated bufferbloat**:
 
@@ -223,7 +226,10 @@ interface SpeedTestResults {
 }
 ```
 
-Rename the existing `bufferbloat` field to be computed as `max(downloadBufferbloat, uploadBufferbloat)` for backward compatibility with the grade calculation.
+The existing `downloadLoadedLatency` and `uploadLoadedLatency` fields already exist in `SpeedTestResults` but are not displayed. Define:
+- `downloadBufferbloat = downloadLoadedLatency - latency`
+- `uploadBufferbloat = uploadLoadedLatency - latency`
+- Keep existing `bufferbloat` as `max(downloadBufferbloat, uploadBufferbloat)` for backward compatibility with the grade calculation
 
 **Client changes**:
 - In the timing breakdown, show two separate rows: "Download bufferbloat" and "Upload bufferbloat"
@@ -242,10 +248,26 @@ New suggestions added to the `dnsSuggestions` array:
 | "Your DNS resolver appears to be tampering with results. Switch to a trusted resolver." | `ctx.hijackTrustScore < 70` |
 | "Your DNS resolver is leaking your IP subnet (ECS detected). Enable DNS-over-HTTPS to prevent this." | `ctx.ecsRating === 'significant'` |
 | "Your resolver does not validate DNSSEC. Switch to a DNSSEC-validating resolver." | `!ctx.hasSecurity('DNSSEC Validation')` |
-| "Your fastest resolver is significantly slower than alternatives. Consider switching for better performance." | `ctx.slowestResolver() > 100` |
+| "Your slowest resolver is significantly slower than alternatives. Consider switching for better performance." | `ctx.slowestResolver() > 100` |
 
 **Implementation**:
-- Extend the `DnsContext` interface to include hijack/ECS/benchmark data
+- Extend the `DnsContext` interface (`dns-ui.ts:29-36`) with new fields:
+
+```typescript
+interface DnsContext {
+  usingResolver: (name: string) => boolean;
+  slowestResolver: () => number;
+  fastestResolver: () => number;
+  hasSecurity: (name: string) => boolean;
+  hasWebRtcLeak: boolean;
+  reachableCount: number;
+  // NEW:
+  hijackTrustScore: number;      // 0-100, from hijack check results
+  ecsRating: 'significant' | 'moderate' | 'none';  // from ECS check results
+}
+```
+
+- Populate these fields from `dnsState` hijack/ECS data after the audit runs
 - After audit results render, recompute suggestions with the enriched context
 - The existing `renderSuggestions()` function and `suggestions-grid` layout are reused — no new UI components needed
 
