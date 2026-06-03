@@ -15,6 +15,9 @@ export interface SpeedTestResults {
   downloadLoadedLatency: number | null;
   uploadLoadedLatency: number | null;
   bufferbloat: number | null;
+  packetLoss: number | null;
+  downloadBufferbloat: number | null;
+  uploadBufferbloat: number | null;
   timing: ResourceTimingBreakdown | null;
   connectionInfo: ConnectionInfo | null;
   avgRtt: number | null;
@@ -30,6 +33,7 @@ export interface SpeedGrade {
     latency: 'pass' | 'warn' | 'fail';
     jitter: 'pass' | 'warn' | 'fail';
     bufferbloat: 'pass' | 'warn' | 'fail';
+    packetLoss: 'pass' | 'warn' | 'fail';
   };
 }
 
@@ -215,6 +219,9 @@ export const SpeedTest = {
     downloadLoadedLatency: null,
     uploadLoadedLatency: null,
     bufferbloat: null,
+    packetLoss: null,
+    downloadBufferbloat: null,
+    uploadBufferbloat: null,
     timing: null,
     connectionInfo: null,
     avgRtt: null,
@@ -233,6 +240,9 @@ export const SpeedTest = {
       downloadLoadedLatency: null,
       uploadLoadedLatency: null,
       bufferbloat: null,
+      packetLoss: null,
+      downloadBufferbloat: null,
+      uploadBufferbloat: null,
       timing: null,
       connectionInfo: null,
       avgRtt: null,
@@ -244,7 +254,10 @@ export const SpeedTest = {
 
     cb('latency', 0, this.results);
     const pings: number[] = [];
+    let pingsSent = 0;
+    let pingsReceived = 0;
     for (let i = 0; i < PING_COUNT; i++) {
+      pingsSent++;
       try {
         const start = performance.now();
         const res = await fetch(`/api/speedtest/ping?_=${Date.now()}`, {
@@ -252,6 +265,7 @@ export const SpeedTest = {
           signal: AbortSignal.timeout(4000),
         });
         pings.push(performance.now() - start);
+        pingsReceived++;
         if (i === 0) {
           this.results.colo = res.headers.get('x-colo') || null;
           const lat = res.headers.get('x-lat');
@@ -299,6 +313,8 @@ export const SpeedTest = {
       this.results.jitter =
         pings.length > 1 ? Math.round((jitterSum / (pings.length - 1)) * 10) / 10 : 0;
     }
+    this.results.packetLoss = pingsSent > 0 ? Math.round(((pingsSent - pingsReceived) / pingsSent) * 1000) / 10 : null;
+
     cb('latency', 100, this.results);
 
     await warmUp();
@@ -442,6 +458,15 @@ export const SpeedTest = {
     this.results.bufferbloat =
       idleRtt !== null ? Math.round(Math.max(0, maxLoadedRtt - idleRtt) * 10) / 10 : null;
 
+    this.results.downloadBufferbloat =
+      idleRtt !== null && this.results.downloadLoadedLatency !== null
+        ? Math.round(Math.max(0, this.results.downloadLoadedLatency - idleRtt) * 10) / 10
+        : null;
+    this.results.uploadBufferbloat =
+      idleRtt !== null && this.results.uploadLoadedLatency !== null
+        ? Math.round(Math.max(0, this.results.uploadLoadedLatency - idleRtt) * 10) / 10
+        : null;
+
     this.results.timing = collectSpeedTiming();
 
     return this.results;
@@ -460,12 +485,14 @@ export const SpeedTest = {
     latency?: number | null,
     jitter?: number | null,
     bufferbloat?: number | null,
+    packetLoss?: number | null,
   ): SpeedGrade {
     const dl = download ?? 0;
     const ul = upload ?? 0;
     const lat = latency ?? (dl > 0 ? 999 : 0);
     const jit = jitter ?? (dl > 0 ? 999 : 0);
     const bb = bufferbloat ?? (dl > 0 ? 999 : 0);
+    const pl = packetLoss ?? (dl > 0 ? 999 : 0);
 
     const factors: SpeedGrade['factors'] = {
       download: dl >= 100 ? 'pass' : dl >= 25 ? 'warn' : 'fail',
@@ -473,16 +500,17 @@ export const SpeedTest = {
       latency: lat < 20 ? 'pass' : lat < 50 ? 'warn' : 'fail',
       jitter: jit < 5 ? 'pass' : jit < 15 ? 'warn' : 'fail',
       bufferbloat: bb < 20 ? 'pass' : bb < 50 ? 'warn' : 'fail',
+      packetLoss: pl === 0 ? 'pass' : pl <= 2 ? 'warn' : 'fail',
     };
 
     const passCount = Object.values(factors).filter((v) => v === 'pass').length;
     const failCount = Object.values(factors).filter((v) => v === 'fail').length;
 
     if (download === null) return { grade: '—', label: 'Unknown', factors };
-    if (failCount === 0 && passCount === 5) return { grade: 'A+', label: 'Exceptional', factors };
-    if (failCount === 0 && passCount >= 4) return { grade: 'A', label: 'Excellent', factors };
-    if (failCount === 0 && passCount >= 3) return { grade: 'B+', label: 'Very Good', factors };
-    if (failCount <= 1 && passCount >= 3) return { grade: 'B', label: 'Good', factors };
+    if (failCount === 0 && passCount === 6) return { grade: 'A+', label: 'Exceptional', factors };
+    if (failCount === 0 && passCount >= 5) return { grade: 'A', label: 'Excellent', factors };
+    if (failCount === 0 && passCount >= 4) return { grade: 'B+', label: 'Very Good', factors };
+    if (failCount <= 1 && passCount >= 4) return { grade: 'B', label: 'Good', factors };
     if (failCount <= 1) return { grade: 'C+', label: 'Average', factors };
     if (failCount <= 2) return { grade: 'C', label: 'Below Average', factors };
     if (failCount <= 3) return { grade: 'D', label: 'Poor', factors };

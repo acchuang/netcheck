@@ -518,6 +518,30 @@
               <div class="speed-progress-fill bufferbloat" id="speed-bufferbloat-bar"></div>
             </div>
           </div>
+          <div class="speed-gauge">
+            <div class="speed-gauge-label" id="speed-packetloss-label" data-tooltip="Percentage of requests that failed during latency testing">Request Loss</div>
+            <div class="speed-gauge-value" id="speed-packetloss">—</div>
+            <div class="speed-gauge-unit">%</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill" id="speed-packetloss-bar"></div>
+            </div>
+          </div>
+          <div class="speed-gauge" style="padding-left:16px;border-left:1px solid var(--surface-tertiary);margin-left:8px">
+            <div class="speed-gauge-label" style="font-size:12px" id="speed-dl-bufferbloat-label">↓ Download Bufferbloat</div>
+            <div class="speed-gauge-value" style="font-size:14px" id="speed-dl-bufferbloat">—</div>
+            <div class="speed-gauge-unit">ms</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill bufferbloat" id="speed-dl-bufferbloat-bar"></div>
+            </div>
+          </div>
+          <div class="speed-gauge" style="padding-left:16px;border-left:1px solid var(--surface-tertiary);margin-left:8px">
+            <div class="speed-gauge-label" style="font-size:12px" id="speed-ul-bufferbloat-label">↑ Upload Bufferbloat</div>
+            <div class="speed-gauge-value" style="font-size:14px" id="speed-ul-bufferbloat">—</div>
+            <div class="speed-gauge-unit">ms</div>
+            <div class="speed-progress-bar">
+              <div class="speed-progress-fill bufferbloat" id="speed-ul-bufferbloat-bar"></div>
+            </div>
+          </div>
         </div>
 
         <div class="speed-status-row">

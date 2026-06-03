@@ -142,12 +142,38 @@ async function runSpeedTest(): Promise<void> {
     bbBar.style.width = `${bbPct}%`;
   }
 
+  const packetLossEl = document.getElementById('speed-packetloss');
+  if (packetLossEl) {
+    packetLossEl.textContent = results.packetLoss !== null ? `${results.packetLoss}%` : '—';
+  }
+  if (results.packetLoss !== null) {
+    const plBar = document.getElementById('speed-packetloss-bar') as HTMLElement;
+    if (plBar) {
+      const plPct = Math.min(100, (results.packetLoss / 10) * 100);
+      plBar.style.width = `${plPct}%`;
+    }
+  }
+
+  if (results.downloadBufferbloat !== null) {
+    const dlBbEl = document.getElementById('speed-dl-bufferbloat');
+    const dlBbBar = document.getElementById('speed-dl-bufferbloat-bar') as HTMLElement;
+    if (dlBbEl) dlBbEl.textContent = `${Math.round(results.downloadBufferbloat)} ms`;
+    if (dlBbBar) dlBbBar.style.width = `${Math.min(100, (results.downloadBufferbloat / 100) * 100)}%`;
+  }
+  if (results.uploadBufferbloat !== null) {
+    const ulBbEl = document.getElementById('speed-ul-bufferbloat');
+    const ulBbBar = document.getElementById('speed-ul-bufferbloat-bar') as HTMLElement;
+    if (ulBbEl) ulBbEl.textContent = `${Math.round(results.uploadBufferbloat)} ms`;
+    if (ulBbBar) ulBbBar.style.width = `${Math.min(100, (results.uploadBufferbloat / 100) * 100)}%`;
+  }
+
   const grade = SpeedTest.getGrade(
     results.download,
     results.upload,
     results.latency,
     results.jitter,
     results.bufferbloat,
+    results.packetLoss,
   );
   const gradeEl = document.getElementById('speed-grade')!;
   gradeEl.textContent = grade.grade;
@@ -164,6 +190,7 @@ async function runSpeedTest(): Promise<void> {
     { key: 'latency', label: t('speed.factor.latency') },
     { key: 'jitter', label: t('speed.factor.jitter') },
     { key: 'bufferbloat', label: t('speed.factor.bufferbloat') },
+    { key: 'packetLoss', label: 'Packet Loss' },
   ];
   factorsEl.innerHTML = factorKeys
     .map((f) => {
@@ -189,6 +216,8 @@ async function runSpeedTest(): Promise<void> {
     results.upload ?? 0,
     results.latency ?? 0,
     results.jitter ?? 0,
+    results.bufferbloat ?? 0,
+    results.packetLoss ?? 0,
   );
   saveHistoryEntry({
     v: 1,
