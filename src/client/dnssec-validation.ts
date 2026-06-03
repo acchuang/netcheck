@@ -3,6 +3,48 @@ import { t } from './i18n';
 import { dnssecValidationState } from './state/dnssec-validation-state';
 import type { DnssecChainStep } from './state/dnssec-validation-state';
 
+const DNS_ALGORITHMS: Record<number, string> = {
+  1: 'RSA/MD5',
+  5: 'RSA/SHA-1',
+  8: 'RSA/SHA-256',
+  10: 'RSA/SHA-512',
+  13: 'ECDSA/P-256',
+  14: 'ECDSA/P-384',
+  15: 'Ed25519',
+  16: 'Ed448',
+};
+
+const DNS_DIGEST_TYPES: Record<number, string> = {
+  1: 'SHA-1',
+  2: 'SHA-256',
+  3: 'GOST R 34.11-94',
+  4: 'SHA-384',
+};
+
+const DNSKEY_FLAGS: Record<number, string> = {
+  256: 'ZSK (Zone Signing Key)',
+  257: 'KSK (Key Signing Key)',
+};
+
+function decodeDnssecDetails(details: string): string {
+  return details
+    .replace(/alg=(\d+)/g, (_, n) => {
+      const num = parseInt(n, 10);
+      const name = DNS_ALGORITHMS[num];
+      return name ? `${name} (Algorithm ${num})` : `Algorithm ${num}`;
+    })
+    .replace(/digestType=(\d+)/g, (_, n) => {
+      const num = parseInt(n, 10);
+      const name = DNS_DIGEST_TYPES[num];
+      return name ? `${name} (Digest Type ${num})` : `Digest Type ${num}`;
+    })
+    .replace(/flags=(\d+)/g, (_, n) => {
+      const num = parseInt(n, 10);
+      const name = DNSKEY_FLAGS[num];
+      return name ? `${name} (Flags ${num})` : `Flags ${num}`;
+    });
+}
+
 interface DnssecResult {
   domain: string;
   status: 'SECURE' | 'INSECURE' | 'BOGUS' | 'ERROR';
@@ -121,7 +163,7 @@ async function runDnssecCheck(): Promise<void> {
                 </svg>
                 <div style="flex:1">
                   <div style="font-weight:600;font-size:13px">${step.step}</div>
-                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${step.details}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${decodeDnssecDetails(step.details)}</div>
                 </div>
               </div>
             `;
