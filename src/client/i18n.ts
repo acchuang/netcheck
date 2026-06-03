@@ -908,61 +908,18 @@ export function initI18n(): void {
   document.documentElement.lang = langMap[current];
   applyStaticTranslations();
 
-  // Language dropdown menu
-  const langToggle = document.getElementById('lang-toggle');
   const langMenu = document.getElementById('lang-menu');
-  if (!langToggle || !langMenu) return;
-
-  function hideMenu(): void {
-    langMenu!.classList.remove('open');
-    langToggle!.setAttribute('aria-expanded', 'false');
-  }
-
-  function positionPanel(trigger: HTMLElement, panel: HTMLElement): void {
-    const r = trigger.getBoundingClientRect();
-    const vpH = window.innerHeight;
-    const vpW = window.innerWidth;
-    const panelH = panel.offsetHeight || 200;
-    const panelW = panel.offsetWidth || 160;
-    // Place panel right of the sidebar; clamp to viewport
-    const sidebarW = vpW >= 769 ? 220 : (vpW >= 641 ? 220 : 280);
-    const left = Math.min(sidebarW + 8, vpW - panelW - 8);
-    const top = Math.max(8, Math.min(r.top, vpH - panelH - 8));
-    panel.style.top = `${Math.round(top)}px`;
-    panel.style.left = `${Math.round(left)}px`;
-  }
-
-  function toggleMenu(): void {
-    const isOpen = langMenu!.classList.contains('open');
-    if (isOpen) {
-      hideMenu();
-    } else {
-      document.getElementById('export-menu')?.classList.remove('open');
-      langMenu!.classList.add('open');
-      langToggle!.setAttribute('aria-expanded', 'true');
-      positionPanel(langToggle!, langMenu!);
-    }
-  }
-
-  langToggle.addEventListener('click', toggleMenu);
 
   // Click a language option
-  langMenu.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const loc = btn.dataset.lang as Locale;
-      if (loc) setLocale(loc);
-      hideMenu();
+  if (langMenu) {
+    langMenu.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const loc = btn.dataset.lang as Locale;
+        if (loc) setLocale(loc);
+        langMenu.classList.remove('open');
+      });
     });
-  });
-
-  // Close on outside click or Escape
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('#lang-dropdown') && !target.closest('#lang-menu')) hideMenu();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hideMenu();
-  });
+  }
 }
 
 function applyStaticTranslations(): void {
@@ -985,7 +942,7 @@ function applyStaticTranslations(): void {
     { selector: '#export-btn', key: 'nav.exportReport', attr: 'data-tooltip' },
     { selector: '#export-markdown-text', key: 'nav.downloadMd' },
     { selector: '#export-pdf-text', key: 'nav.savePdf' },
-    { selector: '#lang-toggle', key: 'nav.lang', attr: 'title' },
+    { selector: '#lang-toggle-header', key: 'nav.lang', attr: 'title' },
 
     // DNS
     { selector: '#dns-title', key: 'dns.title' },
@@ -1103,7 +1060,7 @@ function applyStaticTranslations(): void {
   }
 
   // Update lang toggle label
-  const langBtn = document.getElementById('lang-toggle');
+  const langBtn = document.getElementById('lang-toggle-header') || document.getElementById('lang-toggle');
   if (langBtn) {
     const label = langBtn.querySelector('.nav-toolbar-badge');
     const labels: Record<Locale, string> = {
@@ -1115,6 +1072,7 @@ function applyStaticTranslations(): void {
       ko: 'KR',
     };
     if (label) label.textContent = labels[current];
+    else langBtn.textContent = labels[current];
   }
 
   // Page title — include active tab if any

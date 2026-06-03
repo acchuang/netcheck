@@ -57,7 +57,9 @@ export function initTooltips(): void {
   document.addEventListener(
     'mouseenter',
     (e) => {
-      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const target = t.closest('[data-tooltip]') as HTMLElement | null;
       if (!target) return;
       showTooltip(target);
     },
@@ -67,7 +69,9 @@ export function initTooltips(): void {
   document.addEventListener(
     'mouseleave',
     (e) => {
-      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const target = t.closest('[data-tooltip]') as HTMLElement | null;
       if (target) hideTooltip(target);
     },
     true,
@@ -76,7 +80,9 @@ export function initTooltips(): void {
   document.addEventListener(
     'touchstart',
     (e) => {
-      const target = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const target = t.closest('[data-tooltip]') as HTMLElement | null;
       if (!target) return;
       const touch = e.touches[0];
       pressStartX = touch.clientX;

@@ -272,7 +272,9 @@ function initTabs(): void {
   }
 
   document.addEventListener('click', (e) => {
-    if (!(e.target as HTMLElement).closest('.nav-toolbar-item') && !(e.target as HTMLElement).closest('.nav-toolbar-panel') && !(e.target as HTMLElement).closest('.nav-header-btn')) {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (!t.closest('.nav-toolbar-item') && !t.closest('.nav-toolbar-panel') && !t.closest('.nav-header-btn')) {
       document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
     }
   });
