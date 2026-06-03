@@ -237,6 +237,91 @@ export const RATE_LIMIT_MAX = 120;
 export const RATE_LIMIT_SPEED_BURST = 60;
 export const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
+const crtCache = new Map<string, { data: any[]; expires: number }>();
+const CRT_CACHE_TTL = 5 * 60 * 1000;
+
+interface WorkerTlsCerts {
+  subject: { cn: string; sans: string[]; organization?: string };
+  issuer: { cn: string; organization?: string };
+  validity: { notBefore: string; notAfter: string; daysRemaining: number };
+  key: { type: string; size: number };
+  fingerprint: string;
+  chainDepth: number;
+}
+
+interface WorkerTlsWeakness {
+  id: string;
+  severity: 'critical' | 'high' | 'medium';
+  description: string;
+}
+
+async function fetchCrtShCerts(domain: string): Promise<any[] | null> {
+  const cached = crtCache.get(domain);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  try {
+    const res = await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`, {
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'NetCheck/1.0' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as any[];
+    crtCache.set(domain, { data, expires: Date.now() + CRT_CACHE_TTL });
+    if (crtCache.size > 500) {
+      const oldest = [...crtCache.entries()].sort((a, b) => a[1].expires - b[1].expires);
+      for (let i = 0; i < 100 && i < oldest.length; i++) crtCache.delete(oldest[i][0]);
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function parseCertFromCrtSh(entries: any[], domain: string): WorkerTlsCerts | null {
+  if (!entries || entries.length === 0) return null;
+  const cert = entries[0];
+  const now = new Date();
+  const notBefore = cert.not_before ?? '';
+  const notAfter = cert.not_after ?? '';
+  const daysRemaining = notAfter
+    ? Math.floor((new Date(notAfter).getTime() - now.getTime()) / 86400000)
+    : -1;
+  const cn = cert.common_name ?? cert.name_value?.split('\n')[0] ?? domain;
+  const sans = (cert.name_value ?? '').split('\n').filter((s: string) => s && s !== cn);
+  const rawKeyType = cert.key_type ?? '';
+  const keyType = rawKeyType.includes('RSA') ? 'RSA' : rawKeyType.includes('EC') ? 'ECDSA' : 'unknown';
+  return {
+    subject: { cn, sans, organization: cert.organization ?? undefined },
+    issuer: { cn: cert.issuer_name ?? '', organization: cert.issuer_organization ?? undefined },
+    validity: { notBefore, notAfter, daysRemaining },
+    key: { type: keyType, size: cert.key_length ?? 0 },
+    fingerprint: cert.sha256 ?? '',
+    chainDepth: entries.length,
+  };
+}
+
+function detectWeaknesses(certs: WorkerTlsCerts | null): WorkerTlsWeakness[] {
+  const weaknesses: WorkerTlsWeakness[] = [];
+  if (certs) {
+    if (certs.validity.daysRemaining < 0) {
+      weaknesses.push({ id: 'cert-expired', severity: 'critical', description: 'Certificate has expired' });
+    } else if (certs.validity.daysRemaining <= 7) {
+      weaknesses.push({ id: 'cert-expiring', severity: 'critical', description: `Certificate expires in ${certs.validity.daysRemaining} days` });
+    } else if (certs.validity.daysRemaining <= 30) {
+      weaknesses.push({ id: 'cert-expiring-soon', severity: 'high', description: `Certificate expires in ${certs.validity.daysRemaining} days` });
+    }
+    if (certs.key.type === 'RSA' && certs.key.size > 0 && certs.key.size < 2048) {
+      weaknesses.push({ id: 'small-key', severity: 'high', description: `Weak key: RSA ${certs.key.size} bits (minimum 2048)` });
+    }
+    if (certs.key.type === 'ECDSA' && certs.key.size > 0 && certs.key.size < 224) {
+      weaknesses.push({ id: 'small-key', severity: 'high', description: `Weak key: ECDSA ${certs.key.size} bits (minimum 224)` });
+    }
+    if (certs.subject.cn === certs.issuer.cn) {
+      weaknesses.push({ id: 'self-signed', severity: 'high', description: 'Self-signed certificate' });
+    }
+  }
+  return weaknesses;
+}
+
 export function checkRateLimit(request: Request): Response | null {
   const url = new URL(request.url);
   const isSpeedTest = url.pathname.startsWith('/api/speedtest/');
@@ -2185,6 +2270,8 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     grade: string;
     score: number;
     error?: string;
+    certs?: WorkerTlsCerts | null;
+    weaknesses?: WorkerTlsWeakness[];
   } = {
     domain,
     httpsAvailable: false,
@@ -2245,6 +2332,16 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     const grade =
       score >= 93 ? 'A+' : score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
     result.grade = grade;
+
+    const certEntries = await fetchCrtShCerts(domain);
+    result.certs = certEntries ? parseCertFromCrtSh(certEntries, domain) : null;
+    result.weaknesses = detectWeaknesses(result.certs);
+
+    if (result.weaknesses.length > 0) {
+      const penalty = result.weaknesses.reduce((sum, w) => sum + (w.severity === 'critical' ? 30 : w.severity === 'high' ? 20 : 10), 0);
+      result.score = Math.max(0, result.score - penalty);
+      result.grade = result.score >= 93 ? 'A+' : result.score >= 85 ? 'A' : result.score >= 70 ? 'B' : result.score >= 55 ? 'C' : result.score >= 40 ? 'D' : 'F';
+    }
   } catch {
     if (!result.httpsAvailable && !result.redirectsToHttps) {
       result.error = 'Domain does not support HTTPS';
