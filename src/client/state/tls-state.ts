@@ -13,6 +13,7 @@ export interface TlsInfo {
   hstsPreload: boolean;
   ocspStapling: string;
   grade: string;
+  weaknesses: Array<{ id: string; severity: 'critical' | 'high' | 'medium'; description: string }>;
 }
 
 export function inferKeyExchange(cipher: string): string {
@@ -115,6 +116,14 @@ export async function runTlsCheck(): Promise<void> {
     const forwardSecrecy = hasForwardSecrecy(cipher);
     const protocol = (ipData.tlsVersion as string) || 'Unknown';
 
+    const weaknesses: Array<{ id: string; severity: 'critical' | 'high' | 'medium'; description: string }> = [];
+    if (protocol === 'TLSv1.0' || protocol === 'TLSv1.1' || protocol === 'TLSv1' || protocol === 'SSLv3') {
+      weaknesses.push({ id: 'tls-outdated', severity: 'critical', description: `${protocol} is outdated and insecure` });
+    }
+    if (/3DES|RC4|NULL|EXPORT/i.test(cipher)) {
+      weaknesses.push({ id: 'weak-cipher', severity: 'high', description: `Weak cipher: ${cipher}` });
+    }
+
     const info: TlsInfo = {
       protocol,
       cipher,
@@ -128,6 +137,7 @@ export async function runTlsCheck(): Promise<void> {
       hstsPreload,
       ocspStapling: 'Unknown (not detectable client-side)',
       grade: computeTlsGrade(protocol, cipher, forwardSecrecy, hstsStatus),
+      weaknesses,
     };
 
     tlsState.info.set(info);

@@ -157,6 +157,21 @@ function renderTlsInfo(info: TlsInfo): string {
         </div>
       </div>
     </div>
+    ${info.weaknesses.length > 0 ? `
+      <div class="card card-compact" style="margin-top:var(--space-3)">
+        <div class="card-header">
+          <h2 class="card-title">Warnings</h2>
+        </div>
+        <div class="card-body">
+          ${info.weaknesses.map(w => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface-tertiary)">
+              <span class="status-badge ${w.severity === 'critical' ? 'fail' : w.severity === 'high' ? 'fail' : 'warn'}">${w.severity.toUpperCase()}</span>
+              <span style="font-size:var(--text-mono);color:var(--text-primary)">${w.description}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
   `;
 }
 
