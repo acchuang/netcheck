@@ -971,23 +971,78 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
     headers[key.toLowerCase()] = value;
   }
 
+  const cspAnalysis = parseCsp(headers['content-security-policy'] || null);
+
   const checks = SECURITY_HEADERS.map((h) => {
     const value = headers[h.key] || null;
-    return {
-      name: h.name,
-      key: h.key,
-      desc: h.desc,
-      value,
-      present: !!value,
-    };
+    const present = !!value;
+    let quality: 'good' | 'warn' | 'poor' | undefined;
+    let qualityNote: string | undefined;
+
+    if (present && value !== null) {
+      switch (h.key) {
+        case 'strict-transport-security': {
+          const maxAgeMatch = value.match(/max-age=(\d+)/i);
+          const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 0;
+          if (maxAge >= 31536000) { quality = 'good'; }
+          else if (maxAge >= 15552000) { quality = 'warn'; qualityNote = `max-age is ${Math.round(maxAge / 86400)} days (recommended: ≥365 days)`; }
+          else { quality = 'poor'; qualityNote = `max-age is only ${maxAge} seconds (${Math.round(maxAge / 86400)} days)`; }
+          break;
+        }
+        case 'x-frame-options': {
+          const v = value.trim().toUpperCase();
+          if (v === 'DENY' || v === 'SAMEORIGIN') quality = 'good';
+          else if (v === 'ALLOWALL') { quality = 'poor'; qualityNote = 'ALLOWALL is equivalent to not setting this header'; }
+          else { quality = 'poor'; qualityNote = `Unrecognized value: ${value}`; }
+          break;
+        }
+        case 'referrer-policy': {
+          const v = value.trim().toLowerCase();
+          if (v === 'no-referrer' || v === 'strict-origin-when-cross-origin' || v === 'no-referrer-when-downgrade') quality = 'good';
+          else if (v === 'origin' || v === 'unsafe-url') { quality = 'poor'; qualityNote = `${value} leaks referrer data`; }
+          else { quality = 'warn'; qualityNote = `Unrecognized policy: ${value}`; }
+          break;
+        }
+        case 'x-content-type-options': {
+          quality = value.trim().toLowerCase() === 'nosniff' ? 'good' : 'poor';
+          if (quality === 'poor') qualityNote = `Expected "nosniff", got "${value}"`;
+          break;
+        }
+        case 'permissions-policy': {
+          quality = 'good';
+          break;
+        }
+        case 'x-xss-protection': {
+          if (value.trim() === '1; mode=block') { quality = 'warn'; qualityNote = 'X-XSS-Protection is deprecated; use Content-Security-Policy instead'; }
+          else { quality = 'poor'; qualityNote = `Value "${value}" provides no protection or may be harmful`; }
+          break;
+        }
+        case 'cross-origin-opener-policy':
+        case 'cross-origin-embedder-policy':
+        case 'cross-origin-resource-policy': {
+          quality = 'good';
+          break;
+        }
+        case 'content-security-policy': {
+          quality = cspAnalysis.present && cspAnalysis.score >= 70 ? 'good' : cspAnalysis.present ? 'warn' : undefined;
+          break;
+        }
+      }
+    }
+
+    return { name: h.name, key: h.key, desc: h.desc, value, present, quality, qualityNote };
   });
 
   const present = checks.filter((c) => c.present).length;
   const total = checks.length;
 
-  const cspAnalysis = parseCsp(headers['content-security-policy'] || null);
-
-  const otherHeadersScore = total > 1 ? ((present - (cspAnalysis.present ? 1 : 0)) / (total - 1)) * 100 : 0;
+  const qualityPenalty = checks.reduce((sum, c) => {
+    if (!c.present) return sum;
+    if (c.quality === 'poor') return sum + 1;
+    return sum;
+  }, 0);
+  const adjustedPresent = Math.max(0, present - qualityPenalty);
+  const otherHeadersScore = total > 1 ? ((adjustedPresent - (cspAnalysis.present ? 1 : 0)) / (total - 1)) * 100 : 0;
   const cspWeight = 0.3;
   const otherWeight = 0.7;
   const weightedScore = cspAnalysis.present
@@ -1006,6 +1061,73 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
               ? 'D'
               : 'F';
 
+  const suggestions: Array<{
+    header: string;
+    severity: 'critical' | 'important' | 'info';
+    message: string;
+    fix: string;
+    url: string;
+  }> = [];
+
+  const headerDocs: Record<string, string> = {
+    'strict-transport-security': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security',
+    'content-security-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
+    'x-content-type-options': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options',
+    'x-frame-options': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options',
+    'referrer-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy',
+    'permissions-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy',
+    'x-xss-protection': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection',
+    'cross-origin-opener-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy',
+    'cross-origin-embedder-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy',
+    'cross-origin-resource-policy': 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy',
+  };
+
+  const headerFixes: Record<string, string> = {
+    'strict-transport-security': 'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload',
+    'content-security-policy': "Content-Security-Policy: default-src 'self'",
+    'x-content-type-options': 'X-Content-Type-Options: nosniff',
+    'x-frame-options': 'X-Frame-Options: DENY',
+    'referrer-policy': 'Referrer-Policy: strict-origin-when-cross-origin',
+    'permissions-policy': 'Permissions-Policy: camera=(), microphone=(), geolocation=()',
+    'x-xss-protection': 'Remove X-XSS-Protection (deprecated; use CSP instead)',
+    'cross-origin-opener-policy': 'Cross-Origin-Opener-Policy: same-origin',
+    'cross-origin-embedder-policy': 'Cross-Origin-Embedder-Policy: require-corp',
+    'cross-origin-resource-policy': 'Cross-Origin-Resource-Policy: same-origin',
+  };
+
+  const headerSeverity: Record<string, 'critical' | 'important' | 'info'> = {
+    'strict-transport-security': 'critical',
+    'content-security-policy': 'critical',
+    'x-content-type-options': 'important',
+    'x-frame-options': 'important',
+    'referrer-policy': 'important',
+    'permissions-policy': 'info',
+    'x-xss-protection': 'info',
+    'cross-origin-opener-policy': 'important',
+    'cross-origin-embedder-policy': 'important',
+    'cross-origin-resource-policy': 'important',
+  };
+
+  for (const check of checks) {
+    if (!check.present) {
+      suggestions.push({
+        header: check.key,
+        severity: headerSeverity[check.key] || 'info',
+        message: `Missing ${check.key} header`,
+        fix: headerFixes[check.key] || `Add ${check.key} header`,
+        url: headerDocs[check.key] || '',
+      });
+    } else if (check.quality === 'poor' && check.qualityNote) {
+      suggestions.push({
+        header: check.key,
+        severity: 'important',
+        message: check.qualityNote,
+        fix: headerFixes[check.key] || `Fix ${check.key} configuration`,
+        url: headerDocs[check.key] || '',
+      });
+    }
+  }
+
   return Response.json(
     {
       url: targetUrl,
@@ -1014,6 +1136,7 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
       score: { present, total },
       checks,
       cspAnalysis,
+      suggestions,
       server: headers['server'] || null,
       poweredBy: headers['x-powered-by'] || null,
     },
