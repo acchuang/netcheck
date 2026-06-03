@@ -965,6 +965,84 @@ function parseCsp(cspHeader: string | null): CspAnalysis {
   return { present: true, raw: cspHeader, directives, issues, score, grade };
 }
 
+interface PermissionsPolicyIssue {
+  severity: 'high' | 'medium' | 'low';
+  directive: string;
+  value: string;
+  message: string;
+}
+
+interface PermissionsPolicyAnalysis {
+  present: boolean;
+  raw: string | null;
+  directives: { name: string; values: string[] }[];
+  issues: PermissionsPolicyIssue[];
+  score: number;
+  grade: string;
+}
+
+function parsePermissionsPolicy(raw: string | null): PermissionsPolicyAnalysis {
+  if (!raw) return { present: false, raw: null, directives: [], issues: [], score: 0, grade: 'F' };
+
+  const directives: { name: string; values: string[] }[] = [];
+  const issues: PermissionsPolicyIssue[] = [];
+  const knownDirectives = [
+    'accelerometer', 'ambient-light-sensor', 'autoplay', 'battery', 'camera',
+    'clipboard-read', 'clipboard-write', 'cross-origin-isolated', 'display-capture',
+    'document-domain', 'encrypted-media', 'execution-while-not-rendered',
+    'execution-while-out-of-viewport', 'fullscreen', 'gamepad', 'geolocation',
+    'gyroscope', 'hid', 'identity-credentials', 'idle-detection', 'local-fonts',
+    'magnetometer', 'microphone', 'midi', 'otp-credentials', 'payment', 'picture-in-picture',
+    'publickey-credentials-create', 'publickey-credentials-get', 'screen-wake-lock',
+    'serial', 'speaker-selection', 'storage-access', 'usb', 'web-share', 'window-management',
+    'xr-spatial-tracking',
+  ];
+
+  const parts = raw.split(';').map((p) => p.trim()).filter(Boolean);
+  let score = 100;
+
+  for (const part of parts) {
+    const eq = part.indexOf('=');
+    if (eq === -1) {
+      const name = part.trim();
+      directives.push({ name, values: ['*'] });
+      if (name === '*') {
+        issues.push({ severity: 'high', directive: name, value: '*', message: 'Wildcard allows all origins for this feature' });
+        score -= 15;
+      }
+      continue;
+    }
+    const name = part.slice(0, eq).trim();
+    const valueStr = part.slice(eq + 1).trim();
+    const values = valueStr === '()' ? [] : valueStr.slice(1, -1).split(' ').map((v) => v.trim()).filter(Boolean);
+    directives.push({ name, values });
+
+    if (values.includes('*') || values.includes('self')) {
+      if (['camera', 'microphone', 'geolocation', 'payment', 'usb', 'hid', 'serial'].includes(name)) {
+        issues.push({ severity: 'high', directive: name, value: values.join(' '), message: `Sensitive feature ${name} should be restricted to specific origins` });
+        score -= 10;
+      } else {
+        issues.push({ severity: 'medium', directive: name, value: values.join(' '), message: `Feature ${name} allows broadly — consider restricting to specific origins` });
+        score -= 5;
+      }
+    }
+  }
+
+  const foundDirectives = directives.map((d) => d.name);
+  const missingCritical = ['camera', 'microphone', 'geolocation'].filter((d) => !foundDirectives.includes(d));
+  if (missingCritical.length > 0 && directives.length > 0) {
+    for (const d of missingCritical) {
+      issues.push({ severity: 'low', directive: d, value: '', message: `Missing directive: ${d}. Consider explicitly restricting it with ()` });
+      score -= 2;
+    }
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  const grade = score >= 93 ? 'A+' : score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+
+  return { present: true, raw, directives, issues, score, grade };
+}
+
 function buildHeadersResponse(res: Response, targetUrl: string, request: Request): Response {
   const headers: Record<string, string> = {};
   for (const [key, value] of res.headers) {
@@ -972,6 +1050,7 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
   }
 
   const cspAnalysis = parseCsp(headers['content-security-policy'] || null);
+  const permissionsPolicyAnalysis = parsePermissionsPolicy(headers['permissions-policy'] || null);
 
   const checks = SECURITY_HEADERS.map((h) => {
     const value = headers[h.key] || null;
@@ -1009,7 +1088,9 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
           break;
         }
         case 'permissions-policy': {
-          quality = 'good';
+          quality = permissionsPolicyAnalysis.score >= 70 ? 'good' : permissionsPolicyAnalysis.score >= 40 ? 'warn' : 'poor';
+          if (quality === 'warn') qualityNote = `Permissions-Policy score: ${permissionsPolicyAnalysis.score}/100`;
+          if (quality === 'poor') qualityNote = `Permissions-Policy score: ${permissionsPolicyAnalysis.score}/100 — many features unrestricted`;
           break;
         }
         case 'x-xss-protection': {
@@ -1136,6 +1217,7 @@ function buildHeadersResponse(res: Response, targetUrl: string, request: Request
       score: { present, total },
       checks,
       cspAnalysis,
+      permissionsPolicyAnalysis,
       suggestions,
       server: headers['server'] || null,
       poweredBy: headers['x-powered-by'] || null,
