@@ -237,8 +237,8 @@
       </div>
 
       <div class="cards-grid">
-        <!-- IP Info Card -->
-        <div class="card">
+        <!-- IP Info Card (Hero) -->
+        <div class="card card-hero card-accent-lime">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
@@ -248,33 +248,35 @@
             <span class="status-badge detecting" id="ip-status">detecting...</span>
           </div>
           <div class="card-body">
-            <div class="info-row">
-              <span class="info-label" id="dns-ipv4-label">IPv4</span>
-              <span class="info-value mono" id="ip-address">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-location-label">Location</span>
-              <span class="info-value" id="ip-location">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-isp-label">ISP / ASN</span>
-              <span class="info-value" id="ip-asn">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-timezone-label">Timezone</span>
-              <span class="info-value" id="ip-timezone">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-colo-label">Cloudflare PoP</span>
-              <span class="info-value mono" id="ip-colo">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-http-label">HTTP Protocol</span>
-              <span class="info-value mono" id="ip-http">—</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label" id="dns-tls-label">TLS Version</span>
-              <span class="info-value mono" id="ip-tls">—</span>
+            <div class="stat-strip" id="ip-stat-strip">
+              <div class="stat-item">
+                <span class="stat-label" id="dns-ipv4-label">IPv4</span>
+                <span class="stat-value mono" id="ip-address">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-location-label">Location</span>
+                <span class="stat-value" id="ip-location">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-isp-label">ISP / ASN</span>
+                <span class="stat-value" id="ip-asn">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-timezone-label">Timezone</span>
+                <span class="stat-value" id="ip-timezone">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-colo-label">Cloudflare PoP</span>
+                <span class="stat-value mono" id="ip-colo">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-http-label">HTTP Protocol</span>
+                <span class="stat-value mono" id="ip-http">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" id="dns-tls-label">TLS Version</span>
+                <span class="stat-value mono" id="ip-tls">—</span>
+              </div>
             </div>
           </div>
         </div>
@@ -295,8 +297,8 @@
           </div>
         </div>
 
-        <!-- DNS Security Card -->
-        <div class="card">
+        <!-- DNS Security Card (Compact) -->
+        <div class="card card-compact">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
