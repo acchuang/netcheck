@@ -288,6 +288,57 @@ async function runTlsTargetCheck(): Promise<void> {
           </div>
         ` : ''}
         ${hstsInfo}
+        ${data.certs ? `
+          <div class="card card-compact" style="margin-top:12px">
+            <div class="card-header">
+              <h2 class="card-title">Certificate</h2>
+            </div>
+            <div class="card-body">
+              <div class="stat-strip">
+                <div class="stat-item">
+                  <span class="stat-label">Subject</span>
+                  <span class="stat-value">${data.certs.subject.cn}</span>
+                </div>
+                ${data.certs.subject.sans.length > 0 ? `
+                <div class="stat-item">
+                  <span class="stat-label">SANs</span>
+                  <span class="stat-value">${data.certs.subject.sans.slice(0, 5).join(', ')}${data.certs.subject.sans.length > 5 ? '…' : ''}</span>
+                </div>` : ''}
+                <div class="stat-item">
+                  <span class="stat-label">Issuer</span>
+                  <span class="stat-value">${data.certs.issuer.cn}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Valid</span>
+                  <span class="stat-value" style="color:${data.certs.validity.daysRemaining > 30 ? 'var(--status-pass)' : data.certs.validity.daysRemaining > 7 ? 'var(--status-warn)' : 'var(--status-fail)'}">${data.certs.validity.daysRemaining} days</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Key</span>
+                  <span class="stat-value">${data.certs.key.type} ${data.certs.key.size}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Chain Depth</span>
+                  <span class="stat-value">${data.certs.chainDepth}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+        ${data.weaknesses && data.weaknesses.length > 0 ? `
+          <div class="card card-compact" style="margin-top:12px">
+            <div class="card-header">
+              <h2 class="card-title">Weaknesses</h2>
+            </div>
+            <div class="card-body">
+              ${data.weaknesses.map((w: TlsWeakness) => `
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface-tertiary)">
+                  <span class="status-badge ${w.severity === 'critical' ? 'fail' : w.severity === 'high' ? 'fail' : 'warn'}">${w.severity.toUpperCase()}</span>
+                  <span style="font-size:var(--text-mono);color:var(--text-primary)">${w.description}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   } catch {
