@@ -4,76 +4,10 @@
    NetCheck Bold Design System
    ======================================== */
 
-@theme {
-  /* ── Colors ── */
-  --color-bg: #0A0A0A;
-  --color-bg-surface: #0D0D0D;
-  --color-bg-elevated: #111111;
-  --color-bg-tertiary: #0f0f0f;
-
-  --color-text: #E3E3D3;
-  --color-text-secondary: #666666;
-  --color-text-muted: #4a4a4a;
-
-  --color-accent: #C8FF00;
-  --color-accent-hover: #D4FF1A;
-  --color-accent-glow: rgba(200, 255, 0, 0.15);
-  --color-accent-subtle: rgba(200, 255, 0, 0.06);
-
-  --color-cyan: #00C2FF;
-  --color-orange: #FF6B35;
-  --color-rose: #FF4D6A;
-  --color-purple: #A855F7;
-  --color-green: #22C55E;
-  --color-amber: #FFB800;
-
-  --color-border: #1a1a1a;
-  --color-border-hover: #333333;
-  --color-border-accent: rgba(200, 255, 0, 0.3);
-
-  /* ── Typography ── */
-  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-  --font-display: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
-
-  --text-hero: 3.5rem;
-  --text-display: 2.5rem;
-  --text-heading: 1.5rem;
-  --text-body: 0.875rem;
-  --text-mono: 0.75rem;
-  --text-mono-sm: 0.625rem;
-  --text-xs: 0.625rem;
-  --text-sm: 0.75rem;
-  --text-base: 0.875rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 2rem;
-  --text-4xl: 2.5rem;
-
-  /* ── Spacing ── */
-  --spacing-page: clamp(1.5rem, 5vw, 3rem);
-
-  /* ── Radius ── */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
-
-  /* ── Shadows ── */
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px var(--color-accent-glow);
-
-  /* ── Transitions ── */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* ── Base Reset ── */
 @layer base {
   *, *::before, *::after {
-    border-color: var(--color-border);
+    border-color: var(--border-default);
   }
 
   html {
@@ -83,9 +17,9 @@
   }
 
   body {
-    font-family: var(--font-sans);
-    background: var(--color-bg);
-    color: var(--color-text);
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--surface-primary);
+    color: var(--text-secondary);
     line-height: 1.6;
     min-height: 100dvh;
     overflow-x: hidden;
@@ -95,7 +29,7 @@
 /* ── Utility Classes ── */
 @layer utilities {
   .text-hero {
-    font-family: var(--font-display);
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
     font-size: var(--text-hero);
     font-weight: 800;
     line-height: 1;
@@ -103,16 +37,16 @@
   }
 
   .text-hero-accent {
-    font-family: var(--font-display);
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
     font-size: var(--text-hero);
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.02em;
-    color: var(--accent-lime);
+    color: var(--accent);
   }
 
   .text-display {
-    font-family: var(--font-display);
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
     font-size: var(--text-display);
     font-weight: 800;
     line-height: 1;
@@ -120,14 +54,14 @@
   }
 
   .text-heading {
-    font-family: var(--font-display);
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
     font-size: var(--text-heading);
     font-weight: 700;
     line-height: 1.2;
   }
 
   .text-label {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
     font-size: var(--text-mono-sm);
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -135,7 +69,7 @@
   }
 
   .text-label-muted {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
     font-size: var(--text-mono-sm);
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -144,30 +78,30 @@
   }
 
   .text-mono {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
     font-size: var(--text-mono);
   }
 
   .text-mono-sm {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
     font-size: var(--text-mono-sm);
   }
 
   .card-flat {
-    background: var(--color-bg-surface);
-    border: 1px solid var(--color-border);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-xl);
     transition: border-color var(--duration-150) var(--ease-out);
   }
 
   .card-flat:hover {
-    border-color: var(--color-border-hover);
+    border-color: var(--border-hover);
   }
 
   .card-accent-top {
     position: relative;
-    background: var(--color-bg-surface);
-    border: 1px solid var(--color-border);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-xl);
     overflow: hidden;
   }
@@ -179,7 +113,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--accent, var(--color-accent));
+    background: var(--accent);
     border-radius: 2px 2px 0 0;
   }
 }
