@@ -868,7 +868,7 @@ const locales: Record<Locale, Record<string, string>> = {
 export function t(key: keyof typeof en | (string & {}), ...args: (string | number)[]): string {
   let str = locales[current]?.[key] ?? locales.en[key as keyof typeof en] ?? key;
   args.forEach((arg, i) => {
-    str = str.replace(`{${i}}`, String(arg));
+    str = str.replace(new RegExp(`\\{${i}\\}`, 'g'), String(arg));
   });
   return str;
 }

@@ -1,42 +1,22 @@
 import type { ResolverResult, SecurityCheck } from './types';
 export type { ResolverResult, SecurityCheck };
 
-interface ResolverInfo {
-  name: string;
-  host: string;
-  ip: string;
-  desc: string;
-}
-
 interface IpResult {
   ip?: string;
   error?: string;
+}
+
+interface DnsAnswer {
+  name: string;
+  type: number;
+  TTL: number;
+  data: string;
 }
 
 interface DnsResult {
   Answer?: DnsAnswer[];
   Status?: number;
   error?: string;
-}
-
-interface DnsAnswer {
-  name: string;
-  type: number;
-  TTL: number;
-  data: string;
-}
-
-interface DohResponse {
-  AD?: boolean;
-  Answer?: DnsAnswer[];
-  Status?: number;
-}
-
-interface DnsAnswer {
-  name: string;
-  type: number;
-  TTL: number;
-  data: string;
 }
 
 export const DnsCheck = {
@@ -62,125 +42,45 @@ export const DnsCheck = {
 
   async detectResolver(): Promise<ResolverResult[]> {
     try {
-      const res = await fetch('/api/dns/check-resolvers');
+      const res = await fetch('/api/dns/check-resolvers', {
+        signal: AbortSignal.timeout(8000),
+      });
       if (res.ok) return await res.json();
     } catch {
-      /* fall through */
+      /* fall through to empty result */
     }
-
-    // Fallback: direct DoH checks (may fail due to CORS)
-    const resolvers: ResolverInfo[] = [
-      {
-        name: 'Cloudflare',
-        host: 'cloudflare-dns.com',
-        ip: '1.1.1.1',
-        desc: 'Fast, privacy-focused',
-      },
-      { name: 'Google', host: 'dns.google', ip: '8.8.8.8', desc: 'Reliable, global' },
-      { name: 'Quad9', host: 'dns.quad9.net', ip: '9.9.9.9', desc: 'Security-focused' },
-    ];
-    const results: ResolverResult[] = [];
-    for (const resolver of resolvers) {
-      try {
-        const start = performance.now();
-        const res = await fetch(`https://${resolver.host}/dns-query?name=example.com&type=A`, {
-          headers: { Accept: 'application/dns-json' },
-          signal: AbortSignal.timeout(3000),
-        });
-        results.push({
-          ...resolver,
-          reachable: res.ok,
-          latency: res.ok ? Math.round(performance.now() - start) : null,
-          dnssec: false,
-          filtering: false,
-        });
-      } catch {
-        results.push({
-          ...resolver,
-          reachable: false,
-          latency: null,
-          dnssec: false,
-          filtering: false,
-        });
-      }
-    }
-    return results;
+    return [];
   },
 
-  async checkDnsSecurity(): Promise<SecurityCheck[]> {
+  async checkDnsSecurity(resolverHost?: string): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
+    const resolver = resolverHost || 'cloudflare-dns.com';
 
-    // DNSSEC validation check — resolve a known DNSSEC-signed domain
     try {
       const res = await fetch(
-        'https://cloudflare-dns.com/dns-query?name=cloudflare.com&type=A&do=1',
-        {
-          headers: { Accept: 'application/dns-json' },
-          signal: AbortSignal.timeout(3000),
-        },
+        `/api/dns/check-security?resolver=${encodeURIComponent(resolver)}`,
+        { signal: AbortSignal.timeout(8000) },
       );
-      const data: DohResponse = await res.json();
-      checks.push({
-        name: 'DNSSEC Validation',
-        status: data.AD ? 'pass' : 'warn',
-        detail: data.AD ? 'Your resolver validates DNSSEC' : 'DNSSEC not validated by resolver',
-      });
-    } catch {
-      checks.push({ name: 'DNSSEC Validation', status: 'fail', detail: 'Could not check DNSSEC' });
-    }
-
-    // DNS-over-HTTPS support
-    try {
-      const res = await fetch('https://cloudflare-dns.com/dns-query?name=example.com&type=A', {
-        headers: { Accept: 'application/dns-json' },
-        signal: AbortSignal.timeout(3000),
-      });
-      checks.push({
-        name: 'DNS-over-HTTPS',
-        status: res.ok ? 'pass' : 'fail',
-        detail: res.ok ? 'DoH endpoint reachable' : 'DoH not available',
-      });
-    } catch {
-      checks.push({ name: 'DNS-over-HTTPS', status: 'fail', detail: 'DoH not available' });
-    }
-
-    // Check if known malware domain is blocked (safe test domain)
-    try {
-      const res = await fetch(
-        'https://cloudflare-dns.com/dns-query?name=malware.testcategory.com&type=A',
+      if (res.ok) {
+        const data = (await res.json()) as { checks: SecurityCheck[] };
+        return data.checks;
+      }
+      return [
         {
-          headers: { Accept: 'application/dns-json' },
-          signal: AbortSignal.timeout(3000),
+          name: 'DNSSEC Validation',
+          status: 'fail',
+          detail: 'Could not check security',
         },
-      );
-      const data: DohResponse = await res.json();
-      const blocked = !data.Answer || data.Answer.length === 0 || data.Status === 3;
-      checks.push({
-        name: 'Malware Domain Filtering',
-        status: blocked ? 'pass' : 'warn',
-        detail: blocked ? 'Known test domains filtered' : 'No DNS-level filtering detected',
-      });
+      ];
     } catch {
-      checks.push({
-        name: 'Malware Domain Filtering',
-        status: 'warn',
-        detail: 'Could not test filtering',
-      });
+      return [
+        {
+          name: 'DNSSEC Validation',
+          status: 'fail',
+          detail: 'Could not check security',
+        },
+      ];
     }
-
-    // WebRTC IP leak check
-    try {
-      const leaked = await DnsCheck.checkWebRtcLeak();
-      checks.push({
-        name: 'WebRTC IP Leak',
-        status: leaked ? 'fail' : 'pass',
-        detail: leaked ? `Local IP exposed: ${leaked}` : 'No WebRTC IP leak detected',
-      });
-    } catch {
-      checks.push({ name: 'WebRTC IP Leak', status: 'warn', detail: 'Could not check WebRTC' });
-    }
-
-    return checks;
   },
 
   checkWebRtcLeak(): Promise<string | null> {

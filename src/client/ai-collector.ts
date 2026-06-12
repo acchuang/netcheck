@@ -86,7 +86,7 @@ export function collectTestResults(): TestResultsPayload {
   const headersGrade = headersState.grade.get();
   const headersScore = headersState.score.get();
   const headersUrl = headersState.url.get();
-  if (headersGrade && headersScore && headersUrl) {
+  if (headersUrl) {
     headersData = { grade: headersGrade, score: String(headersScore), url: headersUrl };
   }
 

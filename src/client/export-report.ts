@@ -148,7 +148,7 @@ export const ReportExporter = {
       jitter: speedJit > 0 ? speedJit : null,
       grade:
         speedDl > 0
-          ? SpeedTest.getGrade(speedDl, speedUl, speedLat, speedJit, speedBb)
+          ? SpeedTest.getGrade(speedDl, speedUl, speedLat, speedJit, speedBb, 0)
           : null,
       tested: speedDl > 0,
     };

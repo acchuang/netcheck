@@ -73,24 +73,25 @@ export const FingerprintDetector = {
     const currentHash = await hashString(signalValues);
 
     const STORE_KEY = 'netcheck_fp_hash';
+    const STORE_SIGNALS_KEY = 'netcheck_fp_signals';
     const STORE_DATE_KEY = 'netcheck_fp_date';
     let drift = 0;
     let previousDate: string | null = null;
     try {
-      const prev = localStorage.getItem(STORE_KEY);
-      if (prev && prev !== currentHash) {
-        const prevValues = categories.length;
-        const changedValues = categories
-          .flatMap((cat) => cat.items)
-          .filter((_, i) => {
-            const prevSignals = prev.split('|');
-            const currSignals = signalValues.split('|');
-            return i < prevSignals.length && i < currSignals.length && prevSignals[i] !== currSignals[i];
-          }).length;
-        drift = prevValues > 0 ? Math.round((changedValues / prevValues) * 100) : 0;
+      const prevSignalsStr = localStorage.getItem(STORE_SIGNALS_KEY);
+      if (prevSignalsStr && prevSignalsStr !== signalValues) {
+        const prevSignals = prevSignalsStr.split('|');
+        const currSignals = signalValues.split('|');
+        const total = Math.max(prevSignals.length, currSignals.length);
+        let changed = 0;
+        for (let i = 0; i < total; i++) {
+          if (prevSignals[i] !== currSignals[i]) changed++;
+        }
+        drift = total > 0 ? Math.round((changed / total) * 100) : 0;
       }
       previousDate = localStorage.getItem(STORE_DATE_KEY);
       localStorage.setItem(STORE_KEY, currentHash);
+      localStorage.setItem(STORE_SIGNALS_KEY, signalValues);
       localStorage.setItem(STORE_DATE_KEY, new Date().toISOString());
     } catch {
       /* localStorage unavailable */

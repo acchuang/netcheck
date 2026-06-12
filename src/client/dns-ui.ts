@@ -327,12 +327,19 @@ export async function runDnsChecks(): Promise<void> {
   lastResolvers = await DnsCheck.detectResolver();
   renderResolvers(lastResolvers);
 
-  lastSecurityChecks = await DnsCheck.checkDnsSecurity();
+  const fastestResolver = lastResolvers.find((r) => r.reachable);
+  lastSecurityChecks = await DnsCheck.checkDnsSecurity(fastestResolver?.host);
+  const webrtcLeak = await DnsCheck.checkWebRtcLeak();
+  if (webrtcLeak) {
+    lastSecurityChecks.push({
+      name: 'WebRTC IP Leak',
+      status: 'fail',
+      detail: `Local IP exposed: ${webrtcLeak}`,
+    });
+  }
   renderSecurityChecks(lastSecurityChecks);
   dnsState.securityChecks.set(lastSecurityChecks);
-  dnsState.webrtcLeak.set(
-    lastSecurityChecks.some((c) => c.name === 'WebRTC IP Leak' && c.status === 'fail'),
-  );
+  dnsState.webrtcLeak.set(!!webrtcLeak);
 
   renderDnsSuggestions({
     resolvers: lastResolvers,
