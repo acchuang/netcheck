@@ -1,5 +1,6 @@
 import { tlsState, runTlsCheck } from '../state/tls-state';
 import { t } from '../i18n';
+import { escapeHtml } from '../escape';
 import { appState } from '../state/shared-state';
 import { renderBadge } from '../components/badge';
 import type { SecurityStatus } from '../types';
@@ -306,7 +307,7 @@ async function runTlsTargetCheck(): Promise<void> {
         ${data.redirectChain.length > 0 ? `
           <div class="csp-analysis-card" style="margin-top:12px">
             <h4 class="csp-issues-title">Redirect Chain</h4>
-            ${data.redirectChain.map((r) => `<div class="csp-issue-item"><span class="csp-issue-message" style="font-family:'Berkeley Mono','SF Mono',monospace;font-size:12px">${r}</span></div>`).join('')}
+            ${data.redirectChain.map((r) => `<div class="csp-issue-item"><span class="csp-issue-message" style="font-family:'Berkeley Mono','SF Mono',monospace;font-size:12px">${escapeHtml(r)}</span></div>`).join('')}
           </div>
         ` : ''}
         ${hstsInfo}
@@ -319,16 +320,16 @@ async function runTlsTargetCheck(): Promise<void> {
               <div class="stat-strip">
                 <div class="stat-item">
                   <span class="stat-label">Subject</span>
-                  <span class="stat-value">${data.certs.subject.cn}</span>
+                  <span class="stat-value">${escapeHtml(data.certs.subject.cn)}</span>
                 </div>
                 ${data.certs.subject.sans.length > 0 ? `
                 <div class="stat-item">
                   <span class="stat-label">SANs</span>
-                  <span class="stat-value">${data.certs.subject.sans.slice(0, 5).join(', ')}${data.certs.subject.sans.length > 5 ? '…' : ''}</span>
+                  <span class="stat-value">${escapeHtml(data.certs.subject.sans.slice(0, 5).join(', '))}${data.certs.subject.sans.length > 5 ? '…' : ''}</span>
                 </div>` : ''}
                 <div class="stat-item">
                   <span class="stat-label">Issuer</span>
-                  <span class="stat-value">${data.certs.issuer.cn}</span>
+                  <span class="stat-value">${escapeHtml(data.certs.issuer.cn)}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Valid</span>
@@ -347,7 +348,7 @@ async function runTlsTargetCheck(): Promise<void> {
                 <div style="margin-top:8px;padding-left:16px;border-left:2px solid var(--surface-tertiary)">
                   ${data.certs.intermediates.map((int, idx) => `
                     <div style="font-size:13px;padding:4px 0;color:var(--text-secondary)">
-                      ${idx < data.certs!.intermediates!.length - 1 ? '├─' : '└─'} ${int.cn}${int.organization ? ` (${int.organization})` : ''}
+                      ${idx < data.certs!.intermediates!.length - 1 ? '├─' : '└─'} ${escapeHtml(int.cn)}${int.organization ? ` (${escapeHtml(int.organization)})` : ''}
                     </div>
                   `).join('')}
                 </div>

@@ -1,5 +1,6 @@
 import { cookieState, runCookieAudit, type CookieAuditResult } from '../state/cookie-state';
 import { t } from '../i18n';
+import { escapeHtml } from '../escape';
 import { renderBadge } from '../components/badge';
 
 const GRADE_COLORS: Record<string, string> = {
@@ -46,7 +47,7 @@ function renderResult(info: CookieAuditResult): string {
       }).outerHTML;
       const prefix = e.isHostPrefix ? 'Host' : e.isSecurePrefix ? 'Secure' : '\u2014';
       return `<tr>
-      <td class="cookie-table-name">${e.name}</td>
+      <td class="cookie-table-name">${escapeHtml(e.name)}</td>
       <td>${catBadge}</td>
       <td>${formatSize(e.sizeBytes)}</td>
       <td>${prefix}</td>

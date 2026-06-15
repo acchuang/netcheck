@@ -1,6 +1,7 @@
 import { DnsCheck } from './dns-check';
 import type { ResolverResult, SecurityCheck } from './types';
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 import { CF_POPS } from './cf-pops';
 import { setBadge, createCheckItem } from './ui-utils';
 import { dnsState } from './state/dns-state';
@@ -565,7 +566,7 @@ export async function runDnsLookup(): Promise<void> {
                         : rec.type === 12
                           ? 'PTR'
                           : recType;
-      html += `<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${rec.name || domain}</td><td class="mono">${rec.data}</td><td>${rec.TTL}s</td></tr>`;
+      html += `<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${escapeHtml(rec.name || domain)}</td><td class="mono">${escapeHtml(rec.data)}</td><td>${rec.TTL}s</td></tr>`;
     }
   }
 

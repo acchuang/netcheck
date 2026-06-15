@@ -57,12 +57,6 @@ export default {
 
     const url = new URL(request.url);
 
-    // KV-backed rate limit check for all API routes
-    if (url.pathname.startsWith('/api/')) {
-      const rlKv = await checkRateLimitKV(request, env.ANALYTICS);
-      if (rlKv) return withSecurityHeaders(rlKv, request);
-    }
-
     if (url.pathname === '/api/ip') {
       trackVisitor(request, env).catch(() => {});
       return withSecurityHeaders(await handleIpCheck(request), request);
@@ -367,44 +361,6 @@ export function checkRateLimit(request: Request): Response | null {
   return null;
 }
 
-// ─── KV-backed rate limiting (cross-isolate coordination) ──────────
-
-export const RATE_LIMIT_KV_PREFIX = 'rl:';
-
-export async function checkRateLimitKV(
-  request: Request,
-  kv: KVNamespace,
-): Promise<Response | null> {
-  const url = new URL(request.url);
-  const isSpeedTest = url.pathname.startsWith('/api/speedtest/');
-  const maxRequests = isSpeedTest ? RATE_LIMIT_SPEED_BURST : RATE_LIMIT_MAX;
-  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-  const now = Date.now();
-  const windowIndex = Math.floor(now / RATE_LIMIT_WINDOW);
-  const kvKey = `${RATE_LIMIT_KV_PREFIX}${isSpeedTest ? 'speed' : 'gen'}:${ip}:${windowIndex}`;
-
-  try {
-    const current = await kv.get(kvKey);
-    const count = current ? parseInt(current, 10) : 0;
-
-    if (count >= maxRequests) {
-      return Response.json(
-        { error: 'Rate limit exceeded', retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000) },
-        { status: 429, headers: { ...corsHeaders(request), 'Retry-After': '60' } },
-      );
-    }
-
-    // Increment with TTL; don't await to avoid blocking the request
-    kv.put(kvKey, String(count + 1), {
-      expirationTtl: Math.ceil((RATE_LIMIT_WINDOW * 2) / 1000),
-    }).catch(() => {});
-  } catch {
-    // KV unavailable — fall through to in-memory only
-  }
-
-  return null;
-}
-
 export function isPrivateHostname(hostname: string): boolean {
   const h = hostname.toLowerCase();
 
@@ -609,9 +565,9 @@ async function handleDnsCheck(request: Request): Promise<Response> {
     });
     const dnsData = await dnsResponse.json();
     return Response.json(dnsData, { headers: corsHeaders(request) });
-  } catch (err) {
+  } catch {
     return Response.json(
-      { error: 'DNS lookup failed', detail: String(err) },
+      { error: 'DNS lookup failed' },
       { status: 500, headers: corsHeaders(request) },
     );
   }
@@ -659,11 +615,27 @@ function handleSpeedDown(url: URL, request: Request): Response {
   });
 }
 
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 async function handleSpeedUp(request: Request): Promise<Response> {
   const rl = checkRateLimit(request);
   if (rl) return rl;
 
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  if (contentLength > MAX_UPLOAD_BYTES) {
+    return Response.json(
+      { error: 'Request body too large' },
+      { status: 413, headers: corsHeaders(request) },
+    );
+  }
+
   const body = await request.arrayBuffer();
+  if (body.byteLength > MAX_UPLOAD_BYTES) {
+    return Response.json(
+      { error: 'Request body too large' },
+      { status: 413, headers: corsHeaders(request) },
+    );
+  }
   return Response.json({ bytes: body.byteLength }, { headers: corsHeaders(request) });
 }
 
@@ -877,6 +849,8 @@ export function validateTargetUrl(
   return { ok: true, url: parsed.href };
 }
 
+const MAX_REDIRECT_HOPS = 5;
+
 async function handleHeadersCheck(request: Request): Promise<Response> {
   const rl = checkRateLimit(request);
   if (rl) return rl;
@@ -889,40 +863,55 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       { status: 400, headers: corsHeaders(request) },
     );
   }
-  const targetUrl = validation.url;
+  let targetUrl = validation.url;
 
   try {
-    const res = await fetch(targetUrl, {
-      method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(8000),
-      headers: { 'User-Agent': 'NetCheck Security Scanner/1.0' },
-    });
-
-    // Check redirect targets for private IPs
-    if (res.status >= 300 && res.status < 400) {
-      const location = res.headers.get('location');
-      if (location) {
-        try {
-          const redirectUrl = new URL(location, targetUrl);
-          if (isPrivateHostname(redirectUrl.hostname)) {
-            return Response.json(
-              { error: 'Redirect to private/internal hostname is not allowed' },
-              { status: 400, headers: corsHeaders(request) },
-            );
-          }
-        } catch {
-          // Invalid redirect URL — let it fail naturally
-        }
+    let res: Response;
+    let hops = 0;
+    const redirectChain: string[] = [];
+    while (true) {
+      if (hops >= MAX_REDIRECT_HOPS) {
+        return Response.json(
+          { error: 'Too many redirects' },
+          { status: 400, headers: corsHeaders(request) },
+        );
       }
-      // For redirects, re-fetch the safe redirect target
-        const finalRes = await fetch(targetUrl, {
+      res = await fetch(targetUrl, {
         method: 'GET',
-        redirect: 'follow',
+        redirect: 'manual',
         signal: AbortSignal.timeout(8000),
         headers: { 'User-Agent': 'NetCheck Security Scanner/1.0' },
       });
-      return buildHeadersResponse(finalRes, targetUrl, request, { present: false, url: null, content: null, error: null });
+
+      if (res.status < 300 || res.status >= 400) {
+        break;
+      }
+
+      const location = res.headers.get('location');
+      if (!location) {
+        break;
+      }
+
+      let redirectUrl: URL;
+      try {
+        redirectUrl = new URL(location, targetUrl);
+      } catch {
+        return Response.json(
+          { error: 'Invalid redirect URL' },
+          { status: 400, headers: corsHeaders(request) },
+        );
+      }
+
+      if (isPrivateHostname(redirectUrl.hostname)) {
+        return Response.json(
+          { error: 'Redirect to private/internal hostname is not allowed' },
+          { status: 400, headers: corsHeaders(request) },
+        );
+      }
+
+      redirectChain.push(`${targetUrl} → ${redirectUrl.href}`);
+      targetUrl = redirectUrl.href;
+      hops++;
     }
 
     let securityTxt: { present: boolean; url: string | null; content: string | null; error: string | null } = { present: false, url: null, content: null, error: null };
@@ -940,9 +929,9 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     }
 
     return buildHeadersResponse(res, targetUrl, request, securityTxt);
-  } catch (err) {
+  } catch {
     return Response.json(
-      { error: 'Failed to fetch URL', detail: String(err) },
+      { error: 'Failed to fetch URL' },
       { status: 500, headers: corsHeaders(request) },
     );
   }
@@ -1080,18 +1069,6 @@ function parsePermissionsPolicy(raw: string | null): PermissionsPolicyAnalysis {
 
   const directives: { name: string; values: string[] }[] = [];
   const issues: PermissionsPolicyIssue[] = [];
-  const knownDirectives = [
-    'accelerometer', 'ambient-light-sensor', 'autoplay', 'battery', 'camera',
-    'clipboard-read', 'clipboard-write', 'cross-origin-isolated', 'display-capture',
-    'document-domain', 'encrypted-media', 'execution-while-not-rendered',
-    'execution-while-out-of-viewport', 'fullscreen', 'gamepad', 'geolocation',
-    'gyroscope', 'hid', 'identity-credentials', 'idle-detection', 'local-fonts',
-    'magnetometer', 'microphone', 'midi', 'otp-credentials', 'payment', 'picture-in-picture',
-    'publickey-credentials-create', 'publickey-credentials-get', 'screen-wake-lock',
-    'serial', 'speaker-selection', 'storage-access', 'usb', 'web-share', 'window-management',
-    'xr-spatial-tracking',
-  ];
-
   const parts = raw.split(';').map((p) => p.trim()).filter(Boolean);
   let score = 100;
 
@@ -1122,8 +1099,8 @@ function parsePermissionsPolicy(raw: string | null): PermissionsPolicyAnalysis {
     }
   }
 
-  const foundDirectives = directives.map((d) => d.name);
-  const missingCritical = ['camera', 'microphone', 'geolocation'].filter((d) => !foundDirectives.includes(d));
+  const foundDirectives = new Set(directives.map((d) => d.name));
+  const missingCritical = ['camera', 'microphone', 'geolocation'].filter((d) => !foundDirectives.has(d));
   if (missingCritical.length > 0 && directives.length > 0) {
     for (const d of missingCritical) {
       issues.push({ severity: 'low', directive: d, value: '', message: `Missing directive: ${d}. Consider explicitly restricting it with ()` });
@@ -2179,6 +2156,9 @@ async function handleAiAnalyze(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleEmailSecurity(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const domain = url.searchParams.get('domain') || '';
 
@@ -2391,12 +2371,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
         if (raw.includes('v=STSv1')) {
           mtaSts.present = true;
           mtaSts.valid = true;
-          const tags = raw.split(';').map((t) => t.trim());
-          for (const tag of tags) {
-            const [key, ...valParts] = tag.split('=');
-            const val = valParts.join('=');
-            if (key === 'id') { /* version id, not needed */ }
-          }
+          // MTA-STS version id tag ignored
         }
       }
     }
@@ -2483,6 +2458,9 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
 }
 
 async function handleCertTransparency(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const domain = url.searchParams.get('domain')?.trim().toLowerCase();
 
@@ -2592,6 +2570,9 @@ async function handleCertTransparency(request: Request): Promise<Response> {
 }
 
 async function handleTlsTargetCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const domain = url.searchParams.get('domain')?.trim().toLowerCase();
 
@@ -2701,6 +2682,9 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
 }
 
 async function handleDnssecValidation(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const domain = url.searchParams.get('domain')?.trim().toLowerCase();
 

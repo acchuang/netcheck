@@ -1,5 +1,6 @@
-import { emailState, runEmailCheck, type EmailSecurityResult, type BimiResult, type MtaStsResult, type EmailWarning } from '../state/email-state';
+import { emailState, runEmailCheck, type EmailSecurityResult, type EmailWarning } from '../state/email-state';
 import { t } from '../i18n';
+import { escapeHtml } from '../escape';
 import { renderBadge } from '../components/badge';
 import type { SecurityStatus } from '../types';
 
@@ -51,17 +52,17 @@ function renderResult(info: EmailSecurityResult): string {
   }).outerHTML;
 
   const spfValue = info.spf.value
-    ? `<div class="email-record-value">${info.spf.value}</div>`
+    ? `<div class="email-record-value">${escapeHtml(info.spf.value)}</div>`
     : '';
   const spfMechs =
     info.spf.mechanisms.length > 0
-      ? `<div class="email-mechanisms">${info.spf.mechanisms.map((m) => `<span class="email-mechanism-tag">${m}</span>`).join(' ')}</div>`
+      ? `<div class="email-mechanisms">${info.spf.mechanisms.map((m) => `<span class="email-mechanism-tag">${escapeHtml(m)}</span>`).join(' ')}</div>`
       : '';
   const dkimExtra = info.dkim.found
-    ? `<div class="email-record-detail">${t('emailSecurity.selector', 'Selector')}: ${info.dkim.selector} | ${t('emailSecurity.algorithm', 'Algorithm')}: ${info.dkim.algorithm}</div>`
+    ? `<div class="email-record-detail">${t('emailSecurity.selector', 'Selector')}: ${escapeHtml(info.dkim.selector || '')} | ${t('emailSecurity.algorithm', 'Algorithm')}: ${escapeHtml(info.dkim.algorithm || '')}</div>`
     : '';
   const dmarcPolicy = info.dmarc.policy
-    ? `<div class="email-record-detail">${t('emailSecurity.policy', 'Policy')}: ${info.dmarc.policy}${info.dmarc.subdomainPolicy ? ` | ${t('emailSecurity.subdomainPolicy', 'Subdomain Policy')}: ${info.dmarc.subdomainPolicy}` : ''}</div>`
+    ? `<div class="email-record-detail">${t('emailSecurity.policy', 'Policy')}: ${escapeHtml(info.dmarc.policy)}${info.dmarc.subdomainPolicy ? ` | ${t('emailSecurity.subdomainPolicy', 'Subdomain Policy')}: ${escapeHtml(info.dmarc.subdomainPolicy)}` : ''}</div>`
     : '';
 
   const bimiBadge = renderBadge({
@@ -69,7 +70,7 @@ function renderResult(info: EmailSecurityResult): string {
     label: info.bimi.present ? t('emailSecurity.present', 'Present') : t('emailSecurity.missing', 'Missing'),
   }).outerHTML;
   const bimiExtra = info.bimi.present
-    ? `<div class="email-record-detail">${info.bimi.logoUrl ? `Logo: ${info.bimi.logoUrl}` : ''}${info.bimi.vmcUrl ? ` | VMC: ${info.bimi.vmcUrl}` : ''}</div>`
+    ? `<div class="email-record-detail">${info.bimi.logoUrl ? `Logo: ${escapeHtml(info.bimi.logoUrl)}` : ''}${info.bimi.vmcUrl ? ` | VMC: ${escapeHtml(info.bimi.vmcUrl)}` : ''}</div>`
     : '';
 
   const mtaStsBadge = renderBadge({
@@ -83,7 +84,7 @@ function renderResult(info: EmailSecurityResult): string {
       : t('emailSecurity.missing', 'Missing'),
   }).outerHTML;
   const mtaStsExtra = info.mtaSts.present
-    ? `<div class="email-record-detail">${info.mtaSts.mode ? `Mode: ${info.mtaSts.mode}` : ''}${info.mtaSts.maxAge ? ` | Max Age: ${info.mtaSts.maxAge}s` : ''}</div>`
+    ? `<div class="email-record-detail">${info.mtaSts.mode ? `Mode: ${escapeHtml(info.mtaSts.mode)}` : ''}${info.mtaSts.maxAge ? ` | Max Age: ${escapeHtml(String(info.mtaSts.maxAge))}s` : ''}</div>`
     : '';
 
   return `
@@ -130,7 +131,7 @@ function renderResult(info: EmailSecurityResult): string {
           ${mtaStsExtra}
         </div>
       </div>
-      ${renderEmailWarnings(info.warnings, info)}
+      ${renderEmailWarnings(info.warnings)}
       <div class="email-recommendations">
         ${renderEmailRecommendations(info)}
       </div>
@@ -138,7 +139,7 @@ function renderResult(info: EmailSecurityResult): string {
   `;
 }
 
-function renderEmailWarnings(warnings: EmailWarning[], info: EmailSecurityResult): string {
+function renderEmailWarnings(warnings: EmailWarning[]): string {
   if (!warnings || warnings.length === 0) return '';
   const icons: Record<string, string> = {
     'spf-open': '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',

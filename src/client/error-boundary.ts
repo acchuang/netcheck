@@ -1,3 +1,5 @@
+import { escapeHtml } from './escape';
+
 const TOAST_DURATION = 8000;
 const MAX_TOASTS = 3;
 
@@ -39,12 +41,6 @@ function createToast(moduleName: string, error: Error): HTMLDivElement {
   setTimeout(() => dismiss(toast), TOAST_DURATION);
 
   return toast;
-}
-
-function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 function dismiss(toast: HTMLDivElement): void {

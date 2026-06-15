@@ -53,7 +53,6 @@ export const DnsCheck = {
   },
 
   async checkDnsSecurity(resolverHost?: string): Promise<SecurityCheck[]> {
-    const checks: SecurityCheck[] = [];
     const resolver = resolverHost || 'cloudflare-dns.com';
 
     try {

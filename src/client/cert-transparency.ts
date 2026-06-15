@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 import { appState } from './state/shared-state';
 import { certTransparencyState } from './state/cert-transparency-state';
 
@@ -141,8 +142,8 @@ async function runCtCheck(): Promise<void> {
             <tbody>
               ${data.certs.map((c) => `
                 <tr class="ct-row">
-                  <td class="ct-cell ct-cell-issuer">${c.issuer}</td>
-                  <td class="ct-cell ct-cell-cn">${c.commonName}${c.isWildcard ? ` <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:10px">${t('certTransparency.wildcard')}</span>` : ''}</td>
+                  <td class="ct-cell ct-cell-issuer">${escapeHtml(c.issuer)}</td>
+                  <td class="ct-cell ct-cell-cn">${escapeHtml(c.commonName)}${c.isWildcard ? ` <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:10px">${t('certTransparency.wildcard')}</span>` : ''}</td>
                   <td class="ct-cell"><span class="csp-issue-severity" style="background:${c.status === 'active' ? 'var(--emerald)' : 'var(--text-tertiary)'}20;color:${c.status === 'active' ? 'var(--emerald)' : 'var(--text-tertiary)'}">${c.status.toUpperCase()}</span></td>
                   <td class="ct-cell">${new Date(c.notBefore).toLocaleDateString()}</td>
                   <td class="ct-cell">${new Date(c.notAfter).toLocaleDateString()}</td>

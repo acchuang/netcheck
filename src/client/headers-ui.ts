@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 import { setBadge, renderSkeletonRows } from './ui-utils';
 import { appState } from './state/shared-state';
 import { headersState } from './state/headers-state';
@@ -254,8 +255,8 @@ async function runHeadersCheck(): Promise<void> {
                   (issue) => `
                 <div class="csp-issue-item">
                   <span class="csp-issue-severity" style="background:${severityColors[issue.severity]}20;color:${severityColors[issue.severity]}">${severityLabels[issue.severity]}</span>
-                  <span class="csp-issue-directive">${issue.directive}</span>
-                  <span class="csp-issue-message">${issue.message}</span>
+                  <span class="csp-issue-directive">${escapeHtml(issue.directive)}</span>
+                  <span class="csp-issue-message">${escapeHtml(issue.message)}</span>
                 </div>
               `,
                 )
@@ -307,8 +308,8 @@ async function runHeadersCheck(): Promise<void> {
                   (issue) => `
                 <div class="csp-issue-item">
                   <span class="csp-issue-severity" style="background:${ppSeverityColors[issue.severity]}20;color:${ppSeverityColors[issue.severity]}">${ppSeverityLabels[issue.severity]}</span>
-                  <span class="csp-issue-directive">${issue.directive}</span>
-                  <span class="csp-issue-message">${issue.message}</span>
+                  <span class="csp-issue-directive">${escapeHtml(issue.directive)}</span>
+                  <span class="csp-issue-message">${escapeHtml(issue.message)}</span>
                 </div>
               `,
                 )
@@ -332,7 +333,7 @@ async function runHeadersCheck(): Promise<void> {
         secTxtEl.innerHTML = `
         <div class="card card-compact" style="margin-top:var(--space-3)">
           <div class="card-header"><h2 class="card-title">Security.txt</h2><span class="status-badge pass">Found</span></div>
-          <div class="card-body"><pre style="white-space:pre-wrap;font-size:12px;max-height:200px;overflow-y:auto;background:var(--surface-secondary);padding:12px;border-radius:var(--radius-md)">${data.securityTxt.content || ''}</pre></div>
+          <div class="card-body"><pre style="white-space:pre-wrap;font-size:12px;max-height:200px;overflow-y:auto;background:var(--surface-secondary);padding:12px;border-radius:var(--radius-md)">${escapeHtml(data.securityTxt.content || '')}</pre></div>
         </div>
       `;
         secTxtEl.classList.remove('hidden');
