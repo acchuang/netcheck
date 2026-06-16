@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Network connectivity testing web app. Vite + React frontend with Cloudflare Worker backend.
+Network connectivity testing web app. Vite + vanilla TypeScript frontend (no framework) with Cloudflare Worker backend.
 
 ## Ownership
 
-Independent Vite + React project deployed via Cloudflare Pages + Workers.
+Independent Vite + vanilla TypeScript project (no framework) deployed via Cloudflare Pages + Workers.
 
 ## Local Contracts
 
-- Vite + React frontend. TypeScript via `tsconfig.json`.
+- Vite + vanilla TypeScript frontend (no React, no framework). TypeScript via `tsconfig.json`.
 - Cloudflare Worker backend in `src/worker/` for server-side network checks.
 - ESLint + Prettier configured. Vitest for unit tests, Playwright for e2e.
 - Deployed via `wrangler`.

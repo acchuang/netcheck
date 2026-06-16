@@ -5,6 +5,7 @@ import { escapeHtml } from './escape';
 import { CF_POPS } from './cf-pops';
 import { setBadge, createCheckItem } from './ui-utils';
 import { dnsState } from './state/dns-state';
+import { appState } from './state/shared-state';
 import { safeInitAsync } from './error-boundary';
 import { affiliate } from './affiliates';
 import { onLocaleChange } from './locale-events';
@@ -364,7 +365,6 @@ export async function runDnsChecks(): Promise<void> {
 
   section.setAttribute('aria-busy', 'false');
 
-  const { appState } = await import('./state/shared-state');
   if (!appState.completedTests.get().includes('dns')) {
     appState.completedTests.set([...appState.completedTests.get(), 'dns']);
   }
