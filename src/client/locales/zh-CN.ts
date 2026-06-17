@@ -36,6 +36,7 @@ export const zhCN = {
   'tls.runTest': '检查 TLS',
   'tls.runAgain': '再次检查',
   'tls.checking': '正在检查 TLS 连接...',
+  'tls.target.network': '网络',
   'tls.retry': '重试',
   'tls.error': 'TLS 检查失败',
   'tls.ready': '点击上方按钮以检查您的 TLS 连接。',

@@ -36,6 +36,7 @@ export const ja = {
   'tls.runTest': 'TLS を確認',
   'tls.runAgain': '再度確認',
   'tls.checking': 'TLS 接続を確認中...',
+  'tls.target.network': 'ネットワーク',
   'tls.retry': '再試行',
   'tls.error': 'TLS 確認に失敗しました',
   'tls.ready': '上のボタンをクリックして TLS 接続を確認してください。',

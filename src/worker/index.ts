@@ -2586,6 +2586,59 @@ async function handleCertTransparency(request: Request): Promise<Response> {
   }
 }
 
+async function resolveDomainIp(domain: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=A`, {
+      headers: { Accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { Answer?: Array<{ data: string }> };
+    return data.Answer?.find((a) => /^\d+\.\d+\.\d+\.\d+$/.test(a.data))?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function lookupAsn(ip: string): Promise<{ asn: string | null; asOrganization: string | null }> {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return { asn: null, asOrganization: null };
+  const rev = parts.reverse().join('.');
+  try {
+    const originRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${rev}.origin.asn.cymru.com&type=TXT`, {
+      headers: { Accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!originRes.ok) return { asn: null, asOrganization: null };
+    const originData = (await originRes.json()) as { Answer?: Array<{ data: string }> };
+    const raw = originData.Answer?.[0]?.data;
+    if (!raw) return { asn: null, asOrganization: null };
+    const txt = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+    const asn = txt.split(' | ')[0]?.trim();
+    if (!asn || !/^\d+$/.test(asn)) return { asn: null, asOrganization: null };
+    let asOrganization: string | null = null;
+    try {
+      const nameRes = await fetch(`https://cloudflare-dns.com/dns-query?name=AS${asn}.asn.cymru.com&type=TXT`, {
+        headers: { Accept: 'application/dns-json' },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (nameRes.ok) {
+        const nameData = (await nameRes.json()) as { Answer?: Array<{ data: string }> };
+        const nameRaw = nameData.Answer?.[0]?.data;
+        if (nameRaw) {
+          const nameTxt = nameRaw.startsWith('"') && nameRaw.endsWith('"') ? nameRaw.slice(1, -1) : nameRaw;
+          asOrganization = nameTxt.split(' | ')[4]?.trim() ?? null;
+        }
+      }
+    } catch {
+      // keep asn without organization
+    }
+    return { asn, asOrganization };
+  } catch {
+    return { asn: null, asOrganization: null };
+  }
+}
+
 async function handleTlsTargetCheck(request: Request): Promise<Response> {
   const rl = checkRateLimit(request);
   if (rl) return rl;
@@ -2613,6 +2666,9 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     error?: string;
     certs?: WorkerTlsCerts | null;
     weaknesses?: WorkerTlsWeakness[];
+    asn?: string | null;
+    asOrganization?: string | null;
+    resolvedIp?: string | null;
   } = {
     domain,
     httpsAvailable: false,
@@ -2623,6 +2679,15 @@ async function handleTlsTargetCheck(request: Request): Promise<Response> {
     score: 0,
     supportsH3: false,
   };
+
+  // Network info: resolve the domain and look up its ASN (Team Cymru DoH).
+  const resolvedIp = await resolveDomainIp(domain);
+  if (resolvedIp) {
+    result.resolvedIp = resolvedIp;
+    const asnInfo = await lookupAsn(resolvedIp);
+    result.asn = asnInfo.asn;
+    result.asOrganization = asnInfo.asOrganization;
+  }
 
   try {
     const httpRes = await fetch(`http://${domain}/`, {

@@ -36,6 +36,7 @@ export const es = {
   'tls.runTest': 'Verificar TLS',
   'tls.runAgain': 'Verificar de nuevo',
   'tls.checking': 'Verificando conexión TLS...',
+  'tls.target.network': 'Red',
   'tls.retry': 'Reintentar',
   'tls.error': 'Error al verificar TLS',
   'tls.ready': 'Haz clic en el botón de arriba para verificar tu conexión TLS.',

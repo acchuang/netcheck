@@ -38,6 +38,7 @@ export const zhTW = {
   'tls.runTest': '檢查 TLS',
   'tls.runAgain': '再次檢查',
   'tls.checking': '正在檢查 TLS 連線...',
+  'tls.target.network': '網路',
   'tls.retry': '重試',
   'tls.error': 'TLS 檢查失敗',
   'tls.ready': '點擊上方按鈕以檢查您的 TLS 連線。',

@@ -83,6 +83,9 @@ interface TlsTargetResult {
   error?: string;
   certs?: TlsCerts;
   weaknesses?: TlsWeakness[];
+  asn?: string | null;
+  asOrganization?: string | null;
+  resolvedIp?: string | null;
 }
 
 
@@ -276,11 +279,21 @@ async function runTlsTargetCheck(): Promise<void> {
         </div>`
       : '<div class="csp-analysis-card" style="margin-top:12px"><p class="info-muted">No HSTS header found.</p></div>';
 
+    const networkParts = [
+      data.asOrganization ? escapeHtml(data.asOrganization) : null,
+      data.asn ? `AS${data.asn}` : null,
+      data.resolvedIp ? escapeHtml(data.resolvedIp) : null,
+    ].filter(Boolean);
+    const networkLine = networkParts.length > 0
+      ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${t('tls.target.network')}: ${networkParts.join(' · ')}</div>`
+      : '';
+
     container.innerHTML = `
       <div class="tls-target-results">
         <div class="tls-target-grade">
           <div class="speed-grade" style="color:${GRADE_COLORS[data.grade] || 'var(--text-secondary)'}; font-size:2.5rem">${data.grade}</div>
           <div style="font-size:12px;color:var(--text-secondary)">Target: ${data.domain}</div>
+          ${networkLine}
         </div>
         <div class="ct-summary-grid">
           <div class="ct-summary-card">

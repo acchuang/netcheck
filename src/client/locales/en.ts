@@ -38,6 +38,7 @@ export const en = {
   'tls.runTest': 'Check TLS',
   'tls.runAgain': 'Check Again',
   'tls.checking': 'Checking TLS connection...',
+  'tls.target.network': 'Network',
   'tls.retry': 'Retry',
   'tls.error': 'TLS check failed',
   'tls.ready': 'Click the button above to check your TLS connection.',

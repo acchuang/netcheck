@@ -36,6 +36,7 @@ export const ko = {
   'tls.runTest': 'TLS 확인',
   'tls.runAgain': '다시 확인',
   'tls.checking': 'TLS 연결 확인 중...',
+  'tls.target.network': '네트워크',
   'tls.retry': '다시 시도',
   'tls.error': 'TLS 확인 실패',
   'tls.ready': '위의 버튼을 클릭하여 TLS 연결을 확인하세요.',
