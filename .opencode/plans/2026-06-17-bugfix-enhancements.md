@@ -29,7 +29,7 @@
 
 **P1 Robustness**
 - E1 a11y — DONE: 99 decorative SVGs aria-hidden; 2 hardcoded Dismiss labels i18n'd (`common.dismiss` ×6 locales) in error-boundary.ts + onboarding.ts; `speed-monitor-stop` i18n aria-label (`speed.monitorStop` ×6 locales + mapping; `speed-history-clear` was already i18n'd — no change); a11y unit guard added (`a11y-static.test.ts`, 3 jsdom+axe tests). Note: guard is a runnable jsdom unit test, not Playwright e2e (e2e has no `webServer` + browsers unavailable here).
-- E2 Event-listener hygiene — `addEventListener` ~60+ uses, `removeEventListener` only 2 files. Hotspots: `tooltip.ts` (6/0), `install-prompt.ts` (4/0), `onboarding.ts` (3/0), `ai-analysis-ui.ts` (8/0), `app.ts` (14/0). Audit re-init paths; fix only confirmed leaks.
+- E2 Event-listener hygiene — AUDITED, NO leaks. The addEventListener/removeEventListener imbalance is intentional and correct: app-lifetime document/window listeners registered once at init (`initTabs`/`initTooltips`/`initInstallPrompt`/`initKeyboardShortcuts`/`initNetworkChange` via `safeInit` on `DOMContentLoaded`); element listeners on short-lived banners/toasts and `ai-analysis-ui` re-rendered containers (`innerHTML` replace → GC'd); `{ once: true }` + `AbortController` cover the rest. Corrected: `dns-ui.ts` has 0 listeners (initial estimate of 2 was a miscount).
 
 **P2 Maintainability**
 - E3 Worker split — `src/worker/index.ts` 2,871 lines → modules (dns/tls/headers/email/security/ai). Touch-only; defer unless touching worker for another reason.
@@ -55,6 +55,6 @@
 - [x] Phase 0 — B1, B2, B4 (verified: eslint . exit 0, no sw.js/logger errors; AGENTS.md React claims removed; typecheck/test/build green)
 - [x] Phase 1 — B3 (verified: INEFFECTIVE_DYNAMIC_IMPORT warning gone; tsc/eslint/test/build green)
 - [x] Phase 2 — E1 + B + C + guard (99 SVGs aria-hidden; common.dismiss ×6 locales; speed.monitorStop i18n; a11y-static.test.ts guard; 283 tests green). COMPLETE.
-- [ ] Phase 3 — E2
+- [x] Phase 3 — E2 (audited: NO leaks. All document/window listeners registered once at init; element listeners on short-lived/re-rendered DOM (GC'd); { once: true } + AbortController handle the rest. No code change needed.)
 - [ ] Phase 4 — E4, E5, E7
 - [ ] Phase 5 — E3 (deferred)
