@@ -52,7 +52,7 @@ export function renderHijackRows(data: HijackResult[]): string {
       const nxNote = r.nxdomainTampered ? ` ${t('dns.hijackNxdomain')}` : '';
       const ttlNote = r.ttlAnomaly ? ` ${t('dns.hijackTtl')}` : '';
       return `<div class="dns-check-item fade-in">
-      <svg class="check-icon ${icon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${checkIcon(icon)}</svg>
+      <svg class="check-icon ${icon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${checkIcon(icon)}</svg>
       <span class="check-label">${r.resolver}</span>
       <span class="check-value">${detail}${nxNote}${ttlNote} (${r.trustScore}/100)</span>
     </div>`;
@@ -69,7 +69,7 @@ export function renderEcsRows(data: EcsResult[]): string {
         ? t('dns.ecsDetected', String(r.ecsPrefix ?? '?'), r.ecsAddress ?? 'unknown')
         : t('dns.ecsNone');
       return `<div class="dns-check-item fade-in">
-      <svg class="check-icon ${icon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${checkIcon(icon)}</svg>
+      <svg class="check-icon ${icon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${checkIcon(icon)}</svg>
       <span class="check-label">${r.resolver}</span>
       <span class="check-value">${detail}</span>
     </div>`;

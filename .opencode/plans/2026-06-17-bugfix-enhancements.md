@@ -28,7 +28,7 @@
 ## Enhancement opportunities
 
 **P1 Robustness**
-- E1 a11y audit — 27 aria/role/alt across 39 buttons + 67 SVGs; audit icon-only buttons, add `aria-label`; extend axe-core e2e.
+- E1 a11y — DONE: audit found all 39 buttons already named; real issue was 99 decorative SVGs lacking `aria-hidden` (added across index.html + 13 `*.ts`; status stays accessible via adjacent text, e.g. `createCheckItem` puts status in `value`). Remaining sub-items: B (i18n 2 hardcoded `aria-label="Dismiss"`) + C (`title`→`aria-label` on 2 ✕ buttons) + axe-core e2e guard — deferred.
 - E2 Event-listener hygiene — `addEventListener` ~60+ uses, `removeEventListener` only 2 files. Hotspots: `tooltip.ts` (6/0), `install-prompt.ts` (4/0), `onboarding.ts` (3/0), `ai-analysis-ui.ts` (8/0), `app.ts` (14/0). Audit re-init paths; fix only confirmed leaks.
 
 **P2 Maintainability**
@@ -54,7 +54,7 @@
 - [x] Plan saved
 - [x] Phase 0 — B1, B2, B4 (verified: eslint . exit 0, no sw.js/logger errors; AGENTS.md React claims removed; typecheck/test/build green)
 - [x] Phase 1 — B3 (verified: INEFFECTIVE_DYNAMIC_IMPORT warning gone; tsc/eslint/test/build green)
-- [ ] Phase 2 — E1
+- [x] Phase 2 — E1 (audit: buttons already named; real fix = aria-hidden on 99 decorative SVGs across index.html + 13 *.ts; verified tsc/eslint/280 tests/build green). B + C + axe e2e deferred.
 - [ ] Phase 3 — E2
 - [ ] Phase 4 — E4, E5, E7
 - [ ] Phase 5 — E3 (deferred)

@@ -137,7 +137,7 @@ async function runDnssecCheck(): Promise<void> {
     container.innerHTML = `
       <div class="dnssec-results">
         <div class="dnssec-status-banner" style="padding:16px;border-radius:var(--radius-lg);border:1px solid ${sc.color}40;background:${sc.color}10;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="${sc.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="${sc.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;flex-shrink:0" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             ${sc.icon}
           </svg>
@@ -158,7 +158,7 @@ async function runDnssecCheck(): Promise<void> {
             };
             return `
               <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="${stepColors[step.status]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0;margin-top:2px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="${stepColors[step.status]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0;margin-top:2px" aria-hidden="true">
                   ${stepIcons[step.status]}
                 </svg>
                 <div style="flex:1">

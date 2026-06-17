@@ -207,7 +207,7 @@ async function runHeadersCheck(): Promise<void> {
         }
 
         div.innerHTML = `
-        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconSvg}</svg>
         <div class="check-label-block">
           <span class="check-label">${t(check.name)}</span>
           <span class="check-sublabel">${t(check.desc)}</span>

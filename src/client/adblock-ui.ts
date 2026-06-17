@@ -115,7 +115,7 @@ function createCategoryWithResults(
 
       return `
       <div class="test-item">
-        <svg class="test-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="test-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>${iconSvg}
         </svg>
         <span class="test-name">${tt.name}</span>
@@ -126,7 +126,7 @@ function createCategoryWithResults(
 
   div.innerHTML = `
     <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
-      <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
       <span class="test-category-score">${t('adblock.blockedOf', blocked, tests.length)}</span>
     </div>
@@ -232,7 +232,7 @@ async function loadCommunityStats(score: number): Promise<void> {
       stats.total > 0 ? Math.min(100, Math.round((score / Math.max(stats.p90 || 1, 1)) * 100)) : 0;
     el.innerHTML = `
       <div class="score-ring" style="width:100px;height:100px;margin:0 auto">
-        <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)">
+        <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)" aria-hidden="true">
           <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-tertiary)" stroke-width="6"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand)" stroke-width="6" stroke-dasharray="263.9" stroke-dashoffset="${263.9 - (pct / 100) * 263.9}" stroke-linecap="round"/>
         </svg>
@@ -268,7 +268,7 @@ function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]
   subtitle.textContent = t('adblock.suggestGaps', weakCategories.length, results.length);
 
   const arrowSvg =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
 
   grid.innerHTML = weakCategories
     .map((cat) => {
@@ -291,7 +291,7 @@ function renderAdblockSuggestions(score: AdblockScore, results: CategoryResult[]
       <div class="suggestion-card category-advice stagger-item">
         <div class="suggestion-top">
           <div class="suggestion-icon-svg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${advice.icon}</svg>
           </div>
           <div class="suggestion-info">
             <div class="suggestion-name">${t(key + '.title')}</div>

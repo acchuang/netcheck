@@ -83,7 +83,7 @@ async function runFingerprintScan(): Promise<void> {
 
     div.innerHTML = `
       <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
-        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
         <span class="test-category-name">${t(cat.i18nKey) || cat.name}</span>
         <span class="test-category-score">${cat.items.length} ${t(cat.i18nKey) || cat.name}</span>
       </div>
@@ -97,7 +97,7 @@ async function runFingerprintScan(): Promise<void> {
     sugSection.style.display = 'block';
     const grid = document.getElementById('fp-suggestions-grid')!;
     const arrowSvg =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
     const tips = [
       {
         name: 'fp.tip.brave',
@@ -195,7 +195,7 @@ fingerprintState.categories.subscribe((categories) => {
       .join('');
     div.innerHTML = `
       <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
-        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
         <span class="test-category-name">${t(cat.i18nKey) || cat.name}</span>
         <span class="test-category-score">${cat.items.length} ${t(cat.i18nKey) || cat.name}</span>
       </div>
