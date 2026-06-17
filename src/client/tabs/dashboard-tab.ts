@@ -74,6 +74,23 @@ function computeOverallScore(): { grade: string; score: number; testsCompleted: 
         weightedScore += grade * weight;
         break;
       }
+      case 'headers': {
+        const hg = headersState.grade.get();
+        const hMap: Record<string, number> = { 'A+': 95, A: 90, B: 75, C: 60, D: 40, F: 20 };
+        weightedScore += (hMap[hg] ?? 50) * weight;
+        break;
+      }
+      case 'fingerprint': {
+        // Lower fingerprint uniqueness (less identifiable) is better for privacy.
+        weightedScore += (100 - fingerprintState.uniquenessScore.get()) * weight;
+        break;
+      }
+      case 'quality': {
+        const qg = qualityState.score.get().grade;
+        const qMap: Record<string, number> = { 'A+': 95, A: 88, B: 78, 'C+': 70, C: 60, D: 42, F: 22 };
+        weightedScore += (qMap[qg] ?? 50) * weight;
+        break;
+      }
       default:
         weightedScore += 50 * weight; // placeholder for tests not yet scored
     }
@@ -112,7 +129,18 @@ export function initDashboard(): void {
     renderDashboard();
   });
   adblockState.score.subscribe(() => renderDashboard());
-  headersState.grade.subscribe(() => renderDashboard());
+  headersState.grade.subscribe((g) => {
+    if (g) markCompleted('headers');
+    renderDashboard();
+  });
+  fingerprintState.uniquenessScore.subscribe((s) => {
+    if (s > 0) markCompleted('fingerprint');
+    renderDashboard();
+  });
+  qualityState.hasRun.subscribe((r) => {
+    if (r) markCompleted('quality');
+    renderDashboard();
+  });
 
   renderDashboard();
 }
