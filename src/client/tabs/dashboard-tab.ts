@@ -91,6 +91,16 @@ function computeOverallScore(): { grade: string; score: number; testsCompleted: 
         weightedScore += (qMap[qg] ?? 50) * weight;
         break;
       }
+      case 'tls': {
+        const proto = tlsState.info.get()?.protocol;
+        const grade = proto === 'TLSv1.3' ? 95 : proto === 'TLSv1.2' ? 85 : proto ? 45 : 30;
+        weightedScore += grade * weight;
+        break;
+      }
+      case 'adblock': {
+        weightedScore += adblockState.score.get() * weight;
+        break;
+      }
       default:
         weightedScore += 50 * weight; // placeholder for tests not yet scored
     }
