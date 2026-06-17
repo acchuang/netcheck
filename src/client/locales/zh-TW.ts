@@ -696,6 +696,7 @@ export const zhTW = {
   'speed.monitorProgress': '測試 {0}/{1}',
   'speed.monitorStop': '停止監控',
   'common.dismiss': '關閉',
+  'error.moduleFailed': '載入失敗：{0}',
   'speed.monitorStarted': '監控已開始：{0} 分鐘',
   'speed.monitorStarting': '正在啟動監控...',
 

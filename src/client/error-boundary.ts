@@ -30,7 +30,7 @@ function createToast(moduleName: string, error: Error): HTMLDivElement {
       </svg>
     </div>
     <div class="error-toast-body">
-      <div class="error-toast-title">${escapeHtml(moduleName)} failed to load</div>
+      <div class="error-toast-title">${escapeHtml(t('error.moduleFailed', moduleName))}</div>
       <div class="error-toast-message">${escapeHtml(message)}</div>
     </div>
     <button class="error-toast-close" aria-label="${t('common.dismiss')}">&times;</button>

@@ -684,6 +684,7 @@ export const es = {
   'speed.monitorProgress': 'Test {0}/{1}',
   'speed.monitorStop': 'Detener monitorización',
   'common.dismiss': 'Cerrar',
+  'error.moduleFailed': 'No se pudo cargar {0}',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

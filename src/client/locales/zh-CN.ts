@@ -657,6 +657,7 @@ export const zhCN = {
   'speed.monitorProgress': 'Test {0}/{1}',
   'speed.monitorStop': '停止监控',
   'common.dismiss': '关闭',
+  'error.moduleFailed': '加载失败：{0}',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

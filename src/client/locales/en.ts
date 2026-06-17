@@ -378,6 +378,7 @@ export const en = {
   'speed.monitorProgress': 'Test {0}/{1}',
   'speed.monitorStop': 'Stop monitoring',
   'common.dismiss': 'Dismiss',
+  'error.moduleFailed': '{0} failed to load',
 
   // History
   'speed.history.downloadCsv': 'Download CSV (Speed History)',

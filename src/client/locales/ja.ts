@@ -672,6 +672,7 @@ export const ja = {
   'speed.monitorProgress': 'Test {0}/{1}',
   'speed.monitorStop': 'モニタリングを停止',
   'common.dismiss': '閉じる',
+  'error.moduleFailed': '{0} の読み込みに失敗しました',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

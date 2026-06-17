@@ -661,6 +661,7 @@ export const ko = {
   'speed.monitorProgress': 'Test {0}/{1}',
   'speed.monitorStop': '모니터링 중지',
   'common.dismiss': '닫기',
+  'error.moduleFailed': '{0} 불러오기 실패',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 
