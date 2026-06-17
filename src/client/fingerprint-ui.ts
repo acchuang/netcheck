@@ -3,6 +3,7 @@ import { t } from './i18n';
 import { affiliate } from './affiliates';
 import { appState } from './state/shared-state';
 import { fingerprintState } from './state/fingerprint-state';
+import { animateNumber, animateRing } from './ui-utils';
 
 export function initFingerprint(): void {
   document.getElementById('fp-start-btn')?.addEventListener('click', runFingerprintScan);
@@ -19,12 +20,11 @@ async function runFingerprintScan(): Promise<void> {
 
   const scoreCard = document.getElementById('fp-score-card')!;
   scoreCard.style.display = 'flex';
-  document.getElementById('fp-score-number')!.textContent = String(result.uniquenessScore);
+  const fpScoreEl = document.getElementById('fp-score-number')!;
+  animateNumber(fpScoreEl, 0, result.uniquenessScore, 600, (v) => String(Math.round(v)));
 
-  const circumference = 2 * Math.PI * 54;
   const ring = document.getElementById('fp-score-ring')!;
-  ring.style.strokeDasharray = String(circumference);
-  ring.style.strokeDashoffset = String(circumference * (1 - result.uniquenessScore / 100));
+  animateRing(ring, result.uniquenessScore);
   ring.style.stroke =
     result.uniquenessScore >= 70
       ? 'var(--red)'
@@ -157,12 +157,10 @@ async function runFingerprintScan(): Promise<void> {
 
 fingerprintState.uniquenessScore.subscribe((score) => {
   const el = document.getElementById('fp-score-number');
-  if (el) el.textContent = String(score);
+  if (el) animateNumber(el, 0, score, 600, (v) => String(Math.round(v)));
   const ring = document.getElementById('fp-score-ring');
   if (ring) {
-    const circumference = 2 * Math.PI * 54;
-    ring.style.strokeDasharray = String(circumference);
-    ring.style.strokeDashoffset = String(circumference * (1 - score / 100));
+    animateRing(ring, score);
     ring.style.stroke =
       score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--emerald)';
   }

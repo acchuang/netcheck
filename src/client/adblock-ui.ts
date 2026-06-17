@@ -4,6 +4,7 @@ import { affiliate } from './affiliates';
 import { CnameChecker } from './adblock-cname';
 import { appState } from './state/shared-state';
 import { adblockState } from './state/adblock-state';
+import { animateNumber, animateRing } from './ui-utils';
 
 interface AdblockScore {
   score: number;
@@ -152,7 +153,7 @@ export async function runAdBlockTests(): Promise<void> {
     categoriesEl.appendChild(catEl);
   });
 
-  document.getElementById('score-number')!.textContent = String(score);
+  animateNumber(document.getElementById('score-number')!, 0, score, 600, (v) => String(Math.round(v)));
 
   // CNAME tracking check
   const cnameSection = document.getElementById('cname-section');
@@ -176,8 +177,7 @@ export async function runAdBlockTests(): Promise<void> {
   }
 
   const ring = document.getElementById('score-ring-fill') as unknown as SVGCircleElement;
-  const circumference = 2 * Math.PI * 54;
-  ring.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
+  animateRing(ring, score);
 
   if (score >= 80) {
     ring.style.stroke = 'var(--emerald)';
@@ -329,11 +329,10 @@ adblockState.results.subscribe((results) => {
 
 adblockState.score.subscribe((score) => {
   const el = document.getElementById('score-number');
-  if (el) el.textContent = String(score);
+  if (el) animateNumber(el, 0, score, 600, (v) => String(Math.round(v)));
   const ring = document.getElementById('score-ring-fill') as unknown as SVGCircleElement;
   if (ring) {
-    const circumference = 2 * Math.PI * 54;
-    ring.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
+    animateRing(ring, score);
   }
   if (score >= 80) {
     if (ring) ring.style.stroke = 'var(--emerald)';

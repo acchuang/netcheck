@@ -5,6 +5,10 @@ export function animateNumber(
   duration: number,
   formatter: (v: number) => string,
 ): void {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = formatter(to);
+    return;
+  }
   const start = performance.now();
   const diff = to - from;
   if (Math.abs(diff) < 0.1) {
@@ -19,6 +23,17 @@ export function animateNumber(
     if (progress < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+}
+
+export function animateRing(ring: HTMLElement | SVGElement, score: number, radius = 54): void {
+  const circumference = 2 * Math.PI * radius;
+  ring.style.strokeDasharray = String(circumference);
+  const target = circumference * (1 - score / 100);
+  ring.style.strokeDashoffset = String(circumference);
+  // Commit the empty state, then transition to the target (CSS handles the 0.6s;
+  // the reduced-motion media query makes this instant for reduced-motion users).
+  void ring.getBoundingClientRect();
+  ring.style.strokeDashoffset = String(target);
 }
 
 export function pulseValue(_el: HTMLElement): void {
