@@ -694,6 +694,8 @@ export const zhTW = {
   'speed.history.noData': '無歷史資料',
   'speed.monitorComplete': '監控完成',
   'speed.monitorProgress': '測試 {0}/{1}',
+  'speed.monitorStop': '停止監控',
+  'common.dismiss': '關閉',
   'speed.monitorStarted': '監控已開始：{0} 分鐘',
   'speed.monitorStarting': '正在啟動監控...',
 

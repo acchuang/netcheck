@@ -659,6 +659,8 @@ export const ko = {
   'speed.history.noData': 'No history data available',
   'speed.monitorComplete': 'Monitor complete',
   'speed.monitorProgress': 'Test {0}/{1}',
+  'speed.monitorStop': '모니터링 중지',
+  'common.dismiss': '닫기',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

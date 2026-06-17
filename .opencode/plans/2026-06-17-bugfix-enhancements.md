@@ -28,7 +28,7 @@
 ## Enhancement opportunities
 
 **P1 Robustness**
-- E1 a11y — DONE: audit found all 39 buttons already named; real issue was 99 decorative SVGs lacking `aria-hidden` (added across index.html + 13 `*.ts`; status stays accessible via adjacent text, e.g. `createCheckItem` puts status in `value`). Remaining sub-items: B (i18n 2 hardcoded `aria-label="Dismiss"`) + C (`title`→`aria-label` on 2 ✕ buttons) + axe-core e2e guard — deferred.
+- E1 a11y — DONE: 99 decorative SVGs aria-hidden; 2 hardcoded Dismiss labels i18n'd (`common.dismiss` ×6 locales) in error-boundary.ts + onboarding.ts; `speed-monitor-stop` i18n aria-label (`speed.monitorStop` ×6 locales + mapping; `speed-history-clear` was already i18n'd — no change); a11y unit guard added (`a11y-static.test.ts`, 3 jsdom+axe tests). Note: guard is a runnable jsdom unit test, not Playwright e2e (e2e has no `webServer` + browsers unavailable here).
 - E2 Event-listener hygiene — `addEventListener` ~60+ uses, `removeEventListener` only 2 files. Hotspots: `tooltip.ts` (6/0), `install-prompt.ts` (4/0), `onboarding.ts` (3/0), `ai-analysis-ui.ts` (8/0), `app.ts` (14/0). Audit re-init paths; fix only confirmed leaks.
 
 **P2 Maintainability**
@@ -54,7 +54,7 @@
 - [x] Plan saved
 - [x] Phase 0 — B1, B2, B4 (verified: eslint . exit 0, no sw.js/logger errors; AGENTS.md React claims removed; typecheck/test/build green)
 - [x] Phase 1 — B3 (verified: INEFFECTIVE_DYNAMIC_IMPORT warning gone; tsc/eslint/test/build green)
-- [x] Phase 2 — E1 (audit: buttons already named; real fix = aria-hidden on 99 decorative SVGs across index.html + 13 *.ts; verified tsc/eslint/280 tests/build green). B + C + axe e2e deferred.
+- [x] Phase 2 — E1 + B + C + guard (99 SVGs aria-hidden; common.dismiss ×6 locales; speed.monitorStop i18n; a11y-static.test.ts guard; 283 tests green). COMPLETE.
 - [ ] Phase 3 — E2
 - [ ] Phase 4 — E4, E5, E7
 - [ ] Phase 5 — E3 (deferred)

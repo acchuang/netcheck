@@ -682,6 +682,8 @@ export const es = {
   'speed.history.noData': 'No history data available',
   'speed.monitorComplete': 'Monitor complete',
   'speed.monitorProgress': 'Test {0}/{1}',
+  'speed.monitorStop': 'Detener monitorización',
+  'common.dismiss': 'Cerrar',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

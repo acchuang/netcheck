@@ -655,6 +655,8 @@ export const zhCN = {
   'speed.history.noData': 'No history data available',
   'speed.monitorComplete': 'Monitor complete',
   'speed.monitorProgress': 'Test {0}/{1}',
+  'speed.monitorStop': '停止监控',
+  'common.dismiss': '关闭',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

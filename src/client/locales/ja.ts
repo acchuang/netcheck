@@ -670,6 +670,8 @@ export const ja = {
   'speed.history.noData': 'No history data available',
   'speed.monitorComplete': 'Monitor complete',
   'speed.monitorProgress': 'Test {0}/{1}',
+  'speed.monitorStop': 'モニタリングを停止',
+  'common.dismiss': '閉じる',
   'speed.monitorStarted': 'Monitor started: {0} minutes',
   'speed.monitorStarting': 'Starting monitor...',
 

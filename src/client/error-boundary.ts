@@ -1,4 +1,5 @@
 import { escapeHtml } from './escape';
+import { t } from './i18n';
 
 const TOAST_DURATION = 8000;
 const MAX_TOASTS = 3;
@@ -32,7 +33,7 @@ function createToast(moduleName: string, error: Error): HTMLDivElement {
       <div class="error-toast-title">${escapeHtml(moduleName)} failed to load</div>
       <div class="error-toast-message">${escapeHtml(message)}</div>
     </div>
-    <button class="error-toast-close" aria-label="Dismiss">&times;</button>
+    <button class="error-toast-close" aria-label="${t('common.dismiss')}">&times;</button>
   `;
 
   const closeBtn = toast.querySelector('.error-toast-close')!;

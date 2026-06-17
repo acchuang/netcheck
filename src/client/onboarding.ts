@@ -28,7 +28,7 @@ export function initOnboarding(): void {
   banner.innerHTML = `
     <div class="onboarding-inner">
       <p class="onboarding-text"><strong>NetCheck</strong> — ${t('onboarding.text')}</p>
-      <button class="onboarding-dismiss" aria-label="Dismiss">&times;</button>
+      <button class="onboarding-dismiss" aria-label="${t('common.dismiss')}">&times;</button>
     </div>
   `;
 

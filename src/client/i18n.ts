@@ -389,6 +389,8 @@ const en = {
   'speed.monitorComplete': 'Monitor complete',
   'speed.monitorStarting': 'Starting monitor...',
   'speed.monitorProgress': 'Test {0}/{1}',
+  'speed.monitorStop': 'Stop monitoring',
+  'common.dismiss': 'Dismiss',
 
   // History
   'speed.history.downloadCsv': 'Download CSV (Speed History)',
@@ -988,6 +990,8 @@ function applyStaticTranslations(): void {
     { selector: '#speed-bufferbloat-label', key: 'speed.tip.bufferbloat', attr: 'data-tooltip' },
     { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'title' },
     { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'aria-label' },
+    { selector: '#speed-monitor-stop', key: 'speed.monitorStop', attr: 'title' },
+    { selector: '#speed-monitor-stop', key: 'speed.monitorStop', attr: 'aria-label' },
 
     // History tab
     { selector: '[data-i18n="history.title"]', key: 'history.title' },
