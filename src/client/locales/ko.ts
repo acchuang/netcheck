@@ -27,6 +27,7 @@ export const ko = {
   'dashboard.runDns': 'DNS 확인 실행',
   'dashboard.runSpeed': '속도 테스트 실행',
   'dashboard.runAll': '모든 테스트 실행',
+  'dashboard.running': '실행 중…',
   'dashboard.emptyTitle': 'NetCheck에 오신 것을 환영합니다',
   'dashboard.emptySubtitle': '첫 번째 테스트를 실행하여 네트워크 개요를 확인하세요',
 

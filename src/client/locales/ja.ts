@@ -27,6 +27,7 @@ export const ja = {
   'dashboard.runDns': 'DNS チェックを実行',
   'dashboard.runSpeed': 'スピードテストを実行',
   'dashboard.runAll': 'すべてのテストを実行',
+  'dashboard.running': '実行中…',
   'dashboard.emptyTitle': 'NetCheck へようこそ',
   'dashboard.emptySubtitle': '最初のテストを実行してネットワーク概要を確認してください',
 

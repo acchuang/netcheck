@@ -29,6 +29,7 @@ export const en = {
   'dashboard.runDns': 'Run DNS Check',
   'dashboard.runSpeed': 'Run Speed Test',
   'dashboard.runAll': 'Run All Tests',
+  'dashboard.running': 'Running…',
   'dashboard.emptyTitle': 'Welcome to NetCheck',
   'dashboard.emptySubtitle': 'Run your first test to see your network overview',
 

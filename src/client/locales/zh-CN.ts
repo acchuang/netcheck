@@ -27,6 +27,7 @@ export const zhCN = {
   'dashboard.runDns': '运行 DNS 检测',
   'dashboard.runSpeed': '运行测速',
   'dashboard.runAll': '运行所有测试',
+  'dashboard.running': '运行中…',
   'dashboard.emptyTitle': '欢迎使用 NetCheck',
   'dashboard.emptySubtitle': '运行第一次测试以查看网络总览',
 

@@ -4,6 +4,8 @@ import { speedState } from '../state/speed-state';
 import { tlsState } from '../state/tls-state';
 import { adblockState } from '../state/adblock-state';
 import { headersState } from '../state/headers-state';
+import { fingerprintState } from '../state/fingerprint-state';
+import { qualityState } from '../state/quality-state';
 import { t } from '../i18n';
 import { SpeedTestHistory } from '../history';
 import { getAllHistory } from '../state/history-state';
@@ -363,6 +365,42 @@ function renderSkeletonCards(): string {
   `;
 }
 
+async function runAllTests(): Promise<void> {
+  const steps = [
+    { btn: 'speed-start-btn', done: () => speedState.download.get() > 0 },
+    { btn: 'headers-check-btn', done: () => !!headersState.grade.get() },
+    { btn: 'fp-start-btn', done: () => fingerprintState.uniquenessScore.get() > 0 },
+    { btn: 'quality-run-btn', done: () => qualityState.hasRun.get() },
+  ];
+  const runAllBtns = document.querySelectorAll<HTMLButtonElement>('[data-action="run-all"]');
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    runAllBtns.forEach((b) => {
+      b.disabled = true;
+      b.textContent = `${t('dashboard.running')} (${i + 1}/${steps.length})`;
+    });
+    if (!step.done()) {
+      document.getElementById(step.btn)?.click();
+      await waitFor(step.done, 90000);
+    }
+  }
+  runAllBtns.forEach((b) => {
+    b.disabled = false;
+    b.textContent = t('dashboard.runAll');
+  });
+}
+
+function waitFor(cond: () => boolean, timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const tick = () => {
+      if (cond() || Date.now() - start > timeoutMs) resolve();
+      else setTimeout(tick, 200);
+    };
+    tick();
+  });
+}
+
 function wireActionButtons(container: HTMLElement): void {
   container.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -374,9 +412,7 @@ function wireActionButtons(container: HTMLElement): void {
         const speedLink = document.querySelector('.nav-link[data-tab="speed"]') as HTMLAnchorElement;
         if (speedLink) speedLink.click();
       } else if (action === 'run-all') {
-        // Navigate to DNS first, which triggers auto-run
-        const dnsLink = document.querySelector('.nav-link[data-tab="dns"]') as HTMLAnchorElement;
-        if (dnsLink) dnsLink.click();
+        runAllTests();
       }
     });
   });

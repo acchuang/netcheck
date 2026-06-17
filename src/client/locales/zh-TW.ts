@@ -29,6 +29,7 @@ export const zhTW = {
   'dashboard.runDns': '執行 DNS 檢測',
   'dashboard.runSpeed': '執行測速',
   'dashboard.runAll': '執行所有測試',
+  'dashboard.running': '執行中…',
   'dashboard.emptyTitle': '歡迎使用 NetCheck',
   'dashboard.emptySubtitle': '執行第一次測試以查看網路總覽',
 
