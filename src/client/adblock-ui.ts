@@ -1,4 +1,4 @@
-import { AdBlockTest } from './adblock-test';
+import { AdBlockTest, type TestWithResult } from './adblock-test';
 import { t } from './i18n';
 import { affiliate } from './affiliates';
 import { CnameChecker } from './adblock-cname';
@@ -14,7 +14,7 @@ interface AdblockScore {
 
 interface CategoryResult {
   name: string;
-  tests: { blocked: boolean; [key: string]: any }[];
+  tests: TestWithResult[];
 }
 
 interface CategoryAdviceDef {

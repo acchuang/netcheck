@@ -1,3 +1,7 @@
+interface AiBinding {
+  run(model: string, options: { messages?: unknown; prompt?: string; max_tokens?: number; temperature?: number }): Promise<unknown>;
+}
+
 interface Env {
   ANALYTICS: KVNamespace;
   PING_WNAM: R2Bucket;
@@ -6,7 +10,7 @@ interface Env {
   PING_EEUR: R2Bucket;
   PING_APAC: R2Bucket;
   PING_OC: R2Bucket;
-  AI: any;
+  AI: AiBinding;
 }
 
 function csp(): string {
@@ -235,7 +239,20 @@ export const RATE_LIMIT_MAX = 120;
 export const RATE_LIMIT_SPEED_BURST = 60;
 export const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
-const crtCache = new Map<string, { data: any[]; expires: number }>();
+interface CrtShEntry {
+  common_name?: string;
+  name_value?: string;
+  not_before?: string;
+  not_after?: string;
+  issuer_name?: string;
+  issuer_organization?: string;
+  organization?: string;
+  key_type?: string;
+  key_length?: number;
+  sha256?: string;
+}
+
+const crtCache = new Map<string, { data: CrtShEntry[]; expires: number }>();
 const CRT_CACHE_TTL = 5 * 60 * 1000;
 
 interface WorkerTlsCerts {
@@ -254,7 +271,7 @@ interface WorkerTlsWeakness {
   description: string;
 }
 
-async function fetchCrtShCerts(domain: string): Promise<any[] | null> {
+async function fetchCrtShCerts(domain: string): Promise<CrtShEntry[] | null> {
   const cached = crtCache.get(domain);
   if (cached && cached.expires > Date.now()) return cached.data;
   try {
@@ -263,7 +280,7 @@ async function fetchCrtShCerts(domain: string): Promise<any[] | null> {
       headers: { 'User-Agent': 'NetCheck/1.0' },
     });
     if (!res.ok) return null;
-    const data = await res.json() as any[];
+    const data = await res.json() as CrtShEntry[];
     crtCache.set(domain, { data, expires: Date.now() + CRT_CACHE_TTL });
     if (crtCache.size > 500) {
       const oldest = [...crtCache.entries()].sort((a, b) => a[1].expires - b[1].expires);
@@ -275,7 +292,7 @@ async function fetchCrtShCerts(domain: string): Promise<any[] | null> {
   }
 }
 
-function parseCertFromCrtSh(entries: any[], domain: string): WorkerTlsCerts | null {
+function parseCertFromCrtSh(entries: CrtShEntry[], domain: string): WorkerTlsCerts | null {
   if (!entries || entries.length === 0) return null;
   const cert = entries[0];
   const now = new Date();
@@ -295,7 +312,7 @@ function parseCertFromCrtSh(entries: any[], domain: string): WorkerTlsCerts | nu
     key: { type: keyType, size: cert.key_length ?? 0 },
     fingerprint: cert.sha256 ?? '',
     chainDepth: entries.length,
-    intermediates: entries.slice(1, 4).map((e: any) => ({
+    intermediates: entries.slice(1, 4).map((e) => ({
       cn: e.common_name ?? e.name_value?.split('\n')[0] ?? '',
       organization: e.organization ?? undefined,
       fingerprint: e.sha256 ?? '',

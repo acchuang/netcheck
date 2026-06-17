@@ -46,15 +46,14 @@ export interface QualityScore {
 }
 
 function getConnectionInfo(): ConnectionInfo | null {
-  const conn = (navigator as any).connection as
-    | {
-        type?: string;
-        effectiveType?: string;
-        downlink?: number;
-        rtt?: number;
-        saveData?: boolean;
-      }
-    | undefined;
+  type NetConnInfo = {
+    type?: string;
+    effectiveType?: string;
+    downlink?: number;
+    rtt?: number;
+    saveData?: boolean;
+  };
+  const conn = (navigator as Navigator & { readonly connection?: NetConnInfo }).connection;
   if (!conn) return null;
   return {
     type: conn.type ?? null,

@@ -7,8 +7,15 @@ interface NetworkConnection {
   removeEventListener?: (type: string, listener: () => void) => void;
 }
 
+type ConnectionNavigator = Navigator & {
+  readonly connection?: NetworkConnection;
+  readonly mozConnection?: NetworkConnection;
+  readonly webkitConnection?: NetworkConnection;
+};
+
 function getConnection(): NetworkConnection | null {
-  return (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection || null;
+  const n = navigator as ConnectionNavigator;
+  return n.connection || n.mozConnection || n.webkitConnection || null;
 }
 
 function effectiveTypeLabel(type: string | undefined): string {

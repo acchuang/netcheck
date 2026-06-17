@@ -13,6 +13,7 @@ import { DnsBenchmark, renderBenchmarkHeatmap, renderPathBars } from './dns-benc
 import { DnsAudit, renderHijackRows, renderEcsRows } from './dns-audit';
 import type { HijackResult, EcsResult } from './dns-audit';
 import { testDohConnectivity, renderDohRows } from './doh-test';
+import type { DnsResult } from './dns-check';
 
 interface IpData {
   ip?: string;
@@ -527,7 +528,7 @@ export async function runDnsLookup(): Promise<void> {
   tableEl.innerHTML = `<p class="info-muted">${t('dns.lookupLoading')}</p>`;
   outputEl.textContent = '...';
 
-  let allData: Record<string, any>;
+  let allData: Record<string, DnsResult>;
   if (type === 'ALL') {
     const types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA', 'SRV'];
     const results = await Promise.all(types.map((rt) => DnsCheck.lookupDns(domain, rt)));

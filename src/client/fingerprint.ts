@@ -322,7 +322,7 @@ export const FingerprintDetector = {
   },
 
   detectNavigator(): FingerprintCategory {
-    const nav = navigator as any;
+    const nav = navigator as Navigator & { readonly deviceMemory?: number };
     const items: FingerprintItem[] = [
       {
         label: 'User Agent',

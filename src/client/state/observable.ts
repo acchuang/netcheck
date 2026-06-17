@@ -42,18 +42,20 @@ export function observable<T>(initial: T): {
   };
 }
 
-export function derive<T>(
-  sources: Array<{ get(): any; subscribe(fn: Subscriber<any>): Disposer }>,
-  compute: (...values: any[]) => T,
+type SourceLike<U> = { get(): U; subscribe(fn: Subscriber<U>): Disposer };
+
+export function derive<S extends readonly unknown[], T>(
+  sources: readonly [...{ [K in keyof S]: SourceLike<S[K]> }],
+  compute: (...values: S) => T,
 ): { get(): T; subscribe(fn: Subscriber<T>): Disposer; dispose: Disposer } {
-  let value: T = compute(...sources.map((s) => s.get()));
+  let value: T = compute(...(sources.map((s) => s.get()) as unknown as S));
   let lastGoodValue: T = value;
   const subscribers = new Set<Subscriber<T>>();
   const sourceDisposers: Disposer[] = [];
 
   function recompute() {
     try {
-      const newValue = compute(...sources.map((s) => s.get()));
+      const newValue = compute(...(sources.map((s) => s.get()) as unknown as S));
       if (Object.is(newValue, value)) return;
       value = newValue;
       lastGoodValue = newValue;

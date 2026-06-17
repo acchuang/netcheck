@@ -33,12 +33,12 @@
 
 **P2 Maintainability**
 - E3 Worker split — `src/worker/index.ts` 2,871 lines → modules (dns/tls/headers/email/security/ai). Touch-only; defer unless touching worker for another reason.
-- E4 `any` cleanup — ~20 warnings, concentrated in `privacy-exposure.ts` (8) + `state/observable.ts` (3). Add `types/dom-extras.d.ts` for non-standard Web APIs.
-- E5 Archive stale April plan.
+- E4 `any` cleanup — DONE: all 25 `no-explicit-any` warnings → 0. Added `PrivacyNav` (privacy-exposure), `ConnectionNavigator`/inline intersection casts (network-change/connection-quality/fingerprint), `CrtShEntry` + `AiBinding` (worker crt.sh + AI binding), exported `DnsResult`/`DnsAnswer` (typed dns-ui `allData`), `TestWithResult` (adblock-ui), tuple-generic `derive` (observable), typed globalThis cast (dns-audit.test). `npx eslint .` now 0 warnings / 0 errors.
+- E5 Archive stale April plan — DONE: moved `.opencode/plans/2026-04-14-site-improvements.md` → `docs/archive/` (superseded by 15 specs in `docs/superpowers/specs/`).
 
 **P3 Polish**
 - E6 CSS strategy clarity — Tailwind v4 (`app.css` via `app.ts:1`) + hand-written `public/css/styles.css` (4,465 lines) coexist. Document ownership in AGENTS.md.
-- E7 i18n consistency — move inline `en` from `i18n.ts` to `locales/en.ts`.
+- E7 i18n consistency — DONE: moved inline `en` (844 lines) from `i18n.ts` to `src/client/locales/en.ts` (`export const en = {...} as const`); `i18n.ts` imports it; `Translations = Record<keyof typeof en, string>` preserved.
 
 ## Phased execution
 
@@ -56,5 +56,5 @@
 - [x] Phase 1 — B3 (verified: INEFFECTIVE_DYNAMIC_IMPORT warning gone; tsc/eslint/test/build green)
 - [x] Phase 2 — E1 + B + C + guard (99 SVGs aria-hidden; common.dismiss ×6 locales; speed.monitorStop i18n; a11y-static.test.ts guard; 283 tests green). COMPLETE.
 - [x] Phase 3 — E2 (audited: NO leaks. All document/window listeners registered once at init; element listeners on short-lived/re-rendered DOM (GC'd); { once: true } + AbortController handle the rest. No code change needed.)
-- [ ] Phase 4 — E4, E5, E7
+- [x] Phase 4 — E4, E5, E7 (25 any→0 warnings; April plan archived; en moved to locales/en.ts; tsc/eslint 0-warn/283 tests/build green). COMPLETE.
 - [ ] Phase 5 — E3 (deferred)

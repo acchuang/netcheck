@@ -6,14 +6,14 @@ interface IpResult {
   error?: string;
 }
 
-interface DnsAnswer {
+export interface DnsAnswer {
   name: string;
   type: number;
   TTL: number;
   data: string;
 }
 
-interface DnsResult {
+export interface DnsResult {
   Answer?: DnsAnswer[];
   Status?: number;
   error?: string;

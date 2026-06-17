@@ -2,6 +2,13 @@ import { t } from './i18n';
 import { privacyExposureState } from './state/privacy-exposure-state';
 import type { PrivacyCheck } from './state/privacy-exposure-state';
 
+// Non-standard Navigator APIs used for privacy probing (not in the TS DOM lib).
+type PrivacyNav = Navigator & {
+  getBattery(): Promise<unknown>;
+  readonly deviceMemory?: number;
+  readonly globalPrivacyControl?: boolean;
+};
+
 const GRADE_THRESHOLDS: [number, string][] = [
   [93, 'A+'],
   [90, 'A'],
@@ -69,7 +76,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     async () => {
       if (!('getBattery' in navigator)) return 'unavailable';
       try {
-        const battery = await (navigator as any).getBattery();
+        const battery = await (navigator as PrivacyNav).getBattery();
         return battery ? 'available' : 'blocked';
       } catch {
         return 'blocked';
@@ -85,7 +92,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     'deviceMemory',
     async () => {
       if (!('deviceMemory' in navigator)) return 'unavailable';
-      return (navigator as any).deviceMemory ? 'available' : 'blocked';
+      return (navigator as PrivacyNav).deviceMemory ? 'available' : 'blocked';
     },
     'medium',
     'Approximate device RAM (fingerprinting signal)',
@@ -134,7 +141,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     async () => {
       if (!('getGamepads' in navigator)) return 'unavailable';
       try {
-        const gamepads = (navigator as any).getGamepads();
+        const gamepads = navigator.getGamepads();
         return gamepads && gamepads.length > 0 ? 'available' : 'unavailable';
       } catch {
         return 'unavailable';
@@ -153,7 +160,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
       try {
         const result = await Promise.race([
           new Promise<string>((resolve) => {
-            (navigator as any).permissions.query({ name: 'geolocation' }).then((p: any) => {
+            navigator.permissions.query({ name: 'geolocation' }).then((p: PermissionStatus) => {
               if (p.state === 'granted') resolve('available');
               else if (p.state === 'prompt') resolve('permission');
               else resolve('blocked');
@@ -161,7 +168,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
           }),
           new Promise<string>((resolve) => setTimeout(() => resolve('permission'), 1000)),
         ]);
-        return result as any;
+        return result as 'blocked' | 'unavailable' | 'available' | 'permission';
       } catch {
         return 'blocked';
       }
@@ -218,7 +225,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     t('privacyExposure.api.dnt'),
     'dnt',
     async () => {
-      const dnt = (navigator as any).doNotTrack;
+      const dnt = navigator.doNotTrack;
       return dnt === '1' ? 'blocked' : 'available';
     },
     'low',
@@ -230,7 +237,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
     t('privacyExposure.api.gpc'),
     'gpc',
     async () => {
-      const gpc = (navigator as any).globalPrivacyControl;
+      const gpc = (navigator as PrivacyNav).globalPrivacyControl;
       return gpc === true ? 'blocked' : 'available';
     },
     'low',

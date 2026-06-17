@@ -108,4 +108,4 @@ describe('renderEcsRows', () => {
 });
 
 // Mock i18n just enough for the test to verify key usage
-(globalThis as any).MockI18nTexts = {};
+(globalThis as unknown as { MockI18nTexts: Record<string, string> }).MockI18nTexts = {};
