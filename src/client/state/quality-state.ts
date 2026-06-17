@@ -1,5 +1,5 @@
 import { observable } from './observable';
-import type { ConnectionInfo, TlsInfo, ResourceTimingBreakdown, StabilityResults, QualityScore } from '../connection-quality';
+import type { ConnectionInfo, TlsInfo, ResourceTimingBreakdown, StabilityResults, QualityScore, CaptivePortalResult } from '../connection-quality';
 
 const defaultScore: QualityScore = {
   grade: '—',
@@ -22,4 +22,5 @@ export const qualityState = {
   isRunning: observable<boolean>(false),
   isRunningStability: observable<boolean>(false),
   loading: observable<boolean>(false),
+  captivePortal: observable<CaptivePortalResult | null>(null),
 };

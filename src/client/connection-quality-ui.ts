@@ -4,6 +4,7 @@ import {
   type TlsInfo,
   type ResourceTimingBreakdown,
   type StabilityResults,
+  type CaptivePortalResult,
 } from './connection-quality';
 import { t } from './i18n';
 import { renderSkeletonRows } from './ui-utils';
@@ -27,6 +28,7 @@ const state: {
   tlsInfo: TlsInfo | null;
   timing: ResourceTimingBreakdown | null;
   stability: StabilityResults | null;
+  captivePortal: CaptivePortalResult | null;
   hasRun: boolean;
   progress: ProgressState;
   isRunning: boolean;
@@ -36,6 +38,7 @@ const state: {
   tlsInfo: null,
   timing: null,
   stability: null,
+  captivePortal: null,
   hasRun: false,
   progress: { mode: 'idle' },
   isRunning: false,
@@ -82,6 +85,7 @@ function syncQualityUi(): void {
     renderInitialPlaceholders();
   } else {
     renderConnectionInfo(state.connectionInfo, false);
+    renderCaptivePortal(state.captivePortal, false);
     renderTlsInfo(state.tlsInfo, false);
     renderTimingBreakdown(state.timing, false);
     if (state.tlsInfo || state.connectionInfo) {
@@ -125,6 +129,7 @@ function renderInitialPlaceholders(): void {
     connection.innerHTML = `<p class="info-muted">${t('quality.emptyConnection')}</p>`;
   if (tls) tls.innerHTML = `<p class="info-muted">${t('quality.emptyTls')}</p>`;
   if (timing) timing.innerHTML = `<p class="info-muted">${t('quality.emptyTiming')}</p>`;
+  renderCaptivePortal(null, true);
   renderStabilityPlaceholder();
   renderScorePlaceholder();
 }
@@ -148,15 +153,18 @@ async function runQualityTest(): Promise<void> {
   state.tlsInfo = null;
   state.timing = null;
   state.stability = null;
+  state.captivePortal = null;
   qualityState.connectionInfo.set(null);
   qualityState.tlsInfo.set(null);
   qualityState.timing.set(null);
   qualityState.stabilityTest.set(null);
+  qualityState.captivePortal.set(null);
   syncQualityUi();
 
   renderConnectionInfo(null, true);
   renderTlsInfo(null, true);
   renderTimingBreakdown(null, true);
+  renderCaptivePortal(null, true);
   renderScorePlaceholder();
   renderStabilityPlaceholder();
 
@@ -166,6 +174,11 @@ async function runQualityTest(): Promise<void> {
   state.connectionInfo = connectionInfo;
   qualityState.connectionInfo.set(connectionInfo);
   renderConnectionInfo(connectionInfo, false);
+
+  const captivePortal = await ConnectionQuality.checkCaptivePortal();
+  state.captivePortal = captivePortal;
+  qualityState.captivePortal.set(captivePortal);
+  renderCaptivePortal(captivePortal, false);
 
   setProgress({ mode: 'fetchingTls' });
   announceProgress(t('quality.progressFetchingTls'));
@@ -258,6 +271,18 @@ function renderConnectionInfo(info: ConnectionInfo | null, skeleton?: boolean): 
     <div class="info-row"><span class="info-label">${t('quality.downlink')}</span><span class="info-value">${info.downlinkMbps !== null ? `${info.downlinkMbps} Mbps` : '—'}</span></div>
     <div class="info-row"><span class="info-label">${t('quality.rttEstimate')}</span><span class="info-value">${info.rttMs !== null ? `${info.rttMs} ms` : '—'}</span></div>
     <div class="info-row"><span class="info-label">${t('quality.dataSaver')}</span><span class="info-value">${info.dataSaver ? t('quality.enabled') : t('quality.disabled')}</span></div>`;
+}
+
+function renderCaptivePortal(status: CaptivePortalResult | null, skeleton?: boolean): void {
+  const el = document.getElementById('quality-captive-info');
+  if (!el) return;
+  if (skeleton || !status) {
+    el.innerHTML = `<div class="info-row"><span class="info-label">${t('quality.captive.label')}</span><span class="info-value">—</span></div>`;
+    return;
+  }
+  const text = t(`quality.captive.${status}`);
+  const badgeClass = status === 'ok' ? 'pass' : status === 'captive' ? 'fail' : 'warn';
+  el.innerHTML = `<div class="info-row"><span class="info-label">${t('quality.captive.label')}</span><span class="status-badge ${badgeClass}">${text}</span></div>`;
 }
 
 function renderTlsInfo(info: TlsInfo | null, skeleton?: boolean): void {

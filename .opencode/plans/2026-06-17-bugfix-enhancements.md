@@ -59,3 +59,8 @@
 - [x] Phase 4 — E4, E5, E7 (25 any→0 warnings; April plan archived; en moved to locales/en.ts; tsc/eslint 0-warn/283 tests/build green). COMPLETE.
 - [x] Residuals — i18n error-boundary "failed to load" toast (`error.moduleFailed` ×6 locales) + E6 CSS-ownership note in AGENTS.md. tsc/eslint 0-warn/283 tests/build green.
 - [ ] Phase 5 — E3 (deferred — worker split, only if touching worker)
+
+## Features added (2026-06-17, post-review)
+
+- **#2 Captive-portal detection** — DONE: client-only check in Connection Quality (`checkCaptivePortal` fetches `cloudflare-dns.com` DoH; valid DNS JSON = `ok`, HTML/empty = `captive`, fetch error = `blocked`); new `quality-captive-info` card + status badge; `quality.captive.{label,ok,captive,blocked}` ×6 locales. No worker/CSP change (reuses an already-`connect-src`-allowed host). tsc/eslint 0-warn/283 tests/build green.
+- **#1 BGP/ASN** — user-IP ASN was ALREADY live (`handleIpCheck` returns `cf.asn`/`cf.asOrganization` → IP card shows "Org (AS####)"). The novel **target-domain ASN** (resolve domain → Team Cymru DoH ASN lookup in `handleTlsTargetCheck` + TLS tab render + i18n) is the remaining piece — medium, not yet done.

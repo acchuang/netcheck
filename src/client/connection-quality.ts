@@ -219,10 +219,27 @@ function computeScore(
   return { grade, label, factors };
 }
 
+export type CaptivePortalResult = 'ok' | 'captive' | 'blocked';
+
+export async function checkCaptivePortal(): Promise<CaptivePortalResult> {
+  try {
+    const res = await fetch('https://cloudflare-dns.com/dns-query?name=example.com&type=A', {
+      headers: { Accept: 'application/dns-json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) return 'blocked';
+    const data = (await res.json()) as { Status?: unknown };
+    return typeof data.Status === 'number' ? 'ok' : 'captive';
+  } catch {
+    return 'blocked';
+  }
+}
+
 export const ConnectionQuality = {
   getConnectionInfo,
   fetchTlsInfo,
   measureTiming,
   runStabilityTest,
   computeScore,
+  checkCaptivePortal,
 };
