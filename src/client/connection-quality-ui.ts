@@ -374,16 +374,16 @@ function renderFinalScore(
   if (labelEl) labelEl.textContent = t(LABELS[score.label]) || score.label;
 
   const factorsEl = document.getElementById('quality-factors')!;
-  const keys: { key: keyof typeof score.factors; label: string }[] = [
-    { key: 'tls', label: t('quality.tlsFactor') },
-    { key: 'serverRtt', label: t('quality.serverRttFactor') },
-    { key: 'connectionType', label: t('quality.connTypeFactor') },
-    { key: 'stability', label: t('quality.stabilityFactor') },
+  const keys: { key: keyof typeof score.factors; label: string; tip: string }[] = [
+    { key: 'tls', label: t('quality.tlsFactor'), tip: t('quality.tlsFactor.tip') },
+    { key: 'serverRtt', label: t('quality.serverRttFactor'), tip: t('quality.serverRttFactor.tip') },
+    { key: 'connectionType', label: t('quality.connTypeFactor'), tip: t('quality.connTypeFactor.tip') },
+    { key: 'stability', label: t('quality.stabilityFactor'), tip: t('quality.stabilityFactor.tip') },
   ];
   factorsEl.innerHTML = keys
     .map((f) => {
       const s = score.factors[f.key];
-      return `<span class="grade-factor"><span class="grade-factor-dot ${s === 'unavailable' ? '' : s}"></span>${f.label}</span>`;
+      return `<span class="grade-factor" data-tooltip="${f.tip}"><span class="grade-factor-dot ${s === 'unavailable' ? '' : s}"></span>${f.label}</span>`;
     })
     .join('');
 }
