@@ -164,6 +164,12 @@ export const FilterListDetector = {
     });
 
     const results = await Promise.all(listPromises);
+    const anyBlockerDetected = results.some((r) => r.special !== 'acceptableAds' && r.detected);
+    for (const r of results) {
+      if (r.special === 'acceptableAds' && !anyBlockerDetected) {
+        r.detected = false;
+      }
+    }
     adblockState.filterLists.set(results);
 
     container.remove();

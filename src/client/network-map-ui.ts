@@ -1,6 +1,7 @@
 import { NetworkMap, type MapResults } from './network-map';
 import { networkMapState } from './state/network-map-state';
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 import { onLocaleChange } from './locale-events';
 import type { L, LatLngExpression, Map, TileLayer, CircleMarker, Polyline } from './leaflet';
 
@@ -125,7 +126,7 @@ function renderMapResults(results: MapResults): void {
     userMarker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif">
         <strong>${t('network.yourLocation') || 'Your Location'}</strong><br>
-        <span style="font-size:12px;color:var(--text-muted)">${results.userColo}</span>
+        <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(results.userColo)}</span>
       </div>`,
     );
     bounds.push([results.userLat, results.userLon]);
@@ -165,8 +166,8 @@ function renderMapResults(results: MapResults): void {
 
     marker.bindPopup(
       `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
-        <strong>${probe.name} (${probe.id})${closestBadge}</strong><br>
-        <span style="font-size:12px;color:var(--text-muted)">${probe.city}, ${probe.country}</span><br>
+        <strong>${escapeHtml(probe.name)} (${escapeHtml(String(probe.id))})${closestBadge}</strong><br>
+        <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(probe.city)}, ${escapeHtml(probe.country)}</span><br>
         <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span>
         ${estimateLabel}
       </div>`,

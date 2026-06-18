@@ -102,13 +102,23 @@ export const DnsCheck = {
             resolve(null);
             return;
           }
-          const match = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
-          if (match) {
-            const ip = match[1];
+          const ipv4Match = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+          const ipv6Match = e.candidate.candidate.match(/([0-9a-fA-F:]{2,39})/);
+          if (ipv4Match) {
+            const ip = ipv4Match[1];
             if (!ip.startsWith('0.') && !ips.has(ip)) {
               ips.add(ip);
-              // Private IPs indicate a leak
               if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip)) {
+                pc.close();
+                resolved = true;
+                resolve(ip);
+              }
+            }
+          } else if (ipv6Match) {
+            const ip = ipv6Match[1].toLowerCase();
+            if (!ips.has(ip) && ip !== '::' && ip.includes(':')) {
+              ips.add(ip);
+              if (ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) {
                 pc.close();
                 resolved = true;
                 resolve(ip);

@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 
 interface BenchmarkScenario {
   scenario: string;
@@ -40,7 +41,7 @@ export function renderBenchmarkHeatmap(data: BenchmarkResponse): string {
   html += '<th>Overall</th></tr></thead><tbody>';
 
   for (const r of data.resolvers) {
-    html += `<tr><td><strong>${r.resolver}</strong></td>`;
+    html += `<tr><td><strong>${escapeHtml(r.resolver)}</strong></td>`;
     for (const s of r.scenarios) {
       const ms = s.median;
       const cls = ms === 0 ? 'timeout' : ms < 30 ? 'fast' : ms < 100 ? 'medium' : 'slow';
@@ -62,7 +63,7 @@ export function renderPathBars(pathTimings: PathTiming[]): string {
     const rttPct = ((p.networkRtt / maxTotal) * 100).toFixed(1);
     const procPct = ((p.processingTime / maxTotal) * 100).toFixed(1);
     html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="width:100px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0">${p.resolver}</span>
+      <span style="width:100px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0">${escapeHtml(p.resolver)}</span>
       <div style="flex:1;height:20px;border-radius:4px;overflow:hidden;display:flex;background:var(--surface-tertiary)">
         <div style="width:${rttPct}%;background:var(--brand);transition:width 0.6s ease-out"></div>
         <div style="width:${procPct}%;background:var(--brand-400);transition:width 0.6s ease-out"></div>

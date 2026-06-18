@@ -208,7 +208,7 @@ function renderReadinessPills(): string {
     })
     .join('');
 
-  const remaining = testNames.length - completed.length;
+  const remaining = testNames.filter((n) => !completed.includes(n.key)).length;
   const tip = remaining > 0
     ? `<p class="ai-readiness-tip">${t('ai.readinessTip', 'Run more tests for a better analysis.')} (${remaining} ${t('ai.remaining', 'remaining')})</p>`
     : '<p class="ai-readiness-tip">All tests complete — ready for comprehensive analysis.</p>';

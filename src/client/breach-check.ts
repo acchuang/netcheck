@@ -50,7 +50,7 @@ export function initBreachCheck(): void {
   const toggleBtn = document.getElementById('breach-toggle-visibility') as HTMLButtonElement;
   const results = document.getElementById('breach-results')!;
 
-  if (!input || !btn) return;
+  if (!input || !btn || !toggleBtn) return;
 
   let debounceTimer: ReturnType<typeof setTimeout>;
 
@@ -136,6 +136,7 @@ export function initBreachCheck(): void {
       breachState.loading.set(false);
       input.value = '';
       input.type = 'password';
+      toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       btn.disabled = true;
       btn.textContent = t('breachCheck.check');
     }

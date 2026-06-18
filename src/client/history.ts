@@ -90,7 +90,9 @@ export const SpeedTestHistory = {
     const a = document.createElement('a');
     a.href = url;
     a.download = `netcheck-speed-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
 };

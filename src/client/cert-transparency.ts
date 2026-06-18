@@ -71,7 +71,7 @@ async function runCtCheck(): Promise<void> {
       certTransparencyState.error.set(data.error);
       container.innerHTML = `
         <div class="csp-analysis-card">
-          <p class="info-muted">${data.error}</p>
+          <p class="info-muted">${escapeHtml(data.error)}</p>
           <a href="https://crt.sh/?q=${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px">${t('certTransparency.searchOnCrtsh')}</a>
         </div>
       `;
@@ -117,7 +117,7 @@ async function runCtCheck(): Promise<void> {
         ${data.trustIndicators.length > 0 ? `
           <div class="csp-analysis-card" style="margin-top:16px">
             <h4 class="csp-issues-title">${t('certTransparency.trustIndicators')}</h4>
-            ${data.trustIndicators.map((ind) => `<div class="csp-issue-item"><span class="csp-issue-message">${ind}</span></div>`).join('')}
+            ${data.trustIndicators.map((ind) => `<div class="csp-issue-item"><span class="csp-issue-message">${escapeHtml(ind)}</span></div>`).join('')}
           </div>
         ` : ''}
         ${s.recentlyIssued > 3 ? `

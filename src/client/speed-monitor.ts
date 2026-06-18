@@ -50,19 +50,25 @@ export const SpeedMonitor = {
     announce(t('speed.monitorStarted', duration));
     onResult(null as unknown as SpeedTestResults, 0);
 
-    for (let i = 1; i <= totalTests; i++) {
-      if (abortController.signal.aborted) break;
-      if (i > 1) await new Promise((r) => setTimeout(r, this._pacingFor(duration, i)));
+    try {
+      for (let i = 1; i <= totalTests; i++) {
+        if (abortController.signal.aborted) break;
+        if (i > 1) await new Promise((r) => setTimeout(r, this._pacingFor(duration, i)));
 
-      if (abortController.signal.aborted) break;
-      this.state.testsCompleted = i;
-      const result = await SpeedTest.run(() => {});
-      SpeedTestHistory.save(result);
-      onResult(result, i);
+        if (abortController.signal.aborted) break;
+        this.state.testsCompleted = i;
+        try {
+          const result = await SpeedTest.run(() => {});
+          SpeedTestHistory.save(result);
+          onResult(result, i);
+        } catch {
+          /* skip failed iteration, continue monitoring */
+        }
+      }
+    } finally {
+      this.state = null;
+      announce(t('speed.monitorComplete'));
     }
-
-    this.state = null;
-    announce(t('speed.monitorComplete'));
   },
 
   stop(): void {

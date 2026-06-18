@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import { escapeHtml } from './escape';
 
 import { dnssecValidationState } from './state/dnssec-validation-state';
 import type { DnssecChainStep } from './state/dnssec-validation-state';
@@ -96,7 +97,7 @@ async function runDnssecCheck(): Promise<void> {
       dnssecValidationState.error.set(data.error);
       container.innerHTML = `
         <div class="csp-analysis-card">
-          <p class="info-muted">${data.error}</p>
+          <p class="info-muted">${escapeHtml(data.error)}</p>
         </div>
       `;
       return;
@@ -163,7 +164,7 @@ async function runDnssecCheck(): Promise<void> {
                 </svg>
                 <div style="flex:1">
                   <div style="font-weight:600;font-size:13px">${step.step}</div>
-                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${decodeDnssecDetails(step.details)}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${escapeHtml(decodeDnssecDetails(step.details))}</div>
                 </div>
               </div>
             `;

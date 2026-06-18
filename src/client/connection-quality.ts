@@ -209,7 +209,7 @@ function computeScore(
   } else if (failCount <= 2) {
     grade = 'C';
     label = 'Below Average';
-  } else if (gradedCount > 0 && failCount >= gradedCount - 1) {
+  } else if (gradedCount > 0 && failCount >= gradedCount) {
     grade = 'D';
     label = 'Poor';
   } else {

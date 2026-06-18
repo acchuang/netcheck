@@ -213,7 +213,10 @@ export function initTlsCheck(): void {
       runBtn.textContent = t('tls.runAgain', 'Check Again');
       runBtn.removeAttribute('disabled');
       renderTlsContent(container);
-      appState.completedTests.set([...appState.completedTests.get(), 'tls']);
+      const current = appState.completedTests.get();
+      if (!current.includes('tls')) {
+        appState.completedTests.set([...current, 'tls']);
+      }
     });
   }
 

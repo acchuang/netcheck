@@ -189,7 +189,7 @@ async function runHeadersCheck(): Promise<void> {
           : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
 
         const valueHtml = check.present
-          ? `<span class="header-value-truncate" data-tooltip="${check.value}">${check.value}</span>`
+          ? `<span class="header-value-truncate" data-tooltip="${(check.value ?? '').replace(/"/g, '&quot;')}">${escapeHtml(check.value ?? '')}</span>`
           : `<span class="check-value" style="color:var(--red)">${t('headers.missing')}</span>`;
 
         let qualityHtml = '';

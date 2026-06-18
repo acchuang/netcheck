@@ -19,6 +19,8 @@ export function initSpeedTest(): void {
     const dur = parseInt(monitorSelect.value) as MonitorDuration;
     runMonitor(dur);
   });
+  const monitorStopBtn = document.getElementById('speed-monitor-stop') as HTMLButtonElement;
+  monitorStopBtn?.addEventListener('click', () => SpeedMonitor.stop());
   const csvBtn = document.getElementById('speed-csv-btn');
   csvBtn?.addEventListener('click', () => SpeedTestHistory.downloadCsv());
   renderSpeedHistory();
@@ -222,7 +224,7 @@ async function runSpeedTest(): Promise<void> {
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : '';
   document.getElementById('speed-phase')!.textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t('speed.latency').toLowerCase()}`;
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency ?? '—'}ms ${t('speed.latency').toLowerCase()}`;
 
   // --- RENDER NEW FEATURES ---
   renderTimingBreakdown(results.timing);
@@ -325,9 +327,7 @@ function renderStabilityReadout(avgRtt: number | null, pingJitter: number | null
 async function runMonitor(duration: MonitorDuration): Promise<void> {
   const monitorBar = document.getElementById('speed-monitor-bar')!;
   const monitorStatus = document.getElementById('speed-monitor-status')!;
-  const monitorStopBtn = document.getElementById('speed-monitor-stop') as HTMLButtonElement;
   monitorBar.classList.remove('hidden');
-  monitorStopBtn.addEventListener('click', () => SpeedMonitor.stop());
 
   await SpeedMonitor.start(duration, (result, index) => {
     if (!result) {

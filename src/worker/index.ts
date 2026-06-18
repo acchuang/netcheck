@@ -239,6 +239,19 @@ export const RATE_LIMIT_MAX = 120;
 export const RATE_LIMIT_SPEED_BURST = 60;
 export const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
+function median(sorted: number[]): number {
+  if (sorted.length === 0) return 0;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  return sorted[Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1)];
+}
+
 interface CrtShEntry {
   common_name?: string;
   name_value?: string;
@@ -336,7 +349,7 @@ function detectWeaknesses(certs: WorkerTlsCerts | null): WorkerTlsWeakness[] {
     if (certs.key.type === 'ECDSA' && certs.key.size > 0 && certs.key.size < 224) {
       weaknesses.push({ id: 'small-key', severity: 'high', description: `Weak key: ECDSA ${certs.key.size} bits (minimum 224)` });
     }
-    if (certs.subject.cn === certs.issuer.cn) {
+    if (certs.subject.cn && certs.subject.cn === certs.issuer.cn) {
       weaknesses.push({ id: 'self-signed', severity: 'high', description: 'Self-signed certificate' });
     }
   }
@@ -555,6 +568,9 @@ function handleIpCheck(request: Request): Response {
 }
 
 async function handleDnsCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const domain = url.searchParams.get('domain') || 'example.com';
   const type = url.searchParams.get('type') || 'A';
@@ -579,6 +595,7 @@ async function handleDnsCheck(request: Request): Promise<Response> {
   try {
     const dnsResponse = await fetch(dohUrl, {
       headers: { Accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(5000),
     });
     const dnsData = await dnsResponse.json();
     return Response.json(dnsData, { headers: corsHeaders(request) });
@@ -612,7 +629,8 @@ function handleSpeedDown(url: URL, request: Request): Response {
   const rl = checkRateLimit(request);
   if (rl) return rl;
 
-  const bytes = Math.min(parseInt(url.searchParams.get('bytes') || '0', 10), 100000000);
+  const rawBytes = Number(url.searchParams.get('bytes'));
+  const bytes = Number.isFinite(rawBytes) ? Math.min(Math.trunc(rawBytes), 100000000) : 0;
   if (bytes <= 0) {
     return new Response('', { headers: corsHeaders(request) });
   }
@@ -748,17 +766,30 @@ async function testOneResolver(resolver: ResolverDef) {
 }
 
 async function handleResolverCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const results = await Promise.all(RESOLVERS.map(testOneResolver));
   return Response.json(results, { headers: corsHeaders(request) });
 }
 
 async function handleSecurityCheck(request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   const url = new URL(request.url);
   const resolverHost = url.searchParams.get('resolver') || 'cloudflare-dns.com';
 
-  if (!/^[a-z0-9.-]+$/i.test(resolverHost)) {
+  if (!/^[a-z0-9.-]+$/i.test(resolverHost) || isPrivateHostname(resolverHost)) {
     return Response.json(
       { error: 'Invalid resolver hostname' },
+      { status: 400, headers: corsHeaders(request) },
+    );
+  }
+
+  if (!RESOLVERS.some((r) => r.host === resolverHost)) {
+    return Response.json(
+      { error: 'Unknown resolver' },
       { status: 400, headers: corsHeaders(request) },
     );
   }
@@ -1814,7 +1845,7 @@ async function handleHijackCheck(request: Request): Promise<Response> {
     .filter((r) => r.ttl > 0)
     .map((r) => r.ttl)
     .sort((a, b) => a - b);
-  const medianTTL = ttls.length > 0 ? ttls[Math.floor(ttls.length / 2)] : 0;
+  const medianTTL = ttls.length > 0 ? median(ttls) : 0;
 
   const nxdomain = `nonexistent-${crypto.randomUUID().slice(0, 8)}.netcheck.test`;
   const nxResults: { resolver: string; tampered: boolean }[] = [];
@@ -1909,13 +1940,13 @@ async function handleEcsCheck(request: Request): Promise<Response> {
         const ip = ecsIps[0];
         const parts = ip.split('.');
         const anonymised = `${parts[0]}.${parts[1]}.0.0`;
-        const prefix = 32;
+        const ecsDetected = ip !== r.ip;
         results.push({
           resolver: r.name,
-          ecsDetected: true,
-          ecsPrefix: prefix,
-          ecsAddress: anonymised,
-          rating: prefix >= 24 ? 'significant' : prefix >= 16 ? 'moderate' : 'none',
+          ecsDetected,
+          ecsPrefix: ecsDetected ? 24 : null,
+          ecsAddress: ecsDetected ? anonymised : null,
+          rating: ecsDetected ? 'significant' : 'none',
         });
       } else {
         results.push({
@@ -1992,7 +2023,7 @@ async function handleDnsBenchmark(request: Request): Promise<Response> {
         scenario: s.scenario,
         timings,
         min: sortedVals[0] || 0,
-        median: sortedVals[Math.floor(sortedVals.length / 2)] || 0,
+        median: median(sortedVals) || 0,
         max: sortedVals[sortedVals.length - 1] || 0,
       });
       allTimings.push(...timings);
@@ -2028,7 +2059,7 @@ async function handleDnsBenchmark(request: Request): Promise<Response> {
     results.push({
       resolver: r.name,
       scenarios,
-      overallMedian: sortedAll[Math.floor(sortedAll.length / 2)] || 0,
+      overallMedian: median(sortedAll) || 0,
       pathTiming,
     });
   }
@@ -2062,11 +2093,11 @@ async function handleAdBlockStats(env: Env, request: Request): Promise<Response>
       );
     }
     const sorted = [...data.scores].sort((a, b) => a - b);
-    const median = sorted[Math.floor(sorted.length / 2)];
-    const p75 = sorted[Math.floor(sorted.length * 0.75)];
-    const p90 = sorted[Math.floor(sorted.length * 0.9)];
+    const med = median(sorted);
+    const p75 = percentile(sorted, 0.75);
+    const p90 = percentile(sorted, 0.9);
     return Response.json(
-      { total: data.total, median: Math.round(median), p75: Math.round(p75), p90: Math.round(p90) },
+      { total: data.total, median: Math.round(med), p75: Math.round(p75), p90: Math.round(p90) },
       {
         headers: { ...corsHeaders(request), 'Cache-Control': 'public, max-age=300' },
       },
@@ -2080,6 +2111,9 @@ async function handleAdBlockStats(env: Env, request: Request): Promise<Response>
 }
 
 async function handleAdBlockSubmit(env: Env, request: Request): Promise<Response> {
+  const rl = checkRateLimit(request);
+  if (rl) return rl;
+
   try {
     const body = (await request.json()) as { score: number };
     if (typeof body.score !== 'number' || body.score < 0 || body.score > 100) {
@@ -2101,7 +2135,7 @@ async function handleAdBlockSubmit(env: Env, request: Request): Promise<Response
     await env.ANALYTICS.put(dayKey, JSON.stringify(current), { expirationTtl: 86400 * 2 });
     return Response.json({ ok: true }, { headers: corsHeaders(request) });
   } catch {
-    return Response.json({ ok: false }, { headers: corsHeaders(request) });
+    return Response.json({ ok: false }, { status: 500, headers: corsHeaders(request) });
   }
 }
 
@@ -2218,6 +2252,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   try {
     const spfRes = await fetch(`${dohBase}?name=${encodeURIComponent(domain)}&type=TXT`, {
       headers: { Accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(4000),
     });
     const spfJson = (await spfRes.json()) as { Answer?: { data: string }[] };
     if (spfJson.Answer) {
@@ -2269,7 +2304,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
     try {
       const dkimRes = await fetch(
         `${dohBase}?name=${encodeURIComponent(sel + '.' + domain)}&type=TXT`,
-        { headers: { Accept: 'application/dns-json' } },
+        { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(4000) },
       );
       const dkimJson = (await dkimRes.json()) as { Answer?: { data: string }[] };
       if (dkimJson.Answer) {
@@ -2295,7 +2330,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   try {
     const dmarcRes = await fetch(
       `${dohBase}?name=_dmarc.${encodeURIComponent(domain)}&type=TXT`,
-      { headers: { Accept: 'application/dns-json' } },
+      { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(4000) },
     );
     const dmarcJson = (await dmarcRes.json()) as { Answer?: { data: string }[] };
     if (dmarcJson.Answer) {
@@ -2352,7 +2387,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   try {
     const bimiRes = await fetch(
       `${dohBase}?name=default._bimi.${encodeURIComponent(domain)}&type=TXT`,
-      { headers: { Accept: 'application/dns-json' } },
+      { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(4000) },
     );
     const bimiJson = (await bimiRes.json()) as { Answer?: { data: string }[] };
     if (bimiJson.Answer) {
@@ -2379,7 +2414,7 @@ async function handleEmailSecurity(request: Request): Promise<Response> {
   try {
     const mtaStsRes = await fetch(
       `${dohBase}?name=_mta-sts.${encodeURIComponent(domain)}&type=TXT`,
-      { headers: { Accept: 'application/dns-json' } },
+      { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(4000) },
     );
     const mtaStsJson = (await mtaStsRes.json()) as { Answer?: { data: string }[] };
     if (mtaStsJson.Answer) {
@@ -2498,7 +2533,7 @@ async function handleCertTransparency(request: Request): Promise<Response> {
     if (!ctRes.ok) {
       return Response.json(
         { domain, error: `crt.sh returned status ${ctRes.status}`, certs: [], summary: { total: 0, active: 0, expired: 0, issuers: 0 } },
-        { headers: corsHeaders(request) },
+        { status: 502, headers: corsHeaders(request) },
       );
     }
 
@@ -2578,10 +2613,11 @@ async function handleCertTransparency(request: Request): Promise<Response> {
       { headers: corsHeaders(request) },
     );
   } catch (err) {
-    const msg = err instanceof Error && err.name === 'TimeoutError' ? 'crt.sh request timed out' : 'Failed to fetch certificate transparency data';
+    const isTimeout = err instanceof Error && err.name === 'TimeoutError';
+    const msg = isTimeout ? 'crt.sh request timed out' : 'Failed to fetch certificate transparency data';
     return Response.json(
       { domain, error: msg, certs: [], summary: { total: 0, active: 0, expired: 0, issuers: 0 } },
-      { headers: corsHeaders(request) },
+      { status: isTimeout ? 504 : 502, headers: corsHeaders(request) },
     );
   }
 }
@@ -2780,7 +2816,6 @@ async function handleDnssecValidation(request: Request): Promise<Response> {
 
   const dohBase = 'https://cloudflare-dns.com/dns-query';
   const dohHeaders = { Accept: 'application/dns-json' };
-  const signal = AbortSignal.timeout(5000);
 
   const result: {
     domain: string;
@@ -2804,7 +2839,7 @@ async function handleDnssecValidation(request: Request): Promise<Response> {
   try {
     const domainRes = await fetch(`${dohBase}?name=${encodeURIComponent(domain)}&type=A`, {
       headers: dohHeaders,
-      signal,
+      signal: AbortSignal.timeout(5000),
     });
     const domainJson = (await domainRes.json()) as { AD?: boolean };
     result.adFlag = !!domainJson.AD;
@@ -2820,7 +2855,7 @@ async function handleDnssecValidation(request: Request): Promise<Response> {
     try {
       const dsRes = await fetch(`${dohBase}?name=${encodeURIComponent(domain)}&type=DS`, {
         headers: dohHeaders,
-        signal,
+        signal: AbortSignal.timeout(5000),
       });
       const dsJson = (await dsRes.json()) as { Answer?: { data: string; type: number }[]; AD?: boolean };
 
@@ -2856,12 +2891,16 @@ async function handleDnssecValidation(request: Request): Promise<Response> {
     try {
       const dnskeyRes = await fetch(`${dohBase}?name=${encodeURIComponent(domain)}&type=DNSKEY`, {
         headers: dohHeaders,
-        signal,
+        signal: AbortSignal.timeout(5000),
       });
       const dnskeyJson = (await dnskeyRes.json()) as { Answer?: { data: string; type: number }[]; AD?: boolean };
 
       if (dnskeyJson.Answer && dnskeyJson.Answer.length > 0) {
-        const kskEntry = dnskeyJson.Answer.find((a) => a.type === 48 && a.data.includes('257'));
+        const kskEntry = dnskeyJson.Answer.find((a) => {
+          if (a.type !== 48) return false;
+          const flags = parseInt(a.data.trim().split(/\s+/)[0] || '0', 10);
+          return flags === 257;
+        });
         const entry = kskEntry || dnskeyJson.Answer.find((a) => a.type === 48);
         if (entry) {
           const parts = entry.data.trim().split(/\s+/);
@@ -2909,7 +2948,7 @@ async function handleDnssecValidation(request: Request): Promise<Response> {
       if (result.dsRecord?.present && result.dnskeyRecord?.present && result.hashVerified !== false) {
         result.status = 'SECURE';
       } else if (result.adFlag) {
-        result.status = result.dsRecord?.present ? 'SECURE' : 'INSECURE';
+        result.status = result.dsRecord?.present && result.dnskeyRecord?.present ? 'SECURE' : 'INSECURE';
       }
     }
   } catch (err) {
@@ -2949,5 +2988,5 @@ function computeKeyTag(dnskeyData: string): number {
   }
   ac += (ac >> 16) & 0xffff;
 
-  return (ac & 0xffff) === 0 ? 0 : 0xffff - (ac & 0xffff);
+  return ac & 0xffff;
 }

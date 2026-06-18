@@ -132,7 +132,10 @@ export async function runCookieAudit(): Promise<void> {
       securePercentage,
       grade: scoreToGrade(score),
     });
-    appState.completedTests.set([...appState.completedTests.get(), 'cookies']);
+    const current = appState.completedTests.get();
+    if (!current.includes('cookies')) {
+      appState.completedTests.set([...current, 'cookies']);
+    }
   } catch (e) {
     cookieState.error.set(e instanceof Error ? e.message : 'Cookie audit failed');
   } finally {

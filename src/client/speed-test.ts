@@ -507,10 +507,24 @@ export const SpeedTest = {
       packetLoss: pl === 0 ? 'pass' : pl <= 2 ? 'warn' : 'fail',
     };
 
+    if (download === null) {
+      return {
+        grade: '—',
+        label: 'Unknown',
+        factors: {
+          download: 'fail',
+          upload: 'fail',
+          latency: 'fail',
+          jitter: 'fail',
+          bufferbloat: 'fail',
+          packetLoss: 'fail',
+        },
+      };
+    }
+
     const passCount = Object.values(factors).filter((v) => v === 'pass').length;
     const failCount = Object.values(factors).filter((v) => v === 'fail').length;
 
-    if (download === null) return { grade: '—', label: 'Unknown', factors };
     if (failCount === 0 && passCount === 6) return { grade: 'A+', label: 'Exceptional', factors };
     if (failCount === 0 && passCount >= 5) return { grade: 'A', label: 'Excellent', factors };
     if (failCount === 0 && passCount >= 4) return { grade: 'B+', label: 'Very Good', factors };

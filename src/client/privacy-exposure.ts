@@ -142,7 +142,7 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
       if (!('getGamepads' in navigator)) return 'unavailable';
       try {
         const gamepads = navigator.getGamepads();
-        return gamepads && gamepads.length > 0 ? 'available' : 'unavailable';
+        return gamepads && gamepads.some((g) => g !== null) ? 'available' : 'unavailable';
       } catch {
         return 'unavailable';
       }
