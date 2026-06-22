@@ -82,8 +82,10 @@ describe('handleHeadersCheck', () => {
 
     const res = await handleHeadersCheck(makeRequest('https://example.com'));
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as { grade: string; redirectChain: string[] };
     expect(data).toHaveProperty('grade');
+    expect(data).toHaveProperty('redirectChain');
+    expect(data.redirectChain).toHaveLength(4);
     expect(fetchSpy).toHaveBeenCalledTimes(6);
     fetchSpy.mockRestore();
   });

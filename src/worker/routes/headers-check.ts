@@ -137,7 +137,7 @@ export async function handleHeadersCheck(request: Request): Promise<Response> {
       securityTxt = { present: false, url: null, content: null, error: 'Not found' };
     }
 
-    return buildHeadersResponse(res, targetUrl, request, securityTxt);
+    return buildHeadersResponse(res, targetUrl, request, securityTxt, redirectChain);
   } catch {
     return Response.json(
       { error: 'Failed to fetch URL' },
@@ -443,6 +443,7 @@ function buildHeadersResponse(
     content: string | null;
     error: string | null;
   },
+  redirectChain: string[] = [],
 ): Response {
   const headers: Record<string, string> = {};
   for (const [key, value] of res.headers) {
@@ -692,6 +693,7 @@ function buildHeadersResponse(
       securityTxt: securityTxt || { present: false, url: null, content: null, error: null },
       server: headers['server'] || null,
       poweredBy: headers['x-powered-by'] || null,
+      redirectChain,
     },
     { headers: corsHeaders(request) },
   );
