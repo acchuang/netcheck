@@ -3,8 +3,16 @@ import { t } from './i18n';
 let _pollInterval: ReturnType<typeof setInterval> | null = null;
 
 export function initAnalytics(): void {
+  if (_pollInterval !== null) return;
   fetchAnalytics();
   _pollInterval = setInterval(fetchAnalytics, 60_000);
+}
+
+export function stopAnalytics(): void {
+  if (_pollInterval !== null) {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+  }
 }
 
 function formatCount(n: number): string {

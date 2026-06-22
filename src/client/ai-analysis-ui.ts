@@ -34,7 +34,15 @@ function render(): void {
     return;
   }
 
-  const { mode, loading, result, consentGiven, modelReady, modelDownloadProgress, modelConfirming } = {
+  const {
+    mode,
+    loading,
+    result,
+    consentGiven,
+    modelReady,
+    modelDownloadProgress,
+    modelConfirming,
+  } = {
     mode: aiState.mode.get(),
     loading: aiState.loading.get(),
     result: aiState.result.get(),
@@ -59,8 +67,11 @@ function render(): void {
   if (loading) {
     const isLocal = mode === 'local';
     const downloading = isLocal && !modelReady && modelDownloadProgress < 100;
-    const label = modelReady ? t('ai.analyzing') :
-      isLocal ? `${t('ai.downloading')} (${modelDownloadProgress}%)` : t('ai.analyzing');
+    const label = modelReady
+      ? t('ai.analyzing')
+      : isLocal
+        ? `${t('ai.downloading')} (${modelDownloadProgress}%)`
+        : t('ai.analyzing');
     container.innerHTML = renderLoading(isLocal, downloading, label);
     return;
   }
@@ -209,9 +220,10 @@ function renderReadinessPills(): string {
     .join('');
 
   const remaining = testNames.filter((n) => !completed.includes(n.key)).length;
-  const tip = remaining > 0
-    ? `<p class="ai-readiness-tip">${t('ai.readinessTip', 'Run more tests for a better analysis.')} (${remaining} ${t('ai.remaining', 'remaining')})</p>`
-    : '<p class="ai-readiness-tip">All tests complete — ready for comprehensive analysis.</p>';
+  const tip =
+    remaining > 0
+      ? `<p class="ai-readiness-tip">${t('ai.readinessTip', 'Run more tests for a better analysis.')} (${remaining} ${t('ai.remaining', 'remaining')})</p>`
+      : '<p class="ai-readiness-tip">All tests complete — ready for comprehensive analysis.</p>';
 
   return `
     <div class="ai-readiness">
@@ -303,9 +315,7 @@ function renderAccordionResult(markdown: string): string {
   return `<div class="ai-accordion">${sectionHtml}</div>`;
 }
 
-function parseMarkdownSections(
-  markdown: string,
-): { title: string; body: string }[] {
+function parseMarkdownSections(markdown: string): { title: string; body: string }[] {
   const lines = markdown.split('\n');
   const sections: { title: string; body: string }[] = [];
   let currentTitle = '';
@@ -340,10 +350,7 @@ function parseMarkdownSections(
 }
 
 function renderInlineMarkdown(text: string): string {
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   html = html.replace(/^\*\*(.+?)\*\*:?\s*/gm, '<strong>$1</strong>: ');
   html = html.replace(/^\*\*(.+?)\*\*$/gm, '<strong>$1</strong>');
@@ -380,14 +387,16 @@ function wireEmptyLinks(container: HTMLElement): void {
 }
 
 function wireConsent(container: HTMLElement): void {
-  container.querySelector<HTMLButtonElement>('[data-action="accept-cloud"]')
+  container
+    .querySelector<HTMLButtonElement>('[data-action="accept-cloud"]')
     ?.addEventListener('click', () => {
       localStorage.setItem(CONSENT_KEY, 'true');
       aiState.consentGiven.set(true);
       render();
     });
 
-  container.querySelector<HTMLButtonElement>('[data-action="use-local"]')
+  container
+    .querySelector<HTMLButtonElement>('[data-action="use-local"]')
     ?.addEventListener('click', () => {
       localStorage.setItem(CONSENT_KEY, 'true');
       aiState.consentGiven.set(true);
@@ -398,7 +407,8 @@ function wireConsent(container: HTMLElement): void {
 }
 
 function wireDownloadPrompt(container: HTMLElement): void {
-  container.querySelector<HTMLButtonElement>('[data-action="confirm-download"]')
+  container
+    .querySelector<HTMLButtonElement>('[data-action="confirm-download"]')
     ?.addEventListener('click', async () => {
       aiState.modelConfirming.set(false);
       aiState.loading.set(true);
@@ -419,7 +429,8 @@ function wireDownloadPrompt(container: HTMLElement): void {
       }
     });
 
-  container.querySelector<HTMLButtonElement>('[data-action="cancel-download"]')
+  container
+    .querySelector<HTMLButtonElement>('[data-action="cancel-download"]')
     ?.addEventListener('click', () => {
       aiState.modelConfirming.set(false);
       aiState.mode.set('cloud');
@@ -489,6 +500,8 @@ function wireModeToggle(container: HTMLElement): void {
 function wireCopy(container: HTMLElement): void {
   const btn = container.querySelector<HTMLButtonElement>('#ai-copy-btn');
   if (!btn) return;
+  let resetTimer: ReturnType<typeof setTimeout> | null = null;
+  const copyIconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ${t('ai.copyResult', 'Copy Result')}`;
   btn.addEventListener('click', async () => {
     const result = aiState.result.get();
     try {
@@ -497,8 +510,10 @@ function wireCopy(container: HTMLElement): void {
     } catch {
       btn.textContent = t('ai.copyFailed', 'Copy failed');
     }
-    setTimeout(() => {
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ${t('ai.copyResult', 'Copy Result')}`;
+    if (resetTimer) clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+      btn.innerHTML = copyIconHtml;
+      resetTimer = null;
     }, 2000);
   });
 }
