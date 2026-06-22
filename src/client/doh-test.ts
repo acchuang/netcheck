@@ -21,7 +21,10 @@ export async function testDohConnectivity(): Promise<DohResult[]> {
       const res = await fetch(r.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/dns-message', Accept: 'application/dns-message' },
-        body: new Uint8Array([0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 0, 1, 0, 1]).buffer,
+        body: new Uint8Array([
+          0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109,
+          0, 0, 1, 0, 1,
+        ]).buffer,
         signal: AbortSignal.timeout(5000),
       });
       results.push({
@@ -32,7 +35,13 @@ export async function testDohConnectivity(): Promise<DohResult[]> {
         error: null,
       });
     } catch (e) {
-      results.push({ resolver: r.name, url: r.url, reachable: false, latencyMs: null, error: (e as Error).message });
+      results.push({
+        resolver: r.name,
+        url: r.url,
+        reachable: false,
+        latencyMs: null,
+        error: (e as Error).message,
+      });
     }
   }
   return results;

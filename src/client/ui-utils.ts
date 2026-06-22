@@ -36,8 +36,7 @@ export function animateRing(ring: HTMLElement | SVGElement, score: number, radiu
   ring.style.strokeDashoffset = String(target);
 }
 
-export function pulseValue(_el: HTMLElement): void {
-}
+export function pulseValue(_el: HTMLElement): void {}
 
 export function setBadge(id: string, status: string, text: string): void {
   const el = document.getElementById(id)!;

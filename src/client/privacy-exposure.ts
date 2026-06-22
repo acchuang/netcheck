@@ -25,7 +25,11 @@ function scoreToGrade(score: number): string {
   return 'F';
 }
 
-async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: number; grade: string }> {
+async function checkPrivacyExposure(): Promise<{
+  checks: PrivacyCheck[];
+  score: number;
+  grade: string;
+}> {
   const checks: PrivacyCheck[] = [];
 
   const testApi = async (
@@ -160,11 +164,14 @@ async function checkPrivacyExposure(): Promise<{ checks: PrivacyCheck[]; score: 
       try {
         const result = await Promise.race([
           new Promise<string>((resolve) => {
-            navigator.permissions.query({ name: 'geolocation' }).then((p: PermissionStatus) => {
-              if (p.state === 'granted') resolve('available');
-              else if (p.state === 'prompt') resolve('permission');
-              else resolve('blocked');
-            }).catch(() => resolve('blocked'));
+            navigator.permissions
+              .query({ name: 'geolocation' })
+              .then((p: PermissionStatus) => {
+                if (p.state === 'granted') resolve('available');
+                else if (p.state === 'prompt') resolve('permission');
+                else resolve('blocked');
+              })
+              .catch(() => resolve('blocked'));
           }),
           new Promise<string>((resolve) => setTimeout(() => resolve('permission'), 1000)),
         ]);
@@ -297,12 +304,20 @@ export async function runPrivacyExposure(): Promise<void> {
   privacyExposureState.grade.set(result.grade);
   privacyExposureState.checks.set(result.checks);
 
-  const highRiskCount = result.checks.filter((c) => c.status === 'available' && c.risk === 'high').length;
-  privacyExposureState.riskLevel.set(highRiskCount > 0 ? 'high' : result.score >= 80 ? 'low' : 'medium');
+  const highRiskCount = result.checks.filter(
+    (c) => c.status === 'available' && c.risk === 'high',
+  ).length;
+  privacyExposureState.riskLevel.set(
+    highRiskCount > 0 ? 'high' : result.score >= 80 ? 'low' : 'medium',
+  );
 
   const gradeColors: Record<string, string> = {
-    'A+': 'var(--emerald)', A: 'var(--emerald)', B: 'var(--accent)',
-    C: 'var(--amber)', D: 'var(--red)', F: 'var(--red)',
+    'A+': 'var(--emerald)',
+    A: 'var(--emerald)',
+    B: 'var(--accent)',
+    C: 'var(--amber)',
+    D: 'var(--red)',
+    F: 'var(--red)',
   };
 
   container.innerHTML = `
@@ -318,10 +333,11 @@ export async function runPrivacyExposure(): Promise<void> {
         </div>
       </div>
       <div class="privacy-checks-list" style="margin-top:12px">
-        ${result.checks.map((check) => {
-          const status = STATUS_LABELS[check.status];
-          const risk = RISK_LABELS[check.risk];
-          return `
+        ${result.checks
+          .map((check) => {
+            const status = STATUS_LABELS[check.status];
+            const risk = RISK_LABELS[check.risk];
+            return `
             <div class="csp-issue-item">
               <span class="csp-issue-severity" style="background:${status.color}20;color:${status.color}">${status.label}</span>
               <span class="csp-issue-directive">${check.name}</span>
@@ -331,17 +347,25 @@ export async function runPrivacyExposure(): Promise<void> {
               </span>
             </div>
           `;
-        }).join('')}
+          })
+          .join('')}
       </div>
-      ${result.checks.filter((c) => c.status === 'available' && c.risk === 'high').length > 0 ? `
+      ${
+        result.checks.filter((c) => c.status === 'available' && c.risk === 'high').length > 0
+          ? `
         <div class="csp-analysis-card" style="margin-top:12px;border-color:var(--red)">
           <h4 class="csp-issues-title">${t('privacyExposure.highRiskExposures')}</h4>
           ${result.checks
             .filter((c) => c.status === 'available' && c.risk === 'high')
-            .map((c) => `<div class="csp-issue-item"><span class="csp-issue-message">${c.name}: ${c.tip}</span></div>`)
+            .map(
+              (c) =>
+                `<div class="csp-issue-item"><span class="csp-issue-message">${c.name}: ${c.tip}</span></div>`,
+            )
             .join('')}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
   `;
 

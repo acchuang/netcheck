@@ -239,9 +239,7 @@ describe('checkRateLimit', () => {
 describe('corsHeaders', () => {
   it('returns the production origin for unknown origins', () => {
     const headers = corsHeaders();
-    expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck.oilygold.xyz',
-    );
+    expect(headers['Access-Control-Allow-Origin']).toBe('https://netcheck.oilygold.xyz');
   });
 
   it('allows localhost:8787', () => {
@@ -257,9 +255,7 @@ describe('corsHeaders', () => {
       headers: { Origin: 'https://netcheck.oilygold.xyz' },
     });
     const headers = corsHeaders(req);
-    expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck.oilygold.xyz',
-    );
+    expect(headers['Access-Control-Allow-Origin']).toBe('https://netcheck.oilygold.xyz');
   });
 
   it('allows the pages.dev origin', () => {
@@ -275,9 +271,7 @@ describe('corsHeaders', () => {
       headers: { Origin: 'https://evil.com' },
     });
     const headers = corsHeaders(req);
-    expect(headers['Access-Control-Allow-Origin']).toBe(
-      'https://netcheck.oilygold.xyz',
-    );
+    expect(headers['Access-Control-Allow-Origin']).toBe('https://netcheck.oilygold.xyz');
   });
 
   it('includes required CORS headers', () => {

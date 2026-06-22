@@ -50,11 +50,7 @@ export function buildSummary(): string {
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'adblock') {
     const lines = [
-      metricLine(
-        t('share.metric.score'),
-        String(adblockState.score.get()) || '—',
-        '/100',
-      ),
+      metricLine(t('share.metric.score'), String(adblockState.score.get()) || '—', '/100'),
       metricLine(
         t('share.metric.label'),
         document.getElementById('score-summary')?.textContent?.trim() || '',
@@ -106,9 +102,15 @@ export function buildSummary(): string {
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'cookies') {
     const gradeEl = document.querySelector('.cookie-grade-grade');
-    const totalEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(1) .cookie-stat-value');
-    const sizeEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(2) .cookie-stat-value');
-    const secureEl = document.querySelector<HTMLDivElement>('.cookie-stat:nth-child(3) .cookie-stat-value');
+    const totalEl = document.querySelector<HTMLDivElement>(
+      '.cookie-stat:nth-child(1) .cookie-stat-value',
+    );
+    const sizeEl = document.querySelector<HTMLDivElement>(
+      '.cookie-stat:nth-child(2) .cookie-stat-value',
+    );
+    const secureEl = document.querySelector<HTMLDivElement>(
+      '.cookie-stat:nth-child(3) .cookie-stat-value',
+    );
     const lines = [
       metricLine(t('cookie.grade'), gradeEl?.textContent?.trim() || '—'),
       metricLine(t('cookie.total'), totalEl?.textContent?.trim() || '—'),

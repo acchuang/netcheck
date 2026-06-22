@@ -3,7 +3,9 @@ import type { TestResultsPayload } from './ai-collector';
 export function buildPrompt(payload: TestResultsPayload): string {
   const parts: string[] = [];
 
-  parts.push('You are a network security expert analyzing a user\'s network diagnostic results. Provide a concise, actionable analysis in markdown format.');
+  parts.push(
+    "You are a network security expert analyzing a user's network diagnostic results. Provide a concise, actionable analysis in markdown format.",
+  );
 
   parts.push('## Analysis Request');
   parts.push(`Timestamp: ${payload.timestamp}`);
@@ -12,7 +14,9 @@ export function buildPrompt(payload: TestResultsPayload): string {
   if (payload.ip) {
     parts.push('### IP & Location');
     parts.push(`- IP: ${payload.ip.address}`);
-    parts.push(`- Location: ${[payload.ip.city, payload.ip.region, payload.ip.country].filter(Boolean).join(', ')}`);
+    parts.push(
+      `- Location: ${[payload.ip.city, payload.ip.region, payload.ip.country].filter(Boolean).join(', ')}`,
+    );
     parts.push(`- ISP: ${payload.ip.asOrganization} (AS${payload.ip.asn})`);
     parts.push(`- Colo: ${payload.ip.colo}`);
     parts.push(`- HTTP Protocol: ${payload.ip.httpProtocol}`);
@@ -21,8 +25,12 @@ export function buildPrompt(payload: TestResultsPayload): string {
   }
 
   parts.push('### DNS');
-  parts.push(`WebRTC Leak: ${payload.dns.webrtcLeak === null ? 'unknown' : payload.dns.webrtcLeak ? 'detected' : 'not detected'}`);
-  parts.push(`DNSSEC: ${payload.dns.dnssec === null ? 'unknown' : payload.dns.dnssec ? 'enabled' : 'disabled'}`);
+  parts.push(
+    `WebRTC Leak: ${payload.dns.webrtcLeak === null ? 'unknown' : payload.dns.webrtcLeak ? 'detected' : 'not detected'}`,
+  );
+  parts.push(
+    `DNSSEC: ${payload.dns.dnssec === null ? 'unknown' : payload.dns.dnssec ? 'enabled' : 'disabled'}`,
+  );
   if (payload.dns.ipv6) {
     parts.push(`IPv4 Connectivity: ${payload.dns.ipv6.ipv4Connectivity ? 'yes' : 'no'}`);
     parts.push(`IPv6 Connectivity: ${payload.dns.ipv6.ipv6Connectivity ? 'yes' : 'no'}`);
@@ -34,7 +42,9 @@ export function buildPrompt(payload: TestResultsPayload): string {
   }
   parts.push('DNS Resolvers:');
   for (const r of payload.dns.resolvers) {
-    parts.push(`  - ${r.name}: reachable=${r.reachable}, latency=${r.latency ?? 'N/A'}ms, DNSSEC=${r.dnssec}, malware_filter=${r.filtering}`);
+    parts.push(
+      `  - ${r.name}: reachable=${r.reachable}, latency=${r.latency ?? 'N/A'}ms, DNSSEC=${r.dnssec}, malware_filter=${r.filtering}`,
+    );
   }
 
   parts.push('### Speed Test');
@@ -99,7 +109,9 @@ export function buildPrompt(payload: TestResultsPayload): string {
   parts.push('- Any security or privacy concerns identified.');
   parts.push('');
   parts.push('**Recommendations**:');
-  parts.push('- Specific, actionable steps to improve. Mention DNS providers, browser settings, VPNs where relevant.');
+  parts.push(
+    '- Specific, actionable steps to improve. Mention DNS providers, browser settings, VPNs where relevant.',
+  );
   parts.push('');
   parts.push('Keep it concise. Use plain language. Do not mention that you are an AI.');
 
@@ -108,5 +120,8 @@ export function buildPrompt(payload: TestResultsPayload): string {
 
 export function buildShortPrompt(payload: TestResultsPayload): string {
   const prompt = buildPrompt(payload);
-  return prompt.replace(/\nProvide[\s\S]*$/, '\nProvide a brief analysis: overview, key findings, risks, recommendations.');
+  return prompt.replace(
+    /\nProvide[\s\S]*$/,
+    '\nProvide a brief analysis: overview, key findings, risks, recommendations.',
+  );
 }

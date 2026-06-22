@@ -158,7 +158,8 @@ export const ja = {
   'emailSecurity.checking': 'Checking email security records...',
   'emailSecurity.retry': 'Retry',
   'emailSecurity.error': 'Email security check failed',
-  'emailSecurity.ready': 'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
+  'emailSecurity.ready':
+    'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
   'emailSecurity.grade': 'Email Security Grade',
   'emailSecurity.spf': 'SPF Record',
   'emailSecurity.dkim': 'DKIM Record',
@@ -195,8 +196,10 @@ export const ja = {
   'cookie.total': 'Total Cookies',
   'cookie.size': 'Total Size',
   'cookie.grade': 'Cookie Grade',
-  'cookie.httpOnlyNote': 'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
-  'cookie.noCookie': 'No cookies detected. Your browser may block cookies, or this site does not set any.',
+  'cookie.httpOnlyNote':
+    'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
+  'cookie.noCookie':
+    'No cookies detected. Your browser may block cookies, or this site does not set any.',
   'cookie.secure': 'Cookies with Secure prefix',
   'cookie.category': 'Category Breakdown',
   'cookie.retry': '再試行',
@@ -206,11 +209,14 @@ export const ja = {
   'cookie.allGood': 'All good',
   'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
   'cookie.reduceTracking': 'Reduce tracking cookies',
-  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.reduceTrackingDesc':
+    '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
   'cookie.highCount': 'High cookie count',
-  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.highCountDesc':
+    '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
   'cookie.lowSecure': 'Low secure prefix usage',
-  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
+  'cookie.lowSecureDesc':
+    'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   'dns.title': 'DNS \u0026 ネットワークチェック',
   'dns.subtitle': 'IP、DNS リゾルバー、ネットワーク設定を検出',
@@ -313,16 +319,20 @@ export const ja = {
     'フォールバックとしてセカンダリ DNS リゾルバーを構成します。プライマリがダウンした場合でも、インターネットが途切れません。ほとんどのルーターはプライマリ + セカンダリをサポートしています。',
   'dns.sug.hijack.name': '信頼できる DNS',
   'dns.sug.hijack.type': 'セキュリティ',
-  'dns.sug.hijack.desc': 'DNS リゾルバーが結果を改ざんしている可能性があります。ログを記録しない信頼できるリゾルバーに切り替えてください。',
+  'dns.sug.hijack.desc':
+    'DNS リゾルバーが結果を改ざんしている可能性があります。ログを記録しない信頼できるリゾルバーに切り替えてください。',
   'dns.sug.ecs.name': 'ECS 保護',
   'dns.sug.ecs.type': 'プライバシー',
-  'dns.sug.ecs.desc': 'DNS リゾルバーが ECS を通じて IP サブネットを漏洩しています。DNS-over-HTTPS を有効にしてこれを防いでください。',
+  'dns.sug.ecs.desc':
+    'DNS リゾルバーが ECS を通じて IP サブネットを漏洩しています。DNS-over-HTTPS を有効にしてこれを防いでください。',
   'dns.sug.noDnssec.name': 'DNSSEC 検証',
   'dns.sug.noDnssec.type': 'セキュリティ',
-  'dns.sug.noDnssec.desc': 'リゾルバーが DNSSEC 署名を検証していません。DNSSEC を検証するリゾルバーに切り替えてください。',
+  'dns.sug.noDnssec.desc':
+    'リゾルバーが DNSSEC 署名を検証していません。DNSSEC を検証するリゾルバーに切り替えてください。',
   'dns.sug.slow.name': 'より高速な DNS',
   'dns.sug.slow.type': 'パフォーマンス',
-  'dns.sug.slow.desc': '最も遅いリゾルバーが代替よりも大幅に遅いです。パフォーマンス向上のために切り替えを検討してください。',
+  'dns.sug.slow.desc':
+    '最も遅いリゾルバーが代替よりも大幅に遅いです。パフォーマンス向上のために切り替えを検討してください。',
   'speed.title': 'スピードテスト',
   'speed.subtitle': 'Cloudflare のグローバルエッジネットワークを介した接続速度の測定',
   'speed.testServer': 'テストサーバー',
@@ -439,9 +449,9 @@ export const ja = {
   'history.noData': 'テスト履歴がありません。速度テストを実行して追跡を開始してください。',
   'history.avgDownload': '平均ダウンロード',
   'history.avgLatency': '平均レイテンシ',
-'history.trend': 'トレンド',
-'history.totalTests': '合計テスト数',
-'history.all': '全部',
+  'history.trend': 'トレンド',
+  'history.totalTests': '合計テスト数',
+  'history.all': '全部',
 
   'history.compare': '比較',
   'history.cancelCompare': '比較をキャンセル',
@@ -590,7 +600,8 @@ export const ja = {
   'footer.text':
     'NetCheck — DNS と広告ブロックの診断。すべてのテストはブラウザ内でローカルに実行されます。',
   'footer.privacy': 'プライバシー',
-  'footer.privacyBadge': 'クライアントサイド診断 — AI 分析は Cloudflare AI を使用（オプトイン、ログなし）',
+  'footer.privacyBadge':
+    'クライアントサイド診断 — AI 分析は Cloudflare AI を使用（オプトイン、ログなし）',
   'analytics.activeNow': 'オンライン',
   'analytics.uniqueToday': '今日の訪問者',
   'analytics.total': '合計',
@@ -720,11 +731,13 @@ export const ja = {
   'ai.emptyTitle': 'まず診断を実行してください',
   'ai.emptyBody': 'DNS、速度、または TLS テストを実行して、AI によるネットワーク分析を取得します。',
   'ai.privacyTitle': 'クラウド AI プライバシー通知',
-  'ai.privacyBody': 'クラウド AI はテスト結果を Cloudflare に送信して分析します。データは保存または記録されません。ネットワークテスト指標（IP、速度、DNS 設定、TLS 詳細）のみが送信され、個人データは含まれません。ブラウザ内で完全に実行されるローカル AI も使用できます。',
+  'ai.privacyBody':
+    'クラウド AI はテスト結果を Cloudflare に送信して分析します。データは保存または記録されません。ネットワークテスト指標（IP、速度、DNS 設定、TLS 詳細）のみが送信され、個人データは含まれません。ブラウザ内で完全に実行されるローカル AI も使用できます。',
   'ai.privacyAccept': 'クラウド AI を続行',
   'ai.privacyUseLocal': 'ローカル AI を使用',
   'ai.downloadPromptTitle': 'AI モデルをダウンロード',
-  'ai.downloadPromptBody': 'ローカル AI は言語モデルのダウンロード（約 23 MB）が必要です。完全にブラウザ内で実行され、プライバシーを保護します。ダウンロードは 1 回のみで、以降はキャッシュされます。',
+  'ai.downloadPromptBody':
+    'ローカル AI は言語モデルのダウンロード（約 23 MB）が必要です。完全にブラウザ内で実行され、プライバシーを保護します。ダウンロードは 1 回のみで、以降はキャッシュされます。',
   'ai.downloadConfirm': 'ダウンロードして分析',
   'ai.downloadCancel': 'キャンセル',
   'nav.ai': 'AI 分析',
@@ -733,11 +746,14 @@ export const ja = {
   'breachCheck.checking': 'Checking...',
   'breachCheck.checkingDesc': 'Checking against breach databases...',
   'breachCheck.found': 'Found {0} times',
-  'breachCheck.foundDesc': 'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
+  'breachCheck.foundDesc':
+    'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
   'breachCheck.safe': 'Not found in breaches',
   'breachCheck.safeLabel': 'Safe',
-  'breachCheck.safeDesc': 'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
-  'breachCheck.error': 'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
+  'breachCheck.safeDesc':
+    'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
+  'breachCheck.error':
+    'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
   'breachCheck.errorLink': 'Check on haveibeenpwned.com',
   'breachCheck.severity.safe': 'Safe',
   'breachCheck.severity.low': 'Low Risk',
@@ -755,7 +771,8 @@ export const ja = {
   'certTransparency.last30Days': 'Last 30 Days',
   'certTransparency.trustIndicators': 'Trust Indicators',
   'certTransparency.warning': 'WARNING',
-  'certTransparency.recentlyIssued': '{0} certificates issued in the last 30 days. Investigate if unexpected.',
+  'certTransparency.recentlyIssued':
+    '{0} certificates issued in the last 30 days. Investigate if unexpected.',
   'certTransparency.issuer': 'Issuer',
   'certTransparency.commonName': 'Common Name',
   'certTransparency.status': 'Status',
@@ -764,7 +781,8 @@ export const ja = {
   'certTransparency.wildcard': 'WILDCARD',
   'certTransparency.showingCerts': 'Showing 100 of {0} certificates.',
   'certTransparency.viewAll': 'View all on crt.sh',
-  'certTransparency.error': 'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
+  'certTransparency.error':
+    'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
   'certTransparency.searchOnCrtsh': 'Search on crt.sh',
 
   'dnssecValidation.validate': 'Validate DNSSEC',
@@ -776,7 +794,8 @@ export const ja = {
   'dnssecValidation.errorStatus': 'ERROR — Validation failed',
   'dnssecValidation.trustChain': 'Trust Chain',
   'dnssecValidation.resolver': 'RESOLVER',
-  'dnssecValidation.adFlagTrue': "Cloudflare's resolver also validated this domain (AD flag = true)",
+  'dnssecValidation.adFlagTrue':
+    "Cloudflare's resolver also validated this domain (AD flag = true)",
   'dnssecValidation.adFlagFalse': "Cloudflare's resolver did not set the AD flag for this domain",
   'dnssecValidation.error': 'DNSSEC validation failed. The server may be temporarily unavailable.',
 
@@ -804,9 +823,13 @@ export const ja = {
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
   'privacyExposure.api.dnt': 'Do Not Track',
-  'privacyExposure.api.dnt.reveals': 'トラッキング preference signal (フィンガープリントに利用される可能性)',
-  'privacyExposure.api.dnt.tip': 'DNTは非推奨です；フィンガープリント信号を避けるため無効にしてください',
+  'privacyExposure.api.dnt.reveals':
+    'トラッキング preference signal (フィンガープリントに利用される可能性)',
+  'privacyExposure.api.dnt.tip':
+    'DNTは非推奨です；フィンガープリント信号を避けるため無効にしてください',
   'privacyExposure.api.gpc': 'グローバルプライバシーコントロール',
-  'privacyExposure.api.gpc.reveals': 'プライバシー preference signal (フィンガープリントに利用される可能性)',
-  'privacyExposure.api.gpc.tip': 'GPCは善意ですが、フィンガープリントの一意性を増やします；脅威モデルを考慮してください',
+  'privacyExposure.api.gpc.reveals':
+    'プライバシー preference signal (フィンガープリントに利用される可能性)',
+  'privacyExposure.api.gpc.tip':
+    'GPCは善意ですが、フィンガープリントの一意性を増やします；脅威モデルを考慮してください',
 } satisfies Translations;

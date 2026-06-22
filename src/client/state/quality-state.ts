@@ -1,5 +1,12 @@
 import { observable } from './observable';
-import type { ConnectionInfo, TlsInfo, ResourceTimingBreakdown, StabilityResults, QualityScore, CaptivePortalResult } from '../connection-quality';
+import type {
+  ConnectionInfo,
+  TlsInfo,
+  ResourceTimingBreakdown,
+  StabilityResults,
+  QualityScore,
+  CaptivePortalResult,
+} from '../connection-quality';
 
 const defaultScore: QualityScore = {
   grade: '—',

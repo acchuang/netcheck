@@ -105,7 +105,14 @@ export function parseDmarc(raw: string): {
   subdomainPolicy: string | null;
 } {
   if (!raw)
-    return { present: false, valid: false, policy: null, pct: null, rua: [], subdomainPolicy: null };
+    return {
+      present: false,
+      valid: false,
+      policy: null,
+      pct: null,
+      rua: [],
+      subdomainPolicy: null,
+    };
   const trimmed = raw.trim();
   if (!trimmed.startsWith('v=DMARC1'))
     return { present: true, valid: false, policy: null, pct: null, rua: [], subdomainPolicy: null };

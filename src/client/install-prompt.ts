@@ -1,7 +1,10 @@
 const VISIT_COUNT_KEY = 'netcheck-visits';
 const DISMISSED_KEY = 'netcheck-install-dismissed';
 
-let deferredPrompt: { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null = null;
+let deferredPrompt: {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: string }>;
+} | null = null;
 
 export function initInstallPrompt(): void {
   window.addEventListener('beforeinstallprompt', (e) => {

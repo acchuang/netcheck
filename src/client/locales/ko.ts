@@ -157,7 +157,8 @@ export const ko = {
   'emailSecurity.checking': 'Checking email security records...',
   'emailSecurity.retry': 'Retry',
   'emailSecurity.error': 'Email security check failed',
-  'emailSecurity.ready': 'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
+  'emailSecurity.ready':
+    'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
   'emailSecurity.grade': 'Email Security Grade',
   'emailSecurity.spf': 'SPF Record',
   'emailSecurity.dkim': 'DKIM Record',
@@ -194,8 +195,10 @@ export const ko = {
   'cookie.total': 'Total Cookies',
   'cookie.size': 'Total Size',
   'cookie.grade': 'Cookie Grade',
-  'cookie.httpOnlyNote': 'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
-  'cookie.noCookie': 'No cookies detected. Your browser may block cookies, or this site does not set any.',
+  'cookie.httpOnlyNote':
+    'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
+  'cookie.noCookie':
+    'No cookies detected. Your browser may block cookies, or this site does not set any.',
   'cookie.secure': 'Cookies with Secure prefix',
   'cookie.category': 'Category Breakdown',
   'cookie.retry': '다시 시도',
@@ -205,11 +208,14 @@ export const ko = {
   'cookie.allGood': 'All good',
   'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
   'cookie.reduceTracking': 'Reduce tracking cookies',
-  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.reduceTrackingDesc':
+    '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
   'cookie.highCount': 'High cookie count',
-  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.highCountDesc':
+    '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
   'cookie.lowSecure': 'Low secure prefix usage',
-  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
+  'cookie.lowSecureDesc':
+    'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   'dns.title': 'DNS 및 네트워크 확인',
   'dns.subtitle': 'IP, DNS 리졸버, 네트워크 구성을 확인합니다',
@@ -312,16 +318,20 @@ export const ko = {
     '보조 DNS 리졸버를 폴백으로 구성하세요. 기본 리졸버가 중단되어도 인터넷이 끊기지 않습니다. 대부분의 라우터는 기본 + 보조를 지원합니다.',
   'dns.sug.hijack.name': '신뢰할 수 있는 DNS',
   'dns.sug.hijack.type': '보안',
-  'dns.sug.hijack.desc': 'DNS 리졸버가 결과를 조작하고 있는 것으로 보입니다. 로그를 기록하지 않는 신뢰할 수 있는 리졸버로 전환하세요.',
+  'dns.sug.hijack.desc':
+    'DNS 리졸버가 결과를 조작하고 있는 것으로 보입니다. 로그를 기록하지 않는 신뢰할 수 있는 리졸버로 전환하세요.',
   'dns.sug.ecs.name': 'ECS 보호',
   'dns.sug.ecs.type': '개인정보',
-  'dns.sug.ecs.desc': 'DNS 리졸버가 ECS를 통해 IP 서브넷을 유출하고 있습니다. DNS-over-HTTPS를 활성화하여 이를 방지하세요.',
+  'dns.sug.ecs.desc':
+    'DNS 리졸버가 ECS를 통해 IP 서브넷을 유출하고 있습니다. DNS-over-HTTPS를 활성화하여 이를 방지하세요.',
   'dns.sug.noDnssec.name': 'DNSSEC 검증',
   'dns.sug.noDnssec.type': '보안',
-  'dns.sug.noDnssec.desc': '리졸버가 DNSSEC 서명을 검증하지 않습니다. DNSSEC를 검증하는 리졸버로 전환하세요.',
+  'dns.sug.noDnssec.desc':
+    '리졸버가 DNSSEC 서명을 검증하지 않습니다. DNSSEC를 검증하는 리졸버로 전환하세요.',
   'dns.sug.slow.name': '더 빠른 DNS',
   'dns.sug.slow.type': '성능',
-  'dns.sug.slow.desc': '가장 느린 리졸버가 대안보다 현저히 느립니다. 더 나은 성능을 위해 전환을 고려하세요.',
+  'dns.sug.slow.desc':
+    '가장 느린 리졸버가 대안보다 현저히 느립니다. 더 나은 성능을 위해 전환을 고려하세요.',
   'speed.title': '속도 테스트',
   'speed.subtitle': 'Cloudflare 글로벌 엣지 네트워크를 통해 연결 속도를 측정합니다',
   'speed.testServer': '테스트 서버',
@@ -438,9 +448,9 @@ export const ko = {
   'history.noData': '테스트 기록이 없습니다. 속도 테스트를 실행하여 추적을 시작하세요.',
   'history.avgDownload': '평균 다운로드',
   'history.avgLatency': '평균 지연 시간',
-'history.trend': '추세',
-'history.totalTests': '총 테스트',
-'history.all': '전체',
+  'history.trend': '추세',
+  'history.totalTests': '총 테스트',
+  'history.all': '전체',
 
   'history.compare': '비교',
   'history.cancelCompare': '비교 취소',
@@ -709,11 +719,13 @@ export const ko = {
   'ai.emptyTitle': '먼저 진단을 실행하세요',
   'ai.emptyBody': 'DNS, 속도 또는 TLS 테스트를 실행하여 AI 기반 네트워크 구성을 확인하세요.',
   'ai.privacyTitle': '클라우드 AI 개인정보 보호 공지',
-  'ai.privacyBody': '클라우드 AI는 테스트 결과를 Cloudflare로 전송하여 분석합니다. 데이터는 저장되거나 기록되지 않습니다. 네트워크 테스트 지표(IP, 속도, DNS 구성, TLS 세부 정보)만 전송되며 개인 데이터는 포함되지 않습니다. 브라우저에서 완전히 실행되는 로컬 AI를 사용할 수도 있습니다.',
+  'ai.privacyBody':
+    '클라우드 AI는 테스트 결과를 Cloudflare로 전송하여 분석합니다. 데이터는 저장되거나 기록되지 않습니다. 네트워크 테스트 지표(IP, 속도, DNS 구성, TLS 세부 정보)만 전송되며 개인 데이터는 포함되지 않습니다. 브라우저에서 완전히 실행되는 로컬 AI를 사용할 수도 있습니다.',
   'ai.privacyAccept': '클라우드 AI 계속',
   'ai.privacyUseLocal': '로컬 AI 사용',
   'ai.downloadPromptTitle': 'AI 모델 다운로드',
-  'ai.downloadPromptBody': '로컬 AI는 언어 모델 다운로드(약 23 MB)가 필요합니다. 완전히 브라우저에서 실행되어 개인정보를 보호합니다. 한 번만 다운로드하면 이후 캐시됩니다.',
+  'ai.downloadPromptBody':
+    '로컬 AI는 언어 모델 다운로드(약 23 MB)가 필요합니다. 완전히 브라우저에서 실행되어 개인정보를 보호합니다. 한 번만 다운로드하면 이후 캐시됩니다.',
   'ai.downloadConfirm': '다운로드 및 분석',
   'ai.downloadCancel': '취소',
   'nav.ai': 'AI 분석',
@@ -722,11 +734,14 @@ export const ko = {
   'breachCheck.checking': 'Checking...',
   'breachCheck.checkingDesc': 'Checking against breach databases...',
   'breachCheck.found': 'Found {0} times',
-  'breachCheck.foundDesc': 'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
+  'breachCheck.foundDesc':
+    'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
   'breachCheck.safe': 'Not found in breaches',
   'breachCheck.safeLabel': 'Safe',
-  'breachCheck.safeDesc': 'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
-  'breachCheck.error': 'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
+  'breachCheck.safeDesc':
+    'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
+  'breachCheck.error':
+    'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
   'breachCheck.errorLink': 'Check on haveibeenpwned.com',
   'breachCheck.severity.safe': 'Safe',
   'breachCheck.severity.low': 'Low Risk',
@@ -744,7 +759,8 @@ export const ko = {
   'certTransparency.last30Days': 'Last 30 Days',
   'certTransparency.trustIndicators': 'Trust Indicators',
   'certTransparency.warning': 'WARNING',
-  'certTransparency.recentlyIssued': '{0} certificates issued in the last 30 days. Investigate if unexpected.',
+  'certTransparency.recentlyIssued':
+    '{0} certificates issued in the last 30 days. Investigate if unexpected.',
   'certTransparency.issuer': 'Issuer',
   'certTransparency.commonName': 'Common Name',
   'certTransparency.status': 'Status',
@@ -753,7 +769,8 @@ export const ko = {
   'certTransparency.wildcard': 'WILDCARD',
   'certTransparency.showingCerts': 'Showing 100 of {0} certificates.',
   'certTransparency.viewAll': 'View all on crt.sh',
-  'certTransparency.error': 'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
+  'certTransparency.error':
+    'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
   'certTransparency.searchOnCrtsh': 'Search on crt.sh',
 
   'dnssecValidation.validate': 'Validate DNSSEC',
@@ -765,7 +782,8 @@ export const ko = {
   'dnssecValidation.errorStatus': 'ERROR — Validation failed',
   'dnssecValidation.trustChain': 'Trust Chain',
   'dnssecValidation.resolver': 'RESOLVER',
-  'dnssecValidation.adFlagTrue': "Cloudflare's resolver also validated this domain (AD flag = true)",
+  'dnssecValidation.adFlagTrue':
+    "Cloudflare's resolver also validated this domain (AD flag = true)",
   'dnssecValidation.adFlagFalse': "Cloudflare's resolver did not set the AD flag for this domain",
   'dnssecValidation.error': 'DNSSEC validation failed. The server may be temporarily unavailable.',
 
@@ -794,8 +812,10 @@ export const ko = {
   'privacyExposure.api.clipboard': 'Clipboard API',
   'privacyExposure.api.dnt': '추적 금지',
   'privacyExposure.api.dnt.reveals': '추적 선호도 신호 (핑거프린팅에 사용될 수 있음)',
-  'privacyExposure.api.dnt.tip': 'DNT는 더 이상 사용되지 않습니다; 핑거프린팅 신호를 피하려면 비활성화하세요',
+  'privacyExposure.api.dnt.tip':
+    'DNT는 더 이상 사용되지 않습니다; 핑거프린팅 신호를 피하려면 비활성화하세요',
   'privacyExposure.api.gpc': '글로벌 개인정보 보호 제어',
   'privacyExposure.api.gpc.reveals': '개인정보 보호 선호도 신호 (핑거프린팅에 사용될 수 있음)',
-  'privacyExposure.api.gpc.tip': 'GPC는 좋은 의도이지만 핑거프린트 고유성을 추가합니다; 위협 모델을 고려하세요',
+  'privacyExposure.api.gpc.tip':
+    'GPC는 좋은 의도이지만 핑거프린트 고유성을 추가합니다; 위협 모델을 고려하세요',
 } satisfies Translations;

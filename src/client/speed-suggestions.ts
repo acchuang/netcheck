@@ -142,7 +142,14 @@ export function renderSpeedSuggestions(results: SpeedTestResults): void {
     subtitle.textContent = t('speed.suggestIssues', issues.join(', '));
   }
 
-  const r = { download: dl, upload: ul, latency: lat, jitter: jit, bufferbloat: bb, packetLoss: results.packetLoss ?? 0 };
+  const r = {
+    download: dl,
+    upload: ul,
+    latency: lat,
+    jitter: jit,
+    bufferbloat: bb,
+    packetLoss: results.packetLoss ?? 0,
+  };
   const relevant = speedSuggestions.filter((s) => s.when(r)).slice(0, 6);
 
   const arrowSvg =

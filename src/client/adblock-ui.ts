@@ -153,7 +153,9 @@ export async function runAdBlockTests(): Promise<void> {
     categoriesEl.appendChild(catEl);
   });
 
-  animateNumber(document.getElementById('score-number')!, 0, score, 600, (v) => String(Math.round(v)));
+  animateNumber(document.getElementById('score-number')!, 0, score, 600, (v) =>
+    String(Math.round(v)),
+  );
 
   // CNAME tracking check
   const cnameSection = document.getElementById('cname-section');
@@ -200,7 +202,15 @@ export async function runAdBlockTests(): Promise<void> {
     results.length,
   );
 
-  renderAdblockSuggestions({ score, total: adblockState.totalTests.get(), blocked: adblockState.totalBlocked.get(), passed: adblockState.totalTests.get() - adblockState.totalBlocked.get() }, results);
+  renderAdblockSuggestions(
+    {
+      score,
+      total: adblockState.totalTests.get(),
+      blocked: adblockState.totalBlocked.get(),
+      passed: adblockState.totalTests.get() - adblockState.totalBlocked.get(),
+    },
+    results,
+  );
 
   markCompleted('adblock');
 

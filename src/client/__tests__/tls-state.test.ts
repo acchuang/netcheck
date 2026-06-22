@@ -93,10 +93,12 @@ describe('computeTlsGrade', () => {
   });
 
   it('returns B for TLSv1.2 + AES_128 + FS + no HSTS', () => {
-    expect(computeTlsGrade('TLSv1.2', 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', true, null)).toBe('B');
+    expect(computeTlsGrade('TLSv1.2', 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', true, null)).toBe(
+      'B',
+    );
   });
 
-it('returns C for TLSv1.2 + weak cipher + no FS + HSTS', () => {
+  it('returns C for TLSv1.2 + weak cipher + no FS + HSTS', () => {
     // 30 (v1.2) + 10 (weak) + 0 (no FS) + 15 (HSTS) = 55 → C
     expect(computeTlsGrade('TLSv1.2', 'TLS_RSA_WITH_RC4_128_SHA', false, 'Enabled')).toBe('C');
   });
@@ -116,8 +118,18 @@ it('returns C for TLSv1.2 + weak cipher + no FS + HSTS', () => {
   });
 
   it('rewards HSTS presence', () => {
-    const withoutHsts = computeTlsGrade('TLSv1.2', 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', true, null);
-    const withHsts = computeTlsGrade('TLSv1.2', 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', true, 'Enabled');
+    const withoutHsts = computeTlsGrade(
+      'TLSv1.2',
+      'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+      true,
+      null,
+    );
+    const withHsts = computeTlsGrade(
+      'TLSv1.2',
+      'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+      true,
+      'Enabled',
+    );
     expect(withHsts).not.toBe(withoutHsts);
   });
 });

@@ -51,8 +51,18 @@ interface DnssecResult {
   status: 'SECURE' | 'INSECURE' | 'BOGUS' | 'ERROR';
   adFlag: boolean;
   chain: DnssecChainStep[];
-  dsRecord: { present: boolean; algorithm: number | null; digestType: number | null; keyTag: number | null } | null;
-  dnskeyRecord: { present: boolean; algorithm: number | null; keyTag: number | null; flags: number | null } | null;
+  dsRecord: {
+    present: boolean;
+    algorithm: number | null;
+    digestType: number | null;
+    keyTag: number | null;
+  } | null;
+  dnskeyRecord: {
+    present: boolean;
+    algorithm: number | null;
+    keyTag: number | null;
+    flags: number | null;
+  } | null;
   hashVerified: boolean | null;
   error?: string;
 }
@@ -120,17 +130,34 @@ async function runDnssecCheck(): Promise<void> {
     if (data.dnskeyRecord) {
       dnssecValidationState.dnskeyRecord.set({
         present: data.dnskeyRecord.present,
-        algorithm: data.dnskeyRecord.algorithm != null ? String(data.dnskeyRecord.algorithm) : undefined,
+        algorithm:
+          data.dnskeyRecord.algorithm != null ? String(data.dnskeyRecord.algorithm) : undefined,
         keyTag: data.dnskeyRecord.keyTag ?? undefined,
         flags: data.dnskeyRecord.flags ?? undefined,
       });
     }
 
     const statusConfig: Record<string, { color: string; icon: string; label: string }> = {
-      SECURE: { color: 'var(--emerald)', icon: '<polyline points="9 12 11 14 15 10"/>', label: t('dnssecValidation.secure') },
-      INSECURE: { color: 'var(--amber)', icon: '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', label: t('dnssecValidation.insecure') },
-      BOGUS: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: t('dnssecValidation.bogus') },
-      ERROR: { color: 'var(--red)', icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', label: t('dnssecValidation.errorStatus') },
+      SECURE: {
+        color: 'var(--emerald)',
+        icon: '<polyline points="9 12 11 14 15 10"/>',
+        label: t('dnssecValidation.secure'),
+      },
+      INSECURE: {
+        color: 'var(--amber)',
+        icon: '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        label: t('dnssecValidation.insecure'),
+      },
+      BOGUS: {
+        color: 'var(--red)',
+        icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+        label: t('dnssecValidation.bogus'),
+      },
+      ERROR: {
+        color: 'var(--red)',
+        icon: '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+        label: t('dnssecValidation.errorStatus'),
+      },
     };
 
     const sc = statusConfig[data.status] || statusConfig.ERROR;
@@ -150,14 +177,19 @@ async function runDnssecCheck(): Promise<void> {
 
         <div class="dnssec-chain" style="margin-bottom:16px">
           <h4 class="csp-issues-title">${t('dnssecValidation.trustChain')}</h4>
-          ${data.chain.map((step) => {
-            const stepColors: Record<string, string> = { pass: 'var(--emerald)', fail: 'var(--red)', skip: 'var(--amber)' };
-            const stepIcons: Record<string, string> = {
-              pass: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>',
-              fail: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
-              skip: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
-            };
-            return `
+          ${data.chain
+            .map((step) => {
+              const stepColors: Record<string, string> = {
+                pass: 'var(--emerald)',
+                fail: 'var(--red)',
+                skip: 'var(--amber)',
+              };
+              const stepIcons: Record<string, string> = {
+                pass: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>',
+                fail: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+                skip: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+              };
+              return `
               <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="${stepColors[step.status]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0;margin-top:2px" aria-hidden="true">
                   ${stepIcons[step.status]}
@@ -168,24 +200,29 @@ async function runDnssecCheck(): Promise<void> {
                 </div>
               </div>
             `;
-          }).join('')}
+            })
+            .join('')}
         </div>
 
-        ${data.adFlag ? `
+        ${
+          data.adFlag
+            ? `
           <div class="csp-analysis-card">
             <div class="csp-issue-item">
               <span class="csp-issue-severity" style="background:var(--emerald)20;color:var(--emerald)">${t('dnssecValidation.resolver')}</span>
               <span class="csp-issue-message">${t('dnssecValidation.adFlagTrue')}</span>
             </div>
           </div>
-        ` : `
+        `
+            : `
           <div class="csp-analysis-card">
             <div class="csp-issue-item">
               <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">${t('dnssecValidation.resolver')}</span>
               <span class="csp-issue-message">${t('dnssecValidation.adFlagFalse')}</span>
             </div>
           </div>
-        `}
+        `
+        }
       </div>
     `;
   } catch {

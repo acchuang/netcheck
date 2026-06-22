@@ -37,12 +37,7 @@ function renderResult(info: CookieAuditResult): string {
   const rowsHtml = info.entries
     .map((e) => {
       const catBadge = renderBadge({
-        status:
-          e.category === 'essential'
-            ? 'pass'
-            : e.category === 'analytics'
-              ? 'warn'
-              : 'fail',
+        status: e.category === 'essential' ? 'pass' : e.category === 'analytics' ? 'warn' : 'fail',
         label: e.category,
       }).outerHTML;
       const prefix = e.isHostPrefix ? 'Host' : e.isSecurePrefix ? 'Secure' : '\u2014';
@@ -81,7 +76,13 @@ function renderResult(info: CookieAuditResult): string {
         <span class="cookie-pie-title">${t('cookie.category', 'Category Breakdown')}</span>
         <div class="cookie-pie-chart">${pieSegments}</div>
         <div class="cookie-pie-legend">
-          ${Object.entries(info.categoryBreakdown).filter(([, c]) => c > 0).map(([cat, count]) => `<span class="cookie-legend-item"><span class="cookie-legend-dot" style="background:${CAT_COLORS[cat] || 'var(--text-muted)'}"></span>${cat}: ${count}</span>`).join('')}
+          ${Object.entries(info.categoryBreakdown)
+            .filter(([, c]) => c > 0)
+            .map(
+              ([cat, count]) =>
+                `<span class="cookie-legend-item"><span class="cookie-legend-dot" style="background:${CAT_COLORS[cat] || 'var(--text-muted)'}"></span>${cat}: ${count}</span>`,
+            )
+            .join('')}
         </div>
       </div>
       <table class="cookie-table">

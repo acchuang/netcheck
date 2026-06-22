@@ -25,7 +25,13 @@ export interface TestResultsPayload {
   } | null;
   dns: {
     securityChecks: { name: string; status: string; detail: string }[];
-    resolvers: { name: string; reachable: boolean; latency: number | null; dnssec: boolean; filtering: boolean }[];
+    resolvers: {
+      name: string;
+      reachable: boolean;
+      latency: number | null;
+      dnssec: boolean;
+      filtering: boolean;
+    }[];
     webrtcLeak: boolean | null;
     dnssec: boolean | null;
     ipv6: {
@@ -64,7 +70,14 @@ export interface TestResultsPayload {
     grade: string;
     label: string;
     connectionType: string | null;
-    stability: { min: number; max: number; mean: number; stddev: number; jitter: number; lossPercent: number } | null;
+    stability: {
+      min: number;
+      max: number;
+      mean: number;
+      stddev: number;
+      jitter: number;
+      lossPercent: number;
+    } | null;
   };
   headers: {
     grade: string;

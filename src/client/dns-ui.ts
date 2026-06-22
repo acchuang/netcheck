@@ -458,14 +458,18 @@ function renderDnsSuggestions({
     hasSecurity: (name) => securityChecks.some((c) => c.name === name && c.status === 'pass'),
     hasWebRtcLeak: securityChecks.some((c) => c.name === 'WebRTC IP Leak' && c.status === 'fail'),
     reachableCount: reachable.length,
-    hijackTrustScore: lastHijackData && lastHijackData.length > 0
-      ? Math.min(...lastHijackData.map((h) => h.trustScore))
-      : 100,
-    ecsRating: lastEcsData && lastEcsData.length > 0
-      ? lastEcsData.some((e) => e.rating === 'significant') ? 'significant'
-        : lastEcsData.some((e) => e.rating === 'moderate') ? 'moderate'
-        : 'none'
-      : 'none',
+    hijackTrustScore:
+      lastHijackData && lastHijackData.length > 0
+        ? Math.min(...lastHijackData.map((h) => h.trustScore))
+        : 100,
+    ecsRating:
+      lastEcsData && lastEcsData.length > 0
+        ? lastEcsData.some((e) => e.rating === 'significant')
+          ? 'significant'
+          : lastEcsData.some((e) => e.rating === 'moderate')
+            ? 'moderate'
+            : 'none'
+        : 'none',
   };
 
   const issues: string[] = [];
@@ -600,8 +604,7 @@ function renderIpv6Results(): void {
   if (!container || !ipv6) return;
   if (card) card.classList.remove('hidden');
 
-  const statusIcon = (pass: boolean | null) =>
-    pass === true ? '✓' : pass === false ? '✗' : '—';
+  const statusIcon = (pass: boolean | null) => (pass === true ? '✓' : pass === false ? '✗' : '—');
   const statusClass = (pass: boolean | null) =>
     pass === true ? 'pass' : pass === false ? 'fail' : '';
 

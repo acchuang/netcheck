@@ -22,12 +22,30 @@ export interface CookieAuditResult {
 }
 
 const ANALYTICS_PATTERNS = [
-  '_ga', '_gid', '_gat', '_gcl', '_hj', '_pk_id', '_pk_ses',
-  'amplitude', 'mixpanel', 'matomo', 'piwik',
+  '_ga',
+  '_gid',
+  '_gat',
+  '_gcl',
+  '_hj',
+  '_pk_id',
+  '_pk_ses',
+  'amplitude',
+  'mixpanel',
+  'matomo',
+  'piwik',
 ];
 const ADVERTISING_PATTERNS = [
-  '_fbp', '_fbc', '_gads', '_gcl_aw', 'ads', 'ad',
-  'doubleclick', 'criteo', 'outbrain', 'taboola', 'uid',
+  '_fbp',
+  '_fbc',
+  '_gads',
+  '_gcl_aw',
+  'ads',
+  'ad',
+  'doubleclick',
+  'criteo',
+  'outbrain',
+  'taboola',
+  'uid',
 ];
 
 export function classifyCookie(name: string): CookieEntry['category'] {
@@ -37,8 +55,7 @@ export function classifyCookie(name: string): CookieEntry['category'] {
     return 'essential';
   if (ADVERTISING_PATTERNS.some((p) => lower.startsWith(p) || lower.includes(p)))
     return 'advertising';
-  if (ANALYTICS_PATTERNS.some((p) => lower.startsWith(p) || lower.includes(p)))
-    return 'analytics';
+  if (ANALYTICS_PATTERNS.some((p) => lower.startsWith(p) || lower.includes(p))) return 'analytics';
   return 'unknown';
 }
 

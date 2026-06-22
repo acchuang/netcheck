@@ -376,9 +376,21 @@ function renderFinalScore(
   const factorsEl = document.getElementById('quality-factors')!;
   const keys: { key: keyof typeof score.factors; label: string; tip: string }[] = [
     { key: 'tls', label: t('quality.tlsFactor'), tip: t('quality.tlsFactor.tip') },
-    { key: 'serverRtt', label: t('quality.serverRttFactor'), tip: t('quality.serverRttFactor.tip') },
-    { key: 'connectionType', label: t('quality.connTypeFactor'), tip: t('quality.connTypeFactor.tip') },
-    { key: 'stability', label: t('quality.stabilityFactor'), tip: t('quality.stabilityFactor.tip') },
+    {
+      key: 'serverRtt',
+      label: t('quality.serverRttFactor'),
+      tip: t('quality.serverRttFactor.tip'),
+    },
+    {
+      key: 'connectionType',
+      label: t('quality.connTypeFactor'),
+      tip: t('quality.connTypeFactor.tip'),
+    },
+    {
+      key: 'stability',
+      label: t('quality.stabilityFactor'),
+      tip: t('quality.stabilityFactor.tip'),
+    },
   ];
   factorsEl.innerHTML = keys
     .map((f) => {

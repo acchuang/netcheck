@@ -100,8 +100,10 @@ export const es = {
   'quality.stabilityFactor': 'Estabilidad',
   'quality.tlsFactor.tip': 'Protocolo y cifrado de tu conexión TLS.',
   'quality.serverRttFactor.tip': 'Tiempo de ida y vuelta al servidor (menor es más rápido).',
-  'quality.connTypeFactor.tip': 'Cómo estás conectado (Wi-Fi, celular, ethernet) y su velocidad efectiva.',
-  'quality.stabilityFactor.tip': 'Estabilidad de la conexión bajo carga — latencia, fluctuación y pérdida de paquetes.',
+  'quality.connTypeFactor.tip':
+    'Cómo estás conectado (Wi-Fi, celular, ethernet) y su velocidad efectiva.',
+  'quality.stabilityFactor.tip':
+    'Estabilidad de la conexión bajo carga — latencia, fluctuación y pérdida de paquetes.',
   'quality.emptyConnection': 'Ejecuta la prueba para ver los detalles de tu conexión.',
   'quality.emptyTls': 'Ejecuta la prueba para ver la información TLS.',
   'quality.emptyTiming': 'Ejecuta la prueba para ver el desglose de tiempos de la solicitud.',
@@ -158,7 +160,8 @@ export const es = {
   'emailSecurity.checking': 'Checking email security records...',
   'emailSecurity.retry': 'Retry',
   'emailSecurity.error': 'Email security check failed',
-  'emailSecurity.ready': 'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
+  'emailSecurity.ready':
+    'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
   'emailSecurity.grade': 'Email Security Grade',
   'emailSecurity.spf': 'SPF Record',
   'emailSecurity.dkim': 'DKIM Record',
@@ -195,8 +198,10 @@ export const es = {
   'cookie.total': 'Total Cookies',
   'cookie.size': 'Total Size',
   'cookie.grade': 'Cookie Grade',
-  'cookie.httpOnlyNote': 'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
-  'cookie.noCookie': 'No cookies detected. Your browser may block cookies, or this site does not set any.',
+  'cookie.httpOnlyNote':
+    'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
+  'cookie.noCookie':
+    'No cookies detected. Your browser may block cookies, or this site does not set any.',
   'cookie.secure': 'Cookies with Secure prefix',
   'cookie.category': 'Category Breakdown',
   'cookie.retry': 'Reintentar',
@@ -206,11 +211,14 @@ export const es = {
   'cookie.allGood': 'All good',
   'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
   'cookie.reduceTracking': 'Reduce tracking cookies',
-  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.reduceTrackingDesc':
+    '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
   'cookie.highCount': 'High cookie count',
-  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.highCountDesc':
+    '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
   'cookie.lowSecure': 'Low secure prefix usage',
-  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
+  'cookie.lowSecureDesc':
+    'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   'dns.title': 'Comprobación DNS y red',
   'dns.subtitle': 'Detecta tu IP, resolutores DNS y configuración de red',
@@ -314,16 +322,20 @@ export const es = {
     'Configura un resolutor DNS secundario como respaldo. Si el primario falla, tu internet no se caerá. La mayoría de routers soporta primario + secundario.',
   'dns.sug.hijack.name': 'DNS de confianza',
   'dns.sug.hijack.type': 'Seguridad',
-  'dns.sug.hijack.desc': 'Tu resolutor DNS parece estar alterando los resultados. Cambia a un resolutor de confianza que no registre consultas.',
+  'dns.sug.hijack.desc':
+    'Tu resolutor DNS parece estar alterando los resultados. Cambia a un resolutor de confianza que no registre consultas.',
   'dns.sug.ecs.name': 'Protección ECS',
   'dns.sug.ecs.type': 'Privacidad',
-  'dns.sug.ecs.desc': 'Tu resolutor DNS está filtrando tu subred IP mediante ECS. Activa DNS-over-HTTPS para evitarlo.',
+  'dns.sug.ecs.desc':
+    'Tu resolutor DNS está filtrando tu subred IP mediante ECS. Activa DNS-over-HTTPS para evitarlo.',
   'dns.sug.noDnssec.name': 'Validación DNSSEC',
   'dns.sug.noDnssec.type': 'Seguridad',
-  'dns.sug.noDnssec.desc': 'Tu resolutor no valida las firmas DNSSEC. Cambia a un resolutor que valide DNSSEC.',
+  'dns.sug.noDnssec.desc':
+    'Tu resolutor no valida las firmas DNSSEC. Cambia a un resolutor que valide DNSSEC.',
   'dns.sug.slow.name': 'DNS más rápido',
   'dns.sug.slow.type': 'Rendimiento',
-  'dns.sug.slow.desc': 'Tu resolutor más lento es significativamente más lento que las alternativas. Considera cambiar para un mejor rendimiento.',
+  'dns.sug.slow.desc':
+    'Tu resolutor más lento es significativamente más lento que las alternativas. Considera cambiar para un mejor rendimiento.',
   'speed.title': 'Test de velocidad',
   'speed.subtitle': 'Mide la velocidad de tu conexión a través de la red edge global de Cloudflare',
   'speed.testServer': 'Servidor de prueba',
@@ -443,9 +455,9 @@ export const es = {
   'history.noData': 'Sin historial de pruebas. Ejecuta una prueba de velocidad para comenzar.',
   'history.avgDownload': 'Descarga promedio',
   'history.avgLatency': 'Latencia promedio',
-'history.trend': 'Tendencia',
-'history.totalTests': 'Pruebas totales',
-'history.all': 'Todo',
+  'history.trend': 'Tendencia',
+  'history.totalTests': 'Pruebas totales',
+  'history.all': 'Todo',
 
   'history.compare': 'Comparar',
   'history.cancelCompare': 'Cancelar comparación',
@@ -602,7 +614,8 @@ export const es = {
   'footer.text':
     'NetCheck — Diagnósticos DNS y de bloqueo de anuncios. Todas las pruebas se ejecutan localmente en tu navegador.',
   'footer.privacy': 'Privacidad',
-  'footer.privacyBadge': 'Diagnóstico local — análisis IA vía Cloudflare AI (opcional, sin registros)',
+  'footer.privacyBadge':
+    'Diagnóstico local — análisis IA vía Cloudflare AI (opcional, sin registros)',
   'analytics.activeNow': 'en línea',
   'analytics.uniqueToday': 'visitantes hoy',
   'analytics.total': 'total',
@@ -728,15 +741,19 @@ export const es = {
   'ai.modeLocal': 'IA Local',
   'ai.modeCloudDesc': 'Análisis rápido y detallado con Cloudflare AI',
   'ai.modeLocalDesc': 'Privado, se ejecuta en tu navegador',
-  'ai.cloudNote': 'Los resultados se envían a Cloudflare para procesamiento. No se almacenan datos.',
+  'ai.cloudNote':
+    'Los resultados se envían a Cloudflare para procesamiento. No se almacenan datos.',
   'ai.emptyTitle': 'Ejecuta diagnósticos primero',
-  'ai.emptyBody': 'Ejecuta pruebas de DNS, velocidad o TLS para obtener información de tu red con IA.',
+  'ai.emptyBody':
+    'Ejecuta pruebas de DNS, velocidad o TLS para obtener información de tu red con IA.',
   'ai.privacyTitle': 'Aviso de Privacidad de IA en la Nube',
-  'ai.privacyBody': 'La IA en la nube envía los resultados a Cloudflare para su análisis. No se almacenan ni registran datos. Solo se envían métricas de red (IP, velocidad, DNS, TLS) — sin datos personales. También puedes usar la IA local que funciona completamente en tu navegador.',
+  'ai.privacyBody':
+    'La IA en la nube envía los resultados a Cloudflare para su análisis. No se almacenan ni registran datos. Solo se envían métricas de red (IP, velocidad, DNS, TLS) — sin datos personales. También puedes usar la IA local que funciona completamente en tu navegador.',
   'ai.privacyAccept': 'Continuar con IA en la Nube',
   'ai.privacyUseLocal': 'Usar IA Local',
   'ai.downloadPromptTitle': 'Descargar Modelo IA',
-  'ai.downloadPromptBody': 'La IA local requiere descargar un modelo de lenguaje (~23 MB). Se ejecuta completamente en tu navegador para máxima privacidad. La descarga ocurre una vez y el modelo se almacena en caché.',
+  'ai.downloadPromptBody':
+    'La IA local requiere descargar un modelo de lenguaje (~23 MB). Se ejecuta completamente en tu navegador para máxima privacidad. La descarga ocurre una vez y el modelo se almacena en caché.',
   'ai.downloadConfirm': 'Descargar y Analizar',
   'ai.downloadCancel': 'Cancelar',
   'nav.ai': 'Análisis IA',
@@ -745,11 +762,14 @@ export const es = {
   'breachCheck.checking': 'Checking...',
   'breachCheck.checkingDesc': 'Checking against breach databases...',
   'breachCheck.found': 'Found {0} times',
-  'breachCheck.foundDesc': 'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
+  'breachCheck.foundDesc':
+    'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
   'breachCheck.safe': 'Not found in breaches',
   'breachCheck.safeLabel': 'Safe',
-  'breachCheck.safeDesc': 'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
-  'breachCheck.error': 'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
+  'breachCheck.safeDesc':
+    'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
+  'breachCheck.error':
+    'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
   'breachCheck.errorLink': 'Check on haveibeenpwned.com',
   'breachCheck.severity.safe': 'Safe',
   'breachCheck.severity.low': 'Low Risk',
@@ -767,7 +787,8 @@ export const es = {
   'certTransparency.last30Days': 'Last 30 Days',
   'certTransparency.trustIndicators': 'Trust Indicators',
   'certTransparency.warning': 'WARNING',
-  'certTransparency.recentlyIssued': '{0} certificates issued in the last 30 days. Investigate if unexpected.',
+  'certTransparency.recentlyIssued':
+    '{0} certificates issued in the last 30 days. Investigate if unexpected.',
   'certTransparency.issuer': 'Issuer',
   'certTransparency.commonName': 'Common Name',
   'certTransparency.status': 'Status',
@@ -776,7 +797,8 @@ export const es = {
   'certTransparency.wildcard': 'WILDCARD',
   'certTransparency.showingCerts': 'Showing 100 of {0} certificates.',
   'certTransparency.viewAll': 'View all on crt.sh',
-  'certTransparency.error': 'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
+  'certTransparency.error':
+    'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
   'certTransparency.searchOnCrtsh': 'Search on crt.sh',
 
   'dnssecValidation.validate': 'Validate DNSSEC',
@@ -788,7 +810,8 @@ export const es = {
   'dnssecValidation.errorStatus': 'ERROR — Validation failed',
   'dnssecValidation.trustChain': 'Trust Chain',
   'dnssecValidation.resolver': 'RESOLVER',
-  'dnssecValidation.adFlagTrue': "Cloudflare's resolver also validated this domain (AD flag = true)",
+  'dnssecValidation.adFlagTrue':
+    "Cloudflare's resolver also validated this domain (AD flag = true)",
   'dnssecValidation.adFlagFalse': "Cloudflare's resolver did not set the AD flag for this domain",
   'dnssecValidation.error': 'DNSSEC validation failed. The server may be temporarily unavailable.',
 
@@ -816,9 +839,13 @@ export const es = {
   'privacyExposure.api.mediaDevices': 'Media Devices',
   'privacyExposure.api.clipboard': 'Clipboard API',
   'privacyExposure.api.dnt': 'No Rastrear',
-  'privacyExposure.api.dnt.reveals': 'Señal de preferencia de rastreo (puede usarse para huella digital)',
-  'privacyExposure.api.dnt.tip': 'DNT está obsoleto; desactívelo para evitar añadir una señal de huella digital',
+  'privacyExposure.api.dnt.reveals':
+    'Señal de preferencia de rastreo (puede usarse para huella digital)',
+  'privacyExposure.api.dnt.tip':
+    'DNT está obsoleto; desactívelo para evitar añadir una señal de huella digital',
   'privacyExposure.api.gpc': 'Control Global de Privacidad',
-  'privacyExposure.api.gpc.reveals': 'Señal de preferencia de privacidad (puede usarse para huella digital)',
-  'privacyExposure.api.gpc.tip': 'GPC está bien intencionado pero añade unicidad de huella digital; considere su modelo de amenaza',
+  'privacyExposure.api.gpc.reveals':
+    'Señal de preferencia de privacidad (puede usarse para huella digital)',
+  'privacyExposure.api.gpc.tip':
+    'GPC está bien intencionado pero añade unicidad de huella digital; considere su modelo de amenaza',
 } satisfies Translations;

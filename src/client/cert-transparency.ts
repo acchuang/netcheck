@@ -114,20 +114,28 @@ async function runCtCheck(): Promise<void> {
             <div class="ct-summary-label">${t('certTransparency.last30Days')}</div>
           </div>
         </div>
-        ${data.trustIndicators.length > 0 ? `
+        ${
+          data.trustIndicators.length > 0
+            ? `
           <div class="csp-analysis-card" style="margin-top:16px">
             <h4 class="csp-issues-title">${t('certTransparency.trustIndicators')}</h4>
             ${data.trustIndicators.map((ind) => `<div class="csp-issue-item"><span class="csp-issue-message">${escapeHtml(ind)}</span></div>`).join('')}
           </div>
-        ` : ''}
-        ${s.recentlyIssued > 3 ? `
+        `
+            : ''
+        }
+        ${
+          s.recentlyIssued > 3
+            ? `
           <div class="csp-analysis-card" style="margin-top:8px;border-color:var(--amber)">
             <div class="csp-issue-item">
               <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber)">${t('certTransparency.warning')}</span>
               <span class="csp-issue-message">${t('certTransparency.recentlyIssued', String(s.recentlyIssued))}</span>
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="ct-table-wrap" style="margin-top:16px">
           <table class="ct-table">
             <thead>
@@ -140,7 +148,9 @@ async function runCtCheck(): Promise<void> {
               </tr>
             </thead>
             <tbody>
-              ${data.certs.map((c) => `
+              ${data.certs
+                .map(
+                  (c) => `
                 <tr class="ct-row">
                   <td class="ct-cell ct-cell-issuer">${escapeHtml(c.issuer)}</td>
                   <td class="ct-cell ct-cell-cn">${escapeHtml(c.commonName)}${c.isWildcard ? ` <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:10px">${t('certTransparency.wildcard')}</span>` : ''}</td>
@@ -148,7 +158,9 @@ async function runCtCheck(): Promise<void> {
                   <td class="ct-cell">${new Date(c.notBefore).toLocaleDateString()}</td>
                   <td class="ct-cell">${new Date(c.notAfter).toLocaleDateString()}</td>
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join('')}
             </tbody>
           </table>
         </div>

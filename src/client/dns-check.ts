@@ -56,10 +56,9 @@ export const DnsCheck = {
     const resolver = resolverHost || 'cloudflare-dns.com';
 
     try {
-      const res = await fetch(
-        `/api/dns/check-security?resolver=${encodeURIComponent(resolver)}`,
-        { signal: AbortSignal.timeout(8000) },
-      );
+      const res = await fetch(`/api/dns/check-security?resolver=${encodeURIComponent(resolver)}`, {
+        signal: AbortSignal.timeout(8000),
+      });
       if (res.ok) {
         const data = (await res.json()) as { checks: SecurityCheck[] };
         return data.checks;
@@ -118,7 +117,12 @@ export const DnsCheck = {
             const ip = ipv6Match[1].toLowerCase();
             if (!ips.has(ip) && ip !== '::' && ip.includes(':')) {
               ips.add(ip);
-              if (ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) {
+              if (
+                ip === '::1' ||
+                ip.startsWith('fc') ||
+                ip.startsWith('fd') ||
+                ip.startsWith('fe80')
+              ) {
                 pc.close();
                 resolved = true;
                 resolve(ip);

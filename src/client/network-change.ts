@@ -39,7 +39,8 @@ function showToast(message: string): void {
   if (!container) {
     container = document.createElement('div');
     container.id = 'network-change-toast-container';
-    container.style.cssText = 'position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+    container.style.cssText =
+      'position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
     document.body.appendChild(container);
   }
 

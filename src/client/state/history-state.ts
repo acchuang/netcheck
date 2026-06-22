@@ -37,7 +37,9 @@ export function getAllHistory(): HistoryEntry[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((e: unknown) => typeof e === 'object' && e !== null && 'v' in (e as Record<string, unknown>)) as HistoryEntry[];
+    return parsed.filter(
+      (e: unknown) => typeof e === 'object' && e !== null && 'v' in (e as Record<string, unknown>),
+    ) as HistoryEntry[];
   } catch {
     return [];
   }
@@ -66,7 +68,8 @@ export function clearHistory(): void {
 export function generateHistoryCsv(): string {
   const history = getAllHistory();
   if (!history.length) return '';
-  const header = 'time,download_mbps,upload_mbps,latency_ms,jitter_ms,bufferbloat_ms,speed_grade,dns_security,adblock_score,headers_grade,tls_grade';
+  const header =
+    'time,download_mbps,upload_mbps,latency_ms,jitter_ms,bufferbloat_ms,speed_grade,dns_security,adblock_score,headers_grade,tls_grade';
   const rows = history.map((e) => {
     const d = new Date(e.timestamp).toISOString();
     return [

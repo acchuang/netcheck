@@ -207,7 +207,8 @@ export const zhTW = {
   'cookie.total': 'Cookie 總數',
   'cookie.size': '總大小',
   'cookie.grade': 'Cookie 等級',
-  'cookie.httpOnlyNote': '伺服器設定的 HttpOnly Cookie 出於安全原因不可被 JavaScript 讀取，未顯示。',
+  'cookie.httpOnlyNote':
+    '伺服器設定的 HttpOnly Cookie 出於安全原因不可被 JavaScript 讀取，未顯示。',
   'cookie.noCookie': '未偵測到 Cookie。您的瀏覽器可能阻擋了 Cookie，或此網站未設定 Cookie。',
   'cookie.secure': '帶有 Secure 前綴的 Cookie',
   'cookie.category': '類別分佈',
@@ -218,11 +219,14 @@ export const zhTW = {
   'cookie.allGood': 'All good',
   'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
   'cookie.reduceTracking': 'Reduce tracking cookies',
-  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.reduceTrackingDesc':
+    '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
   'cookie.highCount': 'High cookie count',
-  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.highCountDesc':
+    '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
   'cookie.lowSecure': 'Low secure prefix usage',
-  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
+  'cookie.lowSecureDesc':
+    'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   // DNS section
   'dns.title': 'DNS 與網路檢測',
@@ -333,7 +337,8 @@ export const zhTW = {
   'dns.sug.hijack.desc': '您的 DNS 解析器似乎正在篡改結果。請切換至不記錄日誌的受信任解析器。',
   'dns.sug.ecs.name': 'ECS 保護',
   'dns.sug.ecs.type': '隱私',
-  'dns.sug.ecs.desc': '您的 DNS 解析器正在透過 ECS 洩漏您的 IP 子網路。請啟用 DNS-over-HTTPS 以防止此洩漏。',
+  'dns.sug.ecs.desc':
+    '您的 DNS 解析器正在透過 ECS 洩漏您的 IP 子網路。請啟用 DNS-over-HTTPS 以防止此洩漏。',
   'dns.sug.noDnssec.name': 'DNSSEC 驗證',
   'dns.sug.noDnssec.type': '安全性',
   'dns.sug.noDnssec.desc': '您的解析器未驗證 DNSSEC 簽章。請切換至支援 DNSSEC 驗證的解析器。',
@@ -422,16 +427,14 @@ export const zhTW = {
   'speed.sug.nextdns.desc': '快速 DNS，內建廣告/追蹤器攔截。減少不必要的網路請求，改善體感速度。',
   'speed.sug.packetLoss.name': '連線可靠性',
   'speed.sug.packetLoss.type': '故障排除',
-  'speed.sug.packetLoss.desc':
-    '高丟包率表示連線不穩定。檢查WiFi干擾、網線故障或ISP問題。',
+  'speed.sug.packetLoss.desc': '高丟包率表示連線不穩定。檢查WiFi干擾、網線故障或ISP問題。',
   'speed.sug.bufferbloat.name': '緩衝膨脹修復',
   'speed.sug.bufferbloat.type': '路由器設定',
   'speed.sug.bufferbloat.desc':
     '嚴重的緩衝膨脹意味著路由器排隊了過多數據。請在路由器上啟用智慧佇列管理(SQM/CAKE)。',
   'speed.sug.jitter.name': '連線穩定性',
   'speed.sug.jitter.type': '故障排除',
-  'speed.sug.jitter.desc':
-    '高抖動會導致延遲不一致。嘗試有線連接或檢查網絡擁塞。',
+  'speed.sug.jitter.desc': '高抖動會導致延遲不一致。嘗試有線連接或檢查網絡擁塞。',
 
   // Speed grades
   'speed.grade.exceptional': '卓越',
@@ -460,9 +463,9 @@ export const zhTW = {
   'history.noData': '尚無測試記錄。執行速度測試以開始追蹤。',
   'history.avgDownload': '平均下載',
   'history.avgLatency': '平均延遲',
-'history.trend': '趨勢',
-'history.totalTests': '總測試數',
-'history.all': '全部',
+  'history.trend': '趨勢',
+  'history.totalTests': '總測試數',
+  'history.all': '全部',
 
   'history.compare': '比較',
   'history.cancelCompare': '取消比較',
@@ -744,11 +747,13 @@ export const zhTW = {
   'ai.emptyTitle': '請先執行診斷',
   'ai.emptyBody': '執行 DNS、速度或 TLS 測試以獲得 AI 驅動的網路配置分析。',
   'ai.privacyTitle': '雲端 AI 隱私聲明',
-  'ai.privacyBody': '雲端 AI 會將您的測試結果傳送到 Cloudflare 進行分析。不會儲存或記錄任何資料。僅傳送您的網路測試指標（IP、速度、DNS 配置、TLS 詳細資訊）—— 不包含個人資料。您也可以使用完全在本機運行的本機 AI。',
+  'ai.privacyBody':
+    '雲端 AI 會將您的測試結果傳送到 Cloudflare 進行分析。不會儲存或記錄任何資料。僅傳送您的網路測試指標（IP、速度、DNS 配置、TLS 詳細資訊）—— 不包含個人資料。您也可以使用完全在本機運行的本機 AI。',
   'ai.privacyAccept': '繼續使用雲端 AI',
   'ai.privacyUseLocal': '改用本機 AI',
   'ai.downloadPromptTitle': '下載 AI 模型',
-  'ai.downloadPromptBody': '本機 AI 需要下載語言模型（約 23 MB）。模型完全在瀏覽器中運行以保護隱私。只需下載一次，之後會快取以供未來使用。',
+  'ai.downloadPromptBody':
+    '本機 AI 需要下載語言模型（約 23 MB）。模型完全在瀏覽器中運行以保護隱私。只需下載一次，之後會快取以供未來使用。',
   'ai.downloadConfirm': '下載並分析',
   'ai.downloadCancel': '取消',
   'nav.ai': 'AI 分析',
@@ -757,11 +762,14 @@ export const zhTW = {
   'breachCheck.checking': 'Checking...',
   'breachCheck.checkingDesc': 'Checking against breach databases...',
   'breachCheck.found': 'Found {0} times',
-  'breachCheck.foundDesc': 'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
+  'breachCheck.foundDesc':
+    'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
   'breachCheck.safe': 'Not found in breaches',
   'breachCheck.safeLabel': 'Safe',
-  'breachCheck.safeDesc': 'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
-  'breachCheck.error': 'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
+  'breachCheck.safeDesc':
+    'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
+  'breachCheck.error':
+    'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
   'breachCheck.errorLink': 'Check on haveibeenpwned.com',
   'breachCheck.severity.safe': 'Safe',
   'breachCheck.severity.low': 'Low Risk',
@@ -779,7 +787,8 @@ export const zhTW = {
   'certTransparency.last30Days': 'Last 30 Days',
   'certTransparency.trustIndicators': 'Trust Indicators',
   'certTransparency.warning': 'WARNING',
-  'certTransparency.recentlyIssued': '{0} certificates issued in the last 30 days. Investigate if unexpected.',
+  'certTransparency.recentlyIssued':
+    '{0} certificates issued in the last 30 days. Investigate if unexpected.',
   'certTransparency.issuer': 'Issuer',
   'certTransparency.commonName': 'Common Name',
   'certTransparency.status': 'Status',
@@ -788,7 +797,8 @@ export const zhTW = {
   'certTransparency.wildcard': 'WILDCARD',
   'certTransparency.showingCerts': 'Showing 100 of {0} certificates.',
   'certTransparency.viewAll': 'View all on crt.sh',
-  'certTransparency.error': 'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
+  'certTransparency.error':
+    'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
   'certTransparency.searchOnCrtsh': 'Search on crt.sh',
 
   'dnssecValidation.validate': 'Validate DNSSEC',
@@ -800,7 +810,8 @@ export const zhTW = {
   'dnssecValidation.errorStatus': 'ERROR — Validation failed',
   'dnssecValidation.trustChain': 'Trust Chain',
   'dnssecValidation.resolver': 'RESOLVER',
-  'dnssecValidation.adFlagTrue': "Cloudflare's resolver also validated this domain (AD flag = true)",
+  'dnssecValidation.adFlagTrue':
+    "Cloudflare's resolver also validated this domain (AD flag = true)",
   'dnssecValidation.adFlagFalse': "Cloudflare's resolver did not set the AD flag for this domain",
   'dnssecValidation.error': 'DNSSEC validation failed. The server may be temporarily unavailable.',
 

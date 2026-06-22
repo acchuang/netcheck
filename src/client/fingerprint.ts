@@ -67,9 +67,7 @@ export const FingerprintDetector = {
 
     const uniquenessScore = Math.min(100, Math.round((totalBits / 50) * 100));
 
-    const signalValues = categories
-      .flatMap((cat) => cat.items.map((item) => item.value))
-      .join('|');
+    const signalValues = categories.flatMap((cat) => cat.items.map((item) => item.value)).join('|');
     const currentHash = await hashString(signalValues);
 
     const STORE_KEY = 'netcheck_fp_hash';

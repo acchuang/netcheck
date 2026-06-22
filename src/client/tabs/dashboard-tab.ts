@@ -87,7 +87,15 @@ function computeOverallScore(): { grade: string; score: number; testsCompleted: 
       }
       case 'quality': {
         const qg = qualityState.score.get().grade;
-        const qMap: Record<string, number> = { 'A+': 95, A: 88, B: 78, 'C+': 70, C: 60, D: 42, F: 22 };
+        const qMap: Record<string, number> = {
+          'A+': 95,
+          A: 88,
+          B: 78,
+          'C+': 70,
+          C: 60,
+          D: 42,
+          F: 22,
+        };
         weightedScore += (qMap[qg] ?? 50) * weight;
         break;
       }
@@ -159,14 +167,28 @@ function restoreFromHistory(): void {
   if (speedState.download.get() > 0 || speedState.latency.get() > 0) return;
   const v1 = getAllHistory();
   const legacy = SpeedTestHistory.getAll();
-  let dl = 0, ul = 0, lat = 0, jit = 0, bb = 0;
+  let dl = 0,
+    ul = 0,
+    lat = 0,
+    jit = 0,
+    bb = 0;
 
   if (v1.length > 0) {
     const s = v1[v1.length - 1].speed;
-    if (s) { dl = s.download; ul = s.upload; lat = s.latency; jit = s.jitter; bb = s.bufferbloat; }
+    if (s) {
+      dl = s.download;
+      ul = s.upload;
+      lat = s.latency;
+      jit = s.jitter;
+      bb = s.bufferbloat;
+    }
   } else if (legacy.length > 0) {
     const s = legacy[legacy.length - 1];
-    dl = s.download; ul = s.upload; lat = s.latency; jit = s.jitter; bb = s.bufferbloat;
+    dl = s.download;
+    ul = s.upload;
+    lat = s.latency;
+    jit = s.jitter;
+    bb = s.bufferbloat;
   }
 
   if (dl > 0) {
@@ -279,7 +301,14 @@ function renderDashboard(): void {
 
   if (completed.includes('headers')) {
     const grade = headersState.grade.get();
-    const cls = grade === 'A' ? 'status-pass' : grade === 'B' || grade === 'C' ? 'status-warn' : grade ? 'status-fail' : '';
+    const cls =
+      grade === 'A'
+        ? 'status-pass'
+        : grade === 'B' || grade === 'C'
+          ? 'status-warn'
+          : grade
+            ? 'status-fail'
+            : '';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.headersGrade', 'Headers')}</span>
       <span class="dash-status-value ${cls}">${grade || '\u2014'}</span>
@@ -287,7 +316,12 @@ function renderDashboard(): void {
   }
 
   if (hasTls && tlsInfo) {
-    const cls = tlsInfo.protocol === 'TLSv1.3' ? 'status-pass' : tlsInfo.protocol === 'TLSv1.2' ? 'status-warn' : 'status-fail';
+    const cls =
+      tlsInfo.protocol === 'TLSv1.3'
+        ? 'status-pass'
+        : tlsInfo.protocol === 'TLSv1.2'
+          ? 'status-warn'
+          : 'status-fail';
     statusHtml += `<div class="dash-status-item">
       <span class="dash-status-label">${t('dashboard.tlsVersion', 'TLS Version')}</span>
       <span class="dash-status-value ${cls}">${tlsInfo.protocol}</span>
@@ -447,7 +481,9 @@ function wireActionButtons(container: HTMLElement): void {
         const dnsLink = document.querySelector('.nav-link[data-tab="dns"]') as HTMLAnchorElement;
         if (dnsLink) dnsLink.click();
       } else if (action === 'run-speed') {
-        const speedLink = document.querySelector('.nav-link[data-tab="speed"]') as HTMLAnchorElement;
+        const speedLink = document.querySelector(
+          '.nav-link[data-tab="speed"]',
+        ) as HTMLAnchorElement;
         if (speedLink) speedLink.click();
       } else if (action === 'run-all') {
         runAllTests();

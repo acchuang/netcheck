@@ -147,9 +147,7 @@ export const ReportExporter = {
       latency: speedLat > 0 ? speedLat : null,
       jitter: speedJit > 0 ? speedJit : null,
       grade:
-        speedDl > 0
-          ? SpeedTest.getGrade(speedDl, speedUl, speedLat, speedJit, speedBb, 0)
-          : null,
+        speedDl > 0 ? SpeedTest.getGrade(speedDl, speedUl, speedLat, speedJit, speedBb, 0) : null,
       tested: speedDl > 0,
     };
 
@@ -160,7 +158,12 @@ export const ReportExporter = {
       const abScore = adblockState.score.get();
       const abBlocked = adblockState.totalBlocked.get();
       const abTotal = adblockState.totalTests.get();
-      adblock.score = { score: abScore, total: abTotal, blocked: abBlocked, passed: abTotal - abBlocked };
+      adblock.score = {
+        score: abScore,
+        total: abTotal,
+        blocked: abBlocked,
+        passed: abTotal - abBlocked,
+      };
       adblock.results = abResults;
     }
     const abFilterLists = adblockState.filterLists.get();
@@ -189,13 +192,24 @@ export const ReportExporter = {
       });
     }
 
-    const cookies: CookieData = { grade: '', totalCount: 0, totalSizeBytes: 0, secureCount: 0, securePercentage: 0, categoryBreakdown: {}, entries: [], audited: false };
+    const cookies: CookieData = {
+      grade: '',
+      totalCount: 0,
+      totalSizeBytes: 0,
+      secureCount: 0,
+      securePercentage: 0,
+      categoryBreakdown: {},
+      entries: [],
+      audited: false,
+    };
     const cookieGradeEl = document.querySelector('.cookie-grade-grade');
     if (cookieGradeEl) {
       cookies.audited = true;
       cookies.grade = cookieGradeEl.textContent?.trim() || '';
       const stats = document.querySelectorAll('.cookie-stat');
-      if (stats[0]) cookies.totalCount = parseInt(stats[0].querySelector('.cookie-stat-value')?.textContent || '0', 10) || 0;
+      if (stats[0])
+        cookies.totalCount =
+          parseInt(stats[0].querySelector('.cookie-stat-value')?.textContent || '0', 10) || 0;
       if (stats[1]) cookies.totalSizeBytes = 0;
       if (stats[2]) {
         const secureText = stats[2].querySelector('.cookie-stat-value')?.textContent || '';

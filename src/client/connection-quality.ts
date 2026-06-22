@@ -1,4 +1,3 @@
-
 export interface ConnectionInfo {
   type: string | null;
   effectiveType: string | null;

@@ -151,9 +151,12 @@ async function runSpeedTest(): Promise<void> {
       counts[idx]++;
     }
     const maxCount = Math.max(...counts);
-    jitterHistEl.innerHTML = counts.map((c) =>
-      `<div style="flex:1;height:${maxCount > 0 ? (c / maxCount) * 100 : 0}%;background:var(--accent);border-radius:1px;min-height:2px"></div>`
-    ).join('');
+    jitterHistEl.innerHTML = counts
+      .map(
+        (c) =>
+          `<div style="flex:1;height:${maxCount > 0 ? (c / maxCount) * 100 : 0}%;background:var(--accent);border-radius:1px;min-height:2px"></div>`,
+      )
+      .join('');
     jitterHistEl.classList.remove('hidden');
   } else if (jitterHistEl) {
     jitterHistEl.classList.add('hidden');
@@ -181,7 +184,8 @@ async function runSpeedTest(): Promise<void> {
     const dlBbEl = document.getElementById('speed-dl-bufferbloat');
     const dlBbBar = document.getElementById('speed-dl-bufferbloat-bar') as HTMLElement;
     if (dlBbEl) dlBbEl.textContent = `${Math.round(results.downloadBufferbloat)} ms`;
-    if (dlBbBar) dlBbBar.style.width = `${Math.min(100, (results.downloadBufferbloat / 100) * 100)}%`;
+    if (dlBbBar)
+      dlBbBar.style.width = `${Math.min(100, (results.downloadBufferbloat / 100) * 100)}%`;
   }
   if (results.uploadBufferbloat !== null) {
     const ulBbEl = document.getElementById('speed-ul-bufferbloat');

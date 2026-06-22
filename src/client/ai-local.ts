@@ -32,7 +32,9 @@ export async function analyzeWithLocal(): Promise<string> {
       do_sample: true,
     });
 
-    const generated = Array.isArray(result) ? result[0] : (result as { generated_text: string }).generated_text;
+    const generated = Array.isArray(result)
+      ? result[0]
+      : (result as { generated_text: string }).generated_text;
     const text = typeof generated === 'string' ? generated : generated.generated_text;
     return text.replace(prompt, '').trim();
   } catch (e) {

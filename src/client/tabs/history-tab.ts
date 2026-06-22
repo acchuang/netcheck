@@ -1,4 +1,9 @@
-import { getAllHistory, clearHistory, downloadHistoryCsv, type HistoryEntry } from '../state/history-state';
+import {
+  getAllHistory,
+  clearHistory,
+  downloadHistoryCsv,
+  type HistoryEntry,
+} from '../state/history-state';
 import { SpeedTestHistory } from '../history';
 import { t } from '../i18n';
 import { observable } from '../state/observable';
@@ -69,7 +74,8 @@ export function refreshHistory(): void {
 function filterByRange(entries: HistoryEntry[]): HistoryEntry[] {
   if (timeRange === 'all') return entries;
   const now = Date.now();
-  const cutoff = timeRange === '7d' ? now - 7 * 24 * 60 * 60 * 1000 : now - 30 * 24 * 60 * 60 * 1000;
+  const cutoff =
+    timeRange === '7d' ? now - 7 * 24 * 60 * 60 * 1000 : now - 30 * 24 * 60 * 60 * 1000;
   return entries.filter((e) => e.timestamp >= cutoff);
 }
 
@@ -166,8 +172,10 @@ function renderStats(entries: HistoryEntry[]): void {
     return;
   }
 
-  const avgDl = speedEntries.reduce((sum, e) => sum + (e.speed?.download ?? 0), 0) / speedEntries.length;
-  const avgLat = speedEntries.reduce((sum, e) => sum + (e.speed?.latency ?? 0), 0) / speedEntries.length;
+  const avgDl =
+    speedEntries.reduce((sum, e) => sum + (e.speed?.download ?? 0), 0) / speedEntries.length;
+  const avgLat =
+    speedEntries.reduce((sum, e) => sum + (e.speed?.latency ?? 0), 0) / speedEntries.length;
   const totalTests = speedEntries.length;
 
   let trend = 0;
@@ -289,12 +297,16 @@ function renderDiff(a: HistoryEntry, b: HistoryEntry): string {
         <tr><th>Metric</th><th>${dateA}</th><th>${dateB}</th><th>Diff</th></tr>
       </thead>
       <tbody>
-        ${rows.map((r) => `<tr>
+        ${rows
+          .map(
+            (r) => `<tr>
           <td>${r.label}</td>
           <td>${r.valueA}</td>
           <td>${r.valueB}</td>
           <td><span class="${diffClass(r.diff)}">${r.diff}</span></td>
-        </tr>`).join('')}
+        </tr>`,
+          )
+          .join('')}
       </tbody>
     </table>
   `;

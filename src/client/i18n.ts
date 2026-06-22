@@ -12,7 +12,6 @@ const STORAGE_KEY = 'netcheck-locale';
 
 let current: Locale = 'en';
 
-
 export type Translations = Record<keyof typeof en, string>;
 
 const locales: Record<Locale, Record<string, string>> = {
@@ -221,7 +220,8 @@ function applyStaticTranslations(): void {
   }
 
   // Update lang toggle label
-  const langBtn = document.getElementById('lang-toggle-header') || document.getElementById('lang-toggle');
+  const langBtn =
+    document.getElementById('lang-toggle-header') || document.getElementById('lang-toggle');
   if (langBtn) {
     const label = langBtn.querySelector('.nav-toolbar-badge');
     const labels: Record<Locale, string> = {

@@ -106,8 +106,10 @@ export const en = {
   'quality.stabilityFactor': 'Stability',
   'quality.tlsFactor.tip': 'Protocol and cipher strength of your TLS connection.',
   'quality.serverRttFactor.tip': 'Round-trip time to the server (lower is faster).',
-  'quality.connTypeFactor.tip': 'How the device is connected (Wi-Fi, cellular, ethernet) and its effective speed.',
-  'quality.stabilityFactor.tip': 'Connection consistency under load — latency, jitter, and packet loss.',
+  'quality.connTypeFactor.tip':
+    'How the device is connected (Wi-Fi, cellular, ethernet) and its effective speed.',
+  'quality.stabilityFactor.tip':
+    'Connection consistency under load — latency, jitter, and packet loss.',
   'quality.emptyConnection': 'Run the test to see your connection details.',
   'quality.emptyTls': 'Run the test to see TLS information.',
   'quality.emptyTiming': 'Run the test to see request timing breakdown.',
@@ -168,7 +170,8 @@ export const en = {
   'emailSecurity.checking': 'Checking email security records...',
   'emailSecurity.retry': 'Retry',
   'emailSecurity.error': 'Email security check failed',
-  'emailSecurity.ready': 'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
+  'emailSecurity.ready':
+    'Enter a domain above to check its email security records (SPF, DKIM, DMARC).',
   'emailSecurity.grade': 'Email Security Grade',
   'emailSecurity.spf': 'SPF Record',
   'emailSecurity.dkim': 'DKIM Record',
@@ -209,8 +212,10 @@ export const en = {
   'cookie.total': 'Total Cookies',
   'cookie.size': 'Total Size',
   'cookie.grade': 'Cookie Grade',
-  'cookie.httpOnlyNote': 'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
-  'cookie.noCookie': 'No cookies detected. Your browser may block cookies, or this site does not set any.',
+  'cookie.httpOnlyNote':
+    'HttpOnly cookies set by the server are not readable for security reasons and are not shown.',
+  'cookie.noCookie':
+    'No cookies detected. Your browser may block cookies, or this site does not set any.',
   'cookie.secure': 'Cookies with Secure prefix',
   'cookie.category': 'Category Breakdown',
   'cookie.retry': 'Retry',
@@ -220,11 +225,14 @@ export const en = {
   'cookie.allGood': 'All good',
   'cookie.allGoodDesc': 'Your cookie usage is minimal and secure.',
   'cookie.reduceTracking': 'Reduce tracking cookies',
-  'cookie.reduceTrackingDesc': '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
+  'cookie.reduceTrackingDesc':
+    '{0} advertising/tracking cookies detected. Consider using a browser with built-in tracking protection or review which third-party services set these.',
   'cookie.highCount': 'High cookie count',
-  'cookie.highCountDesc': '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
+  'cookie.highCountDesc':
+    '{0} cookies is higher than typical. Check if any can be cleared or if third-party cookies are accumulating.',
   'cookie.lowSecure': 'Low secure prefix usage',
-  'cookie.lowSecureDesc': 'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
+  'cookie.lowSecureDesc':
+    'Only {0}% of cookies use __Secure- or __Host- prefix. This means most cookies are not explicitly marked as secure.',
 
   // DNS section
   'dns.title': 'DNS & Network Check',
@@ -594,7 +602,8 @@ export const en = {
   // Footer
   'footer.text': 'NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.',
   'footer.privacy': 'Privacy',
-  'footer.privacyBadge': 'Client-side diagnostics — AI analysis uses Cloudflare AI (opt-in, no logs)',
+  'footer.privacyBadge':
+    'Client-side diagnostics — AI analysis uses Cloudflare AI (opt-in, no logs)',
 
   // Analytics
   'analytics.activeNow': 'online',
@@ -757,13 +766,16 @@ export const en = {
   'ai.modeLocalDesc': 'Private, runs entirely in your browser',
   'ai.cloudNote': 'Results are sent to Cloudflare for processing. No data is stored.',
   'ai.emptyTitle': 'Run diagnostics first',
-  'ai.emptyBody': 'Run DNS, Speed, or TLS tests to get AI-powered insights into your network configuration.',
+  'ai.emptyBody':
+    'Run DNS, Speed, or TLS tests to get AI-powered insights into your network configuration.',
   'ai.privacyTitle': 'Cloud AI Privacy Notice',
-  'ai.privacyBody': 'Cloud AI sends your test results to Cloudflare for analysis. No data is stored or logged. Only your network test metrics (IP, speed, DNS config, TLS details) are sent — no personal data. You can also use On-Device AI which runs entirely in your browser.',
+  'ai.privacyBody':
+    'Cloud AI sends your test results to Cloudflare for analysis. No data is stored or logged. Only your network test metrics (IP, speed, DNS config, TLS details) are sent — no personal data. You can also use On-Device AI which runs entirely in your browser.',
   'ai.privacyAccept': 'Continue with Cloud AI',
   'ai.privacyUseLocal': 'Use On-Device AI Instead',
   'ai.downloadPromptTitle': 'Download AI Model',
-  'ai.downloadPromptBody': 'On-Device AI requires downloading a language model (~23 MB). This runs entirely in your browser for full privacy. The download happens once and the model is cached for future use.',
+  'ai.downloadPromptBody':
+    'On-Device AI requires downloading a language model (~23 MB). This runs entirely in your browser for full privacy. The download happens once and the model is cached for future use.',
   'ai.downloadConfirm': 'Download & Analyze',
   'ai.downloadCancel': 'Cancel',
   'nav.ai': 'AI Analysis',
@@ -773,11 +785,14 @@ export const en = {
   'breachCheck.checking': 'Checking...',
   'breachCheck.checkingDesc': 'Checking against breach databases...',
   'breachCheck.found': 'Found {0} times',
-  'breachCheck.foundDesc': 'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
+  'breachCheck.foundDesc':
+    'This password has appeared in known data breaches. You should change it immediately on any site where you use it.',
   'breachCheck.safe': 'Not found in breaches',
   'breachCheck.safeLabel': 'Safe',
-  'breachCheck.safeDesc': 'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
-  'breachCheck.error': 'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
+  'breachCheck.safeDesc':
+    'This password was not found in known data breaches. However, this does not guarantee it is secure — always use unique, strong passwords.',
+  'breachCheck.error':
+    'Unable to check password. The Have I Been Pwned API may be temporarily unavailable.',
   'breachCheck.errorLink': 'Check on haveibeenpwned.com',
   'breachCheck.severity.safe': 'Safe',
   'breachCheck.severity.low': 'Low Risk',
@@ -796,7 +811,8 @@ export const en = {
   'certTransparency.last30Days': 'Last 30 Days',
   'certTransparency.trustIndicators': 'Trust Indicators',
   'certTransparency.warning': 'WARNING',
-  'certTransparency.recentlyIssued': '{0} certificates issued in the last 30 days. Investigate if unexpected.',
+  'certTransparency.recentlyIssued':
+    '{0} certificates issued in the last 30 days. Investigate if unexpected.',
   'certTransparency.issuer': 'Issuer',
   'certTransparency.commonName': 'Common Name',
   'certTransparency.status': 'Status',
@@ -805,7 +821,8 @@ export const en = {
   'certTransparency.wildcard': 'WILDCARD',
   'certTransparency.showingCerts': 'Showing 100 of {0} certificates.',
   'certTransparency.viewAll': 'View all on crt.sh',
-  'certTransparency.error': 'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
+  'certTransparency.error':
+    'Failed to fetch certificate transparency data. The crt.sh API may be temporarily unavailable.',
   'certTransparency.searchOnCrtsh': 'Search on crt.sh',
 
   // DNSSEC Validation
@@ -818,7 +835,8 @@ export const en = {
   'dnssecValidation.errorStatus': 'ERROR — Validation failed',
   'dnssecValidation.trustChain': 'Trust Chain',
   'dnssecValidation.resolver': 'RESOLVER',
-  'dnssecValidation.adFlagTrue': "Cloudflare's resolver also validated this domain (AD flag = true)",
+  'dnssecValidation.adFlagTrue':
+    "Cloudflare's resolver also validated this domain (AD flag = true)",
   'dnssecValidation.adFlagFalse': "Cloudflare's resolver did not set the AD flag for this domain",
   'dnssecValidation.error': 'DNSSEC validation failed. The server may be temporarily unavailable.',
 
@@ -848,8 +866,10 @@ export const en = {
   'privacyExposure.api.clipboard': 'Clipboard API',
   'privacyExposure.api.dnt': 'Do Not Track',
   'privacyExposure.api.dnt.reveals': 'Tracking preference signal (can be used for fingerprinting)',
-  'privacyExposure.api.dnt.tip': 'DNT is deprecated; disable it to avoid adding a fingerprinting signal',
+  'privacyExposure.api.dnt.tip':
+    'DNT is deprecated; disable it to avoid adding a fingerprinting signal',
   'privacyExposure.api.gpc': 'Global Privacy Control',
   'privacyExposure.api.gpc.reveals': 'Privacy preference signal (can be used for fingerprinting)',
-  'privacyExposure.api.gpc.tip': 'GPC is well-intentioned but adds fingerprint uniqueness; consider your threat model',
+  'privacyExposure.api.gpc.tip':
+    'GPC is well-intentioned but adds fingerprint uniqueness; consider your threat model',
 } as const;

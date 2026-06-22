@@ -20,8 +20,8 @@ const PROTOCOL_CLASSES: Record<string, { label: string; status: SecurityStatus }
   'TLSv1.2': { label: 'TLS 1.2 — Secure', status: 'pass' },
   'TLSv1.1': { label: 'TLS 1.1 — Outdated', status: 'fail' },
   'TLSv1.0': { label: 'TLS 1.0 — Insecure', status: 'fail' },
-  'TLSv1':   { label: 'TLS 1.0 — Insecure', status: 'fail' },
-  'SSLv3':   { label: 'SSLv3 — Insecure', status: 'fail' },
+  TLSv1: { label: 'TLS 1.0 — Insecure', status: 'fail' },
+  SSLv3: { label: 'SSLv3 — Insecure', status: 'fail' },
 };
 
 function classifyProtocol(protocol: string): { label: string; status: SecurityStatus } {
@@ -76,7 +76,12 @@ interface TlsTargetResult {
   httpsAvailable: boolean;
   redirectsToHttps: boolean;
   redirectChain: string[];
-  hsts: { present: boolean; maxAge: number | null; includeSubDomains: boolean; preload: boolean } | null;
+  hsts: {
+    present: boolean;
+    maxAge: number | null;
+    includeSubDomains: boolean;
+    preload: boolean;
+  } | null;
   grade: string;
   score: number;
   supportsH3: boolean;
@@ -87,8 +92,6 @@ interface TlsTargetResult {
   asOrganization?: string | null;
   resolvedIp?: string | null;
 }
-
-
 
 function renderTlsInfo(info: TlsInfo): string {
   const protocolClass = classifyProtocol(info.protocol);
@@ -164,21 +167,29 @@ function renderTlsInfo(info: TlsInfo): string {
         </div>
       </div>
     </div>
-    ${info.weaknesses.length > 0 ? `
+    ${
+      info.weaknesses.length > 0
+        ? `
       <div class="card card-compact" style="margin-top:var(--space-3)">
         <div class="card-header">
           <h2 class="card-title">Warnings</h2>
         </div>
         <div class="card-body">
-          ${info.weaknesses.map(w => `
+          ${info.weaknesses
+            .map(
+              (w) => `
             <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface-tertiary)">
               <span class="status-badge ${w.severity === 'critical' ? 'fail' : w.severity === 'high' ? 'fail' : 'warn'}">${w.severity.toUpperCase()}</span>
               <span style="font-size:var(--text-mono);color:var(--text-primary)">${w.description}</span>
             </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </div>
       </div>
-    ` : ''}
+    `
+        : ''
+    }
   `;
 }
 
@@ -255,7 +266,8 @@ async function runTlsTargetCheck(): Promise<void> {
   btn.textContent = 'Checking...';
 
   const container = document.getElementById('tls-target-results')!;
-  container.innerHTML = '<div class="breach-loading"><div class="spinner"></div><p>Checking target domain...</p></div>';
+  container.innerHTML =
+    '<div class="breach-loading"><div class="spinner"></div><p>Checking target domain...</p></div>';
 
   try {
     const res = await fetch(`/api/tls/check?domain=${encodeURIComponent(domain)}`);
@@ -287,9 +299,10 @@ async function runTlsTargetCheck(): Promise<void> {
       data.asn ? `AS${data.asn}` : null,
       data.resolvedIp ? escapeHtml(data.resolvedIp) : null,
     ].filter(Boolean);
-    const networkLine = networkParts.length > 0
-      ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${t('tls.target.network')}: ${networkParts.join(' · ')}</div>`
-      : '';
+    const networkLine =
+      networkParts.length > 0
+        ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${t('tls.target.network')}: ${networkParts.join(' · ')}</div>`
+        : '';
 
     container.innerHTML = `
       <div class="tls-target-results">
@@ -320,14 +333,20 @@ async function runTlsTargetCheck(): Promise<void> {
             <div class="ct-summary-label">Score</div>
           </div>
         </div>
-        ${data.redirectChain.length > 0 ? `
+        ${
+          data.redirectChain.length > 0
+            ? `
           <div class="csp-analysis-card" style="margin-top:12px">
             <h4 class="csp-issues-title">Redirect Chain</h4>
             ${data.redirectChain.map((r) => `<div class="csp-issue-item"><span class="csp-issue-message" style="font-family:'Berkeley Mono','SF Mono',monospace;font-size:12px">${escapeHtml(r)}</span></div>`).join('')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
         ${hstsInfo}
-        ${data.certs ? `
+        ${
+          data.certs
+            ? `
           <div class="card card-compact" style="margin-top:12px">
             <div class="card-header">
               <h2 class="card-title">Certificate</h2>
@@ -338,11 +357,15 @@ async function runTlsTargetCheck(): Promise<void> {
                   <span class="stat-label">Subject</span>
                   <span class="stat-value">${escapeHtml(data.certs.subject.cn)}</span>
                 </div>
-                ${data.certs.subject.sans.length > 0 ? `
+                ${
+                  data.certs.subject.sans.length > 0
+                    ? `
                 <div class="stat-item">
                   <span class="stat-label">SANs</span>
                   <span class="stat-value">${escapeHtml(data.certs.subject.sans.slice(0, 5).join(', '))}${data.certs.subject.sans.length > 5 ? '…' : ''}</span>
-                </div>` : ''}
+                </div>`
+                    : ''
+                }
                 <div class="stat-item">
                   <span class="stat-label">Issuer</span>
                   <span class="stat-value">${escapeHtml(data.certs.issuer.cn)}</span>
@@ -360,33 +383,51 @@ async function runTlsTargetCheck(): Promise<void> {
                   <span class="stat-value">${data.certs.chainDepth}</span>
                 </div>
               </div>
-              ${data.certs.intermediates && data.certs.intermediates.length > 0 ? `
+              ${
+                data.certs.intermediates && data.certs.intermediates.length > 0
+                  ? `
                 <div style="margin-top:8px;padding-left:16px;border-left:2px solid var(--surface-tertiary)">
-                  ${data.certs.intermediates.map((int, idx) => `
+                  ${data.certs.intermediates
+                    .map(
+                      (int, idx) => `
                     <div style="font-size:13px;padding:4px 0;color:var(--text-secondary)">
                       ${idx < data.certs!.intermediates!.length - 1 ? '├─' : '└─'} ${escapeHtml(int.cn)}${int.organization ? ` (${escapeHtml(int.organization)})` : ''}
                     </div>
-                  `).join('')}
+                  `,
+                    )
+                    .join('')}
                 </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
           </div>
-        ` : ''}
-        ${data.weaknesses && data.weaknesses.length > 0 ? `
+        `
+            : ''
+        }
+        ${
+          data.weaknesses && data.weaknesses.length > 0
+            ? `
           <div class="card card-compact" style="margin-top:12px">
             <div class="card-header">
               <h2 class="card-title">Weaknesses</h2>
             </div>
             <div class="card-body">
-              ${data.weaknesses.map((w: TlsWeakness) => `
+              ${data.weaknesses
+                .map(
+                  (w: TlsWeakness) => `
                 <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface-tertiary)">
                   <span class="status-badge ${w.severity === 'critical' ? 'fail' : w.severity === 'high' ? 'fail' : 'warn'}">${w.severity.toUpperCase()}</span>
                   <span style="font-size:var(--text-mono);color:var(--text-primary)">${w.description}</span>
                 </div>
-              `).join('')}
+              `,
+                )
+                .join('')}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   } catch {

@@ -35,15 +35,15 @@ import { initDnssecValidation } from './dnssec-validation';
 import { initNetworkChange } from './network-change';
 
 document.addEventListener('DOMContentLoaded', () => {
-    safeInit('Dashboard', initDashboard);
-    safeInit('TLS Check', initTlsCheck);
-    safeInit('History', initHistory);
-    safeInit('AI Analysis', initAiAnalysis);
-    safeInit('Email Security', initEmailSecurity);
-    safeInit('HTTP/3 Test', initHttp3Test);
-    safeInit('Cookie Audit', initCookieAudit);
-    safeInit('Breach Check', initBreachCheck);
-    safeInit('Cert Transparency', initCertTransparency);
+  safeInit('Dashboard', initDashboard);
+  safeInit('TLS Check', initTlsCheck);
+  safeInit('History', initHistory);
+  safeInit('AI Analysis', initAiAnalysis);
+  safeInit('Email Security', initEmailSecurity);
+  safeInit('HTTP/3 Test', initHttp3Test);
+  safeInit('Cookie Audit', initCookieAudit);
+  safeInit('Breach Check', initBreachCheck);
+  safeInit('Cert Transparency', initCertTransparency);
   safeInit('Privacy Exposure', initPrivacyExposure);
   safeInit('DNSSEC Validation', initDnssecValidation);
   safeInit('Tabs', initTabs);
@@ -182,7 +182,7 @@ function initTabs(): void {
     const isHeader = trigger.closest('.nav-header-tools') !== null;
     const left = isHeader
       ? Math.max(8, Math.min(r.left, vpW - panelW - 8))
-      : Math.min((vpW >= 769 ? 180 : (vpW >= 641 ? 180 : 0)) + 8, vpW - panelW - 8);
+      : Math.min((vpW >= 769 ? 180 : vpW >= 641 ? 180 : 0) + 8, vpW - panelW - 8);
     const top = Math.max(8, Math.min(r.bottom + 4, vpH - panelH - 8));
     panel.style.top = `${Math.round(top)}px`;
     panel.style.left = `${Math.round(left)}px`;
@@ -217,14 +217,16 @@ function initTabs(): void {
     }
   });
 
-  document.querySelectorAll<HTMLButtonElement>('#export-menu .nav-toolbar-option').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const format = btn.dataset.format;
-      if (format === 'markdown') ReportExporter.downloadMarkdown();
-      else if (format === 'pdf') ReportExporter.downloadPdf();
-      document.getElementById('export-menu')?.classList.remove('open');
+  document
+    .querySelectorAll<HTMLButtonElement>('#export-menu .nav-toolbar-option')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const format = btn.dataset.format;
+        if (format === 'markdown') ReportExporter.downloadMarkdown();
+        else if (format === 'pdf') ReportExporter.downloadPdf();
+        document.getElementById('export-menu')?.classList.remove('open');
+      });
     });
-  });
 
   const shareBtnHeader = document.getElementById('share-btn-header') as HTMLElement;
   if (shareBtnHeader) {
@@ -274,7 +276,11 @@ function initTabs(): void {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
-    if (!t.closest('.nav-toolbar-item') && !t.closest('.nav-toolbar-panel') && !t.closest('.nav-header-btn')) {
+    if (
+      !t.closest('.nav-toolbar-item') &&
+      !t.closest('.nav-toolbar-panel') &&
+      !t.closest('.nav-header-btn')
+    ) {
       document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
     }
   });

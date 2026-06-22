@@ -38,9 +38,12 @@ async function checkBreach(password: string): Promise<BreachResult> {
 }
 
 function getSeverity(count: number): { label: string; color: string; level: string } {
-  if (count === 0) return { label: t('breachCheck.severity.safe'), color: 'var(--emerald)', level: 'safe' };
-  if (count < 100) return { label: t('breachCheck.severity.low'), color: 'var(--accent)', level: 'low' };
-  if (count < 10000) return { label: t('breachCheck.severity.medium'), color: 'var(--amber)', level: 'medium' };
+  if (count === 0)
+    return { label: t('breachCheck.severity.safe'), color: 'var(--emerald)', level: 'safe' };
+  if (count < 100)
+    return { label: t('breachCheck.severity.low'), color: 'var(--accent)', level: 'low' };
+  if (count < 10000)
+    return { label: t('breachCheck.severity.medium'), color: 'var(--amber)', level: 'medium' };
   return { label: t('breachCheck.severity.high'), color: 'var(--red)', level: 'high' };
 }
 
@@ -136,7 +139,8 @@ export function initBreachCheck(): void {
       breachState.loading.set(false);
       input.value = '';
       input.type = 'password';
-      toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      toggleBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       btn.disabled = true;
       btn.textContent = t('breachCheck.check');
     }

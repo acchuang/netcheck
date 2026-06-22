@@ -81,9 +81,7 @@ export async function runTlsCheck(): Promise<void> {
     // Measure TLS handshake time via Performance API
     let handshakeTime: number | null = null;
     const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const apiEntry = entries.find(
-      (e) => e.name.includes('/api/ip') && e.secureConnectionStart > 0,
-    );
+    const apiEntry = entries.find((e) => e.name.includes('/api/ip') && e.secureConnectionStart > 0);
     if (apiEntry && apiEntry.secureConnectionStart > 0) {
       handshakeTime = Math.round(apiEntry.connectEnd - apiEntry.secureConnectionStart);
     }
@@ -116,12 +114,29 @@ export async function runTlsCheck(): Promise<void> {
     const forwardSecrecy = hasForwardSecrecy(cipher);
     const protocol = (ipData.tlsVersion as string) || 'Unknown';
 
-    const weaknesses: Array<{ id: string; severity: 'critical' | 'high' | 'medium'; description: string }> = [];
-    if (protocol === 'TLSv1.0' || protocol === 'TLSv1.1' || protocol === 'TLSv1' || protocol === 'SSLv3') {
-      weaknesses.push({ id: 'tls-outdated', severity: 'critical', description: `${protocol} is outdated and insecure` });
+    const weaknesses: Array<{
+      id: string;
+      severity: 'critical' | 'high' | 'medium';
+      description: string;
+    }> = [];
+    if (
+      protocol === 'TLSv1.0' ||
+      protocol === 'TLSv1.1' ||
+      protocol === 'TLSv1' ||
+      protocol === 'SSLv3'
+    ) {
+      weaknesses.push({
+        id: 'tls-outdated',
+        severity: 'critical',
+        description: `${protocol} is outdated and insecure`,
+      });
     }
     if (/3DES|RC4|NULL|EXPORT/i.test(cipher)) {
-      weaknesses.push({ id: 'weak-cipher', severity: 'high', description: `Weak cipher: ${cipher}` });
+      weaknesses.push({
+        id: 'weak-cipher',
+        severity: 'high',
+        description: `Weak cipher: ${cipher}`,
+      });
     }
 
     const info: TlsInfo = {

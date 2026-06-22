@@ -57,7 +57,9 @@ async function runFingerprintScan(): Promise<void> {
     driftBadge.className = `fp-drift-badge ${driftClass}`;
     driftBadge.textContent = `${drift}% ${t('fp.drift.label', 'drift')}`;
     const dateStr = driftDate ? new Date(driftDate).toLocaleDateString() : '';
-    driftText.textContent = dateStr ? t('fp.drift.since', `Since ${dateStr}`) : t('fp.drift.changed', 'Fingerprint changed from previous scan');
+    driftText.textContent = dateStr
+      ? t('fp.drift.since', `Since ${dateStr}`)
+      : t('fp.drift.changed', 'Fingerprint changed from previous scan');
     driftInfo.classList.remove('hidden');
   } else if (driftInfo) {
     driftInfo.classList.add('hidden');
