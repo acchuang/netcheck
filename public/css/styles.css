@@ -146,6 +146,7 @@ p { margin: 0; }
   transition: background var(--duration-150) var(--ease-out);
 }
 .nav-toolbar-option:hover { background: var(--surface-tertiary); color: var(--text-primary); }
+.nav-toolbar-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .nav-toolbar-badge {
   display: inline-flex;
@@ -222,7 +223,7 @@ p { margin: 0; }
   padding: var(--space-1) 0;
   background: var(--surface-secondary);
   border-top: 1px solid var(--border-default);
-  box-shadow: 0 -1px 8px var(--shadow-sm);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .tab-bar-mobile-item {
@@ -494,6 +495,7 @@ p { margin: 0; }
   user-select: none;
 }
 .collapsible-header:hover { color: var(--text-primary); }
+.collapsible-header:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .collapsible-dot {
   width: 8px;
@@ -1061,6 +1063,7 @@ p { margin: 0; }
   border-radius: var(--radius-sm);
 }
 .onboarding-dismiss:hover { color: var(--text-primary); border-color: var(--border-accent); }
+.onboarding-dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .dash-stat-value {
   font-family: var(--font-display);
@@ -1115,6 +1118,7 @@ p { margin: 0; }
   border-radius: var(--radius-sm);
 }
 .ai-copy-btn:hover { color: var(--text-primary); border-color: var(--border-accent); }
+.ai-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .ai-empty-link {
   color: var(--accent);
@@ -1158,6 +1162,7 @@ p { margin: 0; }
   transition: all var(--duration-150) var(--ease-out);
 }
 .nav-link:hover { color: var(--text-primary); background: var(--surface-tertiary); }
+.nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .nav-link.active { color: var(--accent); }
 .nav-link-text { flex: 1; }
 
