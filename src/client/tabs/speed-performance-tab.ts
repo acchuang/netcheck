@@ -8,7 +8,18 @@ import {
   type CaptivePortalResult,
 } from '../connection-quality';
 import { SpeedTestHistory } from '../history';
-import { saveHistoryEntry } from '../state/history-state';
+import {
+  saveHistoryEntry,
+  getAllHistory,
+  clearHistory,
+  downloadHistoryCsv,
+  type HistoryEntry,
+} from '../state/history-state';
+import { compareState, computeDiff, diffClass } from '../state/compare-state';
+import { NetworkMap, type MapResults } from '../network-map';
+import { networkMapState } from '../state/network-map-state';
+import { observable } from '../state/observable';
+import { escapeHtml } from '../escape';
 import { t } from '../i18n';
 import { animateNumber, pulseValue, setActiveGauge, renderSkeletonRows } from '../ui-utils';
 import { clearGraph, drawSpeedGraph, addGraphPoint, drawHistoryChart } from '../speed-graph';
@@ -19,6 +30,7 @@ import { onLocaleChange } from '../locale-events';
 import { appState } from '../state/shared-state';
 import { speedState } from '../state/speed-state';
 import { qualityState } from '../state/quality-state';
+import type { L as LeafletNS, LatLngExpression, Map as LeafletMap, TileLayer, CircleMarker, Polyline } from '../leaflet';
 
 const EM = '\u2014';
 
@@ -160,20 +172,6 @@ function renderShell(): string {
         </div>
       </section>
 
-      <!-- ============ SPEED HISTORY ============ -->
-      <section class="card" id="speed-history">
-        <div class="card-header">
-          <h3 class="card-title" id="speed-history-title">${t('speed.history.title')}</h3>
-          <div class="speed-history-actions">
-            <button class="btn btn-secondary" id="speed-csv-btn" disabled>${t('speed.history.downloadCsv')}</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="speed-history-cards" id="speed-history-cards"></div>
-          <p class="info-muted hidden" id="speed-history-empty">${t('speed.history.empty')}</p>
-        </div>
-      </section>
-
       <!-- ============ SUGGESTIONS ============ -->
       <section class="card suggestions-section" id="speed-suggestions-section">
         <div class="card-header">
@@ -235,27 +233,67 @@ function renderShell(): string {
         </div>
       </section>
 
+      <!-- ============ HISTORY (COLLAPSIBLE) ============ -->
+      <section class="card card-collapsible" id="history-collapsible">
+        <button class="collapsible-toggle" id="history-toggle" aria-expanded="false" aria-controls="history-body">
+          <span class="collapsible-dot"></span>
+          <h3 class="card-title serif" style="font-family:var(--font-display);margin:0;flex:1;text-align:left">${t('speed.history.title')}</h3>
+          <span class="collapsible-caret" id="history-caret">▾</span>
+        </button>
+        <div class="collapsible-body hidden" id="history-body">
+
+          <div class="history-actions">
+            <button class="btn btn-secondary" id="history-compare-btn">${t('history.compare', 'Compare')}</button>
+            <button class="btn btn-secondary" id="history-csv-btn">${t('history.downloadCsv', 'Export CSV')}</button>
+            <button class="btn btn-danger" id="history-clear-btn">${t('history.clear', 'Clear')}</button>
+          </div>
+
+          <div id="history-chart" class="history-chart"></div>
+          <div id="history-stats"></div>
+          <div id="history-recent-cards" class="speed-history-cards"></div>
+          <div id="history-compare"></div>
+
+        </div>
+      </section>
+
+      <!-- ============ NETWORK MAP (COLLAPSIBLE) ============ -->
+      <section class="card card-collapsible" id="networkmap-collapsible">
+        <button class="collapsible-toggle" id="networkmap-toggle" aria-expanded="false" aria-controls="networkmap-body">
+          <span class="collapsible-dot"></span>
+          <h3 class="card-title serif" style="font-family:var(--font-display);margin:0;flex:1;text-align:left">${t('network.title', 'Network Map')}</h3>
+          <span class="collapsible-caret" id="networkmap-caret">▾</span>
+        </button>
+        <div class="collapsible-body hidden" id="networkmap-body">
+
+          <div class="network-actions">
+            <button class="btn btn-primary" id="network-run-btn">${t('network.runTest', 'Run Test')}</button>
+            <span class="info-muted serif italic" id="network-info" style="font-family:var(--font-display);font-style:italic"></span>
+          </div>
+
+          <div id="world-map-container" class="hidden" style="height:420px;margin:12px 0">
+            <div id="world-map" style="width:100%;height:100%"></div>
+          </div>
+
+          <div id="network-results" class="hidden region-grid-wrap"></div>
+
+        </div>
+      </section>
+
     </div>
   `;
 }
 
 function renderSpeedHistory(): void {
   const history = SpeedTestHistory.getAll();
-  const cards = document.getElementById('speed-history-cards');
-  const empty = document.getElementById('speed-history-empty');
-  const csvBtn = document.getElementById('speed-csv-btn') as HTMLButtonElement | null;
-  const historySection = document.getElementById('speed-history');
+  const cards = document.getElementById('history-recent-cards');
+  const historySection = document.getElementById('history-collapsible');
 
   if (!history.length) {
-    if (cards) cards.innerHTML = '';
-    if (empty) empty.classList.remove('hidden');
-    if (csvBtn) csvBtn.disabled = true;
+    if (cards) cards.innerHTML = `<p class="info-muted">${t('speed.history.empty')}</p>`;
     if (historySection) historySection.classList.remove('visible');
     return;
   }
 
-  if (empty) empty.classList.add('hidden');
-  if (csvBtn) csvBtn.disabled = false;
   if (historySection) historySection.classList.add('visible');
 
   const now = Date.now();
@@ -480,6 +518,7 @@ async function runSpeedTest(): Promise<void> {
       colo: results.colo ?? 'unknown',
     },
   });
+  refreshHistory();
   renderSpeedHistory();
 
   btn.disabled = false;
@@ -573,6 +612,7 @@ async function runMonitor(duration: MonitorDuration): Promise<void> {
   if (monitorBar) monitorBar.classList.add('hidden');
   if (monitorStopBtn) monitorStopBtn.classList.add('hidden');
   if (monitorBtn) monitorBtn.disabled = false;
+  refreshHistory();
   renderSpeedHistory();
 }
 
@@ -1011,6 +1051,616 @@ function renderFinalScore(
 
 onLocaleChange(syncQualityUi);
 
+// ============ HISTORY (CHART + STATS + COMPARE) ============
+
+const historyState = {
+  entries: observable<HistoryEntry[]>([]),
+};
+
+let compareMode = false;
+let selectedForCompare: string[] = [];
+let timeRange: '7d' | '30d' | 'all' = '30d';
+
+function refreshHistory(): void {
+  const entries = getAllHistory();
+  if (entries.length === 0) {
+    const legacy = SpeedTestHistory.getAll();
+    for (const e of legacy) {
+      entries.push({
+        v: 1,
+        id: `legacy-${e.ts}`,
+        timestamp: e.ts,
+        speed: {
+          download: e.download,
+          upload: e.upload,
+          latency: e.latency,
+          jitter: e.jitter,
+          bufferbloat: e.bufferbloat,
+          grade: '',
+          colo: e.colo,
+        },
+      });
+    }
+  }
+  historyState.entries.set(entries);
+  renderTimeRangeFilter();
+  renderHistoryChart(entries);
+  renderHistoryStats(entries);
+  renderComparison();
+}
+
+function filterByRange(entries: HistoryEntry[]): HistoryEntry[] {
+  if (timeRange === 'all') return entries;
+  const now = Date.now();
+  const cutoff =
+    timeRange === '7d' ? now - 7 * 24 * 60 * 60 * 1000 : now - 30 * 24 * 60 * 60 * 1000;
+  return entries.filter((e) => e.timestamp >= cutoff);
+}
+
+function renderTimeRangeFilter(): void {
+  const container = document.getElementById('history-chart');
+  if (!container) return;
+  const parent = container.parentElement;
+  if (!parent) return;
+
+  let filterEl = parent.querySelector<HTMLDivElement>('.history-range-filter');
+  if (!filterEl) {
+    filterEl = document.createElement('div');
+    filterEl.className = 'history-range-filter';
+    parent.insertBefore(filterEl, container);
+  }
+
+  const ranges: { key: '7d' | '30d' | 'all'; label: string }[] = [
+    { key: '7d', label: '7D' },
+    { key: '30d', label: '30D' },
+    { key: 'all', label: t('history.all', 'All') },
+  ];
+
+  filterEl.innerHTML = ranges
+    .map(
+      (r) =>
+        `<button class="history-range-btn${r.key === timeRange ? ' active' : ''}" data-range="${r.key}">${r.label}</button>`,
+    )
+    .join('');
+
+  filterEl.querySelectorAll<HTMLButtonElement>('.history-range-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      timeRange = btn.dataset.range as '7d' | '30d' | 'all';
+      const entries = historyState.entries.get();
+      renderTimeRangeFilter();
+      renderHistoryChart(entries);
+      renderHistoryStats(entries);
+    });
+  });
+}
+
+function renderHistoryChart(entries: HistoryEntry[]): void {
+  const container = document.getElementById('history-chart');
+  if (!container) return;
+
+  const filtered = filterByRange(entries);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="history-empty"><p class="info-muted">${t('history.noData', 'No test history yet. Run a speed test to start tracking.')}</p></div>`;
+    return;
+  }
+
+  const byDay = new Map<string, number>();
+  for (const e of filtered) {
+    const day = new Date(e.timestamp).toISOString().slice(0, 10);
+    const dl = e.speed?.download ?? 0;
+    byDay.set(day, Math.max(byDay.get(day) ?? 0, dl));
+  }
+
+  const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  const maxSpeed = Math.max(...days.map((d) => d[1]), 1);
+
+  const firstTs = filtered[0].timestamp;
+  const lastTs = filtered[filtered.length - 1].timestamp;
+
+  let barsHtml = '';
+  for (const [day, speed] of days) {
+    const pct = (speed / maxSpeed) * 100;
+    const dateLabel = new Date(day + 'T00:00:00').toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+    barsHtml += `<div class="history-bar history-bar-day" title="${dateLabel}: ${Math.round(speed)} Mbps" style="--bar-height: ${pct}%">
+      <div class="history-bar-fill"></div>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="history-chart-bars">
+      ${barsHtml}
+    </div>
+    <div class="history-chart-labels">
+      <span>${new Date(firstTs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+      <span>${new Date(lastTs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+    </div>
+  `;
+}
+
+function renderHistoryStats(entries: HistoryEntry[]): void {
+  const container = document.getElementById('history-stats');
+  if (!container) return;
+
+  const speedEntries = filterByRange(entries).filter((e) => e.speed);
+  if (speedEntries.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const avgDl =
+    speedEntries.reduce((sum, e) => sum + (e.speed?.download ?? 0), 0) / speedEntries.length;
+  const avgLat =
+    speedEntries.reduce((sum, e) => sum + (e.speed?.latency ?? 0), 0) / speedEntries.length;
+  const totalTests = speedEntries.length;
+
+  let trend = 0;
+  if (speedEntries.length >= 2) {
+    const recent = speedEntries.slice(-2);
+    const prev = recent[0].speed?.download ?? 0;
+    const curr = recent[1].speed?.download ?? 0;
+    trend = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0;
+  }
+
+  container.innerHTML = `
+    <div class="history-stat-cards">
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('history.avgDownload', 'Avg Download')}</div>
+        <div class="dash-stat-value">${Math.round(avgDl)} <span class="dash-stat-unit">Mbps</span></div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('history.avgLatency', 'Avg Latency')}</div>
+        <div class="dash-stat-value">${avgLat.toFixed(1)} <span class="dash-stat-unit">ms</span></div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('history.trend', 'Trend')}</div>
+        <div class="dash-stat-value${trend > 0 ? ' dash-stat-up' : trend < 0 ? ' dash-stat-down' : ''}">${trend > 0 ? '↑' : trend < 0 ? '↓' : '—'} ${Math.abs(trend)}%</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">${t('history.totalTests', 'Total Tests')}</div>
+        <div class="dash-stat-value">${totalTests}</div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleCompareMode(): void {
+  compareMode = !compareMode;
+  selectedForCompare = [];
+  compareState.selectedIds.set(null);
+  const compareBtn = document.getElementById('history-compare-btn');
+  if (compareBtn) {
+    compareBtn.textContent = compareMode
+      ? t('history.cancelCompare', 'Cancel Compare')
+      : t('history.compare', 'Compare');
+  }
+  renderComparison();
+}
+
+function renderComparison(): void {
+  const container = document.getElementById('history-compare');
+  if (!container) return;
+
+  if (!compareMode) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const entries = historyState.entries.get();
+  if (entries.length < 2) {
+    container.innerHTML = `<p class="info-muted">${t('history.compareMin', 'Need at least 2 tests to compare.')}</p>`;
+    return;
+  }
+
+  const recent = entries.slice(-10);
+  const optionsHtml = recent
+    .map((e) => {
+      const date = new Date(e.timestamp).toLocaleString();
+      const dl = e.speed ? `${Math.round(e.speed.download)} Mbps` : '—';
+      return `<option value="${e.id}">${date} — ${dl}</option>`;
+    })
+    .join('');
+
+  let diffHtml = '';
+  if (selectedForCompare.length === 2) {
+    const a = entries.find((e) => e.id === selectedForCompare[0]);
+    const b = entries.find((e) => e.id === selectedForCompare[1]);
+    if (a && b) {
+      compareState.selectedIds.set([selectedForCompare[0], selectedForCompare[1]]);
+      diffHtml = renderDiff(a, b);
+    }
+  }
+
+  container.innerHTML = `
+    <div class="compare-selectors">
+      <div class="compare-field">
+        <label>${t('history.testA', 'Test A')}</label>
+        <select id="compare-a" class="compare-select">${optionsHtml}</select>
+      </div>
+      <div class="compare-field">
+        <label>${t('history.testB', 'Test B')}</label>
+        <select id="compare-b" class="compare-select">${optionsHtml}</select>
+      </div>
+      <button class="btn btn-primary" id="compare-run-btn">${t('history.runCompare', 'Compare')}</button>
+    </div>
+    <div id="compare-result">${diffHtml}</div>
+  `;
+
+  const selA = container.querySelector('#compare-a') as HTMLSelectElement | null;
+  const selB = container.querySelector('#compare-b') as HTMLSelectElement | null;
+  if (selA && recent.length > 0) selA.value = recent[recent.length - 2].id;
+  if (selB && recent.length > 1) selB.value = recent[recent.length - 1].id;
+
+  const runBtn = container.querySelector('#compare-run-btn');
+  if (runBtn) {
+    runBtn.addEventListener('click', () => {
+      if (!selA || !selB) return;
+      selectedForCompare = [selA.value, selB.value];
+      renderComparison();
+    });
+  }
+}
+
+function renderDiff(a: HistoryEntry, b: HistoryEntry): string {
+  const rows = computeDiff(a, b);
+  const dateA = new Date(a.timestamp).toLocaleString();
+  const dateB = new Date(b.timestamp).toLocaleString();
+  return `
+    <table class="compare-table">
+      <thead>
+        <tr><th>Metric</th><th>${dateA}</th><th>${dateB}</th><th>Diff</th></tr>
+      </thead>
+      <tbody>
+        ${rows
+          .map(
+            (r) => `<tr>
+          <td>${r.label}</td>
+          <td>${r.valueA}</td>
+          <td>${r.valueB}</td>
+          <td><span class="${diffClass(r.diff)}">${r.diff}</span></td>
+        </tr>`,
+          )
+          .join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+onLocaleChange(() => {
+  if (compareMode) renderComparison();
+});
+
+// ============ NETWORK MAP (LEAFLET) ============
+
+let leafletLib: LeafletNS | undefined;
+let leafletLoadPromise: Promise<LeafletNS> | null = null;
+const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+
+let mapInstance: LeafletMap | null = null;
+let userMarker: CircleMarker | null = null;
+let probeMarkers: CircleMarker[] = [];
+let probeLines: Polyline[] = [];
+let darkTile: TileLayer | null = null;
+let lightTile: TileLayer | null = null;
+let lastMapResults: MapResults | null = null;
+
+const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+function loadLeaflet(): Promise<LeafletNS> {
+  if (leafletLib) return Promise.resolve(leafletLib);
+  if (leafletLoadPromise) return leafletLoadPromise;
+
+  leafletLoadPromise = new Promise<LeafletNS>((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = LEAFLET_CSS;
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = LEAFLET_JS;
+    script.onload = () => {
+      leafletLib = (window as unknown as Record<string, LeafletNS>).L as LeafletNS;
+      resolve(leafletLib);
+    };
+    script.onerror = () => reject(new Error('Failed to load Leaflet'));
+    document.head.appendChild(script);
+  });
+
+  return leafletLoadPromise;
+}
+
+function regionKey(region: string): string {
+  const map: Record<string, string> = {
+    'North America': 'network.region.northAmerica',
+    'South America': 'network.region.southAmerica',
+    Europe: 'network.region.europe',
+    'Middle East': 'network.region.middleEast',
+    Africa: 'network.region.africa',
+    Asia: 'network.region.asia',
+    Oceania: 'network.region.oceania',
+    Global: 'network.region.global',
+  };
+  return map[region] || region;
+}
+
+function isDark(): boolean {
+  return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
+function initMapInstance(): LeafletMap {
+  if (!leafletLib) throw new Error('Leaflet not loaded');
+  const m = leafletLib.map('world-map', {
+    center: [20, 0],
+    zoom: 2,
+    zoomControl: true,
+    attributionControl: false,
+    minZoom: 2,
+    maxZoom: 8,
+    worldCopyJump: true,
+  });
+
+  darkTile = leafletLib.tileLayer(DARK_TILES, { maxZoom: 19, opacity: 1 }).addTo(m);
+  lightTile = leafletLib.tileLayer(LIGHT_TILES, { maxZoom: 19, opacity: 0 });
+
+  const observer = new MutationObserver(() => syncTileLayer());
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  return m;
+}
+
+function syncTileLayer(): void {
+  if (!mapInstance || !darkTile || !lightTile) return;
+  const dark = isDark();
+  if (dark) {
+    darkTile.addTo(mapInstance);
+    lightTile.remove();
+  } else {
+    lightTile.addTo(mapInstance);
+    darkTile.remove();
+  }
+}
+
+function clearMapLayers(): void {
+  probeMarkers.forEach((m) => m.remove());
+  probeLines.forEach((l) => l.remove());
+  if (userMarker) userMarker.remove();
+  probeMarkers = [];
+  probeLines = [];
+  userMarker = null;
+}
+
+function resolveCSSColor(cssVar: string): string {
+  if (!cssVar.startsWith('var(')) return cssVar;
+  const name = cssVar.replace('var(', '').replace(')', '');
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#5e6ad2';
+}
+
+function renderMapResults(results: MapResults): void {
+  if (!mapInstance) mapInstance = initMapInstance();
+  const m = mapInstance;
+  clearMapLayers();
+
+  const bounds: [number, number][] = [];
+
+  if (results.userLat != null && results.userLon != null) {
+    const userLatLng: LatLngExpression = [results.userLat, results.userLon];
+    if (!leafletLib) return;
+    userMarker = leafletLib.circleMarker(userLatLng, {
+      radius: 8,
+      fillColor: '#5e6ad2',
+      fillOpacity: 0.9,
+      color: '#fff',
+      weight: 2,
+      opacity: 1,
+    }).addTo(m);
+    userMarker.bindPopup(
+      `<div style="text-align:center;font-family:Inter,system-ui,sans-serif">
+        <strong>${t('network.yourLocation') || 'Your Location'}</strong><br>
+        <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(results.userColo)}</span>
+      </div>`,
+    );
+    bounds.push([results.userLat, results.userLon]);
+  }
+
+  const closest = results.probes.reduce(
+    (best, p) => {
+      if (p.latency === null) return best;
+      if (best === null || p.latency < best.latency!) return p;
+      return best;
+    },
+    null as (typeof results.probes)[0] | null,
+  );
+
+  results.probes.forEach((probe) => {
+    const color = NetworkMap.getLatencyColor(probe.latency);
+    const cssColor = color.startsWith('var(') ? resolveCSSColor(color) : color;
+
+    if (!leafletLib) return;
+    const marker = leafletLib.circleMarker([probe.lat, probe.lon], {
+      radius: probe.id === closest?.id ? 9 : 7,
+      fillColor: cssColor,
+      fillOpacity: 0.85,
+      color: '#fff',
+      weight: 1.5,
+      opacity: 0.6,
+    }).addTo(m);
+
+    const latencyText = probe.latency != null ? `${probe.latency}ms` : '—';
+    const closestBadge =
+      probe.id === closest?.id
+        ? `<span style="background:var(--accent);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t('network.closest') || 'Closest'}</span>`
+        : '';
+    const estimateLabel = !probe.measured
+      ? `<br><span style="font-size:10px;color:var(--text-muted)">⏱ ${t('network.estimated')}</span>`
+      : '';
+
+    marker.bindPopup(
+      `<div style="text-align:center;font-family:Inter,system-ui,sans-serif;min-width:120px">
+        <strong>${escapeHtml(probe.name)} (${escapeHtml(String(probe.id))})${closestBadge}</strong><br>
+        <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(probe.city)}, ${escapeHtml(probe.country)}</span><br>
+        <span style="font-size:18px;font-weight:600;color:${cssColor}">${latencyText}</span>
+        ${estimateLabel}
+      </div>`,
+    );
+
+    probeMarkers.push(marker);
+    bounds.push([probe.lat, probe.lon]);
+
+    if (results.userLat != null && results.userLon != null) {
+      if (!leafletLib) return;
+      const line = leafletLib.polyline(
+        [
+          [results.userLat, results.userLon],
+          [probe.lat, probe.lon],
+        ],
+        { color: cssColor, weight: 1.5, opacity: 0.4, dashArray: '6 4' },
+      ).addTo(m);
+      probeLines.push(line);
+    }
+  });
+
+  if (bounds.length > 0) {
+    m.fitBounds(bounds as LatLngExpression[], { padding: [30, 30], maxZoom: 4 });
+  }
+}
+
+function renderLoading(grid: HTMLElement): void {
+  grid.innerHTML = Array.from(
+    { length: 5 },
+    () =>
+      `<div class="region-card shimmer">
+      <div class="skeleton skeleton-text" style="width:60%; margin:0 auto 12px"></div>
+      <div class="skeleton skeleton-value" style="width:40%; margin:0 auto"></div>
+    </div>`,
+  ).join('');
+}
+
+function renderMapProbeCards(results: MapResults): void {
+  const grid = document.getElementById('network-results')!;
+  const infoEl = document.getElementById('network-info')!;
+
+  const closest = results.probes.reduce(
+    (best, p) => {
+      if (p.latency === null) return best;
+      if (best === null || p.latency < best.latency!) return p;
+      return best;
+    },
+    null as (typeof results.probes)[0] | null,
+  );
+
+  infoEl.textContent = t('network.closestRegion')
+    .replace('{0}', closest?.name || t('network.noResults'))
+    .replace('{1}', closest?.latency != null ? `${closest.latency}ms` : '—');
+
+  const regionOrder = [
+    'North America',
+    'South America',
+    'Europe',
+    'Middle East',
+    'Africa',
+    'Asia',
+    'Oceania',
+  ];
+  const grouped: Record<string, typeof results.probes> = {};
+  for (const region of regionOrder) grouped[region] = [];
+  for (const probe of results.probes) {
+    if (!grouped[probe.region]) grouped[probe.region] = [];
+    grouped[probe.region].push(probe);
+  }
+
+  const probeCard = (probe: (typeof results.probes)[0]) => {
+    const color = NetworkMap.getLatencyColor(probe.latency);
+    const dots = NetworkMap.getLatencyDots(probe.latency);
+    const latencyText =
+      probe.latency != null ? `${probe.latency}<span class="region-unit">ms</span>` : '—';
+    const estimateBadge = !probe.measured
+      ? `<span class="estimate-badge">${t('network.estimated')}</span>`
+      : '';
+    const isClosest = probe.id === closest?.id;
+
+    return `
+      <div class="region-card${isClosest ? ' active' : ''}">
+        <div class="region-name" style="color:var(--text-primary)">${probe.name} <span style="color:var(--text-quaternary);font-size:11px">${probe.id}</span></div>
+        <div class="region-latency" style="color:${color}">${latencyText} ${estimateBadge}</div>
+        <div class="region-dots" style="color:${color}">
+          ${Array.from({ length: 5 }, (_, i) => `<span class="region-dot${i < dots ? ' active' : ''}"></span>`).join('')}
+        </div>
+      </div>`;
+  };
+
+  let html = '';
+  for (const region of regionOrder) {
+    const probes = grouped[region];
+    if (!probes || probes.length === 0) continue;
+    html += `<div class="region-group"><div class="region-group-title">${t(regionKey(region))}</div><div class="region-grid">`;
+    for (const probe of probes) html += probeCard(probe);
+    html += `</div></div>`;
+  }
+  for (const region of Object.keys(grouped)) {
+    if (regionOrder.includes(region)) continue;
+    const probes = grouped[region];
+    if (!probes || probes.length === 0) continue;
+    html += `<div class="region-group"><div class="region-group-title">${t(regionKey(region))}</div><div class="region-grid">`;
+    for (const probe of probes) html += probeCard(probe);
+    html += `</div></div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+async function runMapTest(): Promise<void> {
+  try {
+    await loadLeaflet();
+  } catch {
+    const grid = document.getElementById('network-results')!;
+    grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">Failed to load map library</p>`;
+    const btn = document.getElementById('network-run-btn') as HTMLButtonElement;
+    btn.disabled = false;
+    btn.textContent = t('network.runTest');
+    return;
+  }
+
+  const btn = document.getElementById('network-run-btn') as HTMLButtonElement;
+  const grid = document.getElementById('network-results')!;
+  const mapContainer = document.getElementById('world-map-container')!;
+  btn.disabled = true;
+  btn.textContent = t('network.running');
+  grid.classList.remove('hidden');
+  mapContainer.classList.remove('hidden');
+  renderLoading(grid);
+
+  try {
+    const results = await NetworkMap.run();
+    lastMapResults = results;
+    renderMapProbeCards(results);
+    renderMapResults(results);
+  } catch {
+    grid.innerHTML = `<p class="info-muted" style="grid-column: 1 / -1; text-align:center">${t('network.error') || 'Failed to load probes'}</p>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = t('network.runAgain');
+}
+
+networkMapState.results.subscribe((val) => {
+  if (val) {
+    lastMapResults = val;
+    renderMapProbeCards(val);
+    renderMapResults(val);
+  }
+});
+
+onLocaleChange(() => {
+  if (lastMapResults) {
+    renderMapProbeCards(lastMapResults);
+    renderMapResults(lastMapResults);
+  }
+});
+
 // ============ INIT ============
 
 let initialized = false;
@@ -1038,9 +1688,6 @@ export function initSpeedPerformance(): void {
     const monitorStopBtn = document.getElementById('speed-monitor-stop') as HTMLButtonElement;
     monitorStopBtn?.addEventListener('click', () => SpeedMonitor.stop());
 
-    const csvBtn = document.getElementById('speed-csv-btn');
-    csvBtn?.addEventListener('click', () => SpeedTestHistory.downloadCsv());
-
     const qualityRunBtn = document.getElementById('quality-run-btn');
     qualityRunBtn?.addEventListener('click', runQualityTest);
 
@@ -1054,9 +1701,57 @@ export function initSpeedPerformance(): void {
       if (qualityCaret) qualityCaret.textContent = expanded ? '▾' : '▴';
     });
 
+    // History section wiring
+    const historyClearBtn = document.getElementById('history-clear-btn');
+    historyClearBtn?.addEventListener('click', () => {
+      if (confirm(t('history.confirmClear', 'Clear all history? This cannot be undone.'))) {
+        clearHistory();
+        SpeedTestHistory.clear();
+        refreshHistory();
+        renderSpeedHistory();
+      }
+    });
+
+    const historyCsvBtn = document.getElementById('history-csv-btn');
+    historyCsvBtn?.addEventListener('click', () => downloadHistoryCsv());
+
+    const historyCompareBtn = document.getElementById('history-compare-btn');
+    historyCompareBtn?.addEventListener('click', () => toggleCompareMode());
+
+    const historyToggle = document.getElementById('history-toggle');
+    const historyBody = document.getElementById('history-body');
+    const historyCaret = document.getElementById('history-caret');
+    historyToggle?.addEventListener('click', () => {
+      const expanded = historyToggle.getAttribute('aria-expanded') === 'true';
+      historyToggle.setAttribute('aria-expanded', String(!expanded));
+      historyBody?.classList.toggle('hidden');
+      if (historyCaret) historyCaret.textContent = expanded ? '▾' : '▴';
+      if (expanded) {
+        // reopening; refresh in case new data
+        refreshHistory();
+        if (mapInstance) mapInstance.invalidateSize();
+      }
+    });
+
+    // Network map section wiring
+    const networkRunBtn = document.getElementById('network-run-btn');
+    networkRunBtn?.addEventListener('click', runMapTest);
+
+    const networkmapToggle = document.getElementById('networkmap-toggle');
+    const networkmapBody = document.getElementById('networkmap-body');
+    const networkmapCaret = document.getElementById('networkmap-caret');
+    networkmapToggle?.addEventListener('click', () => {
+      const expanded = networkmapToggle.getAttribute('aria-expanded') === 'true';
+      networkmapToggle.setAttribute('aria-expanded', String(!expanded));
+      networkmapBody?.classList.toggle('hidden');
+      if (networkmapCaret) networkmapCaret.textContent = expanded ? '▾' : '▴';
+      if (mapInstance) mapInstance.invalidateSize();
+    });
+
     syncQualityUi();
   }
 
+  refreshHistory();
   renderSpeedHistory();
   drawSpeedGraph();
 }
