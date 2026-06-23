@@ -1,8 +1,11 @@
 import type { Translations } from '../i18n';
 export const ko = {
   'page.title': 'NetCheck',
-  'nav.dns': 'DNS 확인',
-  'nav.speed': '속도 테스트',
+  'nav.overview': '개요',
+  'nav.dns': 'DNS',
+  'nav.speed': '속도',
+  'nav.security': '보안',
+  'nav.privacy': '프라이버시',
   'nav.adblock': '광고 차단 테스트',
   'nav.export': '내보내기',
   'nav.exportReport': '보고서 내보내기',
@@ -728,7 +731,7 @@ export const ko = {
     '로컬 AI는 언어 모델 다운로드(약 23 MB)가 필요합니다. 완전히 브라우저에서 실행되어 개인정보를 보호합니다. 한 번만 다운로드하면 이후 캐시됩니다.',
   'ai.downloadConfirm': '다운로드 및 분석',
   'ai.downloadCancel': '취소',
-  'nav.ai': 'AI 분석',
+  'nav.ai': 'AI',
 
   'breachCheck.check': 'Check Password',
   'breachCheck.checking': 'Checking...',
