@@ -196,24 +196,51 @@ These existing UI modules are **fully rewritten** but not listed individually in
 
 ---
 
-## 5. Design System (pending mockup)
+## 5. Design System
 
-**Deferred to visual companion:**
-1. Design personality: Refined Instrument vs Editorial Report vs Ops Command Center
-2. Navigation model: sidebar vs top tab bar vs command palette
-3. Layout mockups per workflow
-4. Color palette refinement
-5. Typography scale
+**Resolved via visual companion mockups (2026-06-23):**
 
-**Confirmed regardless of personality:**
+### 5.1 Design Personality: Editorial Report
+- **Background:** Warm off-white (#F5F5F0 light mode), dark variant for dark theme
+- **Typography:** Serif display headings (Georgia / Tiempos / Fraunces), Inter for body, JetBrains Mono for data values
+- **Accent color:** Muted greens (#3B6B00 light, adapted for dark)
+- **Character:** Premium diagnostic report — not a hacker tool. Big numbers, sparse chrome, generous whitespace, italic callouts
+- **Grade colors:** A+ green → F red (retained), but muted to fit editorial palette
+- **Motion:** `motion.ts` retained, adapted for editorial transitions (subtle, not flashy)
+
+### 5.2 Navigation Model: Top Tab Bar
+- Horizontal tabs under header: Overview · DNS · Speed · Security · Privacy · AI
+- Active tab: serif label + 2px bottom border in accent green
+- Mobile: bottom tab bar (icons + labels)
+- No sidebar, no command palette
+
+### 5.3 Workflow Layouts (resolved per mockup)
+
+| Workflow | Layout pattern | Mockup choice |
+|----------|---------------|---------------|
+| **Overview** | Hero + Grid — score and IP side by side at top, 2×4 card grid for quick status | B |
+| **DNS** | Pill sub-tabs — 6 pills (Resolvers / DNSSEC / IPv6 / Lookup / Benchmark / Path). IP card pinned above pills. One active at a time | A |
+| **Speed & Performance** | Speed as hero + collapsible sections — Speed Test always expanded as primary. Quality, History, Map as collapsible sections below | B |
+| **Security Scan** | Self + Target split — top: auto-detected connection (TLS, HTTP/3, cipher). Bottom: target domain input with pills for scan type (Headers / TLS / HTTP/3 / CT / Email) | B |
+| **Privacy & Blocking** | Pill sub-tabs — 5 pills (Ad Block / Fingerprint / Exposure / Cookies / Breach). One active at a time. Consistent with DNS pattern | A |
+| **AI Analysis** | Single panel — cloud/on-device toggle + results output. No sub-tabs needed | — |
+
+### 5.4 Sub-navigation patterns
+Two patterns, used contextually:
+1. **Pill sub-tabs** (rounded, accent-green active): DNS (6), Privacy (5) — many sub-features, equal weight
+2. **Hero + collapsible** (dot + serif heading, ▾ expand): Speed & Performance (4) — one primary, rest secondary
+3. **Self + target split**: Security Scan (5) — two distinct scan modes
+
+### 5.5 Confirmed regardless of personality
 - CSS custom properties token system (`tokens.css`) retained as architecture
 - Dark + light themes via `data-theme` attribute on `<html>`
-- Category accent colors remapped per workflow: lime/cyan/orange/rose/purple/green/amber
-- Status semantics: pass/warn/fail/neutral
-- Grade scale colors: A+ through F
+- Category accent colors remapped per workflow in muted editorial palette
+- Status semantics: pass (muted green #228B22) / warn (amber #946B00) / fail (red #CC1F3D) / neutral
+- Grade scale colors: A+ through F, muted for editorial
 - Motion library (`motion.ts`) for transitions — adapted, not replaced
 - JetBrains Mono for data values
 - Inter for body text
+- Serif (Georgia/Tiempos/Fraunces) for display headings
 
 ---
 
@@ -389,19 +416,19 @@ With PWA dropped, there is no service worker. `offline.html` is deleted (Phase 0
 
 ---
 
-## 16. Open Items for Visual Companion
+## 16. Visual Companion Decisions (RESOLVED)
 
-These are resolved via browser mockups before implementation begins:
+All 7 open items resolved via browser mockups on 2026-06-23:
 
-1. Design personality: Refined Instrument vs Editorial Report vs Ops Command Center
-2. Navigation model: sidebar vs top tab bar vs command palette
-3. Overview workflow layout
-4. DNS workflow sub-navigation pattern (6 sub-features)
-5. Speed & Performance workflow layout (gauges + map + history coexistence)
-6. Security Scan unified-target-input pattern
-7. Privacy & Blocking sub-navigation pattern (5 sub-features)
+1. **Design personality:** Editorial Report (warm off-white, serif headings, muted greens)
+2. **Navigation model:** Top Tab Bar (horizontal tabs, bottom bar on mobile)
+3. **Overview layout:** Hero + Grid (score/IP side by side, 2×4 status card grid)
+4. **DNS sub-nav:** Pill sub-tabs (6 pills, IP card pinned above)
+5. **Speed & Performance:** Speed as hero + collapsible sections (Quality/History/Map below)
+6. **Security Scan:** Self + Target split (auto-detected self on top, target domain with pills below)
+7. **Privacy & Blocking:** Pill sub-tabs (5 pills, consistent with DNS)
 
-Once mockup decisions are made, this spec is updated and re-committed before Phase 0 begins.
+See §5 for full design system details.
 
 ---
 
