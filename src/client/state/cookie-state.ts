@@ -1,5 +1,5 @@
 import { observable } from './observable';
-import { scoreToGrade } from '../tabs/dashboard-tab';
+import { scoreToGrade } from '../tabs/overview-tab';
 import { appState } from './shared-state';
 
 export interface CookieEntry {
