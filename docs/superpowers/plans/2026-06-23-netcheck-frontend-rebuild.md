@@ -455,7 +455,7 @@ HTML structure:
 <!-- Dropdown panels (lang, export, share) — retained from current structure -->
 ```
 
-Keep the dropdown panels (`#lang-menu`, `#export-menu`, `#share-menu`) with their existing IDs.
+Keep the dropdown panels (`#lang-menu`, `#export-menu`, `#share-menu`) with their existing IDs and the `.nav-toolbar-panel` class — app.ts toolbar positioning logic depends on this class.
 
 - [ ] **Step 2: Verify build passes**
 
@@ -584,6 +584,7 @@ Remove the old `tabNames` object (lines 78-94 in current app.ts) and replace wit
 Create `src/client/__tests__/router.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest';
+import { LEGACY_REDIRECTS } from '../app';
 
 describe('Legacy redirect map', () => {
   it('maps all 17 old tab names', () => {
@@ -1001,6 +1002,13 @@ describe('renderGauge', () => {
     expect(el.querySelector('.gauge-value')?.textContent).toBe('94');
     expect(el.querySelector('.gauge-unit')?.textContent).toBe('Mbps');
   });
+
+  it('sets role=img and aria-label with the value', () => {
+    const el = renderGauge({ label: 'Latency', value: 12, unit: 'ms' });
+    expect(el.getAttribute('role')).toBe('img');
+    expect(el.getAttribute('aria-label')).toContain('12');
+    expect(el.getAttribute('aria-label')).toContain('Latency');
+  });
 });
 ```
 
@@ -1022,6 +1030,8 @@ export interface GaugeProps {
 export function renderGauge(props: GaugeProps): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'gauge';
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', `${props.label}: ${props.value} ${props.unit}`);
 
   const label = document.createElement('div');
   label.className = 'gauge-label';
@@ -1159,6 +1169,10 @@ git tag phase-4b
 ## Chunk 4: Workflow Implementations (Phases 5–10)
 
 > **Note:** The workflow tab files are the largest part of the rebuild. Each workflow subscribes to existing state observables and renders UI using the new component primitives. The test engines and state modules are imported unchanged — only the render layer is new.
+>
+> **Testing approach for workflow tabs:** These are UI render modules — DOM-heavy, visual, and difficult to unit-test meaningfully without a full browser environment. The spec §10 only mandates unit tests for state modules (unchanged) and component primitives (Tasks 4a/4b). Workflow tabs are verified via: (1) type-check after each task, (2) `npm run dev` visual review, (3) Playwright e2e in Task 12. This is a deliberate tradeoff — TDD is applied strictly to components and logic; workflow rendering is verified visually and via e2e. Each workflow tab task includes a visual review step as its verification gate.
+>
+> **Step granularity for workflow tabs:** Each workflow tab renders multiple sections. The steps below describe what each section renders and which state it subscribes to. The implementer should treat each bullet point within a step as a sub-action (create the DOM element, wire it to state, append to container). This is inherently larger than a single function — the workflow tabs are 200-600 LOC each. The implementer may need to break the work internally, but the task-level granularity is one workflow tab per task.
 
 ### Task 5: Overview Workflow
 
@@ -1338,7 +1352,7 @@ git tag phase-6b
 **Files:**
 - Create: `src/client/tabs/speed-performance-tab.ts` (speed + quality sections)
 - Modify: `src/client/speed-suggestions.ts` — adapt DOM IDs
-- Delete: `src/client/speed-ui.ts`, `src/client/connection-quality-ui.ts` (after verified)
+- Note: `speed-ui.ts`, `connection-quality-ui.ts` deleted in Task 7b after full workflow verified
 
 - [ ] **Step 1: Write speed-performance-tab.ts (speed + quality)**
 
@@ -1419,7 +1433,7 @@ git tag phase-7b
 
 **Files:**
 - Create: `src/client/tabs/security-scan-tab.ts` (self-check + headers + TLS)
-- Delete: `src/client/headers-ui.ts`, `src/client/tabs/tls-tab.ts` (after verified)
+- Note: `headers-ui.ts`, `tabs/tls-tab.ts` deleted in Task 8b after full workflow verified
 
 - [ ] **Step 1: Write security-scan-tab.ts (self + headers + TLS)**
 
@@ -1493,7 +1507,7 @@ git tag phase-8b
 
 **Files:**
 - Create: `src/client/tabs/privacy-blocking-tab.ts` (ad block + fingerprint)
-- Delete: `src/client/adblock-ui.ts`, `src/client/fingerprint-ui.ts` (after verified)
+- Note: `adblock-ui.ts`, `fingerprint-ui.ts` deleted in Task 9b after full workflow verified
 
 - [ ] **Step 1: Write privacy-blocking-tab.ts (ad block + fingerprint)**
 
@@ -1617,15 +1631,19 @@ git tag phase-10
 ### Task 11: Core Wiring
 
 **Files:**
-- Modify: `src/client/share.ts` — update DOM IDs to new structure
-- Modify: `src/client/export-report.ts` — update DOM IDs to new structure
+- Modify: `src/client/share.ts` — update DOM IDs and selectors to new structure
+- Modify: `src/client/export-report.ts` — update DOM IDs and selectors to new structure
 - Modify: `src/client/i18n.ts` — add new workflow nav keys, update static selector map
-- Modify: `src/client/a11y.ts` — remap keyboard shortcuts 1-6 for workflows
+- Modify: `src/client/a11y.ts` — remap keyboard shortcuts 1-6 + update selectors `.nav-link` → `.tab-link`
 - Modify: `src/client/analytics.ts` — adapt to new section/workflow IDs
 
-- [ ] **Step 1: Audit share.ts DOM IDs**
+Note: Locale file propagation (en.ts + 5 other locale files) is in Task 11b (6 files there, under limit).
+
+- [ ] **Step 1: Update share.ts DOM IDs and selectors**
 
 Current IDs read by share.ts: `score-value`, `dashboard-ip-value`, `dashboard-speed-value`, `dashboard-latency-value`, `score-summary`, `fp-score-summary`, `share-btn`, `share-copy-btn`.
+
+Current selectors read by share.ts: `.nav-link.active .nav-link-text` (line 14), `.nav-link.active` data-tab (line 24), `.cookie-grade-grade` (line 104), `.cookie-stat` / `.cookie-stat-value` (lines 105-115), `.history-bar-day` (line 122).
 
 Map each to the new element IDs in the rebuilt HTML:
 - `score-value` → `overview-score` (rendered by overview-tab)
@@ -1636,13 +1654,22 @@ Map each to the new element IDs in the rebuilt HTML:
 - `fp-score-summary` → `privacy-fp-summary` (rendered by privacy-blocking-tab)
 - `share-btn`, `share-copy-btn` → kept in index.html dropdown panel
 
-Update the `getElementById` calls in share.ts to use the new IDs. Update the `activeTab` check from `data-tab="dashboard"` to `data-tab="overview"`, etc.
+Update selectors:
+- `.nav-link.active .nav-link-text` → `.tab-link.active` (text content directly on the link)
+- `.nav-link.active` data-tab → `.tab-link.active` data-tab
+- `.cookie-grade-grade`, `.cookie-stat`, `.cookie-stat-value`, `.history-bar-day` → preserve these class names in privacy-blocking-tab.ts and speed-performance-tab.ts rendering OR update selectors in share.ts
 
-- [ ] **Step 2: Audit export-report.ts DOM IDs**
+Update the `activeTab` check from `data-tab="dashboard"` to `data-tab="overview"`, from `data-tab="speed"` to `data-tab="speed"` (same), etc.
 
-Current IDs: `ip-address`, `ip-location`, `ip-asn`, `ip-timezone`, `ip-colo`, `export-menu` (x2).
+Update the `getElementById` calls in share.ts to use the new IDs.
 
-Map to new IDs:
+- [ ] **Step 2: Update export-report.ts DOM IDs and selectors**
+
+Current IDs read by export-report.ts: `ip-address`, `ip-location`, `ip-asn`, `ip-timezone`, `ip-colo`, `export-menu` (x2).
+
+Current selectors read by export-report.ts (via querySelectorAll): `#dns-resolver-results .dns-check-item`, `#dns-security-results .dns-check-item`, `.check-label`, `.check-value`, `.check-icon`, `.check-sublabel`, `.header-value-truncate`, `#headers-check-results .dns-check-item`, `.cookie-grade-grade`, `.cookie-stat`, `.cookie-stat-value`, `.cookie-table tbody tr`, `.cookie-legend-item`.
+
+Map IDs to new structure:
 - `ip-address` → `dns-ip-address` (rendered by dns-tab)
 - `ip-location` → `dns-ip-location`
 - `ip-asn` → `dns-ip-asn`
@@ -1650,11 +1677,15 @@ Map to new IDs:
 - `ip-colo` → `dns-ip-colo`
 - `export-menu` → kept in index.html
 
-Update getElementById calls in export-report.ts.
+**Decision: preserve class names in new tab files.** The new workflow tab files (dns-tab.ts, security-scan-tab.ts, privacy-blocking-tab.ts) MUST preserve these class names when rendering results: `.dns-check-item`, `.check-label`, `.check-value`, `.check-icon`, `.check-sublabel`, `.header-value-truncate`, `.cookie-grade-grade`, `.cookie-stat`, `.cookie-stat-value`, `.cookie-table`, `.cookie-legend-item`, `.history-bar-day`.
 
-- [ ] **Step 3: Add new i18n keys**
+Alternatively, rewrite export-report.ts to read from state observables instead of DOM — but that's a larger change. The simpler path is preserving class names. Document this as a contract: new tab files must output these class names.
 
-In `src/client/i18n.ts`, add new keys to the static selector map:
+Update getElementById calls in export-report.ts to use new IDs. Keep querySelector class names unchanged.
+
+- [ ] **Step 3: Update i18n.ts static selector map**
+
+In `src/client/i18n.ts`, update the static selector map. Remove old `.nav-link[data-tab='...'] .nav-link-text` entries and add new ones:
 ```ts
 { selector: '.tab-link[data-tab="overview"]', key: 'nav.overview' },
 { selector: '.tab-link[data-tab="dns"]', key: 'nav.dns' },
@@ -1664,19 +1695,14 @@ In `src/client/i18n.ts`, add new keys to the static selector map:
 { selector: '.tab-link[data-tab="ai"]', key: 'nav.ai' },
 ```
 
-Add new keys to `src/client/locales/en.ts`:
-```ts
-'nav.overview': 'Overview',
-'nav.dns': 'DNS',
-'nav.speed': 'Speed',
-'nav.security': 'Security',
-'nav.privacy': 'Privacy',
-'nav.ai': 'AI',
-```
+Also update section title selectors: `#about-title` → `#overview-title`, etc. Remove stale `.nav-link` entries throughout.
 
-- [ ] **Step 4: Remap a11y.ts keyboard shortcuts**
+Note: New keys (`nav.overview` etc.) are added to locale files in Task 11b.
 
-Update `a11y.ts` line 87 — remap number keys from old 8-tab scheme to 6-workflow scheme:
+- [ ] **Step 4: Remap a11y.ts keyboard shortcuts AND selectors**
+
+Update `a11y.ts`:
+1. Remap number keys from old 8-tab scheme to 6-workflow scheme:
 ```ts
 const KEY_TO_TAB: Record<string, string> = {
   '1': 'overview',
@@ -1687,6 +1713,7 @@ const KEY_TO_TAB: Record<string, string> = {
   '6': 'ai',
 };
 ```
+2. Update ALL selectors: `.nav-link` → `.tab-link`, `.nav-link.active` → `.tab-link.active`, `.nav-link[data-tab]` → `.tab-link[data-tab]`. Grep for `.nav-link` in a11y.ts and replace every instance.
 
 - [ ] **Step 5: Update analytics.ts**
 
@@ -1721,8 +1748,12 @@ git tag phase-11
 - Modify: `src/client/onboarding.ts` — adapt to new nav structure
 - Modify: `src/client/motion.ts` — adapt selectors to new classes
 - Modify: `src/client/tooltip.ts` — adapt selectors to new classes
-- Modify: `src/client/theme.ts` — adapt toggle button ID (kept same)
 - Modify: `src/client/network-change.ts` — adapt to new section IDs
+- Modify: `src/client/error-boundary.ts` — update safeInit references for new workflow module names
+
+Note: `theme.ts` needs no modification — toggle button ID `theme-toggle-header` is preserved and the `data-theme` mechanism is unchanged.
+
+Note: Locale file propagation (6 files) is a separate step below — it touches 6 files but is a single mechanical edit (adding 6 keys to each), split into two sub-steps.
 
 - [ ] **Step 1: Adapt onboarding.ts**
 
@@ -1744,16 +1775,41 @@ Theme toggle button ID `theme-toggle-header` is preserved in new index.html. Ver
 
 Update any section/tab references to new workflow IDs.
 
-- [ ] **Step 6: Verify type-check + lint + tests**
+- [ ] **Step 6: Adapt error-boundary.ts**
+
+Update `safeInit` / `safeInitAsync` call references in app.ts bootstrap to use new workflow module names (Overview → initOverview, etc.). The error-boundary.ts module itself is unchanged — it's the call sites in app.ts that reference module names. Verify error-boundary.ts has no stale selectors.
+
+- [ ] **Step 7: Add new i18n keys to en.ts**
+
+Add to `src/client/locales/en.ts`:
+```ts
+'nav.overview': 'Overview',
+'nav.dns': 'DNS',
+'nav.speed': 'Speed',
+'nav.security': 'Security',
+'nav.privacy': 'Privacy',
+'nav.ai': 'AI',
+```
+
+- [ ] **Step 8: Propagate i18n keys to other 5 locales**
+
+Add the same 6 keys (translated) to each locale file:
+- `src/client/locales/zh-TW.ts`: `'nav.overview': '總覽', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': '安全', 'nav.privacy': '隱私', 'nav.ai': 'AI'`
+- `src/client/locales/zh-CN.ts`: `'nav.overview': '总览', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': '安全', 'nav.privacy': '隐私', 'nav.ai': 'AI'`
+- `src/client/locales/es.ts`: `'nav.overview': 'Resumen', 'nav.dns': 'DNS', 'nav.speed': 'Velocidad', 'nav.security': 'Seguridad', 'nav.privacy': 'Privacidad', 'nav.ai': 'IA'`
+- `src/client/locales/ja.ts`: `'nav.overview': '概要', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': 'セキュリティ', 'nav.privacy': 'プライバシー', 'nav.ai': 'AI'`
+- `src/client/locales/ko.ts`: `'nav.overview': '개요', 'nav.dns': 'DNS', 'nav.speed': '속도', 'nav.security': '보안', 'nav.privacy': '프라이버시', 'nav.ai': 'AI'`
+
+- [ ] **Step 9: Verify type-check + lint + tests**
 
 Run: `npx tsc --noEmit && npx eslint src/ && npx vitest run`
 Expected: All PASS
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add src/client/onboarding.ts src/client/motion.ts src/client/tooltip.ts src/client/network-change.ts
-git commit -m "feat: wire onboarding, motion, tooltip, network-change to new structure"
+git add src/client/onboarding.ts src/client/motion.ts src/client/tooltip.ts src/client/network-change.ts src/client/error-boundary.ts src/client/locales/
+git commit -m "feat: wire onboarding, motion, tooltip, network-change, error-boundary + propagate i18n keys to 6 locales"
 git tag phase-11b
 ```
 
@@ -1852,6 +1908,34 @@ git merge frontend-rebuild
 - `theme-toggle-header`
 - `export-btn-header`, `export-menu`
 - `share-btn-header`, `share-menu`, `share-preview`, `share-copy-btn`
+
+### Class names that MUST be preserved (export-report.ts reads via querySelector)
+
+These class names are used by `export-report.ts` to extract data from the DOM. The new workflow tab files MUST output these class names when rendering results. Do not rename them.
+
+| Class name | Used by | Rendered in |
+|-----------|---------|-------------|
+| `.dns-check-item` | export-report.ts, share.ts | dns-tab.ts, security-scan-tab.ts |
+| `.check-label` | export-report.ts | dns-tab.ts, security-scan-tab.ts |
+| `.check-value` | export-report.ts | dns-tab.ts, security-scan-tab.ts |
+| `.check-icon` | export-report.ts | dns-tab.ts, security-scan-tab.ts |
+| `.check-sublabel` | export-report.ts | dns-tab.ts, security-scan-tab.ts |
+| `.header-value-truncate` | export-report.ts | security-scan-tab.ts |
+| `.cookie-grade-grade` | export-report.ts, share.ts | privacy-blocking-tab.ts |
+| `.cookie-stat` | export-report.ts, share.ts | privacy-blocking-tab.ts |
+| `.cookie-stat-value` | export-report.ts, share.ts | privacy-blocking-tab.ts |
+| `.cookie-table` | export-report.ts | privacy-blocking-tab.ts |
+| `.cookie-legend-item` | export-report.ts | privacy-blocking-tab.ts |
+| `.history-bar-day` | share.ts | speed-performance-tab.ts |
+
+### Selectors that change (old → new)
+
+| Old selector | New selector | Files affected |
+|-------------|-------------|----------------|
+| `.nav-link.active .nav-link-text` | `.tab-link.active` | share.ts, i18n.ts |
+| `.nav-link.active` (data-tab) | `.tab-link.active` (data-tab) | share.ts, a11y.ts |
+| `.nav-link[data-tab='...']` | `.tab-link[data-tab='...']` | i18n.ts, a11y.ts |
+| `.nav-bottom-item` | `.tab-bar-mobile-item` | app.ts, a11y.ts |
 
 ---
 
