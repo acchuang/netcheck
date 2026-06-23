@@ -1,22 +1,32 @@
-.breach-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 24px;
-  color: var(--text-secondary);
-}
+/* Editorial Report Utilities */
 
-.csp-analysis-card {
-  margin-top: 16px;
-  padding: 16px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-}
+.hidden { display: none; }
 
-.grade-badge {
-  font-weight: 800;
-  text-align: center;
-  line-height: 1;
-}
+.mono { font-family: var(--font-mono); }
+.serif { font-family: var(--font-display); }
+
+.muted { color: var(--text-muted); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); }
+
+.mt-4 { margin-top: var(--space-4); }
+.mt-8 { margin-top: var(--space-8); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-8 { margin-bottom: var(--space-8); }
+
+.border-t { border-top: 1px solid var(--border-default); }
+.border-b { border-bottom: 1px solid var(--border-default); }
+
+.italic { font-style: italic; }
+
+.uppercase { text-transform: uppercase; letter-spacing: 1.5px; }
