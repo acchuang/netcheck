@@ -298,10 +298,11 @@ Each phase ≤5 files. Verification gate (typecheck + lint + build) between ever
 | 9b: Privacy extras | `tabs/privacy-blocking-tab.ts` (privacy exposure + cookies + breach), `tabs/cookie-tab.ts` (absorb into W5), `filter-ui.ts`, `breach-check.ts` (adapt), `privacy-exposure.ts` (adapt) | W5 complete | `tsc` + visual |
 | 10: AI Analysis | `tabs/ai-analysis-tab.ts`, `ai-collector.ts` (adapt) | W6 complete | `tsc` + visual |
 | 11: Wiring | `share.ts`, `export-report.ts`, `i18n.ts`, `a11y.ts`, `analytics.ts` | Core systems connected | `vitest run` |
-| 11b: Wiring extras | `onboarding.ts`, `motion.ts`, `tooltip.ts`, `theme.ts`, `network-change.ts` | All systems connected | `vitest run` |
+| 11b: Wiring extras | `onboarding.ts`, `motion.ts`, `tooltip.ts`, `network-change.ts`, `error-boundary.ts` | All systems connected | `vitest run` |
+| 11c: Locale propagation | `en.ts`, `zh-TW.ts`, `zh-CN.ts`, `es.ts`, `ja.ts`, `ko.ts` (split 5+1) | 6 nav keys across 6 locales | `vitest run` |
 | 12: E2E | `e2e/visual/visual.spec.ts`, `playwright.config.ts` | Updated e2e | `npx playwright test` |
 
-**Total: 20 phases** (0a, 0b, 1, 2, 3, 4a, 4b, 5, 6a, 6b, 7a, 7b, 8a, 8b, 9a, 9b, 10, 11, 11b, 12). Each respects the ≤5-file constraint.
+**Total: 22 phases** (0a, 0b, 1, 2, 3, 4a, 4b, 5, 6a, 6b, 7a, 7b, 8a, 8b, 9a, 9b, 10, 11, 11b, 11c, 12). Each respects the ≤5-file constraint.
 
 ---
 
@@ -381,9 +382,9 @@ With PWA dropped, there is no service worker. `offline.html` is deleted (Phase 0
   - `nav.overview`, `nav.dns`, `nav.speed`, `nav.security`, `nav.privacy`, `nav.ai` (6 workflow labels)
   - Sub-navigation labels for each workflow's sub-sections
   - Any merged-section headings (e.g., "Speed & Performance" vs separate "Speed Test" / "Connection Quality")
-- **Process:** Phase 2 (HTML shell) references existing `data-i18n` keys. New keys are added to `en.ts` first, then propagated to the other 5 locale files in Phase 11. `locale-events.ts` notifies UI of locale changes (unchanged).
-- **Audit:** Phase 11 cross-references all `data-i18n` attributes in the new `index.html` against `locales/en.ts` to catch drift.
+- **Process:** Phase 2 (HTML shell) references existing `data-i18n` keys. New keys are added to `en.ts` first, then propagated to the other 5 locale files in Phase 11c. `locale-events.ts` notifies UI of locale changes (unchanged).
 
+- **Audit:** Phase 11 cross-references all `data-i18n` attributes in the new `index.html` against `locales/en.ts` to catch drift. Phase 11c adds the 6 new nav keys to all 6 locale files.
 ---
 
 ## 13. Browser Support
@@ -407,7 +408,7 @@ With PWA dropped, there is no service worker. `offline.html` is deleted (Phase 0
 ## 15. Risks (updated)
 
 1. **Share/Export DOM coupling** — `share.ts` reads DOM by element ID (148 LOC, ~15 `getElementById` calls). New HTML must preserve IDs or `share.ts` is updated in Phase 11. **Mitigation:** audit all `getElementById` in `share.ts` before Phase 2; document required IDs in the HTML spec.
-2. **i18n key drift** — new HTML must use existing `data-i18n` keys. **Mitigation:** Phase 2 cross-references `locales/en.ts` keys; Phase 11 adds new keys to all 6 locales.
+2. **i18n key drift** — new HTML must use existing `data-i18n` keys. **Mitigation:** Phase 2 cross-references `locales/en.ts` keys; Phase 11c adds new keys to all 6 locales.
 3. **`ai-collector.ts` DOM coupling** — reads DOM by ID to collect test results for AI input. **Mitigation:** adapted in Phase 10 alongside the AI workflow rebuild.
 4. **Bundle size** — consolidating tabs may increase initial bundle. **Mitigation:** lazy-load non-active workflows via dynamic `import()` (Phase 3 router).
 5. **`/api/headers` orphaned route** — no client caller; left untouched per Non-Goals. **Mitigation:** none needed; route is harmless.
