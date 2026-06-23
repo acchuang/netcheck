@@ -274,7 +274,7 @@ Each phase ≤5 files. Verification gate (typecheck + lint + build) between ever
 | 11b: Wiring extras | `onboarding.ts`, `motion.ts`, `tooltip.ts`, `theme.ts`, `network-change.ts` | All systems connected | `vitest run` |
 | 12: E2E | `e2e/visual/visual.spec.ts`, `playwright.config.ts` | Updated e2e | `npx playwright test` |
 
-**Total: 19 phases** (0a, 0b, 1, 2, 3, 4a, 4b, 5, 6a, 6b, 7a, 7b, 8a, 8b, 9a, 9b, 10, 11, 11b, 12). Each respects the ≤5-file constraint.
+**Total: 20 phases** (0a, 0b, 1, 2, 3, 4a, 4b, 5, 6a, 6b, 7a, 7b, 8a, 8b, 9a, 9b, 10, 11, 11b, 12). Each respects the ≤5-file constraint.
 
 ---
 
