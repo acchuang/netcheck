@@ -9,6 +9,15 @@ export const ja = {
   'nav.adblock': '広告ブロックテスト',
   'nav.export': 'エクスポート',
   'nav.exportReport': 'レポートをエクスポート',
+
+  // Section titles
+  'overview.title': 'ネットワーク概要',
+  'overview.subtitle': 'ネットワーク状態を一目で確認',
+  'overview.about': 'NetCheck のすべてのテストはブラウザ内でローカルに実行されます。データはデバイスから離れません。',
+  'security.title': 'セキュリティスキャン',
+  'security.subtitle': '任意のウェブサイトのセキュリティ状況をスキャン',
+  'privacy.title': 'プライバシーとブロック',
+  'privacy.subtitle': '広告ブロック、ブラウザフィンガープリント、データ露出をテスト',
   'nav.downloadMd': 'Markdown をダウンロード',
   'nav.savePdf': 'PDF として保存',
   'nav.lang': '言語',

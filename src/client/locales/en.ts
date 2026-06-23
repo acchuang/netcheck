@@ -8,9 +8,19 @@ export const en = {
   'nav.speed': 'Speed',
   'nav.security': 'Security',
   'nav.privacy': 'Privacy',
+  'nav.ai': 'AI',
   'nav.adblock': 'Ad Block Test',
   'nav.export': 'Export',
   'nav.exportReport': 'Export Report',
+
+  // Section titles
+  'overview.title': 'Network Overview',
+  'overview.subtitle': 'Your network status at a glance',
+  'overview.about': 'NetCheck runs all tests locally in your browser. No data leaves your device.',
+  'security.title': 'Security Scan',
+  'security.subtitle': "Scan any website's security posture",
+  'privacy.title': 'Privacy & Blocking',
+  'privacy.subtitle': 'Test ad blocking, fingerprint uniqueness, and data exposure',
   'nav.downloadMd': 'Download Markdown',
   'nav.savePdf': 'Save as PDF',
   'nav.lang': 'Language',
@@ -781,7 +791,6 @@ export const en = {
     'On-Device AI requires downloading a language model (~23 MB). This runs entirely in your browser for full privacy. The download happens once and the model is cached for future use.',
   'ai.downloadConfirm': 'Download & Analyze',
   'ai.downloadCancel': 'Cancel',
-  'nav.ai': 'AI',
 
   // Breach Check
   'breachCheck.check': 'Check Password',

@@ -9,6 +9,15 @@ export const es = {
   'nav.adblock': 'Test de bloqueador de anuncios',
   'nav.export': 'Exportar',
   'nav.exportReport': 'Exportar informe',
+
+  // Section titles
+  'overview.title': 'Resumen de red',
+  'overview.subtitle': 'Estado de tu red de un vistazo',
+  'overview.about': 'NetCheck ejecuta todas las pruebas localmente en tu navegador. Los datos no salen de tu dispositivo.',
+  'security.title': 'Escaneo de seguridad',
+  'security.subtitle': 'Escanea la postura de seguridad de cualquier sitio web',
+  'privacy.title': 'Privacidad y bloqueo',
+  'privacy.subtitle': 'Prueba el bloqueo de anuncios, la huella digital y la exposición de datos',
   'nav.downloadMd': 'Descargar Markdown',
   'nav.savePdf': 'Guardar como PDF',
   'nav.lang': 'Idioma',

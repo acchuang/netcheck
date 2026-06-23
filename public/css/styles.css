@@ -619,12 +619,16 @@ p { margin: 0; }
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-body);
+  table-layout: auto;
 }
 .data-table th,
 .data-table td {
   padding: var(--space-2) var(--space-3);
   text-align: left;
   border-bottom: 1px solid var(--border-subtle);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 300px;
 }
 .data-table th {
   font-family: var(--font-mono);
@@ -634,6 +638,7 @@ p { margin: 0; }
   letter-spacing: 0.06em;
   color: var(--text-muted);
   background: var(--surface-tertiary);
+  white-space: nowrap;
 }
 .data-table td { color: var(--text-secondary); }
 .data-table td.mono { font-family: var(--font-mono); color: var(--text-primary); }
@@ -1196,10 +1201,21 @@ p { margin: 0; }
   .card-hero { padding: var(--space-5); }
   .section { padding: var(--space-5) var(--space-4); }
   .section-header { margin-bottom: var(--space-5); }
-  .stat-strip { gap: var(--space-4); }
+  .stat-strip { gap: var(--space-4); flex-direction: column; }
   .score-card { gap: var(--space-4); }
   .suggestions-grid { grid-template-columns: 1fr; }
   .filter-list-grid { grid-template-columns: 1fr; }
+  .history-chart-bars { min-height: 80px; }
+  .nav-header-tools { gap: 2px; }
+  .speed-graph { height: 150px; }
+  .quality-score-wrap { flex-direction: column; gap: var(--space-3); }
+  .ai-summary-cards { grid-template-columns: 1fr; }
+  .overview-hero { grid-template-columns: 1fr; }
+  .overview-grid { grid-template-columns: repeat(2, 1fr); }
+  .cards-grid { grid-template-columns: 1fr; }
+  .ct-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .h3p-stats { grid-template-columns: 1fr; }
+  .cookie-summary { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -1215,6 +1231,14 @@ p { margin: 0; }
   .speed-gauges { grid-template-columns: 1fr; }
   .speed-secondary { grid-template-columns: 1fr 1fr; }
   .nav-header-tools { gap: 2px; }
+  .stat-strip { flex-direction: column; }
+  .history-chart-bars { height: 60px; }
+  .speed-graph { height: 120px; }
+  .ct-summary-grid { grid-template-columns: 1fr 1fr; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .speed-secondary { grid-template-columns: 1fr; }
+  .history-stat-cards { grid-template-columns: 1fr; }
+}
 }
 
 /* ========================================

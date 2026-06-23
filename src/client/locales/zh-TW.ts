@@ -11,6 +11,15 @@ export const zhTW = {
   'nav.adblock': '廣告攔截測試',
   'nav.export': '匯出',
   'nav.exportReport': '匯出報告',
+
+  // Section titles
+  'overview.title': '網路總覽',
+  'overview.subtitle': '一目瞭然您的網路狀態',
+  'overview.about': 'NetCheck 所有測試都在瀏覽器本機執行，資料不會離開您的裝置。',
+  'security.title': '安全掃描',
+  'security.subtitle': '掃描任何網站的安全防護',
+  'privacy.title': '隱私與封鎖',
+  'privacy.subtitle': '測試廣告封鎖、瀏覽器指紋與資料暴露',
   'nav.downloadMd': '下載 Markdown',
   'nav.savePdf': '儲存為 PDF',
   'nav.lang': '語言',

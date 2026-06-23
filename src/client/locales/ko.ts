@@ -9,6 +9,15 @@ export const ko = {
   'nav.adblock': '광고 차단 테스트',
   'nav.export': '내보내기',
   'nav.exportReport': '보고서 내보내기',
+
+  // Section titles
+  'overview.title': '네트워크 개요',
+  'overview.subtitle': '네트워크 상태를 한눈에',
+  'overview.about': 'NetCheck의 모든 테스트는 브라우저에서 로컬로 실행됩니다. 데이터는 기기를 떠나지 않습니다.',
+  'security.title': '보안 스캔',
+  'security.subtitle': '모든 웹사이트의 보안 상태를 스캔',
+  'privacy.title': '프라이버시 및 차단',
+  'privacy.subtitle': '광고 차단, 브라우저 지문, 데이터 노출 테스트',
   'nav.downloadMd': 'Markdown 다운로드',
   'nav.savePdf': 'PDF로 저장',
   'nav.lang': '언어',

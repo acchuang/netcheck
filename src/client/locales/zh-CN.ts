@@ -9,6 +9,15 @@ export const zhCN = {
   'nav.adblock': '广告拦截测试',
   'nav.export': '导出',
   'nav.exportReport': '导出报告',
+
+  // Section titles
+  'overview.title': '网络总览',
+  'overview.subtitle': '一目了然您的网络状态',
+  'overview.about': 'NetCheck 所有测试都在浏览器本机执行，资料不会离开您的装置。',
+  'security.title': '安全扫描',
+  'security.subtitle': '扫描任何网站的安全防护',
+  'privacy.title': '隐私与封锁',
+  'privacy.subtitle': '测试广告封锁、浏览器指纹与数据暴露',
   'nav.downloadMd': '下载 Markdown',
   'nav.savePdf': '保存为 PDF',
   'nav.lang': '语言',
