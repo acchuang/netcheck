@@ -1508,6 +1508,7 @@ git tag phase-8b
 **Files:**
 - Create: `src/client/tabs/privacy-blocking-tab.ts` (ad block + fingerprint)
 - Note: `adblock-ui.ts`, `fingerprint-ui.ts` deleted in Task 9b after full workflow verified
+- Note: `fingerprint.ts`, `filter-lists.ts`, `adblock-test.ts` are spec §3.2 "adapt" modules, but inspection confirms they use only `document.createElement` / `document.body.appendChild` (dynamic probe creation) — NO `getElementById` or `querySelector`. They create DOM elements, not read from the page. **No adaptation needed.** The spec §3.2 classification was based on DOM coupling, but these modules create their own DOM (fingerprint canvases, ad test iframes containers, filter list test elements) rather than reading existing page elements. They work regardless of page structure.
 
 - [ ] **Step 1: Write privacy-blocking-tab.ts (ad block + fingerprint)**
 
@@ -1737,10 +1738,12 @@ Expected: All PASS
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/client/share.ts src/client/export-report.ts src/client/i18n.ts src/client/a11y.ts src/client/analytics.ts src/client/locales/en.ts
+git add src/client/share.ts src/client/export-report.ts src/client/i18n.ts src/client/a11y.ts src/client/analytics.ts
 git commit -m "feat: wire share, export, i18n, a11y, analytics to new workflow structure"
 git tag phase-11
 ```
+
+Note: i18n.ts references new keys (`nav.overview` etc.) that don't exist in locale files until Task 11c. The `t()` function falls back to the key string itself when a translation is missing, so this is safe — the keys display as their English names until 11c populates them.
 
 ### Task 11b: Auxiliary Wiring
 
@@ -1751,9 +1754,9 @@ git tag phase-11
 - Modify: `src/client/network-change.ts` — adapt to new section IDs
 - Modify: `src/client/error-boundary.ts` — update safeInit references for new workflow module names
 
-Note: `theme.ts` needs no modification — toggle button ID `theme-toggle-header` is preserved and the `data-theme` mechanism is unchanged.
+Note: `theme.ts` needs no modification — toggle button ID `theme-toggle-header` is preserved and the `data-theme` mechanism is unchanged. Spec §3.3 classified it as "adapt only" but inspection shows all refs are to `theme-toggle-header` (preserved) and `data-theme` (unchanged) — no adaptation needed.
 
-Note: Locale file propagation (6 files) is a separate step below — it touches 6 files but is a single mechanical edit (adding 6 keys to each), split into two sub-steps.
+Note: Locale file propagation (6 files) is in Task 11c below — separate phase to respect ≤5 file constraint.
 
 - [ ] **Step 1: Adapt onboarding.ts**
 
@@ -1777,9 +1780,33 @@ Update any section/tab references to new workflow IDs.
 
 - [ ] **Step 6: Adapt error-boundary.ts**
 
-Update `safeInit` / `safeInitAsync` call references in app.ts bootstrap to use new workflow module names (Overview → initOverview, etc.). The error-boundary.ts module itself is unchanged — it's the call sites in app.ts that reference module names. Verify error-boundary.ts has no stale selectors.
+The `safeInit` / `safeInitAsync` wrappers in `error-boundary.ts` are generic — they take a label string and a function. They don't reference module names directly. The call sites in `app.ts` (Task 3) already use new workflow module names. Verify error-boundary.ts has no stale selectors — grep for `.nav-link` and update to `.tab-link` if found.
 
-- [ ] **Step 7: Add new i18n keys to en.ts**
+- [ ] **Step 7: Verify type-check + lint + tests**
+
+Run: `npx tsc --noEmit && npx eslint src/ && npx vitest run`
+Expected: All PASS
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/client/onboarding.ts src/client/motion.ts src/client/tooltip.ts src/client/network-change.ts src/client/error-boundary.ts
+git commit -m "feat: wire onboarding, motion, tooltip, network-change, error-boundary"
+git tag phase-11b
+```
+
+### Task 11c: Locale Propagation
+
+**Files:**
+- Modify: `src/client/locales/en.ts` — add 6 new nav keys
+- Modify: `src/client/locales/zh-TW.ts` — add 6 translated keys
+- Modify: `src/client/locales/zh-CN.ts` — add 6 translated keys
+- Modify: `src/client/locales/es.ts` — add 6 translated keys
+- Modify: `src/client/locales/ja.ts` — add 6 translated keys
+
+Note: `ko.ts` (6th locale) is added in a follow-up commit to respect the ≤5 file constraint. This is a mechanical edit — adding 6 string keys to each file.
+
+- [ ] **Step 1: Add new i18n keys to en.ts**
 
 Add to `src/client/locales/en.ts`:
 ```ts
@@ -1791,26 +1818,89 @@ Add to `src/client/locales/en.ts`:
 'nav.ai': 'AI',
 ```
 
-- [ ] **Step 8: Propagate i18n keys to other 5 locales**
+- [ ] **Step 2: Add translated keys to zh-TW.ts**
 
-Add the same 6 keys (translated) to each locale file:
-- `src/client/locales/zh-TW.ts`: `'nav.overview': '總覽', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': '安全', 'nav.privacy': '隱私', 'nav.ai': 'AI'`
-- `src/client/locales/zh-CN.ts`: `'nav.overview': '总览', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': '安全', 'nav.privacy': '隐私', 'nav.ai': 'AI'`
-- `src/client/locales/es.ts`: `'nav.overview': 'Resumen', 'nav.dns': 'DNS', 'nav.speed': 'Velocidad', 'nav.security': 'Seguridad', 'nav.privacy': 'Privacidad', 'nav.ai': 'IA'`
-- `src/client/locales/ja.ts`: `'nav.overview': '概要', 'nav.dns': 'DNS', 'nav.speed': '速度', 'nav.security': 'セキュリティ', 'nav.privacy': 'プライバシー', 'nav.ai': 'AI'`
-- `src/client/locales/ko.ts`: `'nav.overview': '개요', 'nav.dns': 'DNS', 'nav.speed': '속도', 'nav.security': '보안', 'nav.privacy': '프라이버시', 'nav.ai': 'AI'`
+Add to `src/client/locales/zh-TW.ts`:
+```ts
+'nav.overview': '總覽',
+'nav.dns': 'DNS',
+'nav.speed': '速度',
+'nav.security': '安全',
+'nav.privacy': '隱私',
+'nav.ai': 'AI',
+```
 
-- [ ] **Step 9: Verify type-check + lint + tests**
+- [ ] **Step 3: Add translated keys to zh-CN.ts**
 
-Run: `npx tsc --noEmit && npx eslint src/ && npx vitest run`
-Expected: All PASS
+Add to `src/client/locales/zh-CN.ts`:
+```ts
+'nav.overview': '总览',
+'nav.dns': 'DNS',
+'nav.speed': '速度',
+'nav.security': '安全',
+'nav.privacy': '隐私',
+'nav.ai': 'AI',
+```
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 4: Add translated keys to es.ts**
+
+Add to `src/client/locales/es.ts`:
+```ts
+'nav.overview': 'Resumen',
+'nav.dns': 'DNS',
+'nav.speed': 'Velocidad',
+'nav.security': 'Seguridad',
+'nav.privacy': 'Privacidad',
+'nav.ai': 'IA',
+```
+
+- [ ] **Step 5: Add translated keys to ja.ts**
+
+Add to `src/client/locales/ja.ts`:
+```ts
+'nav.overview': '概要',
+'nav.dns': 'DNS',
+'nav.speed': '速度',
+'nav.security': 'セキュリティ',
+'nav.privacy': 'プライバシー',
+'nav.ai': 'AI',
+```
+
+- [ ] **Step 6: Verify type-check passes**
+
+Run: `npx tsc --noEmit`
+Expected: PASS
+
+- [ ] **Step 7: Commit first 5 locales**
 
 ```bash
-git add src/client/onboarding.ts src/client/motion.ts src/client/tooltip.ts src/client/network-change.ts src/client/error-boundary.ts src/client/locales/
-git commit -m "feat: wire onboarding, motion, tooltip, network-change, error-boundary + propagate i18n keys to 6 locales"
-git tag phase-11b
+git add src/client/locales/en.ts src/client/locales/zh-TW.ts src/client/locales/zh-CN.ts src/client/locales/es.ts src/client/locales/ja.ts
+git commit -m "feat: add 6 nav i18n keys to 5 locale files"
+```
+
+- [ ] **Step 8: Add translated keys to ko.ts**
+
+Add to `src/client/locales/ko.ts`:
+```ts
+'nav.overview': '개요',
+'nav.dns': 'DNS',
+'nav.speed': '속도',
+'nav.security': '보안',
+'nav.privacy': '프라이버시',
+'nav.ai': 'AI',
+```
+
+- [ ] **Step 9: Verify type-check + tests**
+
+Run: `npx tsc --noEmit && npx vitest run`
+Expected: All PASS
+
+- [ ] **Step 10: Commit ko.ts**
+
+```bash
+git add src/client/locales/ko.ts
+git commit -m "feat: add 6 nav i18n keys to ko locale"
+git tag phase-11c
 ```
 
 ### Task 12: E2E Tests + Final Verification
@@ -1961,7 +2051,8 @@ These class names are used by `export-report.ts` to extract data from the DOM. T
 | 9b | 3 modified, 4 deleted | Privacy: exposure + cookies + breach |
 | 10 | 2 modified, 1 deleted | AI analysis |
 | 11 | 5 modified | Core wiring (share/export/i18n/a11y/analytics) |
-| 11b | 5 modified | Auxiliary wiring |
+| 11b | 5 modified | Auxiliary wiring (onboarding/motion/tooltip/network-change/error-boundary) |
+| 11c | 6 modified (split into 5+1) | Locale propagation (6 nav keys × 6 locale files) |
 | 12 | 2 modified | E2E tests + final verification |
 
-**Total: 20 phases, ~40 file operations, 6 new workflow modules, 8 new components, 15 old modules absorbed.**
+**Total: 22 phases, ~45 file operations, 6 new workflow modules, 8 new components, 15 old modules absorbed.**
