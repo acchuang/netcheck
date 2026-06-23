@@ -1,18 +1,27 @@
 export interface CardProps {
   title: string;
+  variant?: 'default' | 'hero' | 'compact' | 'wide';
+  accent?: 'green' | 'amber' | 'rose' | 'cyan' | 'purple' | 'orange';
   grade?: string;
   children?: HTMLElement[];
 }
 
-export function renderCard(props: CardProps): HTMLElement {
+export function renderCard(props: CardProps): HTMLDivElement {
   const el = document.createElement('div');
-  el.className = 'result-card';
+  el.className = 'card';
+  if (props.variant && props.variant !== 'default') {
+    el.classList.add(`card-${props.variant}`);
+  }
+  if (props.accent) {
+    el.classList.add(`card-accent-${props.accent}`);
+  }
 
   const header = document.createElement('div');
   header.className = 'card-header';
 
-  const title = document.createElement('h3');
+  const title = document.createElement(props.variant === 'hero' ? 'h2' : 'h3');
   title.className = 'card-title';
+  title.style.fontFamily = 'var(--font-display)';
   title.textContent = props.title;
   header.appendChild(title);
 
@@ -28,9 +37,7 @@ export function renderCard(props: CardProps): HTMLElement {
   if (props.children) {
     const body = document.createElement('div');
     body.className = 'card-body';
-    for (const child of props.children) {
-      body.appendChild(child);
-    }
+    for (const child of props.children) body.appendChild(child);
     el.appendChild(body);
   }
 
