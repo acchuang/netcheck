@@ -88,23 +88,32 @@ function applyStaticTranslations(): void {
   }
   const bindings: Binding[] = [
     // Nav
-    { selector: ".nav-link[data-tab='dns'] .nav-link-text", key: 'nav.dns' },
-    { selector: ".nav-link[data-tab='history'] .nav-link-text", key: 'nav.history' },
-    { selector: ".nav-link[data-tab='speed'] .nav-link-text", key: 'nav.speed' },
-    { selector: ".nav-link[data-tab='adblock'] .nav-link-text", key: 'nav.adblock' },
-    { selector: ".nav-link[data-tab='headers'] .nav-link-text", key: 'nav.headers' },
-    { selector: ".nav-link[data-tab='fingerprint'] .nav-link-text", key: 'nav.fingerprint' },
-    { selector: ".nav-link[data-tab='quality'] .nav-link-text", key: 'nav.quality' },
-    { selector: ".nav-link[data-tab='network'] .nav-link-text", key: 'nav.network' },
-    { selector: ".nav-link[data-tab='about'] .nav-link-text", key: 'nav.about' },
-    { selector: '#export-btn', key: 'nav.exportReport', attr: 'data-tooltip' },
+    { selector: '.tab-link[data-tab="overview"]', key: 'nav.overview' },
+    { selector: '.tab-link[data-tab="dns"]', key: 'nav.dns' },
+    { selector: '.tab-link[data-tab="speed"]', key: 'nav.speed' },
+    { selector: '.tab-link[data-tab="security"]', key: 'nav.security' },
+    { selector: '.tab-link[data-tab="privacy"]', key: 'nav.privacy' },
+    { selector: '.tab-link[data-tab="ai"]', key: 'nav.ai' },
+    { selector: '#export-btn-header', key: 'nav.exportReport', attr: 'data-tooltip' },
     { selector: '#export-markdown-text', key: 'nav.downloadMd' },
     { selector: '#export-pdf-text', key: 'nav.savePdf' },
     { selector: '#lang-toggle-header', key: 'nav.lang', attr: 'title' },
 
-    // DNS
+    // Section titles
+    { selector: '#overview-title', key: 'overview.title' },
+    { selector: '#overview-subtitle', key: 'overview.subtitle' },
     { selector: '#dns-title', key: 'dns.title' },
     { selector: '#dns-subtitle', key: 'dns.subtitle' },
+    { selector: '#speed-title', key: 'speed.title' },
+    { selector: '#speed-subtitle', key: 'speed.subtitle' },
+    { selector: '#security-title', key: 'security.title' },
+    { selector: '#security-subtitle', key: 'security.subtitle' },
+    { selector: '#privacy-title', key: 'privacy.title' },
+    { selector: '#privacy-subtitle', key: 'privacy.subtitle' },
+    { selector: '#ai-title', key: 'ai.title' },
+    { selector: '#ai-subtitle', key: 'ai.subtitle' },
+
+    // DNS
     { selector: '#dns-ip-title', key: 'dns.ipTitle' },
     { selector: '#dns-ipv4-label', key: 'dns.ipv4' },
     { selector: '#dns-location-label', key: 'dns.location' },
@@ -113,100 +122,50 @@ function applyStaticTranslations(): void {
     { selector: '#dns-colo-label', key: 'dns.colo' },
     { selector: '#dns-resolver-title', key: 'dns.resolverTitle' },
     { selector: '#dns-security-title', key: 'dns.securityTitle' },
-    { selector: '#dns-lookup-title', key: 'dns.lookupTitle' },
     { selector: '#dns-lookup-btn', key: 'dns.lookupBtn' },
-    { selector: '#dns-raw-json-summary', key: 'dns.rawJson' },
-    { selector: '#dns-ptr-option', key: 'dns.ptrReverse' },
-    { selector: '#dns-all-option', key: 'dns.allRecords' },
-    { selector: '#dns-suggestions-title', key: 'dns.recommendations' },
     { selector: '#dns-http-label', key: 'dns.http' },
     { selector: '#dns-tls-label', key: 'dns.tls' },
 
     // Speed
-    { selector: '#speed-title', key: 'speed.title' },
-    { selector: '#speed-subtitle', key: 'speed.subtitle' },
     { selector: '#speed-server-label', key: 'speed.testServer' },
     { selector: '#speed-download-label', key: 'speed.download' },
     { selector: '#speed-upload-label', key: 'speed.upload' },
     { selector: '#speed-latency-label', key: 'speed.latency' },
     { selector: '#speed-jitter-label', key: 'speed.jitter' },
     { selector: '#speed-bufferbloat-label', key: 'speed.bufferbloat' },
-    { selector: '#speed-graph-title-text', key: 'speed.graphTitle' },
-    { selector: '#speed-dl-legend', key: 'speed.download' },
-    { selector: '#speed-ul-legend', key: 'speed.upload' },
-    { selector: '#speed-suggestions-title', key: 'speed.recommendations' },
-    { selector: '#speed-route-you', key: 'speed.you' },
-    { selector: '#speed-history-title', key: 'speed.history.title' },
-    { selector: '#speed-history-empty', key: 'speed.history.empty' },
     { selector: '#speed-start-btn', key: 'speed.runBtn' },
     { selector: '#speed-download-label', key: 'speed.tip.download', attr: 'data-tooltip' },
     { selector: '#speed-upload-label', key: 'speed.tip.upload', attr: 'data-tooltip' },
     { selector: '#speed-latency-label', key: 'speed.tip.latency', attr: 'data-tooltip' },
     { selector: '#speed-jitter-label', key: 'speed.tip.jitter', attr: 'data-tooltip' },
     { selector: '#speed-bufferbloat-label', key: 'speed.tip.bufferbloat', attr: 'data-tooltip' },
-    { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'title' },
-    { selector: '#speed-history-clear', key: 'speed.history.clear', attr: 'aria-label' },
     { selector: '#speed-monitor-stop', key: 'speed.monitorStop', attr: 'title' },
     { selector: '#speed-monitor-stop', key: 'speed.monitorStop', attr: 'aria-label' },
 
-    // History tab
-    { selector: '[data-i18n="history.title"]', key: 'history.title' },
-    { selector: '[data-i18n="history.subtitle"]', key: 'history.subtitle' },
-    { selector: '[data-i18n="history.chartTitle"]', key: 'history.chartTitle' },
-    { selector: '#history-csv-btn', key: 'history.exportCsv' },
-    { selector: '#history-clear-btn', key: 'history.clearHistory' },
-    { selector: '#history-compare-btn', key: 'history.compare' },
-
-    // Ad block
-    { selector: '#adblock-title', key: 'adblock.title' },
-    { selector: '#adblock-subtitle', key: 'adblock.subtitle' },
-    { selector: '#filter-list-title', key: 'filter.title' },
-    { selector: '#adblock-suggestions-title', key: 'adblock.recommendations' },
-
-    // Headers
-    { selector: '#headers-title', key: 'headers.title' },
-    { selector: '#headers-subtitle', key: 'headers.subtitle' },
-    { selector: '#headers-check-title', key: 'headers.checkTitle' },
-    { selector: '#headers-check-btn', key: 'headers.scan' },
-    { selector: '#headers-grade-title', key: 'headers.gradeTitle' },
-    { selector: '#headers-info-title', key: 'headers.infoTitle' },
-    { selector: '#headers-info-desc', key: 'headers.infoDesc' },
-    { selector: '#headers-detail-title', key: 'headers.detailTitle' },
-
-    // Fingerprint
-    { selector: '#fp-title', key: 'fp.title' },
-    { selector: '#fp-subtitle', key: 'fp.subtitle' },
-    { selector: '#fp-start-btn', key: 'fp.scan' },
-    { selector: '#fp-uniqueness-label', key: 'fp.uniqueness' },
-    { selector: '#fp-protection-title', key: 'fp.protection' },
-
-    // Connection Quality
-    { selector: '#quality-title', key: 'quality.title' },
-    { selector: '#quality-subtitle', key: 'quality.subtitle' },
+    // Quality (within Speed tab)
     { selector: '#quality-connection-title', key: 'quality.connectionTitle' },
     { selector: '#quality-tls-title', key: 'quality.tlsTitle' },
     { selector: '#quality-timing-title', key: 'quality.timingTitle' },
     { selector: '#quality-stability-title', key: 'quality.stabilityTitle' },
-    { selector: '#quality-score-title', key: 'quality.scoreTitle' },
     { selector: '#quality-run-btn', key: 'quality.runTest' },
     { selector: '#quality-stability-btn', key: 'quality.runStability' },
 
-    // Network
-    { selector: '#network-title', key: 'network.title' },
-    { selector: '#network-subtitle', key: 'network.subtitle' },
+    // History (within Speed tab)
+    { selector: '#history-compare-btn', key: 'history.compare' },
+    { selector: '#history-csv-btn', key: 'speed.history.downloadCsv' },
+    { selector: '#history-clear-btn', key: 'speed.history.clear' },
+
+    // Network (within Speed tab)
     { selector: '#network-run-btn', key: 'network.runTest' },
 
-    // AI Analysis
-    { selector: '#ai-title', key: 'ai.title' },
-    { selector: '#ai-subtitle', key: 'ai.subtitle' },
+    // Security tab
+    { selector: '#sec-target-btn', key: 'headers.scan' },
+    { selector: '#email-check-btn', key: 'emailSecurity.check' },
+    { selector: '#ct-check-btn', key: 'certTransparency.search' },
+    { selector: '#http3-run-btn', key: 'http3.runTest' },
 
-    // About
-    { selector: '#about-title', key: 'about.title' },
-    { selector: '#about-subtitle', key: 'about.subtitle' },
-
-    // Footer
-    { selector: '#footer-text', key: 'footer.text' },
-    { selector: '#privacy-badge', key: 'footer.privacyBadge' },
+    // Privacy tab
+    { selector: '#pb-fp-start-btn', key: 'fp.scan' },
   ];
 
   for (const { selector, key, attr } of bindings) {
@@ -237,8 +196,8 @@ function applyStaticTranslations(): void {
   }
 
   // Page title — include active tab if any
-  const activeTab = document.querySelector('.nav-link.active') as HTMLElement | null;
-  const tabName = activeTab ? activeTab.querySelector('.nav-link-text')?.textContent || '' : '';
+  const activeTab = document.querySelector('.tab-link.active') as HTMLElement | null;
+  const tabName = activeTab?.textContent || '';
   const baseTitle = t('page.title');
   document.title = tabName ? `${baseTitle} — ${tabName}` : baseTitle;
 
