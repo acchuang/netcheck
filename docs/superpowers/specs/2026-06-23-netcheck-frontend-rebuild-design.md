@@ -25,7 +25,7 @@
 
 ## 3. Module Classification
 
-Every `src/client/*.ts` module is classified into one of three buckets. This resolves the review finding that ~15 engine modules were unclassified.
+Every top-level `src/client/*.ts` module (53 files, excluding tests) is classified into one of the buckets below. State modules (`src/client/state/*.ts`, 21 files) are all **Unchanged** per §3.1's parent contract (observable state layer retained). Locale files (`src/client/locales/*.ts`, 6 files) are **Unchanged** (keys reused, new keys added in Phase 11). This resolves the review finding that ~15 engine modules were unclassified.
 
 ### 3.1 Unchanged — Pure logic, no DOM coupling
 
@@ -109,6 +109,30 @@ These modules are the UI layer. They are fully rewritten for the new design syst
 | `src/client/theme.ts` | 1.4K | 11 (adapt only) |
 | `src/client/network-change.ts` | 2.7K | 11 |
 
+### 3.3a Implicitly rebuilt — Old UI modules absorbed into new tab files
+
+These existing UI modules are **fully rewritten** but not listed individually in §3.3 because their functionality is absorbed into the new workflow tab files listed there. They appear here for explicit bucket assignment — the "every module classified" contract (§3) applies to them too. Each is replaced by the new tab module shown in the "Replaced by" column; the old file is deleted at the end of that phase.
+
+| Old module | LOC | Replaced by | Phase |
+|-----------|-----|-------------|-------|
+| `tabs/dashboard-tab.ts` | 493 | `tabs/overview-tab.ts` | 5 |
+| `dns-ui.ts` | 635 | `tabs/dns-tab.ts` | 6a/6b |
+| `speed-ui.ts` | 351 | `tabs/speed-performance-tab.ts` | 7a |
+| `connection-quality-ui.ts` | 403 | `tabs/speed-performance-tab.ts` | 7a |
+| `network-map-ui.ts` | — | `tabs/speed-performance-tab.ts` | 7b |
+| `tabs/history-tab.ts` | 313 | `tabs/speed-performance-tab.ts` | 7b |
+| `headers-ui.ts` | 397 | `tabs/security-scan-tab.ts` | 8a |
+| `tabs/tls-tab.ts` | 478 | `tabs/security-scan-tab.ts` | 8a |
+| `tabs/http3-tab.ts` | 110 | `tabs/security-scan-tab.ts` | 8b |
+| `tabs/email-tab.ts` | 349 | `tabs/security-scan-tab.ts` | 8b |
+| `adblock-ui.ts` | 364 | `tabs/privacy-blocking-tab.ts` | 9a |
+| `fingerprint-ui.ts` | 206 | `tabs/privacy-blocking-tab.ts` | 9a |
+| `filter-ui.ts` | — | `tabs/privacy-blocking-tab.ts` | 9b |
+| `tabs/cookie-tab.ts` | 198 | `tabs/privacy-blocking-tab.ts` | 9b |
+| `ai-analysis-ui.ts` | 519 | `tabs/ai-analysis-tab.ts` | 10 |
+
+**15 old UI modules** absorbed into 6 new workflow tab files. All are deleted after their replacement phase passes verification.
+
 ### 3.4 Deleted
 
 | Module | Reason |
@@ -117,6 +141,13 @@ These modules are the UI layer. They are fully rewritten for the new design syst
 | `public/sw.js` | PWA dropped |
 | `public/offline.html` | PWA dropped (orphaned by sw.js removal) |
 | `src/client/install-prompt.ts` | PWA dropped |
+
+### 3.5 Unchanged — Entry point & type declarations
+
+| Module | Purpose | Notes |
+|--------|---------|-------|
+| `main.ts` | Vite entry (`import './app';`) | Unchanged — imports `app.ts` which is rebuilt in Phase 3 |
+| `leaflet.d.ts` | Leaflet type declaration | Unchanged — used by network-map-ui (absorbed into W3) |
 
 ---
 
@@ -222,7 +253,8 @@ Each phase ≤5 files. Verification gate (typecheck + lint + build) between ever
 
 | Phase | Files | Output | Verification |
 |-------|-------|--------|--------------|
-| 0: Cleanup | Delete `manifest.json`, `sw.js`, `offline.html`, `install-prompt.ts`; remove refs in `app.ts`, `index.html` | Clean tree | `tsc --noEmit` + `eslint` |
+| 0a: Delete PWA | Delete `manifest.json`, `sw.js`, `offline.html`, `install-prompt.ts` | Dead files removed | `tsc --noEmit` |
+| 0b: Remove PWA refs | `app.ts`, `index.html` (remove install-prompt import + manifest link) | Clean refs | `tsc` + `eslint` |
 | 1: Design tokens | `tokens.css`, `styles.css`, `utilities.css`, `app.css` | New design system | Visual review |
 | 2: HTML shell | `index.html` | 6-workflow nav + section structure | `vite build` |
 | 3: Routing | `app.ts` | Workflow router + nav binding | `tsc` + `eslint` |
@@ -231,18 +263,18 @@ Each phase ≤5 files. Verification gate (typecheck + lint + build) between ever
 | 5: Overview | `tabs/overview-tab.ts` | Workflow 1 complete | `tsc` + visual |
 | 6a: DNS core | `tabs/dns-tab.ts` (core: IP, resolvers, security, DNSSEC), `dnssec-validation.ts` (adapt DOM) | W2 part 1 | `tsc` + visual |
 | 6b: DNS tools | `tabs/dns-tab.ts` (sub-sections: IPv6, lookup, benchmark, resolution path) | W2 complete | `tsc` + visual |
-| 7a: Speed | `tabs/speed-performance-tab.ts` (speed + quality), `speed-ui.ts`, `connection-quality-ui.ts` | W3 part 1 | `tsc` + visual |
+| 7a: Speed | `tabs/speed-performance-tab.ts` (speed + quality), `speed-ui.ts`, `connection-quality-ui.ts`, `speed-suggestions.ts` (adapt DOM) | W3 part 1 | `tsc` + visual |
 | 7b: Perf history | `tabs/speed-performance-tab.ts` (history + map), network-map-ui, `speed-graph.ts` (adapt) | W3 complete | `tsc` + visual |
 | 8a: Security core | `tabs/security-scan-tab.ts` (headers + TLS), `headers-ui.ts`, `tls-tab.ts` | W4 part 1 | `tsc` + visual |
 | 8b: Security extras | `tabs/security-scan-tab.ts` (HTTP/3 + CT + email), `cert-transparency.ts` (adapt), `email-tab.ts` | W4 complete | `tsc` + visual |
 | 9a: Privacy core | `tabs/privacy-blocking-tab.ts` (ad block + fingerprint), `adblock-ui.ts`, `fingerprint-ui.ts` | W5 part 1 | `tsc` + visual |
-| 9b: Privacy extras | `tabs/privacy-blocking-tab.ts` (privacy exposure + cookies + breach), `filter-ui.ts`, `breach-check.ts` (adapt), `privacy-exposure.ts` (adapt) | W5 complete | `tsc` + visual |
+| 9b: Privacy extras | `tabs/privacy-blocking-tab.ts` (privacy exposure + cookies + breach), `tabs/cookie-tab.ts` (absorb into W5), `filter-ui.ts`, `breach-check.ts` (adapt), `privacy-exposure.ts` (adapt) | W5 complete | `tsc` + visual |
 | 10: AI Analysis | `tabs/ai-analysis-tab.ts`, `ai-collector.ts` (adapt) | W6 complete | `tsc` + visual |
 | 11: Wiring | `share.ts`, `export-report.ts`, `i18n.ts`, `a11y.ts`, `analytics.ts` | Core systems connected | `vitest run` |
 | 11b: Wiring extras | `onboarding.ts`, `motion.ts`, `tooltip.ts`, `theme.ts`, `network-change.ts` | All systems connected | `vitest run` |
 | 12: E2E | `e2e/visual/visual.spec.ts`, `playwright.config.ts` | Updated e2e | `npx playwright test` |
 
-**Total: 18 phases.** Each respects the ≤5-file constraint.
+**Total: 19 phases** (0a, 0b, 1, 2, 3, 4a, 4b, 5, 6a, 6b, 7a, 7b, 8a, 8b, 9a, 9b, 10, 11, 11b, 12). Each respects the ≤5-file constraint.
 
 ---
 
@@ -379,6 +411,7 @@ Once mockup decisions are made, this spec is updated and re-committed before Pha
 
 Classification summary:
 - **Unchanged (pure logic):** 19 modules
-- **Adapt DOM coupling:** 11 modules
-- **Rebuilt (render layer):** 29 modules + 6 new component files
+- **Adapt DOM coupling:** 12 modules
+- **Rebuilt (new tab files + components):** 14 existing UI modules (§3.3) + 15 old UI modules absorbed (§3.3a) + 11 new files (6 components + 5 new tab modules beyond the replaced ones) = 40 rebuilt/created
+- **Unchanged entry/declarations:** 2 modules (§3.5)
 - **Deleted:** 4 files
