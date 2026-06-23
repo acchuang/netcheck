@@ -1,8 +1,11 @@
 import type { Translations } from '../i18n';
 export const es = {
   'page.title': 'NetCheck',
-  'nav.dns': 'Comprobación DNS',
-  'nav.speed': 'Test de velocidad',
+  'nav.overview': 'Resumen',
+  'nav.dns': 'DNS',
+  'nav.speed': 'Velocidad',
+  'nav.security': 'Seguridad',
+  'nav.privacy': 'Privacidad',
   'nav.adblock': 'Test de bloqueador de anuncios',
   'nav.export': 'Exportar',
   'nav.exportReport': 'Exportar informe',
@@ -756,7 +759,7 @@ export const es = {
     'La IA local requiere descargar un modelo de lenguaje (~23 MB). Se ejecuta completamente en tu navegador para máxima privacidad. La descarga ocurre una vez y el modelo se almacena en caché.',
   'ai.downloadConfirm': 'Descargar y Analizar',
   'ai.downloadCancel': 'Cancelar',
-  'nav.ai': 'Análisis IA',
+  'nav.ai': 'IA',
 
   'breachCheck.check': 'Check Password',
   'breachCheck.checking': 'Checking...',

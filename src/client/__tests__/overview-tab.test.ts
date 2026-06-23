@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scoreToGrade } from '../tabs/dashboard-tab';
+import { scoreToGrade } from '../tabs/overview-tab';
 
 describe('scoreToGrade', () => {
   it('returns A+ for scores >= 93', () => {

@@ -67,10 +67,9 @@ export function renderSkeletonRows(container: HTMLElement, count: number): void 
   container.innerHTML = Array.from(
     { length: count },
     () =>
-      `<div class="skeleton-row">
-      <div class="skeleton skeleton-circle"></div>
-      <div class="skeleton skeleton-text" style="flex:1"></div>
-      <div class="skeleton skeleton-value"></div>
+      `<div class="info-row">
+      <div class="skeleton skeleton-text" style="width:40%"></div>
+      <div class="skeleton skeleton-value" style="width:20%"></div>
     </div>`,
   ).join('');
 }

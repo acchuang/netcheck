@@ -2,7 +2,6 @@ import { t } from './i18n';
 import { onLocaleChange } from './locale-events';
 import { adblockState } from './state/adblock-state';
 import { fingerprintState } from './state/fingerprint-state';
-import { qualityState } from './state/quality-state';
 import { headersState } from './state/headers-state';
 
 function elText(id: string): string {
@@ -10,9 +9,7 @@ function elText(id: string): string {
 }
 
 function sectionTitle(): string {
-  return (
-    document.querySelector('.nav-link.active .nav-link-text')?.textContent?.trim() || 'NetCheck'
-  );
+  return document.querySelector('.tab-link.active')?.textContent?.trim() || 'NetCheck';
 }
 
 function metricLine(label: string, value: string, suffix = ''): string | null {
@@ -21,19 +18,26 @@ function metricLine(label: string, value: string, suffix = ''): string | null {
 }
 
 export function buildSummary(): string {
-  const activeTab = document.querySelector('.nav-link.active')?.getAttribute('data-tab');
+  const activeTab = document.querySelector('.tab-link.active')?.getAttribute('data-tab');
   const parts: string[] = [`[${sectionTitle()}]`];
 
-  if (activeTab === 'dashboard') {
-    const overallEl = document.getElementById('score-value');
-    const ipEl = document.getElementById('dashboard-ip-value');
-    const speedEl = document.getElementById('dashboard-speed-value');
-    const latencyEl = document.getElementById('dashboard-latency-value');
+  if (activeTab === 'overview') {
+    const overallEl = document.getElementById('overview-score');
+    const ipEl = document.getElementById('overview-ip');
+    const speedEl = document.getElementById('overview-speed');
+    const latencyEl = document.getElementById('overview-latency');
     const lines = [
       metricLine(t('share.metric.score'), overallEl?.textContent?.trim() || '—', '/100'),
       metricLine(t('dashboard.yourIp'), ipEl?.textContent?.trim() || '—'),
       metricLine(elText('speed-download-label'), speedEl?.textContent?.trim() || '—'),
       metricLine(elText('speed-latency-label'), latencyEl?.textContent?.trim() || '—'),
+    ];
+    parts.push(...lines.filter((line): line is string => Boolean(line)));
+  } else if (activeTab === 'dns') {
+    const lines = [
+      metricLine(elText('dns-ipv4-label'), elText('ip-address')),
+      metricLine(elText('dns-location-label'), elText('ip-location')),
+      metricLine(elText('dns-security-title'), elText('dns-security-status')),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
   } else if (activeTab === 'speed') {
@@ -48,82 +52,31 @@ export function buildSummary(): string {
       metricLine(elText('speed-server-label'), elText('speed-server-value')),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'adblock') {
-    const lines = [
-      metricLine(t('share.metric.score'), String(adblockState.score.get()) || '—', '/100'),
-      metricLine(
-        t('share.metric.label'),
-        document.getElementById('score-summary')?.textContent?.trim() || '',
-      ),
-    ];
-    parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'dns') {
-    const lines = [
-      metricLine(elText('dns-ipv4-label'), elText('ip-address')),
-      metricLine(elText('dns-location-label'), elText('ip-location')),
-      metricLine(elText('dns-security-title'), elText('dns-security-status')),
-    ];
-    parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'headers') {
+  } else if (activeTab === 'security') {
     const lines = [
       metricLine(t('dashboard.headersGrade', 'Headers'), headersState.grade.get()),
       metricLine(t('share.metric.score'), String(headersState.score.get())),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'fingerprint') {
+  } else if (activeTab === 'privacy') {
     const lines = [
+      metricLine(t('share.metric.score'), String(adblockState.score.get()) || '—', '/100'),
       metricLine(
-        elText('fp-uniqueness-label'),
+        t('share.metric.summary'),
+        document.getElementById('pb-score-summary')?.textContent?.trim() || '',
+      ),
+      metricLine(
+        t('fp.uniqueness'),
         String(fingerprintState.uniquenessScore.get()) || '—',
       ),
       metricLine(
         t('share.metric.summary'),
-        document.getElementById('fp-score-summary')?.textContent?.trim() || '',
+        document.getElementById('pb-fp-score-summary')?.textContent?.trim() || '',
       ),
     ];
     parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'quality') {
-    const qs = qualityState.score.get();
-    const grade = [qs.grade, qs.label].filter(Boolean).join(' ');
-    const tlsText = elText('quality-tls-info');
-    const serverRtt = tlsText.match(/(\d+)\s*ms/)?.[0] || '—';
-    const lines = [
-      metricLine(elText('quality-score-title'), grade),
-      metricLine(t('quality.serverRtt'), serverRtt),
-    ];
-    parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'tls') {
-    const grade = elText('tls-grade');
-    const lines = [
-      metricLine(t('share.metric.grade'), grade),
-      metricLine(t('tls.protocol'), elText('tls-protocol')),
-      metricLine(t('tls.cipher'), elText('tls-cipher')),
-    ];
-    parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'cookies') {
-    const gradeEl = document.querySelector('.cookie-grade-grade');
-    const totalEl = document.querySelector<HTMLDivElement>(
-      '.cookie-stat:nth-child(1) .cookie-stat-value',
-    );
-    const sizeEl = document.querySelector<HTMLDivElement>(
-      '.cookie-stat:nth-child(2) .cookie-stat-value',
-    );
-    const secureEl = document.querySelector<HTMLDivElement>(
-      '.cookie-stat:nth-child(3) .cookie-stat-value',
-    );
-    const lines = [
-      metricLine(t('cookie.grade'), gradeEl?.textContent?.trim() || '—'),
-      metricLine(t('cookie.total'), totalEl?.textContent?.trim() || '—'),
-      metricLine(t('cookie.size'), sizeEl?.textContent?.trim() || '—'),
-      metricLine(t('cookie.secure'), secureEl?.textContent?.trim() || '—'),
-    ];
-    parts.push(...lines.filter((line): line is string => Boolean(line)));
-  } else if (activeTab === 'history') {
-    const entries = document.querySelectorAll('.history-bar-day');
-    const count = entries.length;
-    parts.push(metricLine(t('share.metric.results'), `${count} days`) || '');
-  } else if (activeTab === 'network') {
-    const line = metricLine(t('share.metric.results'), elText('network-info'));
+  } else if (activeTab === 'ai') {
+    const line = metricLine(t('share.metric.results'), elText('ai-title'));
     if (line) parts.push(line);
   }
 
@@ -133,7 +86,7 @@ export function buildSummary(): string {
 }
 
 export function initShare(): void {
-  const btn = document.getElementById('share-btn');
+  const btn = document.getElementById('share-btn-header');
   if (!btn) return;
 
   btn.title = t('share.tooltip') || 'Copy results';

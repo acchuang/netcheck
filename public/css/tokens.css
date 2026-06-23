@@ -1,42 +1,48 @@
-/* ========================================
-   NetCheck Global Radio Design Tokens
-   ======================================== */
+/* Editorial Report Design Tokens */
 
 /* ── Raw color palette ── */
 :root {
-  --gray-0: #ffffff;
-  --gray-50: #F5F5F0;
-  --gray-100: #E3E3D3;
-  --gray-200: #CCCCBB;
-  --gray-300: #AAAA99;
-  --gray-400: #888877;
-  --gray-500: #666655;
-  --gray-600: #4a4a3a;
-  --gray-700: #333322;
-  --gray-800: #1a1a11;
-  --gray-850: #111111;
-  --gray-900: #0D0D0D;
-  --gray-950: #0A0A0A;
-  --gray-1000: #000000;
+  --warm-0: #FFFFFF;
+  --warm-50: #F5F5F0;
+  --warm-100: #EBEBE3;
+  --warm-200: #CCCCBB;
+  --warm-300: #AAAA99;
+  --warm-400: #888877;
+  --warm-500: #666655;
+  --warm-600: #444433;
+  --warm-700: #333322;
+  --warm-800: #1A1A10;
+  --warm-850: #111111;
+  --warm-900: #0D0D0D;
+  --warm-950: #0A0A0A;
 }
 
-/* ── Category accent colors ── */
+/* ── Accent colors ── */
 :root {
-  --accent-lime: #C8FF00;
-  --accent-cyan: #00C2FF;
-  --accent-orange: #FF6B35;
-  --accent-rose: #FF4D6A;
-  --accent-purple: #A855F7;
-  --accent-green: #22C55E;
-  --accent-amber: #FFB800;
-
-  --status-pass: var(--accent-lime);
-  --status-warn: var(--accent-amber);
-  --status-fail: var(--accent-rose);
-  --status-neutral: #4a4a4a;
+  --accent-green: #3B6B00;
+  --accent-green-light: #5A8A00;
+  --accent-amber: #946B00;
+  --accent-rose: #CC1F3D;
+  --accent-cyan: #007699;
+  --accent-purple: #782BC9;
+  --accent-orange: #B35700;
 }
 
-/* ── Spacing scale ── */
+/* ── Typography ── */
+:root {
+  --font-display: Georgia, 'Tiempos Text', 'Fraunces', serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  --text-hero: 3.5rem;
+  --text-display: 2.5rem;
+  --text-heading: 1.5rem;
+  --text-body: 0.875rem;
+  --text-mono: 0.75rem;
+  --text-mono-sm: 0.625rem;
+}
+
+/* ── Spacing (retained) ── */
 :root {
   --space-1: 4px;
   --space-2: 8px;
@@ -49,41 +55,13 @@
   --space-12: 48px;
 }
 
-/* ── Radius scale ── */
+/* ── Radius ── */
 :root {
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 24px;
   --radius-full: 9999px;
-}
-
-/* ── Shadows ── */
-:root {
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(200, 255, 0, 0.15);
-  --shadow-glow-hover: 0 0 20px rgba(200, 255, 0, 0.3);
-}
-
-/* ── Type scale ── */
-:root {
-  --text-hero: 3.5rem;
-  --text-display: 2.5rem;
-  --text-heading: 1.5rem;
-  --text-body: 0.875rem;
-  --text-mono: 0.75rem;
-  --text-mono-sm: 0.625rem;
-  --text-mono-xs: 0.5rem;
-}
-
-/* ── Leading ── */
-:root {
-  --leading-tight: 1.1;
-  --leading-snug: 1.3;
-  --leading-normal: 1.5;
 }
 
 /* ── Transitions ── */
@@ -98,58 +76,73 @@
 :root {
   --page-px: clamp(1rem, 5vw, 2.5rem);
   --container-max: 1200px;
-  --sidebar-width: 180px;
   --header-height: 48px;
-  --gap-sm: var(--space-2);
-  --gap-md: var(--space-3);
-  --gap-lg: var(--space-6);
   --card-p: var(--space-5);
 }
 
-/* ========================================
-   Semantic Tokens — Dark Theme
-   ======================================== */
+/* ── Semantic Tokens — Light Theme (default) ── */
+[data-theme="light"] {
+  --surface-primary: var(--warm-50);
+  --surface-secondary: var(--warm-0);
+  --surface-tertiary: var(--warm-100);
+  --surface-elevated: #F0F0EB;
 
+  --text-primary: var(--warm-800);
+  --text-secondary: var(--warm-600);
+  --text-muted: var(--warm-500);
+
+  --border-default: var(--warm-200);
+  --border-subtle: var(--warm-100);
+  --border-accent: var(--accent-green);
+
+  --accent: var(--accent-green);
+  --accent-glow: rgba(59, 107, 0, 0.08);
+
+  /* Status */
+  --status-pass: #228B22;
+  --status-warn: #946B00;
+  --status-fail: #CC1F3D;
+  --status-neutral: #666655;
+
+  /* Grade scale */
+  --grade-a-plus: #228B22;
+  --grade-a: #2D9D2D;
+  --grade-b: #946B00;
+  --grade-c: #B35700;
+  --grade-d: #CC1F3D;
+  --grade-f: #B91C1C;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  color-scheme: light;
+}
+
+/* ── Semantic Tokens — Dark Theme ── */
 [data-theme="dark"] {
-  --surface-primary: var(--gray-950);
-  --surface-secondary: var(--gray-900);
+  --surface-primary: var(--warm-950);
+  --surface-secondary: var(--warm-900);
   --surface-tertiary: #0f0f0f;
-  --surface-elevated: var(--gray-850);
+  --surface-elevated: var(--warm-850);
 
-  --text-primary: var(--gray-100);
+  --text-primary: #E3E3D3;
   --text-secondary: #B0B0A0;
   --text-muted: #888877;
 
   --border-default: #1a1a1a;
-  --border-accent: var(--status-pass);
-  --border-hover: var(--gray-850);
-
-  --accent: var(--accent-lime);
-  --accent-glow: rgba(200, 255, 0, 0.12);
-
-  /* Legacy aliases (used in inline styles) */
-  --red: var(--accent-rose);
-  --emerald: var(--accent-green);
-  --amber: var(--accent-amber);
-  --brand: var(--accent-lime);
-  --brand-glow: rgba(200, 255, 0, 0.15);
-  --brand-500: #9EC200;
-  --brand-400: #9EC200;
-  --text-tertiary: #888877;
-  --text-quaternary: #555544;
-  --green: var(--accent-green);
-
-  /* Extended surfaces */
-  --surface-card: var(--surface-secondary);
-  --surface-hover: var(--surface-elevated);
-  --surface-2: var(--surface-secondary);
-
-  /* Border aliases */
-  --border: var(--border-default);
   --border-subtle: #1a1a1a;
+  --border-accent: #7BC02F;
+
+  --accent: #7BC02F;
+  --accent-glow: rgba(123, 192, 47, 0.12);
 
   /* Status */
-  --error: var(--accent-rose);
+  --status-pass: #7BC02F;
+  --status-warn: #FFB800;
+  --status-fail: #FF4D6A;
+  --status-neutral: #888877;
 
   /* Grade scale */
   --grade-a-plus: #22c55e;
@@ -159,6 +152,7 @@
   --grade-d: #ef4444;
   --grade-f: #dc2626;
 
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
@@ -166,75 +160,17 @@
   color-scheme: dark;
 }
 
-/* ========================================
-   Semantic Tokens — Light Theme
-   ======================================== */
-
-[data-theme="light"] {
-  --surface-primary: #F5F5F0;
-  --surface-secondary: #FFFFFF;
-  --surface-tertiary: #E8E8E3;
-  --surface-elevated: #F0F0EB;
-
-  --text-primary: #1A1A10;
-  --text-secondary: #444433;
-  --text-muted: #666655;
-
-  --border-default: #8F8F7F;
-  --border-accent: #3B6B00;
-  --border-hover: #6B6B58;
-
-  --accent: #3B6B00;
-  --accent-glow: rgba(59, 107, 0, 0.12);
-
-  --status-pass: #228B22;
-  --status-warn: #946B00;
-  --status-fail: #CC1F3D;
-  --status-neutral: #666655;
-
-  --accent-lime: #5A8A00;
-  --accent-cyan: #007699;
-  --accent-orange: #B35700;
-  --accent-rose: #CC1F3D;
-  --accent-purple: #782BC9;
-  --accent-green: #228B22;
-  --accent-amber: #946B00;
-
-  /* Legacy aliases (used in inline styles) */
-  --red: var(--accent-rose);
-  --emerald: var(--accent-green);
-  --amber: var(--accent-amber);
-  --brand: #3B6B00;
-  --brand-glow: rgba(59, 107, 0, 0.12);
-  --brand-500: #4D8C00;
-  --brand-400: #6BAA00;
-  --text-tertiary: #666655;
-  --text-quaternary: #999988;
-  --green: var(--accent-green);
-
-  /* Extended surfaces */
+/* Legacy aliases (used in inline styles during migration) */
+:root {
+  --brand: var(--accent);
+  --brand-glow: var(--accent-glow);
+  --text-tertiary: var(--text-muted);
+  --green: var(--status-pass);
+  --red: var(--status-fail);
+  --amber: var(--status-warn);
+  --emerald: var(--status-pass);
+  --error: var(--status-fail);
+  --border: var(--border-default);
   --surface-card: var(--surface-secondary);
   --surface-hover: var(--surface-elevated);
-  --surface-2: var(--surface-secondary);
-
-  /* Border aliases */
-  --border: var(--border-default);
-  --border-subtle: #CCCCBB;
-
-  /* Status */
-  --error: var(--accent-rose);
-
-  /* Grade scale */
-  --grade-a-plus: #228B22;
-  --grade-a: #22c55e;
-  --grade-b: #d97706;
-  --grade-c: #ea580c;
-  --grade-d: #dc2626;
-  --grade-f: #b91c1c;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-  color-scheme: light;
 }

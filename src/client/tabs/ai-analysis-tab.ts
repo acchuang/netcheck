@@ -1,13 +1,13 @@
-import { aiState } from './state/ai-state';
-import { appState } from './state/shared-state';
-import { dnsState } from './state/dns-state';
-import { speedState } from './state/speed-state';
-import { tlsState } from './state/tls-state';
-import { collectTestResults } from './ai-collector';
-import { analyzeWithCloud } from './ai-cloud';
-import { analyzeWithLocal } from './ai-local';
-import { t } from './i18n';
-import { announce } from './a11y';
+import { aiState } from '../state/ai-state';
+import { appState } from '../state/shared-state';
+import { dnsState } from '../state/dns-state';
+import { speedState } from '../state/speed-state';
+import { tlsState } from '../state/tls-state';
+import { collectTestResults } from '../ai-collector';
+import { analyzeWithCloud } from '../ai-cloud';
+import { analyzeWithLocal } from '../ai-local';
+import { t } from '../i18n';
+import { announce } from '../a11y';
 
 const CONSENT_KEY = 'netcheck-ai-consent';
 
@@ -34,23 +34,13 @@ function render(): void {
     return;
   }
 
-  const {
-    mode,
-    loading,
-    result,
-    consentGiven,
-    modelReady,
-    modelDownloadProgress,
-    modelConfirming,
-  } = {
-    mode: aiState.mode.get(),
-    loading: aiState.loading.get(),
-    result: aiState.result.get(),
-    consentGiven: aiState.consentGiven.get(),
-    modelReady: aiState.modelReady.get(),
-    modelDownloadProgress: aiState.modelDownloadProgress.get(),
-    modelConfirming: aiState.modelConfirming.get(),
-  };
+  const mode = aiState.mode.get();
+  const loading = aiState.loading.get();
+  const result = aiState.result.get();
+  const consentGiven = aiState.consentGiven.get();
+  const modelReady = aiState.modelReady.get();
+  const modelDownloadProgress = aiState.modelDownloadProgress.get();
+  const modelConfirming = aiState.modelConfirming.get();
 
   if (!consentGiven && mode === 'cloud') {
     container.innerHTML = renderConsentBanner();
@@ -213,9 +203,9 @@ function renderReadinessPills(): string {
   ];
 
   const pillsHtml = testNames
-    .map((t) => {
-      const done = completed.includes(t.key);
-      return `<span class="ai-readiness-pill ${done ? 'ai-readiness-done' : 'ai-readiness-pending'}">${done ? '\u2713' : '\u2014'} ${t.label}</span>`;
+    .map((n) => {
+      const done = completed.includes(n.key);
+      return `<span class="ai-readiness-pill ${done ? 'ai-readiness-done' : 'ai-readiness-pending'}">${done ? '\u2713' : '\u2014'} ${n.label}</span>`;
     })
     .join('');
 
@@ -517,3 +507,5 @@ function wireCopy(container: HTMLElement): void {
     }, 2000);
   });
 }
+
+initAiAnalysis();

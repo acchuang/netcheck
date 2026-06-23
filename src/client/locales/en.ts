@@ -3,8 +3,11 @@ export const en = {
   'page.title': 'NetCheck',
 
   // Nav
-  'nav.dns': 'DNS Check',
-  'nav.speed': 'Speed Test',
+  'nav.overview': 'Overview',
+  'nav.dns': 'DNS',
+  'nav.speed': 'Speed',
+  'nav.security': 'Security',
+  'nav.privacy': 'Privacy',
   'nav.adblock': 'Ad Block Test',
   'nav.export': 'Export',
   'nav.exportReport': 'Export Report',
@@ -778,7 +781,7 @@ export const en = {
     'On-Device AI requires downloading a language model (~23 MB). This runs entirely in your browser for full privacy. The download happens once and the model is cached for future use.',
   'ai.downloadConfirm': 'Download & Analyze',
   'ai.downloadCancel': 'Cancel',
-  'nav.ai': 'AI Analysis',
+  'nav.ai': 'AI',
 
   // Breach Check
   'breachCheck.check': 'Check Password',

@@ -65,11 +65,11 @@ export function focusSection(id: string): void {
 /** Focus the run button of the active section. */
 export function focusRunButton(sectionId: string): void {
   const btnMap: Record<string, string> = {
+    dns: 'dns-lookup-btn',
     speed: 'speed-start-btn',
-    headers: 'headers-check-btn',
-    fingerprint: 'fp-start-btn',
-    quality: 'quality-run-btn',
-    network: 'network-run-btn',
+    security: 'sec-target-btn',
+    privacy: 'pb-fp-start-btn',
+    ai: 'ai-analyze-btn',
   };
   const id = btnMap[sectionId];
   if (id) document.getElementById(id)?.focus();
@@ -77,15 +77,12 @@ export function focusRunButton(sectionId: string): void {
 
 /** Keyboard shortcut map. */
 const tabShortcuts: Record<string, string> = {
-  '1': 'dns',
-  '2': 'speed',
-  '3': 'adblock',
-  '4': 'headers',
-  '5': 'fingerprint',
-  '6': 'quality',
-  '7': 'network',
-  '8': 'about',
-  '9': 'ai-analysis',
+  '1': 'overview',
+  '2': 'dns',
+  '3': 'speed',
+  '4': 'security',
+  '5': 'privacy',
+  '6': 'ai',
 };
 
 function hideExport(): void {
@@ -112,7 +109,7 @@ export function initKeyboardShortcuts(): void {
     const target = e.target as HTMLElement;
     if (target.matches('input, textarea, select, [contenteditable]')) return;
 
-    // Tab switching: 1–8
+    // Tab switching: 1–6
     if (tabShortcuts[e.key] && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
       activateTab(tabShortcuts[e.key]);
@@ -122,7 +119,7 @@ export function initKeyboardShortcuts(): void {
     // Run active tab's test: r/R
     if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
-      const activeTab = document.querySelector('.nav-link.active')?.getAttribute('data-tab');
+      const activeTab = document.querySelector('.tab-link.active')?.getAttribute('data-tab');
       if (activeTab) focusRunButton(activeTab);
       return;
     }
@@ -130,7 +127,7 @@ export function initKeyboardShortcuts(): void {
     // Previous / Next tab: ← / →
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
-      const tabs = Array.from(document.querySelectorAll<HTMLElement>('.nav-link[data-tab]'));
+      const tabs = Array.from(document.querySelectorAll<HTMLElement>('.tab-link[data-tab]'));
       const activeIdx = tabs.findIndex((t) => t.classList.contains('active'));
       if (activeIdx === -1) return;
       const nextIdx =
@@ -143,6 +140,6 @@ export function initKeyboardShortcuts(): void {
 }
 
 function activateTab(tabId: string): void {
-  const link = document.querySelector<HTMLElement>(`.nav-link[data-tab="${tabId}"]`);
+  const link = document.querySelector<HTMLElement>(`.tab-link[data-tab="${tabId}"]`);
   if (link) link.click();
 }
