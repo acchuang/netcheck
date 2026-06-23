@@ -1,11 +1,19 @@
 import { tlsState, runTlsCheck, type TlsInfo } from '../state/tls-state';
-import { headersState } from '../state/headers-state';
-import type {
-  CspAnalysis,
-  HeaderCheckResult,
-  HeaderSuggestion,
-  PermissionsPolicyAnalysis,
-} from '../headers-ui';
+import {
+  headersState,
+  type CspAnalysis,
+  type HeaderCheckResult,
+  type HeaderSuggestion,
+  type PermissionsPolicyAnalysis,
+} from '../state/headers-state';
+import { http3State, runHttp3Test, type H3TestResult } from '../state/http3-state';
+import {
+  emailState,
+  runEmailCheck,
+  type EmailSecurityResult,
+  type EmailWarning,
+} from '../state/email-state';
+import { initCertTransparency } from '../cert-transparency';
 import { t } from '../i18n';
 import { escapeHtml } from '../escape';
 import { renderBadge } from '../components/badge';
@@ -132,6 +140,9 @@ export function initSecurityScan(): void {
   void runTlsCheck();
 
   initTargetScan();
+  initHttp3Panel();
+  initEmailPanel();
+  initCertTransparency();
 }
 
 function renderShell(container: HTMLElement): void {
@@ -156,9 +167,26 @@ function renderShell(container: HTMLElement): void {
       <div id="sec-target-content">
         <div id="sec-headers-panel" class="scan-panel"></div>
         <div id="sec-tls-panel" class="scan-panel hidden"></div>
-        <div id="sec-http3-panel" class="scan-panel hidden"><div class="csp-analysis-card"><p class="info-muted">HTTP/3 scan — coming in Task 8b.</p></div></div>
-        <div id="sec-ct-panel" class="scan-panel hidden"><div class="csp-analysis-card"><p class="info-muted">Certificate Transparency scan — coming in Task 8b.</p></div></div>
-        <div id="sec-email-panel" class="scan-panel hidden"><div class="csp-analysis-card"><p class="info-muted">Email security scan — coming in Task 8b.</p></div></div>
+        <div id="sec-http3-panel" class="scan-panel hidden">
+          <div class="sec-panel-controls" style="display:flex;gap:var(--space-2);align-items:center;margin-bottom:var(--space-3)">
+            <button id="http3-run-btn" class="btn btn-primary">${t('http3.runTest', 'Test HTTP/3 Connectivity')}</button>
+          </div>
+          <div id="http3-content"></div>
+        </div>
+        <div id="sec-ct-panel" class="scan-panel hidden">
+          <div class="sec-panel-controls" style="display:flex;gap:var(--space-2);align-items:center;margin-bottom:var(--space-3)">
+            <input id="ct-domain-input" type="text" class="input" placeholder="example.com" style="flex:1;min-width:240px" />
+            <button id="ct-check-btn" class="btn btn-primary">${t('certTransparency.search', 'Search CT Logs')}</button>
+          </div>
+          <div id="ct-content"></div>
+        </div>
+        <div id="sec-email-panel" class="scan-panel hidden">
+          <div class="sec-panel-controls" style="display:flex;gap:var(--space-2);align-items:center;margin-bottom:var(--space-3)">
+            <input id="email-domain-input" type="text" class="input" placeholder="example.com" style="flex:1;min-width:240px" />
+            <button id="email-check-btn" class="btn btn-primary">${t('emailSecurity.check', 'Check Email Security')}</button>
+          </div>
+          <div id="email-content"></div>
+        </div>
       </div>
     </section>
   `;
@@ -634,6 +662,360 @@ function renderTlsTargetResults(data: TlsTargetResult): string {
       ${weaknessesHtml}
     </div>
   `;
+}
+
+function initHttp3Panel(): void {
+  const btn = document.getElementById('http3-run-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    btn.setAttribute('disabled', 'true');
+    btn.textContent = t('http3.testing', 'Testing...');
+    await runHttp3Test();
+    btn.textContent = t('http3.runTest', 'Test HTTP/3 Connectivity');
+    btn.removeAttribute('disabled');
+  });
+  const container = document.getElementById('http3-content')!;
+  http3State.result.subscribe(() => renderHttp3Content(container));
+  http3State.error.subscribe(() => renderHttp3Content(container));
+  http3State.loading.subscribe(() => renderHttp3Content(container));
+}
+
+function renderHttp3Content(container: HTMLElement): void {
+  const loading = http3State.loading.get();
+  const error = http3State.error.get();
+  const result = http3State.result.get();
+
+  if (loading && !result) {
+    container.innerHTML = `<div class="h3p-loading"><div class="spinner"></div><p>${t('http3.testing', 'Testing HTTP/3 connectivity...')}</p></div>`;
+    return;
+  }
+
+  if (error && !result) {
+    container.innerHTML = `<div class="h3p-error"><p>${t('http3.error', 'HTTP/3 test failed')}: ${escapeHtml(error)}</p><button class="btn btn-primary" id="http3-retry-btn">${t('http3.retry', 'Retry')}</button></div>`;
+    document.getElementById('http3-retry-btn')?.addEventListener('click', () => void runHttp3Test());
+    return;
+  }
+
+  if (result) {
+    container.innerHTML = renderHttp3Result(result);
+    return;
+  }
+
+  container.innerHTML = `<div class="h3p-placeholder"><p>${t('http3.ready', 'Click the button above to test whether your connection supports HTTP/3 (QUIC).')}</p></div>`;
+}
+
+function renderHttp3Result(info: H3TestResult): string {
+  const h3Badge = renderBadge({
+    status: info.supportsH3 ? 'pass' : 'fail',
+    label: info.supportsH3 ? 'HTTP/3 Supported' : 'HTTP/3 Not Supported',
+  }).outerHTML;
+  const quicBadge = renderBadge({
+    status: info.supportsH3 ? 'pass' : 'fail',
+    label: info.supportsH3 ? 'QUIC Active' : 'QUIC Inactive',
+  }).outerHTML;
+  const altSvcDisplay = info.altSvc ? escapeHtml(info.altSvc) : '—';
+  const zrttText =
+    info.zeroRtt === true
+      ? t('http3.zeroRttDetected', 'Detected')
+      : info.zeroRtt === false
+        ? t('http3.zeroRttNotDetected', 'Not detected')
+        : t('http3.zeroRttUnknown', 'Unknown');
+
+  const barHtml = info.pingResults
+    .map((p, i) => {
+      const cls = p.protocol.startsWith('h3')
+        ? 'h3p-bar-h3'
+        : p.protocol === 'h2'
+          ? 'h3p-bar-h2'
+          : 'h3p-bar-h1';
+      return `<div class="h3p-bar-wrapper"><div class="h3p-bar ${cls}" style="height:${Math.max(4, Math.min(80, p.latency / 2))}px" title="Ping ${i + 1}: ${p.protocol} ${p.latency}ms"></div><span class="h3p-bar-label">${p.latency}ms</span></div>`;
+    })
+    .join('');
+
+  const protocolLabel = info.supportsH3
+    ? t('http3.using', info.dominantProtocol)
+    : t('http3.notSupported', 'Your browser does not support HTTP/3');
+
+  return `
+    <div class="h3p-results">
+      <div class="h3p-status-card">
+        <div class="h3p-status-title">${escapeHtml(protocolLabel)}</div>
+        <div class="h3p-status-sub">${info.h3PingCount}/${info.totalPings} pings used HTTP/3</div>
+      </div>
+      <div class="h3p-bars">${barHtml}</div>
+      <div class="h3p-stats">
+        <div class="h3p-stat"><span class="h3p-stat-label">${t('http3.medianLatency', 'Median Latency')}</span><span class="h3p-stat-value">${info.medianLatency ?? '—'} ms</span></div>
+        <div class="h3p-stat"><span class="h3p-stat-label">${t('http3.zeroRtt', '0-RTT Connection')}</span><span class="h3p-stat-value">${escapeHtml(zrttText)}</span></div>
+        <div class="h3p-stat"><span class="h3p-stat-label">${t('http3.altSvc', 'Alt-Svc Advertisement')}</span><span class="h3p-stat-value">${altSvcDisplay}</span></div>
+        <div class="h3p-stat"><span class="h3p-stat-label">HTTP/3</span><span class="h3p-stat-value">${h3Badge}</span></div>
+        <div class="h3p-stat"><span class="h3p-stat-label">QUIC</span><span class="h3p-stat-value">${quicBadge}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function initEmailPanel(): void {
+  const btn = document.getElementById('email-check-btn');
+  const input = document.getElementById('email-domain-input') as HTMLInputElement | null;
+  if (!btn || !input) return;
+
+  btn.addEventListener('click', async () => {
+    const domain = input.value.trim();
+    if (!domain) return;
+    btn.setAttribute('disabled', 'true');
+    btn.textContent = t('emailSecurity.checking', 'Checking...');
+    await runEmailCheck(domain);
+    btn.textContent = t('emailSecurity.check', 'Check Email Security');
+    btn.removeAttribute('disabled');
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') btn.click();
+  });
+
+  const container = document.getElementById('email-content')!;
+  emailState.result.subscribe(() => renderEmailContent(container));
+  emailState.error.subscribe(() => renderEmailContent(container));
+  emailState.loading.subscribe(() => renderEmailContent(container));
+}
+
+function renderEmailContent(container: HTMLElement): void {
+  const loading = emailState.loading.get();
+  const error = emailState.error.get();
+  const result = emailState.result.get();
+
+  if (loading && !result) {
+    container.innerHTML = `<div class="email-loading"><div class="spinner"></div><p>${t('emailSecurity.checking', 'Checking email security records...')}</p></div>`;
+    return;
+  }
+
+  if (error && !result) {
+    container.innerHTML = `<div class="email-error"><p>${t('emailSecurity.error', 'Email security check failed')}: ${escapeHtml(error)}</p><button class="btn btn-primary" id="email-retry-btn">${t('emailSecurity.retry', 'Retry')}</button></div>`;
+    document.getElementById('email-retry-btn')?.addEventListener('click', () => {
+      const inputEl = document.getElementById('email-domain-input') as HTMLInputElement | null;
+      if (inputEl?.value) void runEmailCheck(inputEl.value.trim());
+    });
+    return;
+  }
+
+  if (result) {
+    container.innerHTML = renderEmailResult(result);
+    return;
+  }
+
+  container.innerHTML = `<div class="email-placeholder"><p>${t('emailSecurity.ready', 'Enter a domain above to check its email security records (SPF, DKIM, DMARC).')}</p></div>`;
+}
+
+function spfStatus(r: { present: boolean; valid: boolean }): SecurityStatus {
+  if (!r.present) return 'fail';
+  if (!r.valid) return 'warn';
+  return 'pass';
+}
+
+function dmarcStatus(r: { present: boolean; valid: boolean }): SecurityStatus {
+  if (!r.present) return 'fail';
+  if (!r.valid) return 'warn';
+  return 'pass';
+}
+
+function renderEmailResult(info: EmailSecurityResult): string {
+  const spfBadge = renderBadge({
+    status: spfStatus(info.spf),
+    label: info.spf.present
+      ? info.spf.valid
+        ? t('emailSecurity.present', 'Present')
+        : t('emailSecurity.invalid', 'Invalid')
+      : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+
+  const dkimBadge = renderBadge({
+    status: info.dkim.found ? 'pass' : 'fail',
+    label: info.dkim.found ? t('emailSecurity.present', 'Present') : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+
+  const dmarcBadge = renderBadge({
+    status: dmarcStatus(info.dmarc),
+    label: info.dmarc.present
+      ? info.dmarc.valid
+        ? t('emailSecurity.present', 'Present')
+        : t('emailSecurity.invalid', 'Invalid')
+      : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+
+  const bimiBadge = renderBadge({
+    status: info.bimi.present ? 'pass' : 'fail',
+    label: info.bimi.present ? t('emailSecurity.present', 'Present') : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+
+  const mtaStsBadge = renderBadge({
+    status: info.mtaSts.present ? (info.mtaSts.mode === 'enforce' ? 'pass' : 'warn') : 'fail',
+    label: info.mtaSts.present
+      ? info.mtaSts.mode === 'enforce'
+        ? 'Enforce'
+        : info.mtaSts.mode === 'testing'
+          ? 'Testing'
+          : 'None'
+      : t('emailSecurity.missing', 'Missing'),
+  }).outerHTML;
+
+  const spfValue = info.spf.value ? `<div class="email-record-value">${escapeHtml(info.spf.value)}</div>` : '';
+  const spfMechs =
+    info.spf.mechanisms.length > 0
+      ? `<div class="email-mechanisms">${info.spf.mechanisms.map((m) => `<span class="email-mechanism-tag">${escapeHtml(m)}</span>`).join(' ')}</div>`
+      : '';
+  const dkimExtra = info.dkim.found
+    ? `<div class="email-record-detail">${t('emailSecurity.selector', 'Selector')}: ${escapeHtml(info.dkim.selector || '')} | ${t('emailSecurity.algorithm', 'Algorithm')}: ${escapeHtml(info.dkim.algorithm || '')}</div>`
+    : '';
+  const dmarcPolicy = info.dmarc.policy
+    ? `<div class="email-record-detail">${t('emailSecurity.policy', 'Policy')}: ${escapeHtml(info.dmarc.policy)}${info.dmarc.subdomainPolicy ? ` | ${t('emailSecurity.subdomainPolicy', 'Subdomain Policy')}: ${escapeHtml(info.dmarc.subdomainPolicy)}` : ''}</div>`
+    : '';
+  const bimiExtra = info.bimi.present
+    ? `<div class="email-record-detail">${info.bimi.logoUrl ? `Logo: ${escapeHtml(info.bimi.logoUrl)}` : ''}${info.bimi.vmcUrl ? ` | VMC: ${escapeHtml(info.bimi.vmcUrl)}` : ''}</div>`
+    : '';
+  const mtaStsExtra = info.mtaSts.present
+    ? `<div class="email-record-detail">${info.mtaSts.mode ? `Mode: ${escapeHtml(info.mtaSts.mode)}` : ''}${info.mtaSts.maxAge ? ` | Max Age: ${escapeHtml(String(info.mtaSts.maxAge))}s` : ''}</div>`
+    : '';
+
+  return `
+    <div class="email-results">
+      <div class="email-grade-card">
+        <div class="email-grade-grade" style="color:${GRADE_COLORS[info.grade] || 'var(--text-secondary)'}">${info.grade}</div>
+        <div class="email-grade-label">${t('emailSecurity.grade', 'Email Security Grade')}</div>
+      </div>
+      <div class="email-details">
+        <div class="email-card">
+          <div class="email-card-header"><span class="email-card-title">${t('emailSecurity.spf', 'SPF Record')}</span>${spfBadge}</div>
+          ${spfValue}${spfMechs}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header"><span class="email-card-title">${t('emailSecurity.dkim', 'DKIM Record')}</span>${dkimBadge}</div>
+          ${dkimExtra}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header"><span class="email-card-title">${t('emailSecurity.dmarc', 'DMARC Record')}</span>${dmarcBadge}</div>
+          ${dmarcPolicy}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header"><span class="email-card-title">BIMI Record</span>${bimiBadge}</div>
+          ${bimiExtra}
+        </div>
+        <div class="email-card">
+          <div class="email-card-header"><span class="email-card-title">MTA-STS</span>${mtaStsBadge}</div>
+          ${mtaStsExtra}
+        </div>
+      </div>
+      ${renderEmailWarnings(info.warnings)}
+      <div class="email-recommendations">${renderEmailRecommendations(info)}</div>
+    </div>
+  `;
+}
+
+function renderEmailWarnings(warnings: EmailWarning[]): string {
+  if (!warnings || warnings.length === 0) return '';
+  return `
+    <div class="csp-analysis-card" style="margin-top:12px;border-color:var(--amber)">
+      <h4 class="csp-issues-title" style="color:var(--amber)">${t('emailSecurity.warnings.title', 'Warnings')}</h4>
+      ${warnings
+        .map(
+          (w) => `<div class="csp-issue-item">
+            <span class="csp-issue-severity" style="background:var(--amber)20;color:var(--amber);font-size:12px">⚠</span>
+            <span class="csp-issue-message" style="font-size:13px">${escapeHtml(w.message)}</span>
+          </div>`,
+        )
+        .join('')}
+    </div>
+  `;
+}
+
+function renderEmailRecommendations(info: EmailSecurityResult): string {
+  const items: { icon: string; title: string; desc: string; fixes: string[] }[] = [];
+
+  if (!info.spf.present || !info.spf.valid) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
+      title: 'Add an SPF record',
+      desc: 'SPF prevents email spoofing by specifying which servers can send email for your domain.',
+      fixes: ['Add TXT record: v=spf1 mx -all'],
+    });
+  }
+
+  if (!info.dkim.found) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      title: 'Set up DKIM signing',
+      desc: 'DKIM adds a digital signature to emails, proving they were not modified in transit.',
+      fixes: ['Generate a DKIM key and add it to your DNS as TXT at default._domainkey'],
+    });
+  }
+
+  if (!info.dmarc.present) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+      title: 'Add a DMARC policy',
+      desc: 'DMARC tells receiving servers how to handle emails that fail SPF or DKIM checks.',
+      fixes: ['Add TXT record at _dmarc: v=DMARC1; p=none; rua=mailto:dmarc@example.com'],
+    });
+  } else if (info.dmarc.policy === 'none') {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+      title: 'Upgrade DMARC to quarantine or reject',
+      desc: 'Your DMARC policy is set to "none", which only monitors. Upgrade for real protection.',
+      fixes: ['Change p=none to p=quarantine or p=reject in your DMARC record'],
+    });
+  }
+
+  if (!info.bimi.present) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      title: 'Add a BIMI record',
+      desc: 'BIMI displays your brand logo in supported email clients, increasing trust and visibility.',
+      fixes: ['Add TXT record at default._bimi: v=BIMI1; l=https://example.com/logo.svg'],
+    });
+  }
+
+  if (!info.mtaSts.present) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      title: 'Set up MTA-STS',
+      desc: 'MTA-STS enforces TLS for SMTP connections, preventing downgrade attacks on email in transit.',
+      fixes: [
+        'Add TXT record at _mta-sts: v=STSv1; id=20260101;',
+        'Create https://mta-sts.example/.well-known/mta-sts.txt with mode: enforce',
+      ],
+    });
+  } else if (info.mtaSts.mode === 'testing') {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      title: 'Upgrade MTA-STS to enforce mode',
+      desc: 'Your MTA-STS policy is in testing mode. Upgrade to enforce for real TLS protection.',
+      fixes: ['Change mode: testing to mode: enforce in your mta-sts.txt policy'],
+    });
+  }
+
+  if (items.length === 0) {
+    items.push({
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 12 11.5 14.5 16 9.5"/><circle cx="12" cy="12" r="10"/></svg>',
+      title: 'All checks passed',
+      desc: 'Your domain has SPF, DKIM, and DMARC properly configured. Your email is well-protected against spoofing and phishing.',
+      fixes: [],
+    });
+  }
+
+  const cardsHtml = items
+    .map(
+      (item) => `
+    <div class="suggestion-card">
+      <div class="suggestion-top">
+        <div class="suggestion-icon-svg">${item.icon}</div>
+        <div class="suggestion-info"><div class="suggestion-name">${item.title}</div></div>
+      </div>
+      <div class="suggestion-desc">${item.desc}</div>
+      ${item.fixes.length > 0 ? `<ul class="suggestion-fixes">${item.fixes.map((f) => `<li>${f}</li>`).join('')}</ul>` : ''}
+    </div>`,
+    )
+    .join('');
+
+  return `<h3 class="dash-section-title">Recommendations</h3><div class="email-recommendations-grid">${cardsHtml}</div>`;
 }
 
 initSecurityScan();
