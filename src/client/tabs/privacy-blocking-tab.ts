@@ -4,11 +4,16 @@ import { animateNumber, animateRing } from '../ui-utils';
 import { appState } from '../state/shared-state';
 import { adblockState } from '../state/adblock-state';
 import { fingerprintState } from '../state/fingerprint-state';
+import { cookieState, runCookieAudit, type CookieAuditResult } from '../state/cookie-state';
 import { safeInitAsync } from '../error-boundary';
 import { AdBlockTest, type TestWithResult, type CategoryResult } from '../adblock-test';
 import { FilterListDetector, type FilterListResult } from '../filter-lists';
 import { FingerprintDetector } from '../fingerprint';
 import { CnameChecker } from '../adblock-cname';
+import { runPrivacyExposure } from '../privacy-exposure';
+import { initBreachCheck } from '../breach-check';
+import { escapeHtml } from '../escape';
+import { renderBadge } from '../components/badge';
 import { renderSubNav, type SubNavSection } from '../components/sub-nav';
 import { onLocaleChange } from '../locale-events';
 
@@ -190,13 +195,176 @@ function renderFingerprintSection(): string {
   `;
 }
 
-function renderPlaceholder(label: string): string {
+function renderExposureSection(): string {
   return `
-    <div class="privacy-subsection" data-section="${label.toLowerCase()}">
-      <div class="card">
-        <div class="card-body" style="text-align:center;padding:var(--space-8)">
-          <p style="font-size:15px;font-weight:600;color:var(--text-secondary);margin:0">${label}</p>
-          <p style="font-size:13px;color:var(--text-tertiary);margin:var(--space-2) 0 0">Coming in Task 9b</p>
+    <div class="privacy-subsection" data-section="exposure">
+      <div class="card card-hero card-accent-amber">
+        <div class="card-header">
+          <h2 class="card-title">${t('privacyExposure.check')}</h2>
+          <p class="subtitle" style="margin:0;font-size:13px;color:var(--text-secondary)">${t('privacyExposure.score')}</p>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-4);align-items:center">
+          <button type="button" id="privacy-exposure-btn" class="btn btn-primary">${t('privacyExposure.check')}</button>
+          <div id="privacy-exposure-results" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+const COOKIE_GRADE_COLORS: Record<string, string> = {
+  'A+': 'var(--grade-a-plus, #22c55e)',
+  A: 'var(--grade-a, #4ade80)',
+  B: 'var(--grade-b, #f59e0b)',
+  C: 'var(--grade-c, #f97316)',
+  D: 'var(--grade-d, #ef4444)',
+  F: 'var(--grade-f, #dc2626)',
+};
+
+const COOKIE_CAT_COLORS: Record<string, string> = {
+  essential: 'var(--green, #2dd4bf)',
+  analytics: 'var(--amber, #fbbf24)',
+  advertising: 'var(--red, #f87171)',
+  unknown: 'var(--text-muted, #565960)',
+};
+
+function formatCookieSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderCookieResult(info: CookieAuditResult): string {
+  const pieSegments = Object.entries(info.categoryBreakdown)
+    .filter(([, count]) => count > 0)
+    .map(([cat, count]) => {
+      const pct = Math.round((count / info.totalCount) * 100);
+      return `<div class="cookie-pie-segment" style="flex: ${pct}; background: ${COOKIE_CAT_COLORS[cat] || 'var(--text-muted)'}" title="${cat}: ${count} (${pct}%)"></div>`;
+    })
+    .join('');
+
+  const rowsHtml = info.entries
+    .map((e) => {
+      const catBadge = renderBadge({
+        status: e.category === 'essential' ? 'pass' : e.category === 'analytics' ? 'warn' : 'fail',
+        label: e.category,
+      }).outerHTML;
+      const prefix = e.isHostPrefix ? 'Host' : e.isSecurePrefix ? 'Secure' : '\u2014';
+      return `<tr>
+      <td class="cookie-table-name">${escapeHtml(e.name)}</td>
+      <td>${catBadge}</td>
+      <td>${formatCookieSize(e.sizeBytes)}</td>
+      <td>${prefix}</td>
+    </tr>`;
+    })
+    .join('');
+
+  return `
+    <div class="cookie-results">
+      <div class="cookie-summary">
+        <div class="cookie-grade-card">
+          <div class="cookie-grade-grade" style="color:${COOKIE_GRADE_COLORS[info.grade] || 'var(--text-secondary)'}">${info.grade}</div>
+          <div class="cookie-grade-label">${t('cookie.grade', 'Cookie Grade')}</div>
+        </div>
+        <div class="cookie-summary-stats">
+          <div class="cookie-stat">
+            <span class="cookie-stat-label">${t('cookie.total', 'Total Cookies')}</span>
+            <span class="cookie-stat-value">${info.totalCount}</span>
+          </div>
+          <div class="cookie-stat">
+            <span class="cookie-stat-label">${t('cookie.size', 'Total Size')}</span>
+            <span class="cookie-stat-value">${formatCookieSize(info.totalSizeBytes)}</span>
+          </div>
+          <div class="cookie-stat">
+            <span class="cookie-stat-label">${t('cookie.secure', 'Cookies with Secure prefix')}</span>
+            <span class="cookie-stat-value">${info.secureCount} (${info.securePercentage}%)</span>
+          </div>
+        </div>
+      </div>
+      <div class="cookie-pie">
+        <span class="cookie-pie-title">${t('cookie.category', 'Category Breakdown')}</span>
+        <div class="cookie-pie-chart">${pieSegments}</div>
+        <div class="cookie-pie-legend">
+          ${Object.entries(info.categoryBreakdown)
+            .filter(([, c]) => c > 0)
+            .map(
+              ([cat, count]) =>
+                `<span class="cookie-legend-item"><span class="cookie-legend-dot" style="background:${COOKIE_CAT_COLORS[cat] || 'var(--text-muted)'}"></span>${cat}: ${count}</span>`,
+            )
+            .join('')}
+        </div>
+      </div>
+      <table class="cookie-table">
+        <thead><tr><th>${t('cookie.name')}</th><th>${t('cookie.category')}</th><th>${t('cookie.sizeColumn')}</th><th>${t('cookie.prefix')}</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div class="cookie-note">
+        <p>${t('cookie.httpOnlyNote', 'HttpOnly cookies set by the server are not readable for security reasons and are not shown.')}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderCookieRecommendations(info: CookieAuditResult): string {
+  const advCount = info.categoryBreakdown.advertising || 0;
+  if (advCount === 0 && info.securePercentage >= 75 && info.totalCount <= 10) {
+    return `<div class="suggestion-card"><div class="suggestion-top"><div class="suggestion-icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 12 11.5 14.5 16 9.5"/><circle cx="12" cy="12" r="10"/></svg></div><div class="suggestion-info"><div class="suggestion-name">${t('cookie.allGood')}</div></div></div><div class="suggestion-desc">${t('cookie.allGoodDesc')}</div></div>`;
+  }
+  const items: { title: string; desc: string }[] = [];
+  if (advCount > 0) {
+    items.push({ title: t('cookie.reduceTracking'), desc: t('cookie.reduceTrackingDesc', advCount) });
+  }
+  if (info.totalCount > 25) {
+    items.push({ title: t('cookie.highCount'), desc: t('cookie.highCountDesc', info.totalCount) });
+  }
+  if (info.securePercentage < 50) {
+    items.push({ title: t('cookie.lowSecure'), desc: t('cookie.lowSecureDesc', info.securePercentage) });
+  }
+  if (items.length === 0) return '';
+  return items
+    .map(
+      (item) =>
+        `<div class="suggestion-card"><div class="suggestion-top"><div class="suggestion-info"><div class="suggestion-name">${item.title}</div></div></div><div class="suggestion-desc">${item.desc}</div></div>`,
+    )
+    .join('');
+}
+
+function renderCookiesSection(): string {
+  return `
+    <div class="privacy-subsection" data-section="cookies">
+      <div class="card card-hero card-accent-emerald">
+        <div class="card-header">
+          <h2 class="card-title">${t('cookie.title')}</h2>
+          <p class="subtitle" style="margin:0;font-size:13px;color:var(--text-secondary)">${t('cookie.desc')}</p>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-4);align-items:center">
+          <button type="button" id="cookie-audit-btn" class="btn btn-primary">${t('cookie.audit')}</button>
+          <div id="cookie-content" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderBreachSection(): string {
+  return `
+    <div class="privacy-subsection" data-section="breach">
+      <div class="card card-hero card-accent-amber">
+        <div class="card-header">
+          <h2 class="card-title">${t('breachCheck.check')}</h2>
+          <p class="subtitle" style="margin:0;font-size:13px;color:var(--text-secondary)">${t('breachCheck.checkingDesc')}</p>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-4);align-items:center;width:100%">
+          <div style="display:flex;gap:var(--space-2);width:100%;max-width:420px;align-items:center">
+            <div style="position:relative;flex:1">
+              <input type="password" id="breach-password-input" placeholder="${t('breachCheck.check')}" autocomplete="off" style="width:100%;padding:8px 40px 8px 12px;border:1px solid var(--surface-tertiary);border-radius:8px;background:var(--surface-secondary);color:var(--text-primary);font-size:14px" />
+              <button type="button" id="breach-toggle-visibility" aria-label="toggle visibility" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:18px;height:18px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <button type="button" id="breach-check-btn" class="btn btn-primary" disabled>${t('breachCheck.check')}</button>
+          </div>
+          <div id="breach-results" style="width:100%"></div>
         </div>
       </div>
     </div>
@@ -209,9 +377,9 @@ function renderShell(): string {
     <div id="pb-subsections">
       ${renderAdBlockSection()}
       ${renderFingerprintSection()}
-      ${renderPlaceholder('Exposure')}
-      ${renderPlaceholder('Cookies')}
-      ${renderPlaceholder('Breach')}
+      ${renderExposureSection()}
+      ${renderCookiesSection()}
+      ${renderBreachSection()}
     </div>
   `;
 }
@@ -617,6 +785,58 @@ function wireFingerprintButton(): void {
   if (btn) btn.addEventListener('click', () => void runFingerprintScan());
 }
 
+function renderCookieContent(): void {
+  const container = document.getElementById('cookie-content');
+  if (!container) return;
+  const loading = cookieState.loading.get();
+  const error = cookieState.error.get();
+  const result = cookieState.result.get();
+
+  if (loading && !result) {
+    container.innerHTML = `<div class="cookie-loading"><div class="spinner"></div><p>${t('cookie.auditing', 'Auditing cookies...')}</p></div>`;
+    return;
+  }
+
+  if (error && !result) {
+    container.innerHTML = `<div class="cookie-error"><p>${t('cookie.error', 'Cookie audit failed')}: ${error}</p><button class="btn btn-primary" id="cookie-retry-btn" style="margin-top:0.5rem">${t('cookie.retry', 'Retry')}</button></div>`;
+    const retryBtn = document.getElementById('cookie-retry-btn');
+    if (retryBtn) retryBtn.addEventListener('click', () => void runCookieAudit());
+    return;
+  }
+
+  if (result) {
+    if (result.totalCount === 0) {
+      container.innerHTML = `<div class="cookie-empty"><p>${t('cookie.noCookie', 'No cookies detected. Your browser may block cookies, or this site does not set any.')}</p></div>`;
+    } else {
+      container.innerHTML = renderCookieResult(result) + `<div class="cookie-recommendations">${renderCookieRecommendations(result)}</div>`;
+    }
+    return;
+  }
+
+  container.innerHTML = `<div class="cookie-placeholder"><p>${t('cookie.ready', 'Click the button above to audit cookies stored by this site.')}</p></div>`;
+}
+
+function wireExposureButton(): void {
+  const btn = document.getElementById('privacy-exposure-btn');
+  if (btn) btn.addEventListener('click', () => void runPrivacyExposure());
+}
+
+function wireCookieButton(): void {
+  const btn = document.getElementById('cookie-audit-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = t('cookie.auditing', 'Auditing...');
+    await runCookieAudit();
+    btn.textContent = t('cookie.audit');
+    btn.disabled = false;
+  });
+}
+
+function wireBreachSection(): void {
+  initBreachCheck();
+}
+
 function renderPrivacyContent(container: HTMLElement): void {
   container.innerHTML = renderShell();
   const subnavMount = document.getElementById('pb-subnav-mount')!;
@@ -624,6 +844,10 @@ function renderPrivacyContent(container: HTMLElement): void {
   subnavMount.appendChild(nav);
   showActiveSection(container, activeSection);
   wireFingerprintButton();
+  wireExposureButton();
+  wireCookieButton();
+  wireBreachSection();
+  renderCookieContent();
 }
 
 let initialized = false;
@@ -681,6 +905,10 @@ export function initPrivacyBlocking(): void {
       if (!container || categories.length === 0) return;
       renderFingerprintCategories(categories);
     });
+
+    cookieState.result.subscribe(() => renderCookieContent());
+    cookieState.error.subscribe(() => renderCookieContent());
+    cookieState.loading.subscribe(() => renderCookieContent());
   }
 }
 
