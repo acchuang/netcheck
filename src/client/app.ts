@@ -1,98 +1,129 @@
 import './app.css';
 import { ReportExporter } from './export-report';
 import { t } from './i18n';
-import { renderSkeletonRows } from './ui-utils';
-import { initHeadersCheck } from './headers-ui';
 import { initTheme } from './theme';
 import { initI18n } from './i18n';
-import { runDnsChecks, runDnsLookup, runDnsAudit } from './dns-ui';
-import { runAdBlockTests } from './adblock-ui';
-import { initSpeedTest } from './speed-ui';
-import { runFilterListDetection } from './filter-ui';
-import { initFingerprint } from './fingerprint-ui';
+import { initShare, buildSummary } from './share';
 import { initAnalytics } from './analytics';
 import { initOnboarding } from './onboarding';
-import { initConnectionQuality } from './connection-quality-ui';
-import { initNetworkMap } from './network-map-ui';
-import { initKeyboardShortcuts } from './a11y';
-import { initShare, buildSummary } from './share';
-
 import { initMotion } from './motion';
-import { safeInit, safeInitAsync } from './error-boundary';
+import { safeInit } from './error-boundary';
 import { initTooltips } from './tooltip';
-import { initDashboard } from './tabs/dashboard-tab';
-import { initTlsCheck } from './tabs/tls-tab';
-import { initHistory } from './tabs/history-tab';
-import { initAiAnalysis } from './ai-analysis-ui';
-import { refreshHistory } from './tabs/history-tab';
-import { initEmailSecurity } from './tabs/email-tab';
-import { initHttp3Test } from './tabs/http3-tab';
-import { initCookieAudit } from './tabs/cookie-tab';
-import { initBreachCheck } from './breach-check';
-import { initCertTransparency } from './cert-transparency';
-import { initPrivacyExposure } from './privacy-exposure';
-import { initDnssecValidation } from './dnssec-validation';
-import { initNetworkChange } from './network-change';
+
+export const LEGACY_REDIRECTS: Record<string, string> = {
+  dashboard: 'overview',
+  about: 'overview',
+  dns: 'dns',
+  speed: 'speed',
+  adblock: 'privacy',
+  fingerprint: 'privacy',
+  cookies: 'privacy',
+  breach: 'privacy',
+  headers: 'security',
+  tls: 'security',
+  http3: 'security',
+  'cert-transparency': 'security',
+  'email-security': 'security',
+  quality: 'speed',
+  network: 'speed',
+  history: 'speed',
+  'ai-analysis': 'ai',
+};
+
+const WORKFLOW_NAMES: Record<string, string> = {
+  overview: 'Overview',
+  dns: 'DNS',
+  speed: 'Speed & Performance',
+  security: 'Security Scan',
+  privacy: 'Privacy & Blocking',
+  ai: 'AI Analysis',
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-  safeInit('Dashboard', initDashboard);
-  safeInit('TLS Check', initTlsCheck);
-  safeInit('History', initHistory);
-  safeInit('AI Analysis', initAiAnalysis);
-  safeInit('Email Security', initEmailSecurity);
-  safeInit('HTTP/3 Test', initHttp3Test);
-  safeInit('Cookie Audit', initCookieAudit);
-  safeInit('Breach Check', initBreachCheck);
-  safeInit('Cert Transparency', initCertTransparency);
-  safeInit('Privacy Exposure', initPrivacyExposure);
-  safeInit('DNSSEC Validation', initDnssecValidation);
-  safeInit('Tabs', initTabs);
+  safeInit('Router', initRouter);
   safeInit('Tooltips', initTooltips);
-  safeInit('Skeletons', renderInitialSkeletons);
-  safeInitAsync('DNS Checks', runDnsChecks);
-  safeInitAsync('Ad Block Tests', runAdBlockTests);
-  safeInitAsync('Filter Lists', runFilterListDetection);
-  safeInit('Speed Test', initSpeedTest);
-  safeInit('Headers Check', initHeadersCheck);
-  safeInit('Fingerprint', initFingerprint);
+  safeInit('Theme', initTheme);
+  safeInit('I18n', initI18n);
+  safeInit('Share', initShare);
   safeInit('Analytics', initAnalytics);
   safeInit('Onboarding', initOnboarding);
-  safeInit('Connection Quality', initConnectionQuality);
-  safeInit('Network Map', initNetworkMap);
-  safeInit('Keyboard Shortcuts', initKeyboardShortcuts);
-  safeInit('Share', initShare);
-
   safeInit('Motion', initMotion);
-  safeInit('Network Change', initNetworkChange);
+  safeInit('Export', () => ReportExporter);
 });
 
-function renderInitialSkeletons(): void {
-  const resolverEl = document.getElementById('dns-resolver-results');
-  if (resolverEl) renderSkeletonRows(resolverEl, 3);
+function initRouter(): void {
+  const hash = location.hash.slice(1) || 'overview';
+  const tab = LEGACY_REDIRECTS[hash] || hash;
+  navigateTo(tab);
 
-  const securityEl = document.getElementById('dns-security-results');
-  if (securityEl) renderSkeletonRows(securityEl, 4);
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.slice(1) || 'overview';
+    navigateTo(LEGACY_REDIRECTS[h] || h);
+  });
+
+  document.querySelectorAll<HTMLAnchorElement>('.tab-link[data-tab], .tab-bar-mobile-item[data-tab]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = link.dataset.tab!;
+      if (location.hash.slice(1) !== tab) {
+        history.replaceState(null, '', `#${tab}`);
+      }
+      navigateTo(tab);
+    });
+  });
+}
+
+function navigateTo(tab: string): void {
+  document.querySelectorAll('.tab-link, .tab-bar-mobile-item').forEach((l) => {
+    l.classList.remove('active');
+    l.removeAttribute('aria-current');
+  });
+  document.querySelector(`.tab-link[data-tab="${tab}"]`)?.classList.add('active');
+  document.querySelector(`.tab-bar-mobile-item[data-tab="${tab}"]`)?.classList.add('active');
+
+  document.querySelectorAll('.section').forEach((s) => s.classList.remove('active'));
+  document.getElementById(tab)?.classList.add('active');
+
+  updateMetaForTab(tab);
+  loadWorkflow(tab);
+
+  if (location.hash.slice(1) !== tab) {
+    history.replaceState(null, '', `#${tab}`);
+  }
+}
+
+const loadedWorkflows = new Set<string>();
+async function loadWorkflow(tab: string): Promise<void> {
+  if (loadedWorkflows.has(tab)) return;
+  loadedWorkflows.add(tab);
+  try {
+    switch (tab) {
+      case 'overview':
+        await import('./tabs/overview-tab');
+        break;
+      case 'dns':
+        await import('./tabs/dns-tab');
+        break;
+      case 'speed':
+        await import('./tabs/speed-performance-tab');
+        break;
+      case 'security':
+        await import('./tabs/security-scan-tab');
+        break;
+      case 'privacy':
+        await import('./tabs/privacy-blocking-tab');
+        break;
+      case 'ai':
+        await import('./tabs/ai-analysis-tab');
+        break;
+    }
+  } catch (e) {
+    console.error(`Failed to load workflow ${tab}:`, e);
+  }
 }
 
 function updateMetaForTab(tab: string): void {
-  const tabNames: Record<string, string> = {
-    dashboard: 'Dashboard',
-    tls: 'TLS Inspector',
-    history: t('nav.history'),
-    dns: t('nav.dns'),
-    speed: t('nav.speed'),
-    adblock: t('nav.adblock'),
-    headers: t('nav.headers'),
-    fingerprint: t('nav.fingerprint'),
-    quality: t('nav.quality'),
-    network: t('nav.network'),
-    about: t('nav.about'),
-    'ai-analysis': t('nav.ai'),
-    'email-security': 'Email Security',
-    http3: 'HTTP/3 Test',
-    cookies: 'Cookie Audit',
-  };
-  const tabName = tabNames[tab] || tab;
+  const tabName = WORKFLOW_NAMES[tab] || tab;
   const title = `NetCheck — ${tabName}`;
   document.title = title;
 
@@ -111,184 +142,116 @@ function updateMetaForTab(tab: string): void {
   }
 }
 
-function initTabs(): void {
-  const burger = document.getElementById('nav-burger');
-  const overlay = document.getElementById('nav-overlay');
+function positionToolbarPanel(trigger: HTMLElement, panel: HTMLElement): void {
+  const r = trigger.getBoundingClientRect();
+  const vpH = window.innerHeight;
+  const vpW = window.innerWidth;
+  const panelH = panel.offsetHeight || 200;
+  const panelW = panel.offsetWidth || 160;
+  const isHeader = trigger.closest('.nav-header-tools') !== null;
+  const left = isHeader
+    ? Math.max(8, Math.min(r.left, vpW - panelW - 8))
+    : Math.min((vpW >= 769 ? 180 : vpW >= 641 ? 180 : 0) + 8, vpW - panelW - 8);
+  const top = Math.max(8, Math.min(r.bottom + 4, vpH - panelH - 8));
+  panel.style.top = `${Math.round(top)}px`;
+  panel.style.left = `${Math.round(left)}px`;
+}
 
-  function closeNav(): void {
-    document.body.classList.remove('nav-open');
-    if (burger) burger.setAttribute('aria-expanded', 'false');
+document.getElementById('lang-toggle-header')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = document.getElementById('lang-menu');
+  const btn = e.currentTarget as HTMLElement;
+  if (menu) {
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+    if (!wasOpen) {
+      menu.classList.add('open');
+      positionToolbarPanel(btn, menu);
+    }
   }
+});
 
-  function openNav(): void {
-    document.body.classList.add('nav-open');
-    if (burger) burger.setAttribute('aria-expanded', 'true');
+document.getElementById('export-btn-header')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const btn = e.currentTarget as HTMLElement;
+  const menu = document.getElementById('export-menu');
+  if (menu) {
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+    if (!wasOpen) {
+      menu.classList.add('open');
+      positionToolbarPanel(btn, menu);
+    }
   }
+});
 
-  function toggleNav(): void {
-    if (document.body.classList.contains('nav-open')) closeNav();
-    else openNav();
-  }
-
-  if (burger) burger.addEventListener('click', toggleNav);
-  if (overlay) overlay.addEventListener('click', closeNav);
-
-  const links = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-tab]');
-  links.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeNav();
-      const tab = link.dataset.tab!;
-
-      document.querySelectorAll('.nav-link').forEach((l) => {
-        l.classList.remove('active');
-        l.removeAttribute('aria-current');
-      });
-      link.classList.add('active');
-      link.setAttribute('aria-current', 'page');
-
-      document.querySelectorAll('.nav-bottom-item').forEach((bi) => {
-        bi.classList.remove('active');
-        bi.removeAttribute('aria-current');
-      });
-      const bottomItem = document.querySelector(`.nav-bottom-item[data-tab="${tab}"]`);
-      if (bottomItem) {
-        bottomItem.classList.add('active');
-        bottomItem.setAttribute('aria-current', 'page');
-      }
-
-      document.querySelectorAll('.section').forEach((s) => s.classList.remove('active'));
-      document.getElementById(tab)!.classList.add('active');
-
-      updateMetaForTab(tab);
-
-      if (tab === 'history') refreshHistory();
+document
+  .querySelectorAll<HTMLButtonElement>('#export-menu .nav-toolbar-option')
+  .forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const format = btn.dataset.format;
+      if (format === 'markdown') ReportExporter.downloadMarkdown();
+      else if (format === 'pdf') ReportExporter.downloadPdf();
+      document.getElementById('export-menu')?.classList.remove('open');
     });
   });
 
-  document.getElementById('dns-lookup-btn')!.addEventListener('click', runDnsLookup);
-  document.getElementById('dns-lookup-domain')!.addEventListener('keydown', (e) => {
-    if ((e as KeyboardEvent).key === 'Enter') runDnsLookup();
-  });
-
-  document.getElementById('dns-audit-btn')!.addEventListener('click', runDnsAudit);
-
-  function positionToolbarPanel(trigger: HTMLElement, panel: HTMLElement): void {
-    const r = trigger.getBoundingClientRect();
-    const vpH = window.innerHeight;
-    const vpW = window.innerWidth;
-    const panelH = panel.offsetHeight || 200;
-    const panelW = panel.offsetWidth || 160;
-    const isHeader = trigger.closest('.nav-header-tools') !== null;
-    const left = isHeader
-      ? Math.max(8, Math.min(r.left, vpW - panelW - 8))
-      : Math.min((vpW >= 769 ? 180 : vpW >= 641 ? 180 : 0) + 8, vpW - panelW - 8);
-    const top = Math.max(8, Math.min(r.bottom + 4, vpH - panelH - 8));
-    panel.style.top = `${Math.round(top)}px`;
-    panel.style.left = `${Math.round(left)}px`;
-  }
-
-  // Header toolbar buttons
-  document.getElementById('lang-toggle-header')?.addEventListener('click', (e) => {
+const shareBtnHeader = document.getElementById('share-btn-header') as HTMLElement;
+if (shareBtnHeader) {
+  shareBtnHeader.addEventListener('click', (e) => {
     e.stopPropagation();
-    const menu = document.getElementById('lang-menu');
-    const btn = e.currentTarget as HTMLElement;
-    if (menu) {
-      const wasOpen = menu.classList.contains('open');
+    const shareMenu = document.getElementById('share-menu');
+    const sharePreview = document.getElementById('share-preview');
+    if (shareMenu && sharePreview) {
+      const wasOpen = shareMenu.classList.contains('open');
       document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
       if (!wasOpen) {
-        menu.classList.add('open');
-        positionToolbarPanel(btn, menu);
+        sharePreview.textContent = buildSummary();
+        shareMenu.classList.add('open');
+        positionToolbarPanel(shareBtnHeader, shareMenu);
       }
     }
-  });
-
-  document.getElementById('export-btn-header')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const btn = e.currentTarget as HTMLElement;
-    const menu = document.getElementById('export-menu');
-    if (menu) {
-      const wasOpen = menu.classList.contains('open');
-      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
-      if (!wasOpen) {
-        menu.classList.add('open');
-        positionToolbarPanel(btn, menu);
-      }
-    }
-  });
-
-  document
-    .querySelectorAll<HTMLButtonElement>('#export-menu .nav-toolbar-option')
-    .forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const format = btn.dataset.format;
-        if (format === 'markdown') ReportExporter.downloadMarkdown();
-        else if (format === 'pdf') ReportExporter.downloadPdf();
-        document.getElementById('export-menu')?.classList.remove('open');
-      });
-    });
-
-  const shareBtnHeader = document.getElementById('share-btn-header') as HTMLElement;
-  if (shareBtnHeader) {
-    shareBtnHeader.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const shareMenu = document.getElementById('share-menu');
-      const sharePreview = document.getElementById('share-preview');
-      if (shareMenu && sharePreview) {
-        const wasOpen = shareMenu.classList.contains('open');
-        document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
-        if (!wasOpen) {
-          sharePreview.textContent = buildSummary();
-          shareMenu.classList.add('open');
-          positionToolbarPanel(shareBtnHeader, shareMenu);
-        }
-      }
-    });
-  }
-
-  const shareCopyBtn = document.getElementById('share-copy-btn');
-  if (shareCopyBtn) {
-    shareCopyBtn.addEventListener('click', async () => {
-      const sharePreview = document.getElementById('share-preview');
-      const text = sharePreview?.textContent || '';
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      }
-      shareCopyBtn.textContent = t('share.copied') || 'Copied!';
-      shareBtnHeader?.classList.add('nav-toolbar-btn-copied');
-      setTimeout(() => {
-        shareCopyBtn.textContent = t('share.copy') || 'Copy to clipboard';
-        shareBtnHeader?.classList.remove('nav-toolbar-btn-copied');
-        document.getElementById('share-menu')?.classList.remove('open');
-      }, 1500);
-    });
-  }
-
-  document.addEventListener('click', (e) => {
-    const t = e.target;
-    if (!(t instanceof Element)) return;
-    if (
-      !t.closest('.nav-toolbar-item') &&
-      !t.closest('.nav-toolbar-panel') &&
-      !t.closest('.nav-header-btn')
-    ) {
-      document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeNav();
   });
 }
+
+const shareCopyBtn = document.getElementById('share-copy-btn');
+if (shareCopyBtn) {
+  shareCopyBtn.addEventListener('click', async () => {
+    const sharePreview = document.getElementById('share-preview');
+    const text = sharePreview?.textContent || '';
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    shareCopyBtn.textContent = t('share.copied') || 'Copied!';
+    shareBtnHeader?.classList.add('nav-toolbar-btn-copied');
+    setTimeout(() => {
+      shareCopyBtn.textContent = t('share.copy') || 'Copy to clipboard';
+      shareBtnHeader?.classList.remove('nav-toolbar-btn-copied');
+      document.getElementById('share-menu')?.classList.remove('open');
+    }, 1500);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  const target = e.target;
+  if (!(target instanceof Element)) return;
+  if (
+    !target.closest('.nav-toolbar-item') &&
+    !target.closest('.nav-toolbar-panel') &&
+    !target.closest('.nav-header-btn')
+  ) {
+    document.querySelectorAll('.nav-toolbar-panel').forEach((p) => p.classList.remove('open'));
+  }
+});
 
 initTheme();
 initI18n();
