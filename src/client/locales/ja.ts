@@ -1,8 +1,11 @@
 import type { Translations } from '../i18n';
 export const ja = {
   'page.title': 'NetCheck',
-  'nav.dns': 'DNS チェック',
-  'nav.speed': 'スピードテスト',
+  'nav.overview': '概要',
+  'nav.dns': 'DNS',
+  'nav.speed': '速度',
+  'nav.security': 'セキュリティ',
+  'nav.privacy': 'プライバシー',
   'nav.adblock': '広告ブロックテスト',
   'nav.export': 'エクスポート',
   'nav.exportReport': 'レポートをエクスポート',
@@ -740,7 +743,7 @@ export const ja = {
     'ローカル AI は言語モデルのダウンロード（約 23 MB）が必要です。完全にブラウザ内で実行され、プライバシーを保護します。ダウンロードは 1 回のみで、以降はキャッシュされます。',
   'ai.downloadConfirm': 'ダウンロードして分析',
   'ai.downloadCancel': 'キャンセル',
-  'nav.ai': 'AI 分析',
+  'nav.ai': 'AI',
 
   'breachCheck.check': 'Check Password',
   'breachCheck.checking': 'Checking...',

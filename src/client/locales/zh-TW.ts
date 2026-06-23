@@ -3,8 +3,11 @@ export const zhTW = {
   'page.title': 'NetCheck',
 
   // Nav
-  'nav.dns': 'DNS 檢測',
-  'nav.speed': '測速',
+  'nav.overview': '總覽',
+  'nav.dns': 'DNS',
+  'nav.speed': '速度',
+  'nav.security': '安全',
+  'nav.privacy': '隱私',
   'nav.adblock': '廣告攔截測試',
   'nav.export': '匯出',
   'nav.exportReport': '匯出報告',
@@ -756,7 +759,7 @@ export const zhTW = {
     '本機 AI 需要下載語言模型（約 23 MB）。模型完全在瀏覽器中運行以保護隱私。只需下載一次，之後會快取以供未來使用。',
   'ai.downloadConfirm': '下載並分析',
   'ai.downloadCancel': '取消',
-  'nav.ai': 'AI 分析',
+  'nav.ai': 'AI',
 
   'breachCheck.check': 'Check Password',
   'breachCheck.checking': 'Checking...',

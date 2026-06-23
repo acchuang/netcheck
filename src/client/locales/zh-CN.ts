@@ -1,8 +1,11 @@
 import type { Translations } from '../i18n';
 export const zhCN = {
   'page.title': 'NetCheck',
-  'nav.dns': 'DNS 检测',
-  'nav.speed': '网速测试',
+  'nav.overview': '总览',
+  'nav.dns': 'DNS',
+  'nav.speed': '速度',
+  'nav.security': '安全',
+  'nav.privacy': '隐私',
   'nav.adblock': '广告拦截测试',
   'nav.export': '导出',
   'nav.exportReport': '导出报告',
@@ -717,7 +720,7 @@ export const zhCN = {
     '本机 AI 需要下载语言模型（约 23 MB）。模型完全在浏览器中运行以保护隐私。只需下载一次，之后会缓存以供未来使用。',
   'ai.downloadConfirm': '下载并分析',
   'ai.downloadCancel': '取消',
-  'nav.ai': 'AI 分析',
+  'nav.ai': 'AI',
 
   'breachCheck.check': 'Check Password',
   'breachCheck.checking': 'Checking...',
