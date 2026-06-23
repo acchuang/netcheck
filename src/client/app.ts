@@ -16,7 +16,7 @@ import { initConnectionQuality } from './connection-quality-ui';
 import { initNetworkMap } from './network-map-ui';
 import { initKeyboardShortcuts } from './a11y';
 import { initShare, buildSummary } from './share';
-import { initInstallPrompt } from './install-prompt';
+
 import { initMotion } from './motion';
 import { safeInit, safeInitAsync } from './error-boundary';
 import { initTooltips } from './tooltip';
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit('Network Map', initNetworkMap);
   safeInit('Keyboard Shortcuts', initKeyboardShortcuts);
   safeInit('Share', initShare);
-  safeInit('Install Prompt', initInstallPrompt);
+
   safeInit('Motion', initMotion);
   safeInit('Network Change', initNetworkChange);
 });
