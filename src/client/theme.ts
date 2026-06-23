@@ -1,9 +1,9 @@
 export type ThemeMode = 'dark' | 'light';
 
 const STORAGE_KEY = 'netcheck-theme';
-const CYCLE: ThemeMode[] = ['dark', 'light'];
+const CYCLE: ThemeMode[] = ['light', 'dark'];
 
-let current: ThemeMode = 'dark';
+let current: ThemeMode = 'light';
 
 function enableThemeTransition(): void {
   const style = document.createElement('style');
@@ -28,8 +28,8 @@ export function initTheme(): void {
   const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
   if (saved && CYCLE.includes(saved)) current = saved;
   else {
-    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    current = prefersLight ? 'light' : 'dark';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    current = prefersDark ? 'dark' : 'light';
   }
   apply();
 

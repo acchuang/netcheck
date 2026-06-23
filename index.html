@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#F5F5F0" media="(prefers-color-scheme: light)">
   <script>
-    (function(){var t=localStorage.getItem("netcheck-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}else{t=t==="light"?"light":"dark"}document.documentElement.setAttribute("data-theme",t)})();
+    (function(){var t=localStorage.getItem("netcheck-theme");if(!t){t="light"}else{t=t==="light"?"light":"dark"}document.documentElement.setAttribute("data-theme",t)})();
   </script>
   <title>NetCheck — Network Diagnostics</title>
 
