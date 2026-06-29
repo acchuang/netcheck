@@ -98,6 +98,8 @@ const en = {
   "speed.title": "Speed Test",
   "speed.subtitle": "Measure your connection speed via Cloudflare's global edge network",
   "speed.testServer": "Test Server",
+  "speed.server.edge": "Nearest Edge (Worker)",
+  "speed.server.cfSpeed": "Cloudflare Speed Test",
   "speed.autoNearest": "Automatic — nearest edge",
   "speed.you": "You",
   "speed.download": "Download",
@@ -380,6 +382,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.title": "測速",
   "speed.subtitle": "透過 Cloudflare 全球邊緣網路測量連線速度",
   "speed.testServer": "測試伺服器",
+  "speed.server.edge": "最近邊緣節點 (Worker)",
+  "speed.server.cfSpeed": "Cloudflare 測速",
   "speed.autoNearest": "自動 — 最近節點",
   "speed.you": "您",
   "speed.download": "下載",
@@ -653,6 +657,11 @@ function applyStaticTranslations(): void {
   s("speed-title", "speed.title");
   s("speed-subtitle", "speed.subtitle");
   s("speed-server-label", "speed.testServer");
+  const serverSelect = document.getElementById("speed-server-select") as HTMLSelectElement | null;
+  if (serverSelect) {
+    serverSelect.options[0].textContent = t("speed.server.edge");
+    serverSelect.options[1].textContent = t("speed.server.cfSpeed");
+  }
   s("speed-download-label", "speed.download");
   s("speed-upload-label", "speed.upload");
   s("speed-latency-label", "speed.latency");

@@ -321,6 +321,13 @@ const speedGraphData: { download: { time: number; value: number }[]; upload: { t
 
 function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
+  // reflect server choice in the badge before a test runs
+  const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
+  if (sel) sel.addEventListener("change", () => {
+    const v = document.getElementById("speed-server-value")!;
+    v.textContent = sel.value === "cf-speed" ? t("speed.server.cfSpeed") : t("speed.server.edge");
+    document.getElementById("speed-server-detail")!.classList.add("hidden");
+  });
 }
 
 function drawSpeedGraph(): void {
@@ -430,6 +437,7 @@ async function runSpeedTest(): Promise<void> {
   const startTime = performance.now();
 
   const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0 };
+  const serverId = (document.getElementById("speed-server-select") as HTMLSelectElement | null)?.value || "edge";
 
   const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
@@ -468,7 +476,7 @@ async function runSpeedTest(): Promise<void> {
         drawSpeedGraph();
       }
     }
-  });
+  }, serverId);
 
   setActiveGauge(""); // clear active state
   document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";

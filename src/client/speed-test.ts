@@ -21,6 +21,61 @@ export type ProgressCallback = (
   results: SpeedTestResults
 ) => void;
 
+interface SpeedServer {
+  id: string;
+  pingUrl: () => string;
+  downUrl: (bytes: number) => string;
+  upUrl: string;
+  // read colo + geo from the first ping response
+  parseMeta: (res: Response) => { colo: string | null; lat: number | null; lon: number | null };
+  // ponytail: cf-speed uses text/plain Blob to avoid CORS preflight (OPTIONS 400s)
+  makeUploadBody: (size: number) => BodyInit;
+}
+
+const SERVERS: SpeedServer[] = [
+  {
+    id: "edge",
+    pingUrl: () => `/api/speedtest/ping?_=${Date.now()}`,
+    downUrl: (bytes) => `/api/speedtest/down?bytes=${bytes}&_=${Date.now()}`,
+    upUrl: "/api/speedtest/up",
+    parseMeta: (res) => ({
+      colo: res.headers.get("x-colo"),
+      lat: parseFloat(res.headers.get("x-lat") || "") || null,
+      lon: parseFloat(res.headers.get("x-lon") || "") || null,
+    }),
+    makeUploadBody: (size) => {
+      const d = new Uint8Array(size);
+      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
+      return d;
+    },
+  },
+  {
+    id: "cf-speed",
+    pingUrl: () => `https://speed.cloudflare.com/__down?bytes=0&_=${Date.now()}`,
+    downUrl: (bytes) => `https://speed.cloudflare.com/__down?bytes=${bytes}&_=${Date.now()}`,
+    upUrl: "https://speed.cloudflare.com/__up",
+    parseMeta: (res) => ({
+      colo: res.headers.get("cf-meta-colo"),
+      lat: parseFloat(res.headers.get("cf-meta-latitude") || "") || null,
+      lon: parseFloat(res.headers.get("cf-meta-longitude") || "") || null,
+    }),
+    makeUploadBody: (size) => {
+      const d = new Uint8Array(size);
+      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
+      // text/plain => simple request, no CORS preflight (speed.cloudflare.com OPTIONS 400s)
+      return new Blob([d], { type: "text/plain" });
+    },
+  },
+];
+
+function getServer(id: string): SpeedServer {
+  return SERVERS.find((s) => s.id === id) || SERVERS[0];
+}
+
+export function getServerIds(): string[] {
+  return SERVERS.map((s) => s.id);
+}
+
 export const SpeedTest = {
   results: {
     download: null,
@@ -32,32 +87,29 @@ export const SpeedTest = {
     userLon: null,
   } as SpeedTestResults,
 
-  async run(onProgress?: ProgressCallback): Promise<SpeedTestResults> {
+  async run(onProgress?: ProgressCallback, serverId = "edge"): Promise<SpeedTestResults> {
     this.results = { download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null };
+    const server = getServer(serverId);
     const cb: ProgressCallback = onProgress || (() => {});
 
-    // Phase 1: Latency + jitter (10 pings)
+    // Latency
     cb("latency", 0, this.results);
     const pings: number[] = [];
     for (let i = 0; i < 10; i++) {
       try {
         const start = performance.now();
-        const res = await fetch(`/api/speedtest/ping?_=${Date.now()}`, {
+        const res = await fetch(server.pingUrl(), {
           cache: "no-store",
           signal: AbortSignal.timeout(4000),
         });
         pings.push(performance.now() - start);
         if (i === 0) {
-          this.results.colo = res.headers.get("x-colo") || null;
-          const lat = res.headers.get("x-lat");
-          const lon = res.headers.get("x-lon");
-          if (lat && lon) {
-            this.results.userLat = parseFloat(lat);
-            this.results.userLon = parseFloat(lon);
-          }
+          const meta = server.parseMeta(res);
+          this.results.colo = meta.colo;
+          this.results.userLat = meta.lat;
+          this.results.userLon = meta.lon;
         }
       } catch {
-        /* skip */
       }
       cb("latency", Math.round(((i + 1) / 10) * 100), this.results);
     }
@@ -76,7 +128,7 @@ export const SpeedTest = {
     }
     cb("latency", 100, this.results);
 
-    // Phase 2: Download — progressive sizes with streaming for live updates
+    // Download
     cb("download", 0, this.results);
     const dlSizes = [100000, 500000, 1000000, 5000000, 10000000, 25000000];
     const dlStart = performance.now();
@@ -84,7 +136,7 @@ export const SpeedTest = {
 
     for (let i = 0; i < dlSizes.length; i++) {
       try {
-        const url = `/api/speedtest/down?bytes=${dlSizes[i]}&_=${Date.now()}`;
+        const url = server.downUrl(dlSizes[i]);
         const res = await fetch(url, {
           cache: "no-store",
           signal: AbortSignal.timeout(12000),
@@ -128,19 +180,17 @@ export const SpeedTest = {
     if (dlElapsed === 0 || dlTotalBytes === 0) this.results.download = null;
     cb("download", 100, this.results);
 
-    // Phase 3: Upload — progressive sizes
+    // Upload
     cb("upload", 0, this.results);
     const ulSizes = [100000, 500000, 1000000, 2000000, 5000000];
     const ulStart = performance.now();
     let ulTotalBytes = 0;
 
     for (let i = 0; i < ulSizes.length; i++) {
-      const data = new Uint8Array(ulSizes[i]);
-      for (let j = 0; j < ulSizes[i]; j += 4096)
-        data[j] = (Math.random() * 256) | 0;
+      const data = server.makeUploadBody(ulSizes[i]);
 
       try {
-        await fetch("/api/speedtest/up", {
+        await fetch(server.upUrl, {
           method: "POST",
           body: data,
           cache: "no-store",
