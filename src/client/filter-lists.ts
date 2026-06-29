@@ -127,6 +127,13 @@ export const FilterListDetector = {
         // but general ads ARE blocked, Acceptable Ads is likely enabled.
         { type: "element", className: "acceptable-ad", expectAllowed: true },
         { type: "element", id: "aab-banner", expectAllowed: true },
+        { type: "element", className: "acceptable-ads", expectAllowed: true },
+        { type: "element", className: "aa-advertisement", expectAllowed: true },
+        // Known Acceptable Ads participant networks (whitelisted by ABP)
+        { type: "script", url: "https://cdn.taboola.com/libtrc/test/loader.js", expectAllowed: true },
+        { type: "script", url: "https://widgets.outbrain.com/outbrain.js", expectAllowed: true },
+        { type: "script", url: "https://static.criteo.net/js/ld/publishertag.js", expectAllowed: true },
+        { type: "script", url: "https://server.adtech.de/ads/AD_KEY/grp=test", expectAllowed: true },
       ],
       special: "acceptableAds",
     },
@@ -160,7 +167,7 @@ export const FilterListDetector = {
         // Acceptable Ads is detected if acceptable-ad elements are NOT hidden
         // while regular ads ARE hidden (need general ad blocking context)
         const allowed = listResult.tests.filter((t) => !t.blocked).length;
-        listResult.detected = allowed > 0;
+        listResult.detected = allowed >= Math.ceil(list.tests.length * 0.5);
       } else {
         const blocked = listResult.tests.filter((t) => t.blocked).length;
         listResult.detected = blocked >= Math.ceil(list.tests.length * 0.5);

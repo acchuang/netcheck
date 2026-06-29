@@ -319,6 +319,30 @@
       <div class="section-header">
         <h1 class="display" id="adblock-title">Ad Block Tester</h1>
         <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
+        <div class="adblock-toolbar">
+          <button class="btn btn-small" id="adblock-rerun-btn" title="Re-run tests">Re-test</button>
+          <div class="adblock-custom">
+            <input type="text" id="adblock-custom-url" class="input" placeholder="example.com or https://..." aria-label="Custom test URL">
+            <button class="btn btn-small" id="adblock-custom-btn">Test URL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-wide" id="adblock-blocker-card" hidden>
+        <div class="card-header">
+          <h2 class="card-title">Detected Blocker</h2>
+          <span class="status-badge done" id="adblock-blocker-name">—</span>
+        </div>
+        <div class="card-body">
+          <p class="info-muted" id="adblock-blocker-detail"></p>
+        </div>
+      </div>
+
+      <div class="card card-wide" id="adblock-custom-card" hidden>
+        <div class="card-header">
+          <h2 class="card-title">Custom URL Test</h2>
+        </div>
+        <div class="card-body" id="adblock-custom-results"></div>
       </div>
 
       <div class="score-card">
@@ -358,6 +382,18 @@
         <div class="suggestions-grid" id="suggestions-grid">
           <!-- Populated by JS -->
         </div>
+      </div>
+
+      <!-- Adblock Score History -->
+      <div class="snapshot-section" id="adblock-history-section" hidden>
+        <div class="snapshot-header">
+          <h2 class="snapshot-title">Score History</h2>
+          <div class="snapshot-actions">
+            <button class="btn btn-small" id="adblock-history-save-btn" disabled>Save Snapshot</button>
+            <button class="btn btn-small" id="adblock-history-clear-btn" title="Clear history">Clear</button>
+          </div>
+        </div>
+        <div class="snapshot-list" id="adblock-history-list"></div>
       </div>
     </section>
 

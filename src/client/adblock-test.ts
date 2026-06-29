@@ -32,9 +32,16 @@ interface ElementTest {
 
 type Test = ScriptTest | ImageTest | PixelTest | IframeTest | ElementTest;
 
-interface TestResult {
+// method = HOW the test resolved (feature 4: per-test "why blocked")
+//   network  = request failed (onerror) — blocker or network killed it
+//   loaded   = request succeeded (onload) — not blocked
+//   cosmetic = element hidden via CSS (display/visibility/zero-size)
+//   visible  = element rendered normally — not blocked
+//   timeout  = no resolution in 3s — treated as blocked
+export interface TestResult {
   blocked: boolean;
   uncertain?: boolean;
+  method?: string;
 }
 
 type TestWithResult = Test & TestResult;
@@ -152,9 +159,26 @@ export const AdBlockTest = {
     return this.results;
   },
 
+  // Feature 1: test a user-supplied URL as script + image
+  async testCustomUrl(rawUrl: string): Promise<TestWithResult[]> {
+    const url = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+    const container = document.createElement("div");
+    container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
+    document.body.appendChild(container);
+
+    const scriptRes = await this.runTest({ name: url, type: "script", url }, container);
+    const imageRes = await this.runTest({ name: url, type: "image", url }, container);
+
+    container.remove();
+    return [
+      { name: `${url} (script)`, type: "script", url, ...scriptRes },
+      { name: `${url} (image)`, type: "image", url, ...imageRes },
+    ];
+  },
+
   runTest(test: Test, container: HTMLDivElement): Promise<TestResult> {
     return new Promise((resolve) => {
-      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true }), 3000);
+      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true, method: "timeout" }), 3000);
 
       switch (test.type) {
         case "script":
@@ -174,7 +198,7 @@ export const AdBlockTest = {
           break;
         default:
           clearTimeout(timeout);
-          resolve({ blocked: false, uncertain: true });
+          resolve({ blocked: false, uncertain: true, method: "unknown" });
       }
     });
   },
@@ -184,11 +208,11 @@ export const AdBlockTest = {
     script.src = url;
     script.onload = () => {
       clearTimeout(timeout);
-      resolve({ blocked: false });
+      resolve({ blocked: false, method: "loaded" });
     };
     script.onerror = () => {
       clearTimeout(timeout);
-      resolve({ blocked: true });
+      resolve({ blocked: true, method: "network" });
     };
     container.appendChild(script);
   },
@@ -198,11 +222,11 @@ export const AdBlockTest = {
     img.src = url;
     img.onload = () => {
       clearTimeout(timeout);
-      resolve({ blocked: false });
+      resolve({ blocked: false, method: "loaded" });
     };
     img.onerror = () => {
       clearTimeout(timeout);
-      resolve({ blocked: true });
+      resolve({ blocked: true, method: "network" });
     };
     container.appendChild(img);
   },
@@ -214,11 +238,11 @@ export const AdBlockTest = {
     img.height = 1;
     img.onload = () => {
       clearTimeout(timeout);
-      resolve({ blocked: false });
+      resolve({ blocked: false, method: "loaded" });
     };
     img.onerror = () => {
       clearTimeout(timeout);
-      resolve({ blocked: true });
+      resolve({ blocked: true, method: "network" });
     };
     container.appendChild(img);
   },
@@ -238,7 +262,7 @@ export const AdBlockTest = {
         getComputedStyle(iframe).display === "none" ||
         getComputedStyle(iframe).visibility === "hidden";
       clearTimeout(timeout);
-      resolve({ blocked: hidden });
+      resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
     });
   },
 
@@ -256,7 +280,7 @@ export const AdBlockTest = {
         getComputedStyle(div).display === "none" ||
         getComputedStyle(div).visibility === "hidden";
       clearTimeout(timeout);
-      resolve({ blocked: hidden });
+      resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
     });
   },
 

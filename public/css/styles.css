@@ -1950,3 +1950,9 @@ select option {
 .snap-delta.good { color: var(--emerald, #10b981); }
 .snap-delta.bad { color: var(--red, #ef4444); }
 .snap-delta.same { color: var(--text-quaternary); }
+
+/* --- Ad Block toolbar + custom/blocker cards --- */
+.adblock-toolbar { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.adblock-custom { display: flex; gap: 8px; flex: 1; min-width: 240px; }
+.adblock-custom .input { flex: 1; }
+.snapshot-actions { display: flex; gap: 8px; }

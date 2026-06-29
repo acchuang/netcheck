@@ -5,6 +5,8 @@ import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-t
 import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
+import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
+import { detectBlocker } from "./blocker-fingerprint";
 import { t } from "./i18n";
 
 function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
@@ -72,6 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initSpeedTest();
   initHeadersCheck();
   initSnapshots();
+  initAdblockHistory();
+  initAdblockToolbar();
 });
 
 function renderSkeletonRows(container: HTMLElement, count: number): void {
@@ -196,7 +200,44 @@ async function runAdBlockTests(): Promise<void> {
   document.getElementById("score-detail")!.textContent =
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
+  enableAdblockSaveButton();
   renderSuggestions(score, AdBlockTest.results);
+}
+
+// Feature 1 + re-test: custom URL test + re-run adblock tests
+function initAdblockToolbar(): void {
+  document.getElementById("adblock-rerun-btn")?.addEventListener("click", runAdBlockTests);
+  const customBtn = document.getElementById("adblock-custom-btn");
+  const customInput = document.getElementById("adblock-custom-url") as HTMLInputElement | null;
+  customBtn?.addEventListener("click", runCustomUrlTest);
+  customInput?.addEventListener("keydown", (e) => { if (e.key === "Enter") runCustomUrlTest(); });
+}
+
+async function runCustomUrlTest(): Promise<void> {
+  const input = document.getElementById("adblock-custom-url") as HTMLInputElement | null;
+  if (!input || !input.value.trim()) return;
+  const url = input.value.trim();
+  const card = document.getElementById("adblock-custom-card")!;
+  const results = document.getElementById("adblock-custom-results")!;
+  card.hidden = false;
+  results.innerHTML = `<p class="info-muted">${t("adblock.testing")}</p>`;
+  const tests = await AdBlockTest.testCustomUrl(url);
+  const methodLabel: Record<string, string> = {
+    network: t("adblock.method.network"), loaded: t("adblock.method.loaded"),
+    cosmetic: t("adblock.method.cosmetic"), visible: t("adblock.method.visible"),
+    timeout: t("adblock.method.timeout"), unknown: t("adblock.method.unknown"),
+  };
+  results.innerHTML = tests.map((tt) => {
+    const status = tt.blocked ? "blocked" : "not-blocked";
+    const label = tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
+    const iconSvg = tt.blocked ? '<polyline points="9 12 11.5 14.5 16 9.5"/>' : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+    const method = tt.method ? methodLabel[tt.method] || tt.method : "";
+    return `<div class="dns-check-item fade-in">
+      <svg class="check-icon ${status === "blocked" ? "fail" : "pass"}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>${iconSvg}</svg>
+      <span class="check-label" data-tooltip="${method}">${tt.name}</span>
+      <span class="check-value ${status}">${label}</span>
+    </div>`;
+  }).join("");
 }
 
 // UI helpers
@@ -640,6 +681,26 @@ async function runFilterListDetection(): Promise<void> {
       </div>`;
     })
     .join("");
+
+  // Feature 3: deep blocker fingerprint using detected filter list names
+  renderBlockerFingerprint(summary.detected.map((d) => d.name));
+}
+
+async function renderBlockerFingerprint(filterListNames: string[]): Promise<void> {
+  const card = document.getElementById("adblock-blocker-card")!;
+  const nameEl = document.getElementById("adblock-blocker-name")!;
+  const detailEl = document.getElementById("adblock-blocker-detail")!;
+  card.hidden = false;
+  nameEl.textContent = "...";
+  try {
+    const fp = await detectBlocker(filterListNames);
+    nameEl.textContent = fp.name;
+    const confLabel = fp.confidence === "high" ? t("adblock.fp.high") : fp.confidence === "medium" ? t("adblock.fp.medium") : t("adblock.fp.low");
+    detailEl.textContent = `${t("adblock.fp.confidence", confLabel)} · ${t("adblock.fp.source", fp.source)}`;
+  } catch {
+    nameEl.textContent = t("adblock.fp.unknown");
+    detailEl.textContent = "";
+  }
 }
 
 // Per-category adblock suggestions
@@ -759,9 +820,18 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
   section.classList.add("visible");
 }
 
-function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean }[], blocked: number): HTMLDivElement {
+function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], blocked: number): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "test-category";
+
+  const methodLabel: Record<string, string> = {
+    network: t("adblock.method.network"),
+    loaded: t("adblock.method.loaded"),
+    cosmetic: t("adblock.method.cosmetic"),
+    visible: t("adblock.method.visible"),
+    timeout: t("adblock.method.timeout"),
+    unknown: t("adblock.method.unknown"),
+  };
 
   const testsHtml = tests
     .map((tt) => {
@@ -770,6 +840,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
       const iconSvg = tt.blocked
         ? '<polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+      const method = tt.method ? methodLabel[tt.method] || tt.method : "";
 
       return `
       <div class="test-item">
@@ -777,7 +848,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
           <circle cx="12" cy="12" r="10"/>${iconSvg}
         </svg>
         <span class="test-name">${tt.name}</span>
-        <span class="test-result ${status}">${label}</span>
+        <span class="test-result ${status}" data-tooltip="${method}">${label}</span>
       </div>`;
     })
     .join("");
