@@ -345,12 +345,17 @@ function drawSpeedGraph(): void {
   if (allVals.length === 0) return;
   const maxVal = Math.max(...allVals, 1) * 1.15;
 
+  // ponytail: read theme CSS vars so grid/labels are visible in light mode too
+  const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const gridColor = cssVar("--border-standard") || "rgba(128,128,128,0.1)";
+  const labelColor = cssVar("--text-tertiary") || "rgba(128,128,128,0.6)";
+
   // Grid lines
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
   const gridLines = 4;
   ctx.font = "11px Inter, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.fillStyle = labelColor;
   ctx.textAlign = "right";
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
@@ -399,7 +404,7 @@ function drawSpeedGraph(): void {
   drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
   drawLine(speedGraphData.upload, "rgba(52, 211, 153, 1)");
 
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.fillStyle = labelColor;
   ctx.textAlign = "center";
   ctx.fillText("Mbps", pad.left + 16, pad.top + plotH + 18);
 }

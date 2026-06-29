@@ -83,7 +83,6 @@ function renderSnapshotHistory(): void {
   }
 
   section.hidden = false;
-  const cur = snapshots[snapshots.length - 1];
 
   list.innerHTML = snapshots
     .slice()
