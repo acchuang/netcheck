@@ -1917,3 +1917,28 @@ select option {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Snapshot History --- */
+.snapshot-section { margin-top: 24px; }
+.snapshot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.snapshot-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin: 0; }
+.snapshot-list { display: flex; flex-direction: column; gap: 6px; }
+.snap-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr 80px;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.snap-row.latest { border-color: var(--accent); background: var(--bg-tertiary); }
+.snap-time { color: var(--text-tertiary); }
+.snap-val { color: var(--text-secondary); }
+.snap-colo { color: var(--text-quaternary); text-align: right; }
+.snap-delta { font-size: 11px; margin-left: 4px; }
+.snap-delta.good { color: var(--emerald, #10b981); }
+.snap-delta.bad { color: var(--red, #ef4444); }
+.snap-delta.same { color: var(--text-quaternary); }

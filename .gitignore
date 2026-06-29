@@ -2,3 +2,9 @@ node_modules/
 .wrangler/
 .dev.vars
 dist/
+
+# Tool-generated
+.codegraph/
+.opencode/
+.playwright-mcp/
+.superpowers/

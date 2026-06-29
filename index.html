@@ -2,11 +2,15 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <meta name="theme-color" content="#08090a">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetCheck — DNS & Ad Block Tester</title>
   <link rel="preconnect" href="https://rsms.me/">
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-  <link rel="stylesheet" href="/public/css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <nav class="nav">
@@ -274,6 +278,7 @@
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>
           <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
+          <button class="btn btn-small" id="snapshot-save-btn" title="Save current results to compare later" disabled>Save Snapshot</button>
         </div>
         <!-- Speed Graph -->
         <div class="speed-graph-card">
@@ -285,6 +290,15 @@
             </div>
           </div>
           <canvas id="speed-graph" width="1100" height="200"></canvas>
+        </div>
+
+        <!-- Speed Snapshot History -->
+        <div class="snapshot-section" id="snapshot-section" hidden>
+          <div class="snapshot-header">
+            <h2 class="snapshot-title">History</h2>
+            <button class="btn btn-small" id="snapshot-clear-btn" title="Clear history">Clear</button>
+          </div>
+          <div class="snapshot-list" id="snapshot-list"></div>
         </div>
 
         <!-- Speed Suggestions -->

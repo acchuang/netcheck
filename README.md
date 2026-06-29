@@ -38,7 +38,7 @@ DNS, ad block, speed test, and browser fingerprint diagnostics — all in one to
 
 - **Runtime:** [Cloudflare Workers](https://workers.cloudflare.com/)
 - **Static Assets:** Served via Workers Assets binding
-- **Frontend:** Vanilla HTML, CSS, JavaScript (no framework, no build step)
+- **Frontend:** Vite + TypeScript (compiled to Vanilla JS/CSS)
 - **Design System:** [Linear](https://linear.app)-inspired dark theme — Inter Variable, `#08090a` canvas, indigo-violet accents
 - **DNS Lookups:** Cloudflare DNS-over-HTTPS (`cloudflare-dns.com/dns-query`)
 - **Speed Test:** Cloudflare's `speed.cloudflare.com` endpoints
@@ -48,19 +48,19 @@ DNS, ad block, speed test, and browser fingerprint diagnostics — all in one to
 ```
 netcheck-site/
 ├── wrangler.toml              # Cloudflare Worker config
+├── vite.config.ts             # Vite build configuration
+├── tsconfig.json              # TypeScript configuration
 ├── src/
-│   └── index.ts               # Worker — API routes (/api/ip, /api/dns, /api/headers)
+│   ├── client/                # Frontend logic (TypeScript)
+│   │   ├── main.ts            # Entry point
+│   │   ├── app.ts             # Tab routing, UI orchestration
+│   │   └── ...                # Domain-specific logic
+│   └── worker/                # Backend logic (TypeScript)
+│       └── index.ts           # Worker — API routes
 └── public/
-    ├── index.html             # Single-page app with 4 tabs
-    ├── css/
-    │   └── styles.css         # Linear design system implementation
-    └── js/
-        ├── app.js             # Tab routing, UI orchestration
-        ├── dns-check.js       # IP detection, resolver probing, security checks
-        ├── adblock-test.js    # Ad/tracker blocking tests
-        ├── filter-lists.js    # Filter list identification
-        ├── speed-test.js      # Download/upload/latency measurement
-        └── fingerprint.js     # Browser fingerprint collection
+    ├── index.html             # Single-page app shell
+    └── css/
+        └── styles.css         # Linear design system implementation
 ```
 
 ## Development

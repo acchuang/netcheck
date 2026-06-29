@@ -1,0 +1,12 @@
+{
+  "name": "NetCheck — DNS & Ad Block Tester",
+  "short_name": "NetCheck",
+  "description": "DNS, ad block, speed test, and browser fingerprint diagnostics.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090a",
+  "theme_color": "#08090a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
