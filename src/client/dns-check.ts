@@ -146,21 +146,27 @@ export const DnsCheck = {
       detail: "Connection is encrypted via DNS-over-HTTPS",
     });
 
-    // Malware domain filtering
+    // Malware domain filtering — test through the USER's resolver (not Cloudflare's DoH).
+    // A no-cors fetch resolves the hostname via the user's configured DNS. Filtering
+    // resolvers (Quad9, Cloudflare Families, AdGuard, NextDNS) block this malware-test
+    // domain (return 0.0.0.0/NXDOMAIN) so the fetch rejects => filtered. Vanilla
+    // resolvers resolve it => fetch connects => not filtered.
     try {
-      const res = await fetch("https://cloudflare-dns.com/dns-query?name=malware.testcategory.com&type=A", {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
+      await fetch("https://malware.testcategory.com/pixel.png", {
+        mode: "no-cors",
+        signal: AbortSignal.timeout(4000),
       });
-      const data: DohResponse = await res.json();
-      const blocked = !data.Answer || data.Answer.length === 0 || data.Status === 3;
       checks.push({
         name: "Malware Domain Filtering",
-        status: blocked ? "pass" : "warn",
-        detail: blocked ? "Malware domain appears to be blocked" : "Malware test domain resolved — consider adding a filtering DNS",
+        status: "warn",
+        detail: t("dns.malwareNotFiltered"),
       });
     } catch {
-      checks.push({ name: "Malware Domain Filtering", status: "warn", detail: "Could not check" });
+      checks.push({
+        name: "Malware Domain Filtering",
+        status: "pass",
+        detail: t("dns.malwareFiltered"),
+      });
     }
 
     // WebRTC leak

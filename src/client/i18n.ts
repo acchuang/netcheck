@@ -61,6 +61,8 @@ const en = {
   "dns.topFix": "Top Fix",
   "dns.learnMore": "Learn more",
   "dns.checkBrowser": "Check browser settings",
+  "dns.malwareFiltered": "Malware test domain blocked by your resolver — filtering is active",
+  "dns.malwareNotFiltered": "Malware test domain resolved via your resolver — consider a filtering DNS",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1 (Cloudflare DNS)",
@@ -359,6 +361,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.topFix": "首要修正",
   "dns.learnMore": "了解更多",
   "dns.checkBrowser": "檢查瀏覽器設定",
+  "dns.malwareFiltered": "惡意測試網域已被您的解析器阻擋 — 過濾功能已啟用",
+  "dns.malwareNotFiltered": "惡意測試網域經您的解析器解析 — 建議使用具過濾功能的 DNS",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1（Cloudflare DNS）",
