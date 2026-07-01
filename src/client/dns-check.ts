@@ -1,5 +1,5 @@
 import { t } from "./i18n";
-import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS } from "./ui-utils";
+import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 
 interface IpResult {
@@ -438,7 +438,7 @@ export async function runDnsLookup(): Promise<void> {
       const typeName = rec.type === 1 ? "A" : rec.type === 28 ? "AAAA" : rec.type === 15 ? "MX"
         : rec.type === 2 ? "NS" : rec.type === 16 ? "TXT" : rec.type === 5 ? "CNAME"
         : rec.type === 6 ? "SOA" : rec.type === 33 ? "SRV" : rec.type === 12 ? "PTR" : recType;
-      html += `<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${rec.name || domain}</td><td class="mono">${rec.data}</td><td>${rec.TTL}s</td></tr>`;
+      html += `<tr><td><span class="dns-type-badge">${escapeHtml(typeName)}</span></td><td class="mono">${escapeHtml(rec.name || domain)}</td><td class="mono">${escapeHtml(rec.data)}</td><td>${escapeHtml(rec.TTL)}s</td></tr>`;
     }
   }
 

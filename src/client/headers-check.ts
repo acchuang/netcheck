@@ -1,5 +1,5 @@
 import { t } from "./i18n";
-import { setBadge, renderSkeletonRows } from "./ui-utils";
+import { setBadge, renderSkeletonRows, escapeHtml } from "./ui-utils";
 
 interface HeaderCheckResult {
   name: string;
@@ -87,14 +87,14 @@ export async function runHeadersCheck(): Promise<void> {
         : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
 
       const valueHtml = check.present
-        ? `<span class="header-value-truncate" data-tooltip="${check.value}">${check.value}</span>`
+        ? `<span class="header-value-truncate" data-tooltip="${escapeHtml(check.value)}">${escapeHtml(check.value)}</span>`
         : `<span class="check-value" style="color:var(--red)">${t("headers.missing")}</span>`;
 
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
-          <span class="check-label">${check.name}</span>
-          <span class="check-sublabel">${check.desc}</span>
+          <span class="check-label">${escapeHtml(check.name)}</span>
+          <span class="check-sublabel">${escapeHtml(check.desc)}</span>
         </div>
         ${valueHtml}
       `;

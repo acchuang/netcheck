@@ -8,6 +8,7 @@ import { initSnapshots, enableSaveButton } from "./snapshots";
 import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
 import { detectBlocker } from "./blocker-fingerprint";
 import { t } from "./i18n";
+import { escapeHtml } from "./ui-utils";
 
 function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
   const start = performance.now();
@@ -234,7 +235,7 @@ async function runCustomUrlTest(): Promise<void> {
     const method = tt.method ? methodLabel[tt.method] || tt.method : "";
     return `<div class="dns-check-item fade-in">
       <svg class="check-icon ${status === "blocked" ? "fail" : "pass"}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>${iconSvg}</svg>
-      <span class="check-label" data-tooltip="${method}">${tt.name}</span>
+      <span class="check-label" data-tooltip="${escapeHtml(method)}">${escapeHtml(tt.name)}</span>
       <span class="check-value ${status}">${label}</span>
     </div>`;
   }).join("");

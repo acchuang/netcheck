@@ -1,5 +1,13 @@
 import { t } from "./i18n";
 
+const ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+};
+
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ESCAPE_MAP[ch]);
+}
+
 export function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
   const start = performance.now();
   const diff = to - from;
