@@ -1,13 +1,13 @@
 import { runDnsChecks, runDnsLookup } from "./dns-check";
 import { AdBlockTest } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
-import { SpeedTest, type SpeedTestResults, type SpeedTestPhase } from "./speed-test";
+import { SpeedTest, type SpeedTestResults, type SpeedTestPhase, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
 import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
 import { detectBlocker } from "./blocker-fingerprint";
-import { t } from "./i18n";
+import { t, onLocaleChange } from "./i18n";
 import { escapeHtml } from "./ui-utils";
 
 function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
@@ -361,15 +361,73 @@ const speedGraphData: { download: { time: number; value: number }[]; upload: { t
   upload: [],
 };
 
-function initSpeedTest(): void {
-  document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
-  // reflect server choice in the badge before a test runs
+const serverLabelKeys: Record<string, string> = {
+  edge: "speed.server.edge",
+  "cf-speed": "speed.server.cfSpeed",
+  custom: "speed.server.custom",
+};
+
+const serverProbeState: Record<string, { reachable: boolean; latency: number | null }> = {};
+
+// Appends a live latency badge to each <option> and disables ones that failed to probe.
+function renderServerOptionLabels(): void {
   const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
-  if (sel) sel.addEventListener("change", () => {
-    const v = document.getElementById("speed-server-value")!;
-    v.textContent = sel.value === "cf-speed" ? t("speed.server.cfSpeed") : t("speed.server.edge");
-    document.getElementById("speed-server-detail")!.classList.add("hidden");
+  if (!sel) return;
+  Array.from(sel.options).forEach((opt) => {
+    const key = serverLabelKeys[opt.value];
+    if (!key) return;
+    const base = t(key);
+    const probe = serverProbeState[opt.value];
+    if (!probe) {
+      opt.textContent = base;
+      opt.disabled = false;
+      return;
+    }
+    if (probe.reachable) {
+      opt.textContent = `${base} — ${probe.latency}ms`;
+      opt.disabled = false;
+    } else {
+      opt.textContent = `${base} — ${t("speed.server.unreachable")}`;
+      opt.disabled = true;
+    }
   });
+}
+
+async function initSpeedTest(): Promise<void> {
+  document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
+  const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
+  const customRow = document.getElementById("speed-custom-url-row");
+  const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;
+
+  function updateServerValueLabel(): void {
+    if (!sel) return;
+    const v = document.getElementById("speed-server-value")!;
+    v.textContent =
+      sel.value === "cf-speed" ? t("speed.server.cfSpeed") :
+      sel.value === "custom" ? t("speed.server.custom") :
+      t("speed.server.edge");
+    document.getElementById("speed-server-detail")!.classList.add("hidden");
+    customRow?.classList.toggle("hidden", sel.value !== "custom");
+  }
+
+  sel?.addEventListener("change", updateServerValueLabel);
+  updateServerValueLabel();
+
+  customInput?.addEventListener("blur", async () => {
+    const url = customInput.value.trim();
+    if (!url) return;
+    setCustomServerUrl(url);
+    const [result] = await probeServers(["custom"]);
+    serverProbeState.custom = { reachable: result.reachable, latency: result.latency };
+    renderServerOptionLabels();
+  });
+
+  onLocaleChange(renderServerOptionLabels);
+
+  // probe-on-load: only the built-in servers, the custom one is probed on blur once a URL is entered
+  const results = await probeServers(["edge", "cf-speed"]);
+  results.forEach((r) => { serverProbeState[r.id] = { reachable: r.reachable, latency: r.latency }; });
+  renderServerOptionLabels();
 }
 
 function drawSpeedGraph(): void {
@@ -459,6 +517,27 @@ function drawSpeedGraph(): void {
 }
 
 async function runSpeedTest(): Promise<void> {
+  const serverId = (document.getElementById("speed-server-select") as HTMLSelectElement | null)?.value || "edge";
+
+  if (serverId === "custom") {
+    const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;
+    const url = customInput?.value.trim() || "";
+    if (!url) {
+      document.getElementById("speed-phase")!.textContent = t("speed.customUrlRequired");
+      return;
+    }
+    setCustomServerUrl(url);
+    if (!serverProbeState.custom || !serverProbeState.custom.reachable) {
+      const [result] = await probeServers(["custom"]);
+      serverProbeState.custom = { reachable: result.reachable, latency: result.latency };
+      renderServerOptionLabels();
+    }
+    if (!serverProbeState.custom.reachable) {
+      document.getElementById("speed-phase")!.textContent = t("speed.serverUnreachable");
+      return;
+    }
+  }
+
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = t("speed.running");
@@ -482,7 +561,6 @@ async function runSpeedTest(): Promise<void> {
   const startTime = performance.now();
 
   const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0 };
-  const serverId = (document.getElementById("speed-server-select") as HTMLSelectElement | null)?.value || "edge";
 
   const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");

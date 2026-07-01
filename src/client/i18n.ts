@@ -102,6 +102,10 @@ const en = {
   "speed.testServer": "Test Server",
   "speed.server.edge": "Nearest Edge (Worker)",
   "speed.server.cfSpeed": "Cloudflare Speed Test",
+  "speed.server.custom": "Custom Server…",
+  "speed.server.unreachable": "unreachable",
+  "speed.customUrlRequired": "Enter a server URL first",
+  "speed.serverUnreachable": "Selected server is unreachable",
   "speed.autoNearest": "Automatic — nearest edge",
   "speed.you": "You",
   "speed.download": "Download",
@@ -405,6 +409,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.testServer": "測試伺服器",
   "speed.server.edge": "最近邊緣節點 (Worker)",
   "speed.server.cfSpeed": "Cloudflare 測速",
+  "speed.server.custom": "自訂伺服器…",
+  "speed.server.unreachable": "無法連線",
+  "speed.customUrlRequired": "請先輸入伺服器網址",
+  "speed.serverUnreachable": "所選伺服器無法連線",
   "speed.autoNearest": "自動 — 最近節點",
   "speed.you": "您",
   "speed.download": "下載",
@@ -624,11 +632,18 @@ export function getLocale(): Locale {
   return current;
 }
 
+const localeChangeListeners: (() => void)[] = [];
+
+export function onLocaleChange(cb: () => void): void {
+  localeChangeListeners.push(cb);
+}
+
 export function setLocale(locale: Locale): void {
   current = locale;
   localStorage.setItem(STORAGE_KEY, locale);
   document.documentElement.lang = locale === "zh-TW" ? "zh-TW" : "en";
   applyStaticTranslations();
+  localeChangeListeners.forEach((cb) => cb());
 }
 
 export function initI18n(): void {
@@ -699,6 +714,7 @@ function applyStaticTranslations(): void {
   if (serverSelect) {
     serverSelect.options[0].textContent = t("speed.server.edge");
     serverSelect.options[1].textContent = t("speed.server.cfSpeed");
+    if (serverSelect.options[2]) serverSelect.options[2].textContent = t("speed.server.custom");
   }
   s("speed-download-label", "speed.download");
   s("speed-upload-label", "speed.upload");

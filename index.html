@@ -225,6 +225,7 @@
             <select id="speed-server-select" class="input select server-select" aria-label="Test server">
               <option value="edge">Nearest Edge (Worker)</option>
               <option value="cf-speed">Cloudflare Speed Test</option>
+              <option value="custom">Custom Server…</option>
             </select>
           </div>
           <div class="server-badge-detail hidden" id="speed-server-detail">
@@ -235,6 +236,10 @@
               <span class="route-line"></span>
               <span class="route-server" id="speed-server-colo"></span>
             </div>
+          </div>
+          <div class="server-badge-detail hidden" id="speed-custom-url-row">
+            <input type="url" id="speed-custom-url" class="input" placeholder="https://your-worker.example.com" />
+            <p class="info-muted" id="speed-custom-url-hint">Must implement /api/speedtest/{ping,down,up}</p>
           </div>
         </div>
       </div>

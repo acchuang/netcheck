@@ -27,11 +27,21 @@ interface SpeedServer {
   id: string;
   pingUrl: () => string;
   downUrl: (bytes: number) => string;
-  upUrl: string;
+  upUrl: () => string;
   // read colo + geo from the first ping response
   parseMeta: (res: Response) => { colo: string | null; lat: number | null; lon: number | null };
   // ponytail: cf-speed uses text/plain Blob to avoid CORS preflight (OPTIONS 400s)
   makeUploadBody: (size: number) => BodyInit;
+}
+
+let customBaseUrl = "";
+
+export function setCustomServerUrl(url: string): void {
+  customBaseUrl = url.trim().replace(/\/+$/, "");
+}
+
+export function hasCustomServerUrl(): boolean {
+  return customBaseUrl.length > 0;
 }
 
 const SERVERS: SpeedServer[] = [
@@ -39,7 +49,7 @@ const SERVERS: SpeedServer[] = [
     id: "edge",
     pingUrl: () => `/api/speedtest/ping?_=${Date.now()}`,
     downUrl: (bytes) => `/api/speedtest/down?bytes=${bytes}&_=${Date.now()}`,
-    upUrl: "/api/speedtest/up",
+    upUrl: () => "/api/speedtest/up",
     parseMeta: (res) => ({
       colo: res.headers.get("x-colo"),
       lat: parseFloat(res.headers.get("x-lat") || "") || null,
@@ -55,7 +65,7 @@ const SERVERS: SpeedServer[] = [
     id: "cf-speed",
     pingUrl: () => `https://speed.cloudflare.com/__down?bytes=0&_=${Date.now()}`,
     downUrl: (bytes) => `https://speed.cloudflare.com/__down?bytes=${bytes}&_=${Date.now()}`,
-    upUrl: "https://speed.cloudflare.com/__up",
+    upUrl: () => "https://speed.cloudflare.com/__up",
     parseMeta: (res) => ({
       colo: res.headers.get("cf-meta-colo"),
       lat: parseFloat(res.headers.get("cf-meta-latitude") || "") || null,
@@ -65,6 +75,23 @@ const SERVERS: SpeedServer[] = [
       const d = new Uint8Array(size);
       for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
       // text/plain => simple request, no CORS preflight (speed.cloudflare.com OPTIONS 400s)
+      return new Blob([d], { type: "text/plain" });
+    },
+  },
+  {
+    id: "custom",
+    pingUrl: () => `${customBaseUrl}/api/speedtest/ping?_=${Date.now()}`,
+    downUrl: (bytes) => `${customBaseUrl}/api/speedtest/down?bytes=${bytes}&_=${Date.now()}`,
+    upUrl: () => `${customBaseUrl}/api/speedtest/up`,
+    parseMeta: (res) => ({
+      colo: res.headers.get("x-colo"),
+      lat: parseFloat(res.headers.get("x-lat") || "") || null,
+      lon: parseFloat(res.headers.get("x-lon") || "") || null,
+    }),
+    makeUploadBody: (size) => {
+      const d = new Uint8Array(size);
+      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
+      // text/plain => simple request, no CORS preflight
       return new Blob([d], { type: "text/plain" });
     },
   },
@@ -108,6 +135,26 @@ export function getServerIds(): string[] {
   return SERVERS.map((s) => s.id);
 }
 
+export interface ServerProbeResult {
+  id: string;
+  reachable: boolean;
+  latency: number | null;
+}
+
+export async function probeServer(id: string): Promise<ServerProbeResult> {
+  if (id === "custom" && !hasCustomServerUrl()) {
+    return { id, reachable: false, latency: null };
+  }
+  const server = getServer(id);
+  const ms = await pingOnce(server);
+  return { id, reachable: ms !== null, latency: ms !== null ? Math.round(ms) : null };
+}
+
+export async function probeServers(ids?: string[]): Promise<ServerProbeResult[]> {
+  const targets = ids || SERVERS.map((s) => s.id);
+  return Promise.all(targets.map((id) => probeServer(id)));
+}
+
 export const SpeedTest = {
   results: {
     download: null,
@@ -124,6 +171,9 @@ export const SpeedTest = {
       download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
     };
+    if (serverId === "custom" && !hasCustomServerUrl()) {
+      throw new Error("No custom server URL set");
+    }
     const server = getServer(serverId);
     const cb: ProgressCallback = onProgress || (() => {});
     const loadedPings: number[] = [];
@@ -229,7 +279,7 @@ export const SpeedTest = {
       const data = server.makeUploadBody(ulSizes[i]);
 
       try {
-        await fetch(server.upUrl, {
+        await fetch(server.upUrl(), {
           method: "POST",
           body: data,
           cache: "no-store",

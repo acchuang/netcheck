@@ -1233,6 +1233,16 @@ select option {
   border-top: 1px solid var(--border-standard);
 }
 
+#speed-custom-url-row #speed-custom-url {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+#speed-custom-url-row #speed-custom-url-hint {
+  margin: 0;
+  font-size: 12px;
+}
+
 .server-badge-route {
   display: flex;
   align-items: center;
