@@ -517,7 +517,7 @@ function drawSpeedGraph(): void {
 }
 
 async function runSpeedTest(): Promise<void> {
-  const serverId = (document.getElementById("speed-server-select") as HTMLSelectElement | null)?.value || "edge";
+  const serverId = (document.getElementById("speed-server-select") as HTMLSelectElement | null)?.value || "cf-speed";
 
   if (serverId === "custom") {
     const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;

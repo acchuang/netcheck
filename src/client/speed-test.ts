@@ -166,7 +166,7 @@ export const SpeedTest = {
     userLon: null,
   } as SpeedTestResults,
 
-  async run(onProgress?: ProgressCallback, serverId = "edge"): Promise<SpeedTestResults> {
+  async run(onProgress?: ProgressCallback, serverId = "cf-speed"): Promise<SpeedTestResults> {
     this.results = {
       download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
