@@ -23,15 +23,29 @@ export type ProgressCallback = (
   results: SpeedTestResults
 ) => void;
 
+interface ServerMeta {
+  colo: string | null;
+  lat: number | null;
+  lon: number | null;
+}
+
 interface SpeedServer {
   id: string;
   pingUrl: () => string;
   downUrl: (bytes: number) => string;
   upUrl: () => string;
   // read colo + geo from the first ping response
-  parseMeta: (res: Response) => { colo: string | null; lat: number | null; lon: number | null };
+  parseMeta: (res: Response) => ServerMeta;
+  // some servers (speed.cloudflare.com) don't expose colo/geo on the ping response —
+  // they need a separate metadata request instead
+  fetchMeta?: () => Promise<ServerMeta>;
   // ponytail: cf-speed uses text/plain Blob to avoid CORS preflight (OPTIONS 400s)
   makeUploadBody: (size: number) => BodyInit;
+}
+
+async function resolveMeta(server: SpeedServer, res: Response): Promise<ServerMeta> {
+  if (server.fetchMeta) return server.fetchMeta();
+  return server.parseMeta(res);
 }
 
 let customBaseUrl = "";
@@ -66,11 +80,24 @@ const SERVERS: SpeedServer[] = [
     pingUrl: () => `https://speed.cloudflare.com/__down?bytes=0&_=${Date.now()}`,
     downUrl: (bytes) => `https://speed.cloudflare.com/__down?bytes=${bytes}&_=${Date.now()}`,
     upUrl: () => "https://speed.cloudflare.com/__up",
-    parseMeta: (res) => ({
-      colo: res.headers.get("cf-meta-colo"),
-      lat: parseFloat(res.headers.get("cf-meta-latitude") || "") || null,
-      lon: parseFloat(res.headers.get("cf-meta-longitude") || "") || null,
-    }),
+    parseMeta: () => ({ colo: null, lat: null, lon: null }),
+    fetchMeta: async () => {
+      try {
+        const res = await fetch("https://speed.cloudflare.com/meta", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000),
+        });
+        // colo.iata is the serving edge location; top-level latitude/longitude is the client's geo
+        const data = (await res.json()) as { latitude?: string; longitude?: string; colo?: { iata?: string } };
+        return {
+          colo: data.colo?.iata ?? null,
+          lat: data.latitude != null ? parseFloat(data.latitude) : null,
+          lon: data.longitude != null ? parseFloat(data.longitude) : null,
+        };
+      } catch {
+        return { colo: null, lat: null, lon: null };
+      }
+    },
     makeUploadBody: (size) => {
       const d = new Uint8Array(size);
       for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
@@ -139,15 +166,25 @@ export interface ServerProbeResult {
   id: string;
   reachable: boolean;
   latency: number | null;
+  colo: string | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 export async function probeServer(id: string): Promise<ServerProbeResult> {
   if (id === "custom" && !hasCustomServerUrl()) {
-    return { id, reachable: false, latency: null };
+    return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
   }
   const server = getServer(id);
-  const ms = await pingOnce(server);
-  return { id, reachable: ms !== null, latency: ms !== null ? Math.round(ms) : null };
+  try {
+    const start = performance.now();
+    const res = await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    const ms = performance.now() - start;
+    const meta = await resolveMeta(server, res);
+    return { id, reachable: true, latency: Math.round(ms), colo: meta.colo, lat: meta.lat, lon: meta.lon };
+  } catch {
+    return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
+  }
 }
 
 export async function probeServers(ids?: string[]): Promise<ServerProbeResult[]> {
@@ -190,7 +227,7 @@ export const SpeedTest = {
         });
         pings.push(performance.now() - start);
         if (i === 0) {
-          const meta = server.parseMeta(res);
+          const meta = await resolveMeta(server, res);
           this.results.colo = meta.colo;
           this.results.userLat = meta.lat;
           this.results.userLon = meta.lon;

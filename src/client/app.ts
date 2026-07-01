@@ -367,7 +367,7 @@ const serverLabelKeys: Record<string, string> = {
   custom: "speed.server.custom",
 };
 
-const serverProbeState: Record<string, { reachable: boolean; latency: number | null }> = {};
+const serverProbeState: Record<string, { reachable: boolean; latency: number | null; colo: string | null; lat: number | null; lon: number | null }> = {};
 
 // Appends a live latency badge to each <option> and disables ones that failed to probe.
 function renderServerOptionLabels(): void {
@@ -408,6 +408,10 @@ async function initSpeedTest(): Promise<void> {
       t("speed.server.edge");
     document.getElementById("speed-server-detail")!.classList.add("hidden");
     customRow?.classList.toggle("hidden", sel.value !== "custom");
+
+    // show the probed location right away if we already know it for the selected server
+    const probe = serverProbeState[sel.value];
+    if (probe?.colo) updateServerBadge(probe.colo, probe.lat, probe.lon);
   }
 
   sel?.addEventListener("change", updateServerValueLabel);
@@ -418,15 +422,17 @@ async function initSpeedTest(): Promise<void> {
     if (!url) return;
     setCustomServerUrl(url);
     const [result] = await probeServers(["custom"]);
-    serverProbeState.custom = { reachable: result.reachable, latency: result.latency };
+    serverProbeState.custom = { reachable: result.reachable, latency: result.latency, colo: result.colo, lat: result.lat, lon: result.lon };
     renderServerOptionLabels();
+    if (sel?.value === "custom" && result.colo) updateServerBadge(result.colo, result.lat, result.lon);
   });
 
   onLocaleChange(renderServerOptionLabels);
 
   // probe-on-load: only the built-in servers, the custom one is probed on blur once a URL is entered
   const results = await probeServers(["edge", "cf-speed"]);
-  results.forEach((r) => { serverProbeState[r.id] = { reachable: r.reachable, latency: r.latency }; });
+  results.forEach((r) => { serverProbeState[r.id] = { reachable: r.reachable, latency: r.latency, colo: r.colo, lat: r.lat, lon: r.lon }; });
+  updateServerValueLabel();
   renderServerOptionLabels();
 }
 
@@ -529,7 +535,7 @@ async function runSpeedTest(): Promise<void> {
     setCustomServerUrl(url);
     if (!serverProbeState.custom || !serverProbeState.custom.reachable) {
       const [result] = await probeServers(["custom"]);
-      serverProbeState.custom = { reachable: result.reachable, latency: result.latency };
+      serverProbeState.custom = { reachable: result.reachable, latency: result.latency, colo: result.colo, lat: result.lat, lon: result.lon };
       renderServerOptionLabels();
     }
     if (!serverProbeState.custom.reachable) {
