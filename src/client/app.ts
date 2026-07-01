@@ -471,6 +471,9 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = "—";
   document.getElementById("speed-latency")!.textContent = "—";
   document.getElementById("speed-jitter")!.textContent = "—";
+  document.getElementById("speed-bufferbloat")!.textContent = "—";
+  document.getElementById("speed-bufferbloat-unit")!.textContent = t("speed.grade");
+  (document.getElementById("speed-bufferbloat-bar") as HTMLElement).style.width = "0%";
   document.getElementById("speed-server-value")!.textContent = t("speed.detecting");
   (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
@@ -525,6 +528,17 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
   document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
   document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
+
+  const bbGrade = SpeedTest.getBufferbloatGrade(results.bufferbloatIncrease);
+  const gradeColors: Record<string, string> = { "A+": "var(--emerald)", A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
+  const bbEl = document.getElementById("speed-bufferbloat")!;
+  bbEl.textContent = bbGrade.grade;
+  bbEl.style.color = gradeColors[bbGrade.grade] || "var(--text-primary)";
+  document.getElementById("speed-bufferbloat-unit")!.textContent =
+    results.bufferbloatIncrease !== null ? `+${results.bufferbloatIncrease}ms · ${bbGrade.label}` : t("speed.grade");
+  const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
+  bbBar.style.width = results.bufferbloatIncrease !== null ? "100%" : "0%";
+  bbBar.style.background = gradeColors[bbGrade.grade] || "var(--brand)";
 
   const grade = SpeedTest.getGrade(results.download);
   const gradeEl = document.getElementById("speed-grade")!;

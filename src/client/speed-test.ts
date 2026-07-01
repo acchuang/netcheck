@@ -6,6 +6,8 @@ export interface SpeedTestResults {
   colo: string | null;
   userLat: number | null;
   userLon: number | null;
+  loadedLatency: number | null;
+  bufferbloatIncrease: number | null;
 }
 
 export interface SpeedGrade {
@@ -68,6 +70,36 @@ const SERVERS: SpeedServer[] = [
   },
 ];
 
+async function pingOnce(server: SpeedServer): Promise<number | null> {
+  try {
+    const start = performance.now();
+    await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    return performance.now() - start;
+  } catch {
+    return null;
+  }
+}
+
+// Bufferbloat: ping in the background while download/upload saturate the link,
+// so latency-under-load can be compared against the idle baseline.
+function startLoadedPinger(server: SpeedServer, sink: number[]): () => void {
+  let stopped = false;
+  (async () => {
+    while (!stopped) {
+      const ms = await pingOnce(server);
+      if (ms !== null) sink.push(ms);
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  })();
+  return () => { stopped = true; };
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
 function getServer(id: string): SpeedServer {
   return SERVERS.find((s) => s.id === id) || SERVERS[0];
 }
@@ -88,9 +120,13 @@ export const SpeedTest = {
   } as SpeedTestResults,
 
   async run(onProgress?: ProgressCallback, serverId = "edge"): Promise<SpeedTestResults> {
-    this.results = { download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null };
+    this.results = {
+      download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null,
+      loadedLatency: null, bufferbloatIncrease: null,
+    };
     const server = getServer(serverId);
     const cb: ProgressCallback = onProgress || (() => {});
+    const loadedPings: number[] = [];
 
     // Latency
     cb("latency", 0, this.results);
@@ -133,6 +169,7 @@ export const SpeedTest = {
     const dlSizes = [100000, 500000, 1000000, 5000000, 10000000, 25000000];
     const dlStart = performance.now();
     let dlTotalBytes = 0;
+    const stopDownloadPing = startLoadedPinger(server, loadedPings);
 
     for (let i = 0; i < dlSizes.length; i++) {
       try {
@@ -176,6 +213,7 @@ export const SpeedTest = {
       }
     }
 
+    stopDownloadPing();
     const dlElapsed = (performance.now() - dlStart) / 1000;
     if (dlElapsed === 0 || dlTotalBytes === 0) this.results.download = null;
     cb("download", 100, this.results);
@@ -185,6 +223,7 @@ export const SpeedTest = {
     const ulSizes = [100000, 500000, 1000000, 2000000, 5000000];
     const ulStart = performance.now();
     let ulTotalBytes = 0;
+    const stopUploadPing = startLoadedPinger(server, loadedPings);
 
     for (let i = 0; i < ulSizes.length; i++) {
       const data = server.makeUploadBody(ulSizes[i]);
@@ -211,9 +250,15 @@ export const SpeedTest = {
       }
     }
 
+    stopUploadPing();
     const ulElapsed = (performance.now() - ulStart) / 1000;
     if (ulElapsed === 0 || ulTotalBytes === 0) this.results.upload = null;
     cb("upload", 100, this.results);
+
+    this.results.loadedLatency = median(loadedPings);
+    if (this.results.loadedLatency !== null && this.results.latency !== null) {
+      this.results.bufferbloatIncrease = Math.max(0, Math.round(this.results.loadedLatency - this.results.latency));
+    }
 
     return this.results;
   },
@@ -234,5 +279,16 @@ export const SpeedTest = {
     if (downloadMbps >= 25) return { grade: "C", label: "Average" };
     if (downloadMbps >= 10) return { grade: "D", label: "Below Average" };
     return { grade: "F", label: "Slow" };
+  },
+
+  // Waveform-style bufferbloat grading: ms of latency increase under a saturated link.
+  getBufferbloatGrade(increaseMs: number | null): SpeedGrade {
+    if (increaseMs === null) return { grade: "—", label: "Unknown" };
+    if (increaseMs < 5) return { grade: "A+", label: "None" };
+    if (increaseMs < 30) return { grade: "A", label: "Minimal" };
+    if (increaseMs < 60) return { grade: "B", label: "Mild" };
+    if (increaseMs < 200) return { grade: "C", label: "Moderate" };
+    if (increaseMs < 400) return { grade: "D", label: "Significant" };
+    return { grade: "F", label: "Severe" };
   },
 };

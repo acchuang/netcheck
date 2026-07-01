@@ -1290,7 +1290,7 @@ select option {
 
 .speed-gauge-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 
@@ -1369,6 +1369,7 @@ select option {
 .speed-progress-fill.upload { background: var(--emerald); }
 .speed-progress-fill.latency { background: var(--amber); }
 .speed-progress-fill.jitter { background: var(--text-tertiary); }
+.speed-progress-fill.bufferbloat { background: var(--brand); }
 
 .speed-status-row {
   display: flex;
