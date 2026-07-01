@@ -307,6 +307,23 @@ const en = {
   "headers.poor": "poor",
   "headers.error": "Failed to scan URL",
 
+  // About section
+  "nav.about": "About",
+  "about.title": "About NetCheck",
+  "about.subtitle": "A browser-based network diagnostics toolkit — no installs, no accounts, nothing leaves your device except the checks themselves",
+  "about.what.title": "What is NetCheck?",
+  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver and its security posture, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network — there's no backend collecting your results.",
+  "about.feat.dns.title": "DNS Check",
+  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; flags missing DNSSEC, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each.",
+  "about.feat.speed.title": "Speed Test",
+  "about.feat.speed.desc": "Measures download, upload, latency, jitter, and bufferbloat against the nearest Cloudflare edge, Cloudflare's own speed test, or a server of your choosing.",
+  "about.feat.adblock.title": "Ad Block Test",
+  "about.feat.adblock.desc": "Runs dozens of ad, tracker, and fingerprinting tests across real ad-network domains, identifies which blocker you're running, and tests any custom URL.",
+  "about.feat.headers.title": "Security Headers",
+  "about.feat.headers.desc": "Scans any URL's HTTP response headers and grades its protection against XSS, clickjacking, and MIME-sniffing attacks.",
+  "about.privacy.title": "Privacy",
+  "about.privacy.desc": "All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine — nothing is sent to a server.",
+
   // Footer
   "footer.text": "NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.",
 } as const;
@@ -614,6 +631,23 @@ const zhTW: Record<keyof typeof en, string> = {
   "headers.poor": "不佳",
   "headers.error": "掃描 URL 失敗",
 
+  // About section
+  "nav.about": "關於",
+  "about.title": "關於 NetCheck",
+  "about.subtitle": "純瀏覽器端的網路診斷工具 — 免安裝、免帳號，除了檢測本身之外不會有任何資料離開你的裝置",
+  "about.what.title": "NetCheck 是什麼？",
+  "about.what.desc": "NetCheck 直接在你的瀏覽器中執行一系列網路與隱私診斷：你的 DNS 解析器及其安全性、真實的下載/上傳速度與緩衝膨脹、廣告與追蹤器攔截器的表現，以及任何網站的安全標頭。所有測試都在客戶端透過 Cloudflare 邊緣網路執行 — 沒有後端伺服器收集你的結果。",
+  "about.feat.dns.title": "DNS 檢測",
+  "about.feat.dns.desc": "偵測你的 IP、解析器與 PoP；標示缺失的 DNSSEC、未加密的 DNS、WebRTC 洩漏與惡意軟體過濾漏洞，並提供對應修正方式。",
+  "about.feat.speed.title": "速度測試",
+  "about.feat.speed.desc": "針對最近的 Cloudflare 邊緣節點、Cloudflare 自家測速服務，或你指定的伺服器，測量下載、上傳、延遲、抖動與緩衝膨脹。",
+  "about.feat.adblock.title": "廣告攔截測試",
+  "about.feat.adblock.desc": "在真實廣告網路網域上執行數十項廣告、追蹤器與指紋辨識測試，辨識你使用的攔截器，並可測試任何自訂網址。",
+  "about.feat.headers.title": "安全標頭",
+  "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
+  "about.privacy.title": "隱私",
+  "about.privacy.desc": "所有檢測都在你的瀏覽器中執行。快照與廣告攔截記錄僅儲存於裝置的本機儲存空間，不會上傳到任何地方。匯出功能會在你的裝置上產生 Markdown 或 PDF 檔案 — 不會傳送到伺服器。",
+
   // Footer
   "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
 };
@@ -683,6 +717,7 @@ function applyStaticTranslations(): void {
     else if (tab === "speed") target.textContent = t("nav.speed");
     else if (tab === "adblock") target.textContent = t("nav.adblock");
     else if (tab === "headers") target.textContent = t("nav.headers");
+    else if (tab === "about") target.textContent = t("nav.about");
   });
 
   s("export-btn-text", "nav.export");
@@ -751,6 +786,22 @@ function applyStaticTranslations(): void {
   s("headers-info-title", "headers.infoTitle");
   s("headers-info-desc", "headers.infoDesc");
   s("headers-detail-title", "headers.detailTitle");
+
+  // About section
+  s("about-title", "about.title");
+  s("about-subtitle", "about.subtitle");
+  s("about-what-title", "about.what.title");
+  s("about-what-desc", "about.what.desc");
+  s("about-feat-dns-title", "about.feat.dns.title");
+  s("about-feat-dns-desc", "about.feat.dns.desc");
+  s("about-feat-speed-title", "about.feat.speed.title");
+  s("about-feat-speed-desc", "about.feat.speed.desc");
+  s("about-feat-adblock-title", "about.feat.adblock.title");
+  s("about-feat-adblock-desc", "about.feat.adblock.desc");
+  s("about-feat-headers-title", "about.feat.headers.title");
+  s("about-feat-headers-desc", "about.feat.headers.desc");
+  s("about-privacy-title", "about.privacy.title");
+  s("about-privacy-desc", "about.privacy.desc");
 
   // Footer
   s("footer-text", "footer.text");
