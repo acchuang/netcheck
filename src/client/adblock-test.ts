@@ -1,3 +1,5 @@
+import { isHidden } from "./ui-utils";
+
 interface ScriptTest {
   name: string;
   type: "script";
@@ -257,10 +259,7 @@ export const AdBlockTest = {
     container.appendChild(iframe);
 
     requestAnimationFrame(() => {
-      const rect = iframe.getBoundingClientRect();
-      const hidden = rect.width === 0 || rect.height === 0 ||
-        getComputedStyle(iframe).display === "none" ||
-        getComputedStyle(iframe).visibility === "hidden";
+      const hidden = isHidden(iframe);
       clearTimeout(timeout);
       resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
     });
@@ -275,10 +274,7 @@ export const AdBlockTest = {
     container.appendChild(div);
 
     requestAnimationFrame(() => {
-      const rect = div.getBoundingClientRect();
-      const hidden = rect.width === 0 || rect.height === 0 ||
-        getComputedStyle(div).display === "none" ||
-        getComputedStyle(div).visibility === "hidden";
+      const hidden = isHidden(div);
       clearTimeout(timeout);
       resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
     });

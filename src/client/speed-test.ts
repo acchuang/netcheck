@@ -167,7 +167,7 @@ export interface ServerProbeResult {
   lon: number | null;
 }
 
-export async function probeServer(id: string): Promise<ServerProbeResult> {
+async function probeServer(id: string): Promise<ServerProbeResult> {
   if (id === "custom" && !hasCustomServerUrl()) {
     return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
   }

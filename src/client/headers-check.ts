@@ -30,7 +30,7 @@ export function initHeadersCheck(): void {
   });
 }
 
-export async function runHeadersCheck(): Promise<void> {
+async function runHeadersCheck(): Promise<void> {
   const input = document.getElementById("headers-url-input") as HTMLInputElement;
   const url = input.value.trim();
   if (!url) return;

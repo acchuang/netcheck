@@ -96,6 +96,13 @@ export const CF_POPS: Record<string, [string, number, number]> = {
   PVG: ["Shanghai", 31.14, 121.81], PEK: ["Beijing", 40.08, 116.58], CMB: ["Colombo", 7.18, 79.88],
 };
 
+export function isHidden(el: HTMLElement): boolean {
+  const rect = el.getBoundingClientRect();
+  return rect.width === 0 || rect.height === 0 ||
+    getComputedStyle(el).display === "none" ||
+    getComputedStyle(el).visibility === "hidden";
+}
+
 export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;

@@ -1,3 +1,5 @@
+import { isHidden } from "./ui-utils";
+
 interface ElementTest {
   type: "element";
   className?: string;
@@ -212,10 +214,7 @@ export const FilterListDetector = {
           container.appendChild(el);
 
           requestAnimationFrame(() => {
-            const rect: DOMRect = el.getBoundingClientRect();
-            const hidden: boolean = rect.width === 0 || rect.height === 0 ||
-              getComputedStyle(el).display === "none" ||
-              getComputedStyle(el).visibility === "hidden";
+            const hidden = isHidden(el);
             clearTimeout(timeout);
             resolve({ blocked: hidden });
           });
