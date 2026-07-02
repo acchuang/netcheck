@@ -1,5 +1,6 @@
 import type { SpeedTestResults } from "./speed-test";
 import { SpeedTest } from "./speed-test";
+import { loadHistory, persistHistory } from "./ui-utils";
 
 interface Snapshot {
   ts: number;
@@ -28,22 +29,10 @@ export function enableSaveButton(): void {
   if (btn) btn.disabled = false;
 }
 
-function loadSnapshots(): Snapshot[] {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function persist(snapshots: Snapshot[]): void {
-  localStorage.setItem(KEY, JSON.stringify(snapshots.slice(-MAX)));
-}
-
 function saveSnapshot(): void {
   const r = SpeedTest.results;
   if (r.download === null && r.upload === null && r.latency === null) return;
-  const snapshots = loadSnapshots();
+  const snapshots = loadHistory<Snapshot>(KEY);
   snapshots.push({
     ts: Date.now(),
     download: r.download,
@@ -52,7 +41,7 @@ function saveSnapshot(): void {
     jitter: r.jitter,
     colo: r.colo,
   });
-  persist(snapshots);
+  persistHistory(KEY, snapshots, MAX);
   renderSnapshotHistory();
 }
 
@@ -74,7 +63,7 @@ function fmtDelta(cur: number | null, prev: number | null, unit: string, lowerBe
 function renderSnapshotHistory(): void {
   const section = document.getElementById("snapshot-section")!;
   const list = document.getElementById("snapshot-list")!;
-  const snapshots = loadSnapshots();
+  const snapshots = loadHistory<Snapshot>(KEY);
 
   if (snapshots.length === 0) {
     section.hidden = true;

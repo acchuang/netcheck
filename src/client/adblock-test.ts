@@ -184,13 +184,13 @@ export const AdBlockTest = {
 
       switch (test.type) {
         case "script":
-          this.testScript(test.url, container, timeout, resolve);
+          this.testResource("script", test.url, container, timeout, resolve);
           break;
         case "image":
-          this.testImage(test.url, container, timeout, resolve);
+          this.testResource("img", test.url, container, timeout, resolve);
           break;
         case "pixel":
-          this.testPixel(test.url, container, timeout, resolve);
+          this.testResource("img", test.url, container, timeout, resolve, true);
           break;
         case "iframe":
           this.testIframe(test, container, timeout, resolve);
@@ -205,48 +205,22 @@ export const AdBlockTest = {
     });
   },
 
-  testScript(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const script = document.createElement("script");
-    script.src = url;
-    script.onload = () => {
+  testResource(tag: "script" | "img", url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void, pixel = false): void {
+    const el = document.createElement(tag);
+    el.src = url;
+    if (pixel && el instanceof HTMLImageElement) {
+      el.width = 1;
+      el.height = 1;
+    }
+    el.onload = () => {
       clearTimeout(timeout);
       resolve({ blocked: false, method: "loaded" });
     };
-    script.onerror = () => {
+    el.onerror = () => {
       clearTimeout(timeout);
       resolve({ blocked: true, method: "network" });
     };
-    container.appendChild(script);
-  },
-
-  testImage(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const img = document.createElement("img");
-    img.src = url;
-    img.onload = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: false, method: "loaded" });
-    };
-    img.onerror = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: true, method: "network" });
-    };
-    container.appendChild(img);
-  },
-
-  testPixel(url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const img = document.createElement("img");
-    img.src = url;
-    img.width = 1;
-    img.height = 1;
-    img.onload = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: false, method: "loaded" });
-    };
-    img.onerror = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: true, method: "network" });
-    };
-    container.appendChild(img);
+    container.appendChild(el);
   },
 
   testIframe(test: IframeTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {

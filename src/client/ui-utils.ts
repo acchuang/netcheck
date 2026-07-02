@@ -96,6 +96,18 @@ export const CF_POPS: Record<string, [string, number, number]> = {
   PVG: ["Shanghai", 31.14, 121.81], PEK: ["Beijing", 40.08, 116.58], CMB: ["Colombo", 7.18, 79.88],
 };
 
+export function loadHistory<T>(key: string): T[] {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function persistHistory<T>(key: string, items: T[], max: number): void {
+  localStorage.setItem(key, JSON.stringify(items.slice(-max)));
+}
+
 export function isHidden(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect();
   return rect.width === 0 || rect.height === 0 ||

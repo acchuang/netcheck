@@ -1,5 +1,6 @@
 // ponytail: mirrors snapshots.ts — adblock scores over time, color-coded deltas
 import { AdBlockTest } from "./adblock-test";
+import { loadHistory, persistHistory } from "./ui-utils";
 
 interface AdblockSnapshot {
   ts: number;
@@ -23,18 +24,6 @@ export function enableAdblockSaveButton(): void {
   if (btn) btn.disabled = false;
 }
 
-function load(): AdblockSnapshot[] {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function persist(s: AdblockSnapshot[]): void {
-  localStorage.setItem(KEY, JSON.stringify(s.slice(-MAX)));
-}
-
 function saveSnapshot(): void {
   const score = AdBlockTest.getScore();
   if (score.total === 0) return;
@@ -42,9 +31,9 @@ function saveSnapshot(): void {
     const blocked = c.tests.filter((t) => t.blocked).length;
     return { name: c.name, pct: c.tests.length ? Math.round((blocked / c.tests.length) * 100) : 0 };
   });
-  const snapshots = load();
+  const snapshots = loadHistory<AdblockSnapshot>(KEY);
   snapshots.push({ ts: Date.now(), score: score.score, blocked: score.blocked, total: score.total, cats });
-  persist(snapshots);
+  persistHistory(KEY, snapshots, MAX);
   renderHistory();
 }
 
@@ -65,7 +54,7 @@ function fmtDelta(cur: number, prev: number | undefined, lowerBetter = false): s
 function renderHistory(): void {
   const section = document.getElementById("adblock-history-section")!;
   const list = document.getElementById("adblock-history-list")!;
-  const snapshots = load();
+  const snapshots = loadHistory<AdblockSnapshot>(KEY);
 
   if (snapshots.length === 0) {
     section.hidden = true;
