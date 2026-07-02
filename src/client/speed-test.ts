@@ -158,10 +158,6 @@ function getServer(id: string): SpeedServer {
   return SERVERS.find((s) => s.id === id) || SERVERS[0];
 }
 
-export function getServerIds(): string[] {
-  return SERVERS.map((s) => s.id);
-}
-
 export interface ServerProbeResult {
   id: string;
   reachable: boolean;

@@ -105,16 +105,3 @@ export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: numb
     Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-
-export function formatColo(colo: string | null, userLat?: number | null, userLon?: number | null): string {
-  if (!colo || colo === "unknown") return "—";
-  const pop = CF_POPS[colo];
-  if (!pop) return colo;
-  const [city, popLat, popLon] = pop;
-  let dist = "";
-  if (userLat != null && userLon != null) {
-    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
-    dist = ` · ${km.toLocaleString()} km`;
-  }
-  return `${city} (${colo})${dist}`;
-}
