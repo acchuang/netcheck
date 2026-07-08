@@ -107,6 +107,7 @@ const en = {
   "speed.server.custom": "Custom Server…",
   "speed.server.unreachable": "unreachable",
   "speed.customUrlRequired": "Enter a server URL first",
+  "speed.customUrlHint": "Must implement /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "Selected server is unreachable",
   "speed.autoNearest": "Automatic — nearest edge",
   "speed.you": "You",
@@ -208,6 +209,8 @@ const en = {
   "adblock.fp.unknown": "Unknown",
   "adblock.rerun": "Re-test",
   "adblock.testUrl": "Test URL",
+  "adblock.blockerCard": "Detected Blocker",
+  "adblock.customCard": "Custom URL Test",
   "adblock.recommendations": "Recommendations",
   "adblock.suggestPerfect": "Your ad blocker is performing excellently across all categories. No action needed.",
   "adblock.suggestGaps": "Found gaps in {0} of {1} categories. Here's how to fix each one:",
@@ -279,6 +282,12 @@ const en = {
   "filter.disabled": "disabled",
   "filter.found": "detected",
   "filter.notFound": "not found",
+
+  // Snapshot history
+  "snap.title": "History",
+  "snap.scoreTitle": "Score History",
+  "snap.save": "Save Snapshot",
+  "snap.clear": "Clear",
 
   // DNS table
   "dns.table.type": "Type",
@@ -433,6 +442,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.server.custom": "自訂伺服器…",
   "speed.server.unreachable": "無法連線",
   "speed.customUrlRequired": "請先輸入伺服器網址",
+  "speed.customUrlHint": "必須實作 /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "所選伺服器無法連線",
   "speed.autoNearest": "自動 — 最近節點",
   "speed.you": "您",
@@ -534,6 +544,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.fp.unknown": "未知",
   "adblock.rerun": "重新測試",
   "adblock.testUrl": "測試網址",
+  "adblock.blockerCard": "偵測到的攔截器",
+  "adblock.customCard": "自訂網址測試",
   "adblock.recommendations": "建議",
   "adblock.suggestPerfect": "您的廣告攔截器在所有類別中表現優異。無需操作。",
   "adblock.suggestGaps": "在 {1} 個類別中發現 {0} 個缺口。以下是改善方法：",
@@ -605,6 +617,12 @@ const zhTW: Record<keyof typeof en, string> = {
   "filter.disabled": "已停用",
   "filter.found": "已偵測",
   "filter.notFound": "未找到",
+
+  // Snapshot history
+  "snap.title": "歷史記錄",
+  "snap.scoreTitle": "分數記錄",
+  "snap.save": "儲存快照",
+  "snap.clear": "清除",
 
   // DNS table
   "dns.table.type": "類型",
@@ -726,6 +744,8 @@ function applyStaticTranslations(): void {
 
   s("export-btn-text", "nav.export");
   sa("export-btn", "nav.exportReport", "title");
+  s("export-md-text", "nav.downloadMd");
+  s("export-pdf-text", "nav.savePdf");
 
   // DNS section
   s("dns-title", "dns.title");
@@ -770,12 +790,23 @@ function applyStaticTranslations(): void {
   s("speed-ul-legend", "speed.upload");
   s("speed-suggestions-title", "speed.recommendations");
   s("speed-route-you", "speed.you");
+  s("speed-custom-url-hint", "speed.customUrlHint");
+  s("snapshot-title", "snap.title");
+  s("snapshot-save-btn", "snap.save");
+  s("snapshot-clear-btn", "snap.clear");
 
   // Ad block section
   s("adblock-title", "adblock.title");
   s("adblock-subtitle", "adblock.subtitle");
+  s("adblock-rerun-btn", "adblock.rerun");
+  s("adblock-custom-btn", "adblock.testUrl");
+  s("adblock-blocker-title", "adblock.blockerCard");
+  s("adblock-custom-title", "adblock.customCard");
   s("filter-list-title", "filter.title");
   s("adblock-suggestions-title", "adblock.recommendations");
+  s("adblock-history-title", "snap.scoreTitle");
+  s("adblock-history-save-btn", "snap.save");
+  s("adblock-history-clear-btn", "snap.clear");
 
   // DNS connection info
   s("dns-http-label", "dns.http");

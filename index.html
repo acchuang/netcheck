@@ -77,11 +77,11 @@
           <div class="export-menu" id="export-menu">
             <button class="export-option" data-format="markdown">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Download Markdown
+              <span id="export-md-text">Download Markdown</span>
             </button>
             <button class="export-option" data-format="pdf">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-              Save as PDF
+              <span id="export-pdf-text">Save as PDF</span>
             </button>
           </div>
         </div>
@@ -322,7 +322,7 @@
         <!-- Speed Snapshot History -->
         <div class="snapshot-section" id="snapshot-section" hidden>
           <div class="snapshot-header">
-            <h2 class="snapshot-title">History</h2>
+            <h2 class="snapshot-title" id="snapshot-title">History</h2>
             <button class="btn btn-small" id="snapshot-clear-btn" title="Clear history">Clear</button>
           </div>
           <div class="snapshot-list" id="snapshot-list"></div>
@@ -353,7 +353,7 @@
 
       <div class="card card-wide" id="adblock-blocker-card" hidden>
         <div class="card-header">
-          <h2 class="card-title">Detected Blocker</h2>
+          <h2 class="card-title" id="adblock-blocker-title">Detected Blocker</h2>
           <span class="status-badge done" id="adblock-blocker-name">—</span>
         </div>
         <div class="card-body">
@@ -363,7 +363,7 @@
 
       <div class="card card-wide" id="adblock-custom-card" hidden>
         <div class="card-header">
-          <h2 class="card-title">Custom URL Test</h2>
+          <h2 class="card-title" id="adblock-custom-title">Custom URL Test</h2>
         </div>
         <div class="card-body" id="adblock-custom-results"></div>
       </div>
@@ -410,7 +410,7 @@
       <!-- Adblock Score History -->
       <div class="snapshot-section" id="adblock-history-section" hidden>
         <div class="snapshot-header">
-          <h2 class="snapshot-title">Score History</h2>
+          <h2 class="snapshot-title" id="adblock-history-title">Score History</h2>
           <div class="snapshot-actions">
             <button class="btn btn-small" id="adblock-history-save-btn" disabled>Save Snapshot</button>
             <button class="btn btn-small" id="adblock-history-clear-btn" title="Clear history">Clear</button>
