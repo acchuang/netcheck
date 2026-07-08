@@ -204,7 +204,8 @@ body {
   z-index: 100;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-subtle);
-  backdrop-filter: blur(12px);
+  /* no backdrop-filter: it would create a containing block that breaks the
+     fixed-position mobile tab bar and export menu (and bg is opaque anyway) */
 }
 
 .nav-inner {
@@ -1947,13 +1948,13 @@ select option {
   grid-template-columns: 120px 1fr 1fr 1fr 80px;
   gap: 12px;
   padding: 8px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border: 1px solid var(--border-standard);
   border-radius: 8px;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
-.snap-row.latest { border-color: var(--accent); background: var(--bg-tertiary); }
+.snap-row.latest { border-color: var(--accent); background: var(--bg-surface); }
 .snap-time { color: var(--text-tertiary); }
 .snap-val { color: var(--text-secondary); }
 .snap-colo { color: var(--text-quaternary); text-align: right; }
