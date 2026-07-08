@@ -30,20 +30,27 @@ export function pulseValue(el: HTMLElement): void {
   setTimeout(() => el.classList.remove("updating"), 150);
 }
 
-export function createCheckItem(status: "pass" | "warn" | "fail", label: string, value: string): HTMLDivElement {
+export function createCheckItem(status: "pass" | "warn" | "fail", label: string, value: string, sublabel?: string): HTMLDivElement {
   const div = document.createElement("div");
-  div.className = `check-item ${status}`;
-  
-  const iconSvg = {
-    pass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    fail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  div.className = "dns-check-item fade-in";
+
+  const iconPath = {
+    pass: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>',
+    warn: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    fail: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
   }[status];
 
+  const labelHtml = sublabel
+    ? `<div class="check-label-block">
+        <span class="check-label">${escapeHtml(label)}</span>
+        <span class="check-sublabel">${escapeHtml(sublabel)}</span>
+      </div>`
+    : `<span class="check-label">${escapeHtml(label)}</span>`;
+
   div.innerHTML = `
-    <div class="check-icon">${iconSvg}</div>
-    <div class="check-label">${label}</div>
-    <div class="check-value">${value}</div>
+    <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPath}</svg>
+    ${labelHtml}
+    ${value ? `<span class="check-value">${escapeHtml(value)}</span>` : ""}
   `;
   return div;
 }

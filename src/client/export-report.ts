@@ -92,7 +92,7 @@ export const ReportExporter = {
 
     document.querySelectorAll("#dns-security-results .dns-check-item").forEach((item) => {
       const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
+      const value = (item.querySelector(".check-value") || item.querySelector(".check-sublabel"))?.textContent?.trim() || "";
       const icon = item.querySelector(".check-icon");
       const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
       dns.security.push({ label, value, status });

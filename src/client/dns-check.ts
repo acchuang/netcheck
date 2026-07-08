@@ -330,7 +330,7 @@ export async function runDnsChecks(): Promise<void> {
   const anyFail = securityChecks.some((c) => c.status === "fail");
 
   securityChecks.forEach((check) => {
-    const item = createCheckItem(check.status, check.name, check.detail);
+    const item = createCheckItem(check.status, check.name, "", check.detail);
     securityContainer.appendChild(item);
   });
 
