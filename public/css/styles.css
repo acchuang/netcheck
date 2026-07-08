@@ -195,6 +195,7 @@ body {
   color: var(--text-secondary);
   background: var(--bg-black);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Nav */

@@ -29,7 +29,10 @@ function enableThemeTransition(): void {
 
 function apply(animate = false): void {
   if (animate) enableThemeTransition();
-  document.documentElement.setAttribute("data-theme", resolvedTheme());
+  const theme = resolvedTheme();
+  document.documentElement.setAttribute("data-theme", theme);
+  document.querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", theme === "light" ? "#f8f9fa" : "#08090a");
   const btn = document.getElementById("theme-toggle");
   if (btn) {
     const svg = btn.querySelector("svg");
