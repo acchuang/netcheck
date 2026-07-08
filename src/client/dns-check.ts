@@ -262,7 +262,18 @@ export async function runDnsChecks(): Promise<void> {
   // IP detection
   const ipData: IpData = await DnsCheck.detectIp();
   if (!ipData.error) {
-    document.getElementById("ip-address")!.textContent = ipData.ip || "—";
+    const ipEl = document.getElementById("ip-address")!;
+    ipEl.textContent = ipData.ip || "—";
+    if (ipData.ip) {
+      ipEl.classList.add("copyable");
+      ipEl.title = t("dns.copyHint");
+      ipEl.onclick = () => {
+        navigator.clipboard.writeText(ipData.ip!).then(() => {
+          setBadge("ip-status", "done", t("dns.copied"));
+          setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
+        });
+      };
+    }
     document.getElementById("ip-location")!.textContent =
       [ipData.city, ipData.region, ipData.country].filter(Boolean).join(", ") || "—";
     document.getElementById("ip-asn")!.textContent =

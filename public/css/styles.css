@@ -560,6 +560,14 @@ body {
   color: var(--text-quaternary);
 }
 
+.copyable {
+  cursor: pointer;
+}
+
+.copyable:hover {
+  color: var(--accent);
+}
+
 /* DNS Check Items */
 .dns-check-item {
   display: flex;

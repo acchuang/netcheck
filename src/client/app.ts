@@ -439,6 +439,7 @@ async function runSpeedTest(): Promise<void> {
 
   speedGraphData.download = [];
   speedGraphData.upload = [];
+  document.querySelector(".speed-graph-card")?.removeAttribute("hidden");
   drawSpeedGraph();
 
   document.getElementById("speed-download")!.textContent = "—";
