@@ -1,4 +1,4 @@
-import { t } from "./i18n";
+import { t, onLocaleChange } from "./i18n";
 import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 
@@ -267,6 +267,7 @@ export async function runDnsChecks(): Promise<void> {
     if (ipData.ip) {
       ipEl.classList.add("copyable");
       ipEl.title = t("dns.copyHint");
+      onLocaleChange(() => { ipEl.title = t("dns.copyHint"); });
       ipEl.onclick = () => {
         navigator.clipboard.writeText(ipData.ip!).then(() => {
           setBadge("ip-status", "done", t("dns.copied"));
