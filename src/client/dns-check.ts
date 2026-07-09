@@ -1,4 +1,4 @@
-import { t, onLocaleChange } from "./i18n";
+import { t, tTag, onLocaleChange } from "./i18n";
 import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 
@@ -28,11 +28,15 @@ interface ResolverResult extends ResolverInfo {
 }
 
 type SecurityStatus = "pass" | "warn" | "fail";
+type SecurityCheckId = "dnssec" | "doh" | "malware" | "webrtc";
 
+// Stores identifiers + i18n keys (not display strings) so locale switches
+// can re-render the card without re-running the checks.
 interface SecurityCheck {
-  name: string;
+  id: SecurityCheckId;
   status: SecurityStatus;
-  detail: string;
+  detailKey: string;
+  detailArg?: string;
 }
 
 interface DohResponse {
@@ -63,7 +67,7 @@ interface DnsContext {
   usingResolver: (name: string) => boolean;
   slowestResolver: () => number;
   fastestResolver: () => number;
-  hasSecurity: (name: string) => boolean;
+  hasSecurity: (id: string) => boolean;
   hasWebRtcLeak: boolean;
   reachableCount: number;
 }
@@ -131,19 +135,19 @@ export const DnsCheck = {
       });
       const data: DohResponse = await res.json();
       checks.push({
-        name: "DNSSEC Validation",
+        id: "dnssec",
         status: data.AD ? "pass" : "warn",
-        detail: data.AD ? "DNS responses include DNSSEC authentication" : "No DNSSEC AD flag detected",
+        detailKey: data.AD ? "dns.dnssecPass" : "dns.dnssecWarn",
       });
     } catch {
-      checks.push({ name: "DNSSEC Validation", status: "warn", detail: "Could not verify" });
+      checks.push({ id: "dnssec", status: "warn", detailKey: "dns.dnssecUnknown" });
     }
 
     // DoH support
     checks.push({
-      name: "DNS-over-HTTPS",
+      id: "doh",
       status: "pass",
-      detail: "Connection is encrypted via DNS-over-HTTPS",
+      detailKey: "dns.dohPass",
     });
 
     // Malware domain filtering — test through the USER's resolver (not Cloudflare's DoH).
@@ -157,15 +161,15 @@ export const DnsCheck = {
         signal: AbortSignal.timeout(4000),
       });
       checks.push({
-        name: "Malware Domain Filtering",
+        id: "malware",
         status: "warn",
-        detail: t("dns.malwareNotFiltered"),
+        detailKey: "dns.malwareNotFiltered",
       });
     } catch {
       checks.push({
-        name: "Malware Domain Filtering",
+        id: "malware",
         status: "pass",
-        detail: t("dns.malwareFiltered"),
+        detailKey: "dns.malwareFiltered",
       });
     }
 
@@ -173,12 +177,13 @@ export const DnsCheck = {
     try {
       const leaked = await DnsCheck.checkWebRtcLeak();
       checks.push({
-        name: "WebRTC IP Leak",
+        id: "webrtc",
         status: leaked ? "fail" : "pass",
-        detail: leaked ? `Local IP exposed: ${leaked}` : "No WebRTC IP leak detected",
+        detailKey: leaked ? "dns.webrtcLeak" : "dns.webrtcPass",
+        detailArg: leaked ?? undefined,
       });
     } catch {
-      checks.push({ name: "WebRTC IP Leak", status: "warn", detail: "Could not check WebRTC" });
+      checks.push({ id: "webrtc", status: "warn", detailKey: "dns.webrtcUnknown" });
     }
 
     return checks;
@@ -237,17 +242,17 @@ const dnsSuggestions: Suggestion[] = [
   { name: "dns.sug.cf", icon: "CF", tags: ["fastest", "DoH", "DoT", "privacy"], url: "https://1.1.1.1",
     when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100 },
   { name: "dns.sug.cfFamily", icon: "CF+", tags: ["family safe", "malware blocking", "free"], url: "https://1.1.1.1/family",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") },
+    when: (ctx) => !ctx.hasSecurity("malware") },
   { name: "dns.sug.quad9", icon: "Q9", tags: ["threat blocking", "non-profit", "DNSSEC"], url: "https://quad9.net",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") || !ctx.hasSecurity("DNSSEC Validation") },
+    when: (ctx) => !ctx.hasSecurity("malware") || !ctx.hasSecurity("dnssec") },
   { name: "dns.sug.nextdns", icon: "ND", tags: ["customizable", "analytics", "ad blocking"], url: "https://nextdns.io",
     when: () => true },
   { name: "dns.sug.doh", icon: "DoH", tags: ["encryption", "privacy", "browser setting"], url: "https://www.cloudflare.com/ssl/encrypted-sni/",
-    when: (ctx) => !ctx.hasSecurity("DNS-over-HTTPS") },
+    when: (ctx) => !ctx.hasSecurity("doh") },
   { name: "dns.sug.dnssec", icon: "SEC", tags: ["anti-spoofing", "cryptographic", "validation"], url: "https://www.internetsociety.org/deploy360/dnssec/",
-    when: (ctx) => !ctx.hasSecurity("DNSSEC Validation") },
+    when: (ctx) => !ctx.hasSecurity("dnssec") },
   { name: "dns.sug.pihole", icon: "Pi", tags: ["self-hosted", "network-wide", "open source"], url: "https://pi-hole.net",
-    when: (ctx) => !ctx.hasSecurity("Malware Domain Filtering") },
+    when: (ctx) => !ctx.hasSecurity("malware") },
   { name: "dns.sug.webrtc", icon: "RTC", tags: ["privacy fix", "IP leak", "browser setting"], url: null,
     when: (ctx) => ctx.hasWebRtcLeak },
   { name: "dns.sug.adguard", icon: "AG", tags: ["ad blocking", "no install", "cross-platform"], url: "https://adguard.com/adguard-dns/overview.html",
@@ -258,43 +263,77 @@ const dnsSuggestions: Suggestion[] = [
 
 // --- UI Functions ---
 
+// Last successful results, kept so locale switches can re-render translated UI
+// without re-running the network checks.
+let lastIp: IpData | null = null;
+let lastResolvers: ResolverResult[] | null = null;
+let lastSecurity: SecurityCheck[] | null = null;
+let lastLookup: { domain: string; data: Record<string, any> } | null = null;
+
+onLocaleChange(() => {
+  if (lastIp) renderIpInfo(lastIp);
+  if (lastResolvers) renderResolvers(lastResolvers);
+  if (lastSecurity) renderSecurity(lastSecurity);
+  if (lastResolvers && lastSecurity) {
+    renderDnsSuggestions({
+      resolvers: lastResolvers,
+      securityChecks: lastSecurity,
+      reachable: lastResolvers.filter((r) => r.reachable),
+    });
+  }
+  if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
+});
+
 export async function runDnsChecks(): Promise<void> {
-  // IP detection
   const ipData: IpData = await DnsCheck.detectIp();
   if (!ipData.error) {
-    const ipEl = document.getElementById("ip-address")!;
-    ipEl.textContent = ipData.ip || "—";
-    if (ipData.ip) {
-      ipEl.classList.add("copyable");
-      ipEl.title = t("dns.copyHint");
-      onLocaleChange(() => { ipEl.title = t("dns.copyHint"); });
-      ipEl.onclick = () => {
-        navigator.clipboard.writeText(ipData.ip!).then(() => {
-          setBadge("ip-status", "done", t("dns.copied"));
-          setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
-        });
-      };
-    }
-    document.getElementById("ip-location")!.textContent =
-      [ipData.city, ipData.region, ipData.country].filter(Boolean).join(", ") || "—";
-    document.getElementById("ip-asn")!.textContent =
-      ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
-    document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
-    
-    const coloCode = ipData.colo;
-    const popInfo = coloCode ? CF_POPS[coloCode] : null;
-    document.getElementById("ip-colo")!.textContent = popInfo
-      ? `${popInfo[0]} (${coloCode})`
-      : coloCode || "—";
-    document.getElementById("ip-http")!.textContent = ipData.httpProtocol || "—";
-    document.getElementById("ip-tls")!.textContent = ipData.tlsVersion || "—";
-    setBadge("ip-status", "done", t("dns.detected"));
+    lastIp = ipData;
+    renderIpInfo(ipData);
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
   }
 
-  // DNS resolver detection
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
+  lastResolvers = resolvers;
+  renderResolvers(resolvers);
+
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity();
+  lastSecurity = securityChecks;
+  renderSecurity(securityChecks);
+
+  renderDnsSuggestions({ resolvers, securityChecks, reachable: resolvers.filter((r) => r.reachable) });
+}
+
+function renderIpInfo(ipData: IpData): void {
+  const ipEl = document.getElementById("ip-address")!;
+  ipEl.textContent = ipData.ip || "—";
+  if (ipData.ip) {
+    ipEl.classList.add("copyable");
+    ipEl.title = t("dns.copyHint");
+    ipEl.onclick = () => {
+      navigator.clipboard.writeText(ipData.ip!).then(() => {
+        setBadge("ip-status", "done", t("dns.copied"));
+        setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
+      });
+    };
+  }
+  document.getElementById("ip-location")!.textContent =
+    [ipData.city, ipData.region, ipData.country].filter(Boolean).join(", ") || "—";
+  document.getElementById("ip-asn")!.textContent =
+    ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
+  document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
+
+  const coloCode = ipData.colo;
+  const popInfo = coloCode ? CF_POPS[coloCode] : null;
+  document.getElementById("ip-colo")!.textContent = popInfo
+    ? `${popInfo[0]} (${coloCode})`
+    : coloCode || "—";
+  document.getElementById("ip-http")!.textContent = ipData.httpProtocol || "—";
+  document.getElementById("ip-tls")!.textContent = ipData.tlsVersion || "—";
+  setBadge("ip-status", "done", t("dns.detected"));
+}
+
+function renderResolvers(resolvers: ResolverResult[]): void {
   const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
 
@@ -332,9 +371,9 @@ export async function runDnsChecks(): Promise<void> {
     resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
     setBadge("dns-resolver-status", "error", t("dns.nonefound"));
   }
+}
 
-  // DNS security checks
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity();
+function renderSecurity(securityChecks: SecurityCheck[]): void {
   const securityContainer = document.getElementById("dns-security-results")!;
   securityContainer.innerHTML = "";
 
@@ -342,7 +381,8 @@ export async function runDnsChecks(): Promise<void> {
   const anyFail = securityChecks.some((c) => c.status === "fail");
 
   securityChecks.forEach((check) => {
-    const item = createCheckItem(check.status, check.name, "", check.detail);
+    const detail = check.detailArg !== undefined ? t(check.detailKey, check.detailArg) : t(check.detailKey);
+    const item = createCheckItem(check.status, t(`dns.check.${check.id}`), "", detail);
     securityContainer.appendChild(item);
   });
 
@@ -353,8 +393,6 @@ export async function runDnsChecks(): Promise<void> {
   } else {
     setBadge("dns-security-status", "done", t("dns.partial"));
   }
-
-  renderDnsSuggestions({ resolvers, securityChecks, reachable });
 }
 
 function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
@@ -366,15 +404,15 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
     usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
     slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
     fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency ?? Infinity)) : Infinity,
-    hasSecurity: (name) => securityChecks.some((c) => c.name === name && c.status === "pass"),
-    hasWebRtcLeak: securityChecks.some((c) => c.name === "WebRTC IP Leak" && c.status === "fail"),
+    hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
+    hasWebRtcLeak: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
     reachableCount: reachable.length,
   };
 
   const issues: string[] = [];
-  if (!ctx.hasSecurity("DNSSEC Validation")) issues.push(t("dns.issueDnssec"));
-  if (!ctx.hasSecurity("DNS-over-HTTPS")) issues.push(t("dns.issueDoh"));
-  if (!ctx.hasSecurity("Malware Domain Filtering")) issues.push(t("dns.issueMalware"));
+  if (!ctx.hasSecurity("dnssec")) issues.push(t("dns.issueDnssec"));
+  if (!ctx.hasSecurity("doh")) issues.push(t("dns.issueDoh"));
+  if (!ctx.hasSecurity("malware")) issues.push(t("dns.issueMalware"));
   if (ctx.hasWebRtcLeak) issues.push(t("dns.issueWebrtc"));
   if (ctx.fastestResolver() > 80) issues.push(t("dns.issueSlow"));
   if (ctx.reachableCount < 2) issues.push(t("dns.issueLimited"));
@@ -408,7 +446,7 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
         </div>
         <div class="suggestion-desc">${t(s.name + ".desc")}</div>
         <div class="suggestion-tags">
-          ${s.tags.map((tag) => `<span class="suggestion-tag">${tag}</span>`).join("")}
+          ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
         </div>
         ${linkHtml}
       </div>`;
@@ -439,6 +477,14 @@ export async function runDnsLookup(): Promise<void> {
   } else {
     allData = { [type]: await DnsCheck.lookupDns(domain, type) };
   }
+
+  lastLookup = { domain, data: allData };
+  renderLookupResults(domain, allData);
+}
+
+function renderLookupResults(domain: string, allData: Record<string, any>): void {
+  const tableEl = document.getElementById("dns-lookup-table")!;
+  const outputEl = document.getElementById("dns-lookup-output")!;
 
   let html = `<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>`;
   let hasRecords = false;

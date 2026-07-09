@@ -1,4 +1,4 @@
-import { t } from "./i18n";
+import { t, onLocaleChange } from "./i18n";
 import { setBadge, renderSkeletonRows, escapeHtml } from "./ui-utils";
 
 interface HeaderCheckResult {
@@ -20,6 +20,8 @@ interface HeadersResponse {
   error?: string;
 }
 
+let lastHeadersData: HeadersResponse | null = null;
+
 export function initHeadersCheck(): void {
   const btn = document.getElementById("headers-check-btn")!;
   const input = document.getElementById("headers-url-input") as HTMLInputElement;
@@ -27,6 +29,10 @@ export function initHeadersCheck(): void {
   btn.addEventListener("click", runHeadersCheck);
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") runHeadersCheck();
+  });
+
+  onLocaleChange(() => {
+    if (lastHeadersData) renderHeadersResults(lastHeadersData);
   });
 }
 
@@ -56,54 +62,64 @@ async function runHeadersCheck(): Promise<void> {
       return;
     }
 
-    // Grade display
-    const gradeEl = document.getElementById("headers-grade")!;
-    gradeEl.textContent = data.grade;
-    gradeEl.className = "speed-grade";
-
-    const gradeColors: Record<string, string> = { A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
-    gradeEl.style.color = gradeColors[data.grade] || "var(--text-primary)";
-
-    document.getElementById("headers-score")!.textContent =
-      t("headers.scoreOf", data.score.present, data.score.total);
-
-    const serverParts: string[] = [];
-    if (data.server) serverParts.push(`Server: ${data.server}`);
-    if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
-    serverParts.push(`HTTP ${data.statusCode}`);
-    document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
-
-    setBadge("headers-status", data.grade === "A" || data.grade === "B" ? "done" : data.grade === "C" ? "done" : "error",
-      data.grade === "A" ? t("headers.excellent") : data.grade === "B" ? t("headers.good") : data.grade === "C" ? t("headers.fair") : t("headers.poor"));
-
-    // Individual header checks
-    checkResults.innerHTML = "";
-    data.checks.forEach((check) => {
-      const div = document.createElement("div");
-      div.className = "dns-check-item fade-in";
-      const status = check.present ? "pass" : "fail";
-      const iconSvg = check.present
-        ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-
-      const valueHtml = check.present
-        ? `<span class="header-value-truncate" data-tooltip="${escapeHtml(check.value)}">${escapeHtml(check.value)}</span>`
-        : `<span class="check-value" style="color:var(--red)">${t("headers.missing")}</span>`;
-
-      div.innerHTML = `
-        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
-        <div class="check-label-block">
-          <span class="check-label">${escapeHtml(check.name)}</span>
-          <span class="check-sublabel">${escapeHtml(check.desc)}</span>
-        </div>
-        ${valueHtml}
-      `;
-      checkResults.appendChild(div);
-    });
+    lastHeadersData = data;
+    renderHeadersResults(data);
   } catch {
     checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}</p>`;
   }
 
   btn.disabled = false;
   btn.textContent = t("headers.scan");
+}
+
+function renderHeadersResults(data: HeadersResponse): void {
+  const checkResults = document.getElementById("headers-check-results")!;
+
+  // Grade display
+  const gradeEl = document.getElementById("headers-grade")!;
+  gradeEl.textContent = data.grade;
+  gradeEl.className = "speed-grade";
+
+  const gradeColors: Record<string, string> = { A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
+  gradeEl.style.color = gradeColors[data.grade] || "var(--text-primary)";
+
+  document.getElementById("headers-score")!.textContent =
+    t("headers.scoreOf", data.score.present, data.score.total);
+
+  const serverParts: string[] = [];
+  if (data.server) serverParts.push(`Server: ${data.server}`);
+  if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
+  serverParts.push(`HTTP ${data.statusCode}`);
+  document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
+
+  setBadge("headers-status", data.grade === "A" || data.grade === "B" ? "done" : data.grade === "C" ? "done" : "error",
+    data.grade === "A" ? t("headers.excellent") : data.grade === "B" ? t("headers.good") : data.grade === "C" ? t("headers.fair") : t("headers.poor"));
+
+  // Individual header checks
+  checkResults.innerHTML = "";
+  data.checks.forEach((check) => {
+    const div = document.createElement("div");
+    div.className = "dns-check-item fade-in";
+    const status = check.present ? "pass" : "fail";
+    const iconSvg = check.present
+      ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
+      : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+
+    const descKey = `headers.desc.${check.key}`;
+    const translated = t(descKey);
+    const desc = translated === descKey ? check.desc : translated; // fall back to worker text for unknown headers
+    const valueHtml = check.present
+      ? `<span class="header-value-truncate" data-tooltip="${escapeHtml(check.value)}">${escapeHtml(check.value)}</span>`
+      : `<span class="check-value" style="color:var(--red)">${t("headers.missing")}</span>`;
+
+    div.innerHTML = `
+      <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+      <div class="check-label-block">
+        <span class="check-label">${escapeHtml(check.name)}</span>
+        <span class="check-sublabel">${escapeHtml(desc)}</span>
+      </div>
+      ${valueHtml}
+    `;
+    checkResults.appendChild(div);
+  });
 }

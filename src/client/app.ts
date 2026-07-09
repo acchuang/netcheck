@@ -6,8 +6,8 @@ import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
 import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
-import { detectBlocker } from "./blocker-fingerprint";
-import { t, onLocaleChange } from "./i18n";
+import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint";
+import { t, tTag, onLocaleChange } from "./i18n";
 import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm } from "./ui-utils";
 
 function setActiveGauge(phase: string): void {
@@ -55,6 +55,17 @@ document.addEventListener("DOMContentLoaded", () => {
   initSnapshots();
   initAdblockHistory();
   initAdblockToolbar();
+
+  // Idle-state texts live in the HTML in English; localize them on first load
+  // and re-render all dynamic content when the locale changes.
+  refreshSpeedLocaleTexts();
+  onLocaleChange(() => {
+    if (AdBlockTest.results.length > 0) renderAdBlockResults();
+    if (lastCustomTests) renderCustomUrlResults(lastCustomTests);
+    renderBlockerFingerprint();
+    renderFilterLists();
+    refreshSpeedLocaleTexts();
+  });
 });
 
 function renderInitialSkeletons(): void {
@@ -131,17 +142,37 @@ function renderFilterListSkeletons(container: HTMLElement, count: number): void 
   ).join("");
 }
 
+// English category names double as identity keys (CATEGORY_ADVICE); translate
+// only for display.
+function catDisplayName(name: string): string {
+  const advice = CATEGORY_ADVICE[name];
+  return advice ? t(`adblock.cat.${advice.i18nKey}`) : name;
+}
+
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
   renderCategorySkeletons(categoriesEl, 7);
+  document.getElementById("score-summary")!.textContent = t("adblock.running");
 
   await AdBlockTest.runAll();
 
+  renderAdBlockResults();
+  enableAdblockSaveButton();
+}
+
+function renderAdBlockResults(): void {
+  const categoriesEl = document.getElementById("test-categories")!;
+  const openIdx = new Set<number>();
+  categoriesEl.querySelectorAll(".test-category").forEach((el, i) => {
+    if (el.classList.contains("open")) openIdx.add(i);
+  });
+
   categoriesEl.innerHTML = "";
-  AdBlockTest.results.forEach((cat) => {
+  AdBlockTest.results.forEach((cat, i) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
-    const catEl = createCategoryWithResults(cat.name, cat.tests, blocked);
+    const catEl = createCategoryWithResults(catDisplayName(cat.name), cat.tests, blocked);
     catEl.classList.add("stagger-item");
+    if (openIdx.has(i)) catEl.classList.add("open");
     categoriesEl.appendChild(catEl);
   });
 
@@ -169,7 +200,6 @@ async function runAdBlockTests(): Promise<void> {
   document.getElementById("score-detail")!.textContent =
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
-  enableAdblockSaveButton();
   renderSuggestions(score, AdBlockTest.results);
 }
 
@@ -182,6 +212,8 @@ function initAdblockToolbar(): void {
   customInput?.addEventListener("keydown", (e) => { if (e.key === "Enter") runCustomUrlTest(); });
 }
 
+let lastCustomTests: Awaited<ReturnType<typeof AdBlockTest.testCustomUrl>> | null = null;
+
 async function runCustomUrlTest(): Promise<void> {
   const input = document.getElementById("adblock-custom-url") as HTMLInputElement | null;
   if (!input || !input.value.trim()) return;
@@ -190,7 +222,12 @@ async function runCustomUrlTest(): Promise<void> {
   const results = document.getElementById("adblock-custom-results")!;
   card.hidden = false;
   results.innerHTML = `<p class="info-muted">${t("adblock.testing")}</p>`;
-  const tests = await AdBlockTest.testCustomUrl(url);
+  lastCustomTests = await AdBlockTest.testCustomUrl(url);
+  renderCustomUrlResults(lastCustomTests);
+}
+
+function renderCustomUrlResults(tests: NonNullable<typeof lastCustomTests>): void {
+  const results = document.getElementById("adblock-custom-results")!;
   const methodLabel: Record<string, string> = {
     network: t("adblock.method.network"), loaded: t("adblock.method.loaded"),
     cosmetic: t("adblock.method.cosmetic"), visible: t("adblock.method.visible"),
@@ -207,23 +244,6 @@ async function runCustomUrlTest(): Promise<void> {
       <span class="check-value ${status}">${label}</span>
     </div>`;
   }).join("");
-}
-
-// UI helpers
-function createCategory(name: string, testCount: number): HTMLDivElement {
-  const div = document.createElement("div");
-  div.className = "test-category";
-  div.innerHTML = `
-    <div class="test-category-header">
-      <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      <span class="test-category-name">${name}</span>
-      <span class="test-category-score">${t("adblock.testing", testCount)}</span>
-    </div>
-    <div class="test-category-body">
-      <p class="info-muted">${t("adblock.running")}</p>
-    </div>
-  `;
-  return div;
 }
 
 function updateServerBadge(colo: string, userLat?: number | null, userLon?: number | null): void {
@@ -316,7 +336,10 @@ async function initSpeedTest(): Promise<void> {
     if (sel?.value === "custom" && result.colo) updateServerBadge(result.colo, result.lat, result.lon);
   });
 
-  onLocaleChange(renderServerOptionLabels);
+  onLocaleChange(() => {
+    renderServerOptionLabels();
+    updateServerValueLabel();
+  });
 
   // probe-on-load: only the built-in servers, the custom one is probed on blur once a URL is entered
   const results = await probeServers(["edge", "cf-speed"]);
@@ -498,6 +521,14 @@ async function runSpeedTest(): Promise<void> {
   }, serverId);
 
   setActiveGauge(""); // clear active state
+  renderSpeedResults(results);
+  drawSpeedGraph();
+  enableSaveButton();
+  btn.disabled = false;
+  btn.textContent = t("speed.runAgain");
+}
+
+function renderSpeedResults(results: SpeedTestResults): void {
   document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";
   document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
   document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
@@ -531,11 +562,23 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-phase")!.textContent =
     `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}`;
 
-  drawSpeedGraph();
   renderSpeedSuggestions(results);
-  enableSaveButton();
-  btn.disabled = false;
-  btn.textContent = t("speed.runAgain");
+}
+
+// Applies locale-correct text for the speed panel's idle/finished states.
+// Skipped mid-test: the progress callback owns those texts while running.
+function refreshSpeedLocaleTexts(): void {
+  const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
+  if (btn.disabled) return;
+  if (SpeedTest.results.download !== null) {
+    renderSpeedResults(SpeedTest.results);
+    btn.textContent = t("speed.runAgain");
+  } else {
+    document.getElementById("speed-grade-label")!.textContent = t("speed.waiting");
+    document.getElementById("speed-phase")!.textContent = t("speed.clickBegin");
+    document.getElementById("speed-bufferbloat-unit")!.textContent = t("speed.grade");
+    btn.textContent = t("speed.runBtn");
+  }
 }
 
 // Speed suggestions
@@ -620,7 +663,7 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
         </div>
         <div class="suggestion-desc">${t(s.name + ".desc")}</div>
         <div class="suggestion-tags">
-          ${s.tags.map((tag) => `<span class="suggestion-tag">${tag}</span>`).join("")}
+          ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
         </div>
         ${linkHtml}
       </div>`;
@@ -631,11 +674,23 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
 }
 
 // Filter list detection
+let filterListsDone = false;
+
 async function runFilterListDetection(): Promise<void> {
   const filterGrid = document.getElementById("filter-list-grid")!;
   renderFilterListSkeletons(filterGrid, 10);
+  document.getElementById("filter-list-subtitle")!.textContent = t("filter.detecting");
 
   await FilterListDetector.runAll();
+  filterListsDone = true;
+  renderFilterLists();
+
+  // deep blocker fingerprint using detected filter list names
+  runBlockerFingerprint(FilterListDetector.getSummary().detected.map((d) => d.name));
+}
+
+function renderFilterLists(): void {
+  if (!filterListsDone) return;
   const summary = FilterListDetector.getSummary();
   const grid = document.getElementById("filter-list-grid")!;
   const subtitle = document.getElementById("filter-list-subtitle")!;
@@ -670,26 +725,39 @@ async function runFilterListDetection(): Promise<void> {
       </div>`;
     })
     .join("");
-
-  // Feature 3: deep blocker fingerprint using detected filter list names
-  renderBlockerFingerprint(summary.detected.map((d) => d.name));
 }
 
-async function renderBlockerFingerprint(filterListNames: string[]): Promise<void> {
+let lastFingerprint: BlockerFingerprint | null = null;
+
+const FP_SOURCE_KEYS: Record<string, string> = {
+  "navigator.brave": "adblock.fp.src.brave",
+  "extension resource": "adblock.fp.src.ext",
+  "filter list inference": "adblock.fp.src.lists",
+  "fallback": "adblock.fp.src.fallback",
+};
+
+async function runBlockerFingerprint(filterListNames: string[]): Promise<void> {
   const card = document.getElementById("adblock-blocker-card")!;
   const nameEl = document.getElementById("adblock-blocker-name")!;
-  const detailEl = document.getElementById("adblock-blocker-detail")!;
   card.hidden = false;
   nameEl.textContent = "...";
   try {
-    const fp = await detectBlocker(filterListNames);
-    nameEl.textContent = fp.name;
-    const confLabel = fp.confidence === "high" ? t("adblock.fp.high") : fp.confidence === "medium" ? t("adblock.fp.medium") : t("adblock.fp.low");
-    detailEl.textContent = `${t("adblock.fp.confidence", confLabel)} · ${t("adblock.fp.source", fp.source)}`;
+    lastFingerprint = await detectBlocker(filterListNames);
+    renderBlockerFingerprint();
   } catch {
     nameEl.textContent = t("adblock.fp.unknown");
-    detailEl.textContent = "";
+    document.getElementById("adblock-blocker-detail")!.textContent = "";
   }
+}
+
+function renderBlockerFingerprint(): void {
+  if (!lastFingerprint) return;
+  const fp = lastFingerprint;
+  document.getElementById("adblock-blocker-name")!.textContent = fp.name;
+  const confLabel = fp.confidence === "high" ? t("adblock.fp.high") : fp.confidence === "medium" ? t("adblock.fp.medium") : t("adblock.fp.low");
+  const source = FP_SOURCE_KEYS[fp.source] ? t(FP_SOURCE_KEYS[fp.source]) : fp.source;
+  document.getElementById("adblock-blocker-detail")!.textContent =
+    `${t("adblock.fp.confidence", confLabel)} · ${t("adblock.fp.source", source)}`;
 }
 
 // Per-category adblock suggestions
@@ -796,7 +864,7 @@ function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void
           </div>
           <div class="suggestion-info">
             <div class="suggestion-name">${t(key + ".title")}</div>
-            <div class="suggestion-type">${cat.name}</div>
+            <div class="suggestion-type">${catDisplayName(cat.name)}</div>
           </div>
           <span class="suggestion-score ${pct >= 50 ? "partial" : "low"}">${t("adblock.blockedOf", blocked, total)}</span>
         </div>
