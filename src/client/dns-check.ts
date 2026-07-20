@@ -87,6 +87,17 @@ export const DnsCheck = {
     }
   },
 
+  // IPv6-only endpoint: succeeds only if the client has working IPv6.
+  async detectIpv6(): Promise<string | null> {
+    try {
+      const res = await fetch("https://api6.ipify.org?format=json", { signal: AbortSignal.timeout(5000) });
+      const data = (await res.json()) as { ip?: string };
+      return data.ip ?? null;
+    } catch {
+      return null;
+    }
+  },
+
   async lookupDns(domain: string, type: string): Promise<DnsResult> {
     try {
       const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`);
@@ -261,12 +272,14 @@ const dnsSuggestions: Suggestion[] = [
 // Last successful results, kept so locale switches can re-render translated UI
 // without re-running the network checks.
 let lastIp: IpData | null = null;
+let lastIpv6: string | null | undefined; // undefined = not yet probed
 let lastResolvers: ResolverResult[] | null = null;
 let lastSecurity: SecurityCheck[] | null = null;
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 
 onLocaleChange(() => {
   if (lastIp) renderIpInfo(lastIp);
+  if (lastIpv6 !== undefined) renderIpv6(lastIpv6);
   if (lastResolvers) renderResolvers(lastResolvers);
   if (lastSecurity) renderSecurity(lastSecurity);
   if (lastResolvers && lastSecurity) {
@@ -280,6 +293,11 @@ onLocaleChange(() => {
 });
 
 export async function runDnsChecks(): Promise<void> {
+  DnsCheck.detectIpv6().then((v6) => {
+    lastIpv6 = v6;
+    renderIpv6(v6);
+  });
+
   const ipData: IpData = await DnsCheck.detectIp();
   if (!ipData.error) {
     lastIp = ipData;
@@ -297,6 +315,12 @@ export async function runDnsChecks(): Promise<void> {
   renderSecurity(securityChecks);
 
   renderDnsSuggestions({ resolvers, securityChecks, reachable: resolvers.filter((r) => r.reachable) });
+}
+
+function renderIpv6(ip: string | null): void {
+  const el = document.getElementById("ip-address-v6")!;
+  el.textContent = ip || t("dns.ipv6None");
+  el.classList.toggle("info-muted", !ip);
 }
 
 function renderIpInfo(ipData: IpData): void {

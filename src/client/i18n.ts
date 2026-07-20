@@ -19,6 +19,8 @@ const en = {
   "dns.subtitle": "Detect your IP, DNS resolvers, and network configuration",
   "dns.ipTitle": "Your IP Address",
   "dns.ipv4": "IPv4",
+  "dns.ipv6": "IPv6",
+  "dns.ipv6None": "Not available",
   "dns.location": "Location",
   "dns.isp": "ISP / ASN",
   "dns.timezone": "Timezone",
@@ -431,6 +433,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.subtitle": "偵測您的 IP、DNS 解析器及網路設定",
   "dns.ipTitle": "您的 IP 位址",
   "dns.ipv4": "IPv4",
+  "dns.ipv6": "IPv6",
+  "dns.ipv6None": "無法使用",
   "dns.location": "位置",
   "dns.isp": "ISP / ASN",
   "dns.timezone": "時區",
@@ -912,6 +916,7 @@ function applyStaticTranslations(): void {
   s("dns-subtitle", "dns.subtitle");
   s("dns-ip-title", "dns.ipTitle");
   s("dns-ipv4-label", "dns.ipv4");
+  s("dns-ipv6-label", "dns.ipv6");
   s("dns-location-label", "dns.location");
   s("dns-isp-label", "dns.isp");
   s("dns-timezone-label", "dns.timezone");
