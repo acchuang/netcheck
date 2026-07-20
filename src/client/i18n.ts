@@ -947,12 +947,7 @@ function applyStaticTranslations(): void {
   s("speed-title", "speed.title");
   s("speed-subtitle", "speed.subtitle");
   s("speed-server-label", "speed.testServer");
-  const serverSelect = document.getElementById("speed-server-select") as HTMLSelectElement | null;
-  if (serverSelect) {
-    serverSelect.options[0].textContent = t("speed.server.edge");
-    serverSelect.options[1].textContent = t("speed.server.cfSpeed");
-    if (serverSelect.options[2]) serverSelect.options[2].textContent = t("speed.server.custom");
-  }
+  // server <option> labels are re-rendered by app.ts renderServerOptionLabels on locale change
   s("speed-download-label", "speed.download");
   s("speed-upload-label", "speed.upload");
   s("speed-latency-label", "speed.latency");

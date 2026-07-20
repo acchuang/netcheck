@@ -1,7 +1,7 @@
 import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
 import { AdBlockTest, type Score, type CategoryResult } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
-import { SpeedTest, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
+import { SpeedTest, SERVERS, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
@@ -280,6 +280,12 @@ const serverLabelKeys: Record<string, string> = {
   custom: "speed.server.custom",
 };
 
+function serverLabel(id: string): string {
+  const key = serverLabelKeys[id];
+  if (key) return t(key);
+  return SERVERS.find((s) => s.id === id)?.name ?? id;
+}
+
 const serverProbeState: Record<string, ServerProbeResult> = {};
 
 // Appends a live latency badge to each <option> and disables ones that failed to probe.
@@ -287,9 +293,7 @@ function renderServerOptionLabels(): void {
   const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
   if (!sel) return;
   Array.from(sel.options).forEach((opt) => {
-    const key = serverLabelKeys[opt.value];
-    if (!key) return;
-    const base = t(key);
+    const base = serverLabel(opt.value);
     const probe = serverProbeState[opt.value];
     if (!probe) {
       opt.textContent = base;
@@ -312,13 +316,17 @@ async function initSpeedTest(): Promise<void> {
   const customRow = document.getElementById("speed-custom-url-row");
   const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;
 
+  // Options come from the SERVERS array; the static HTML options are just initial paint.
+  if (sel) {
+    const current = sel.value;
+    sel.innerHTML = SERVERS.map((s) => `<option value="${s.id}">${escapeHtml(serverLabel(s.id))}</option>`).join("");
+    if (Array.from(sel.options).some((o) => o.value === current)) sel.value = current;
+  }
+
   function updateServerValueLabel(): void {
     if (!sel) return;
     const v = document.getElementById("speed-server-value")!;
-    v.textContent =
-      sel.value === "cf-speed" ? t("speed.server.cfSpeed") :
-      sel.value === "custom" ? t("speed.server.custom") :
-      t("speed.server.edge");
+    v.textContent = serverLabel(sel.value);
     document.getElementById("speed-server-detail")!.classList.add("hidden");
     customRow?.classList.toggle("hidden", sel.value !== "custom");
 
@@ -345,8 +353,8 @@ async function initSpeedTest(): Promise<void> {
     updateServerValueLabel();
   });
 
-  // probe-on-load: only the built-in servers, the custom one is probed on blur once a URL is entered
-  const results = await probeServers(["edge", "cf-speed"]);
+  // probe-on-load: everything except custom, which is probed on blur once a URL is entered
+  const results = await probeServers(SERVERS.filter((s) => s.id !== "custom").map((s) => s.id));
   results.forEach((r) => { serverProbeState[r.id] = r; });
   updateServerValueLabel();
   renderServerOptionLabels();
@@ -475,7 +483,9 @@ async function runSpeedTest(): Promise<void> {
 
   const prevValues = { download: 0, upload: 0, latency: 0, jitter: 0 };
 
-  const results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
+  let results: SpeedTestResults;
+  try {
+  results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
     const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
     document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
     (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
@@ -513,9 +523,19 @@ async function runSpeedTest(): Promise<void> {
       }
     }
   }, serverId);
+  } catch {
+    // server refused init (e.g. fast.com discovery failed, expired target)
+    setActiveGauge("");
+    document.getElementById("speed-phase")!.textContent = t("speed.serverUnreachable");
+    btn.disabled = false;
+    btn.textContent = t("speed.runBtn");
+    return;
+  }
 
   setActiveGauge(""); // clear active state
   renderSpeedResults(results);
+  // servers without colo metadata (LibreSpeed nodes) would otherwise stay on "detecting..."
+  if (!results.colo) document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
   drawSpeedGraph();
   enableSaveButton();
   btn.disabled = false;
