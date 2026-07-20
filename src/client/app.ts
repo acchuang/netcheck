@@ -545,8 +545,9 @@ function renderSpeedResults(results: SpeedTestResults): void {
   document.getElementById("speed-grade-label")!.textContent = t(grade.labelKey);
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
+  const lossStr = results.packetLoss !== null ? ` · ${results.packetLoss}% ${t("speed.loss")}` : "";
   document.getElementById("speed-phase")!.textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}`;
+    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}${lossStr}`;
 
   renderSpeedSuggestions(results);
 }

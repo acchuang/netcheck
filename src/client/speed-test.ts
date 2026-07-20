@@ -3,6 +3,8 @@ export interface SpeedTestResults {
   upload: number | null;
   latency: number | null;
   jitter: number | null;
+  packetLoss: number | null; // % of idle pings that failed
+
   colo: string | null;
   userLat: number | null;
   userLon: number | null;
@@ -198,7 +200,7 @@ export const SpeedTest = {
 
   async run(onProgress?: ProgressCallback, serverId = "cf-speed"): Promise<SpeedTestResults> {
     this.results = {
-      download: null, upload: null, latency: null, jitter: null, colo: null, userLat: null, userLon: null,
+      download: null, upload: null, latency: null, jitter: null, packetLoss: null, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
     };
     if (serverId === "custom" && !hasCustomServerUrl()) {
@@ -211,7 +213,9 @@ export const SpeedTest = {
     // Latency
     cb("latency", 0, this.results);
     const pings: number[] = [];
-    for (let i = 0; i < 10; i++) {
+    const PING_COUNT = 10;
+    let lostPings = 0;
+    for (let i = 0; i < PING_COUNT; i++) {
       try {
         const start = performance.now();
         const res = await fetch(server.pingUrl(), {
@@ -226,9 +230,11 @@ export const SpeedTest = {
           this.results.userLon = meta.lon;
         }
       } catch {
+        lostPings++;
       }
-      cb("latency", Math.round(((i + 1) / 10) * 100), this.results);
+      cb("latency", Math.round(((i + 1) / PING_COUNT) * 100), this.results);
     }
+    this.results.packetLoss = Math.round((lostPings / PING_COUNT) * 100);
 
     if (pings.length > 0) {
       pings.sort((a, b) => a - b);

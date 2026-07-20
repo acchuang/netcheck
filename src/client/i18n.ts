@@ -199,6 +199,7 @@ const en = {
   "speed.bb.significant": "Significant",
   "speed.bb.severe": "Severe",
   "speed.bb.unknown": "Unknown",
+  "speed.loss": "packet loss",
 
   // Ad block section
   "adblock.title": "Ad Block Tester",
@@ -610,6 +611,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.bb.significant": "明顯",
   "speed.bb.severe": "嚴重",
   "speed.bb.unknown": "未知",
+  "speed.loss": "封包遺失",
 
   // Ad block section
   "adblock.title": "廣告攔截測試",
