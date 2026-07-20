@@ -23,7 +23,8 @@ function initTooltips(): void {
   document.body.appendChild(tip);
 
   document.addEventListener("mouseenter", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-tooltip]") as HTMLElement | null;
+    if (!(e.target instanceof Element)) return;
+    const target = e.target.closest("[data-tooltip]") as HTMLElement | null;
     if (!target) return;
     tip.textContent = target.dataset.tooltip!;
     tip.classList.add("visible");
@@ -37,7 +38,7 @@ function initTooltips(): void {
   }, true);
 
   document.addEventListener("mouseleave", (e) => {
-    if ((e.target as HTMLElement).closest("[data-tooltip]")) {
+    if (e.target instanceof Element && e.target.closest("[data-tooltip]")) {
       tip.classList.remove("visible");
     }
   }, true);
