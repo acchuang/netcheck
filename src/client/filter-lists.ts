@@ -1,4 +1,4 @@
-import { isHidden } from "./ui-utils";
+import { hiddenTestContainer, probeTest } from "./adblock-test";
 
 interface ElementTest {
   type: "element";
@@ -26,7 +26,7 @@ interface FilterListDefinition {
   special?: string;
 }
 
-interface FilterListResult {
+export interface FilterListResult {
   name: string;
   desc: string;
   tests: FilterTestResult[];
@@ -145,10 +145,7 @@ export const FilterListDetector = {
 
   async runAll(): Promise<FilterListResult[]> {
     this.results = [];
-    const container: HTMLDivElement = document.createElement("div");
-    container.id = "filter-list-test-container";
-    container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
-    document.body.appendChild(container);
+    const container = hiddenTestContainer();
 
     for (const list of this.lists) {
       const listResult: FilterListResult = {
@@ -160,8 +157,8 @@ export const FilterListDetector = {
       };
 
       for (const test of list.tests) {
-        const result = await this.runTest(test, container);
-        listResult.tests.push({ ...test, ...result } as FilterTestResult);
+        const result = await probeTest(test, container);
+        listResult.tests.push({ ...test, blocked: result.blocked });
       }
 
       // A list is "detected" if most of its tests show blocking
@@ -180,51 +177,6 @@ export const FilterListDetector = {
 
     container.remove();
     return this.results;
-  },
-
-  runTest(test: FilterTest, container: HTMLDivElement): Promise<{ blocked: boolean }> {
-    return new Promise((resolve) => {
-      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true }), 3000);
-
-      switch (test.type) {
-        case "script": {
-          const el: HTMLScriptElement = document.createElement("script");
-          el.src = test.url;
-          el.onload = () => { clearTimeout(timeout); resolve({ blocked: false }); };
-          el.onerror = () => { clearTimeout(timeout); resolve({ blocked: true }); };
-          container.appendChild(el);
-          break;
-        }
-        case "image":
-        case "pixel": {
-          const el: HTMLImageElement = document.createElement("img");
-          el.src = test.url;
-          if (test.type === "pixel") { el.width = 1; el.height = 1; }
-          el.onload = () => { clearTimeout(timeout); resolve({ blocked: false }); };
-          el.onerror = () => { clearTimeout(timeout); resolve({ blocked: true }); };
-          container.appendChild(el);
-          break;
-        }
-        case "element": {
-          const el: HTMLDivElement = document.createElement("div");
-          if (test.className) el.className = test.className;
-          if (test.id) el.id = test.id;
-          el.style.cssText = "width:300px;height:250px;background:transparent;";
-          el.innerHTML = "&nbsp;";
-          container.appendChild(el);
-
-          requestAnimationFrame(() => {
-            const hidden = isHidden(el);
-            clearTimeout(timeout);
-            resolve({ blocked: hidden });
-          });
-          break;
-        }
-        default:
-          clearTimeout(timeout);
-          resolve({ blocked: false });
-      }
-    });
   },
 
   getSummary(): FilterListSummary {

@@ -1,33 +1,6 @@
 import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test";
-import { AdBlockTest } from "./adblock-test";
-import { FilterListDetector } from "./filter-lists";
-
-interface AdBlockTestResult {
-  name: string;
-  url?: string;
-  type: string;
-  blocked: boolean;
-}
-
-interface AdBlockCategory {
-  name: string;
-  tests: AdBlockTestResult[];
-}
-
-interface AdBlockScore {
-  score: number;
-  total: number;
-  blocked: number;
-  passed: number;
-}
-
-interface FilterListResult {
-  name: string;
-  desc: string;
-  tests: Array<{ blocked: boolean }>;
-  detected: boolean;
-  special?: string;
-}
+import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test";
+import { FilterListDetector, type FilterListResult } from "./filter-lists";
 
 type CheckStatus = "pass" | "fail" | "warn";
 
@@ -57,8 +30,8 @@ interface SpeedData {
 }
 
 interface AdBlockData {
-  score: AdBlockScore | null;
-  results: AdBlockCategory[];
+  score: Score | null;
+  results: CategoryResult[];
   filterLists: FilterListResult[];
 }
 

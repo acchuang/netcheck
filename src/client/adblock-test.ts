@@ -53,16 +53,86 @@ interface Category {
   tests: Test[];
 }
 
-interface CategoryResult {
+export interface CategoryResult {
   name: string;
   tests: TestWithResult[];
 }
 
-interface Score {
+export interface Score {
   score: number;
   total: number;
   blocked: number;
   passed: number;
+}
+
+// Minimal shape shared with filter-lists.ts probes.
+export interface ProbeTarget {
+  type: string;
+  url?: string;
+  className?: string;
+  id?: string;
+  width?: number;
+  height?: number;
+}
+
+export function hiddenTestContainer(): HTMLDivElement {
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
+  document.body.appendChild(container);
+  return container;
+}
+
+export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<TestResult> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve({ blocked: true, method: "timeout" }), 3000);
+    const settle = (r: TestResult) => { clearTimeout(timeout); resolve(r); };
+
+    switch (test.type) {
+      case "script":
+      case "image":
+      case "pixel": {
+        const el = document.createElement(test.type === "script" ? "script" : "img") as HTMLScriptElement | HTMLImageElement;
+        el.src = test.url!;
+        if (test.type === "pixel" && el instanceof HTMLImageElement) {
+          el.width = 1;
+          el.height = 1;
+        }
+        el.onload = () => settle({ blocked: false, method: "loaded" });
+        el.onerror = () => settle({ blocked: true, method: "network" });
+        container.appendChild(el);
+        break;
+      }
+      case "iframe": {
+        const iframe = document.createElement("iframe");
+        iframe.width = String(test.width);
+        iframe.height = String(test.height);
+        iframe.src = "about:blank";
+        iframe.className = "ad_iframe";
+        iframe.style.cssText = `width:${test.width}px;height:${test.height}px;`;
+        container.appendChild(iframe);
+        requestAnimationFrame(() => {
+          const hidden = isHidden(iframe);
+          settle({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
+        });
+        break;
+      }
+      case "element": {
+        const div = document.createElement("div");
+        if (test.className) div.className = test.className;
+        if (test.id) div.id = test.id;
+        div.style.cssText = "width:300px;height:250px;background:transparent;";
+        div.innerHTML = "&nbsp;";
+        container.appendChild(div);
+        requestAnimationFrame(() => {
+          const hidden = isHidden(div);
+          settle({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
+        });
+        break;
+      }
+      default:
+        settle({ blocked: false, uncertain: true, method: "unknown" });
+    }
+  });
 }
 
 export const AdBlockTest = {
@@ -141,16 +211,13 @@ export const AdBlockTest = {
 
   async runAll(): Promise<CategoryResult[]> {
     this.results = [];
-    const container = document.createElement("div");
-    container.id = "adblock-test-container";
-    container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
-    document.body.appendChild(container);
+    const container = hiddenTestContainer();
 
     for (const category of this.categories) {
       const catResults: CategoryResult = { name: category.name, tests: [] };
 
       for (const test of category.tests) {
-        const result = await this.runTest(test, container);
+        const result = await probeTest(test, container);
         catResults.tests.push({ ...test, ...result } as TestWithResult);
       }
 
@@ -164,94 +231,16 @@ export const AdBlockTest = {
   // Feature 1: test a user-supplied URL as script + image
   async testCustomUrl(rawUrl: string): Promise<TestWithResult[]> {
     const url = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-    const container = document.createElement("div");
-    container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
-    document.body.appendChild(container);
+    const container = hiddenTestContainer();
 
-    const scriptRes = await this.runTest({ name: url, type: "script", url }, container);
-    const imageRes = await this.runTest({ name: url, type: "image", url }, container);
+    const scriptRes = await probeTest({ type: "script", url }, container);
+    const imageRes = await probeTest({ type: "image", url }, container);
 
     container.remove();
     return [
       { name: `${url} (script)`, type: "script", url, ...scriptRes },
       { name: `${url} (image)`, type: "image", url, ...imageRes },
     ];
-  },
-
-  runTest(test: Test, container: HTMLDivElement): Promise<TestResult> {
-    return new Promise((resolve) => {
-      const timeout: ReturnType<typeof setTimeout> = setTimeout(() => resolve({ blocked: true, method: "timeout" }), 3000);
-
-      switch (test.type) {
-        case "script":
-          this.testResource("script", test.url, container, timeout, resolve);
-          break;
-        case "image":
-          this.testResource("img", test.url, container, timeout, resolve);
-          break;
-        case "pixel":
-          this.testResource("img", test.url, container, timeout, resolve, true);
-          break;
-        case "iframe":
-          this.testIframe(test, container, timeout, resolve);
-          break;
-        case "element":
-          this.testElement(test, container, timeout, resolve);
-          break;
-        default:
-          clearTimeout(timeout);
-          resolve({ blocked: false, uncertain: true, method: "unknown" });
-      }
-    });
-  },
-
-  testResource(tag: "script" | "img", url: string, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void, pixel = false): void {
-    const el = document.createElement(tag);
-    el.src = url;
-    if (pixel && el instanceof HTMLImageElement) {
-      el.width = 1;
-      el.height = 1;
-    }
-    el.onload = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: false, method: "loaded" });
-    };
-    el.onerror = () => {
-      clearTimeout(timeout);
-      resolve({ blocked: true, method: "network" });
-    };
-    container.appendChild(el);
-  },
-
-  testIframe(test: IframeTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const iframe = document.createElement("iframe");
-    iframe.width = String(test.width);
-    iframe.height = String(test.height);
-    iframe.src = "about:blank";
-    iframe.className = "ad_iframe";
-    iframe.style.cssText = `width:${test.width}px;height:${test.height}px;`;
-    container.appendChild(iframe);
-
-    requestAnimationFrame(() => {
-      const hidden = isHidden(iframe);
-      clearTimeout(timeout);
-      resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
-    });
-  },
-
-  testElement(test: ElementTest, container: HTMLDivElement, timeout: ReturnType<typeof setTimeout>, resolve: (result: TestResult) => void): void {
-    const div = document.createElement("div");
-    if (test.className) div.className = test.className;
-    if (test.id) div.id = test.id;
-    div.style.cssText = "width:300px;height:250px;background:transparent;";
-    div.innerHTML = "&nbsp;";
-    container.appendChild(div);
-
-    requestAnimationFrame(() => {
-      const hidden = isHidden(div);
-      clearTimeout(timeout);
-      resolve({ blocked: hidden, method: hidden ? "cosmetic" : "visible" });
-    });
   },
 
   getScore(): Score {
