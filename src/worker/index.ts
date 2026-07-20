@@ -1,4 +1,4 @@
-import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
+import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 
 export default {
   async fetch(request: Request, env: Record<string, unknown>): Promise<Response> {
@@ -121,7 +121,7 @@ function handleHeaders(request: Request): Response {
   return Response.json({ headers }, { headers: corsHeaders() });
 }
 
-function handleSpeedDown(url: URL): Response {
+export function handleSpeedDown(url: URL): Response {
   const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
