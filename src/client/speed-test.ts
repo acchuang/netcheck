@@ -12,7 +12,7 @@ export interface SpeedTestResults {
 
 export interface SpeedGrade {
   grade: string;
-  label: string;
+  labelKey: string; // i18n key — callers render with t(labelKey)
 }
 
 export type SpeedTestPhase = "latency" | "download" | "upload";
@@ -54,8 +54,19 @@ export function setCustomServerUrl(url: string): void {
   customBaseUrl = url.trim().replace(/\/+$/, "");
 }
 
-export function hasCustomServerUrl(): boolean {
+function hasCustomServerUrl(): boolean {
   return customBaseUrl.length > 0;
+}
+
+function randomBody(size: number): Uint8Array<ArrayBuffer> {
+  const d = new Uint8Array(size);
+  for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
+  return d;
+}
+
+// ponytail: text/plain Blob => simple request, no CORS preflight (speed.cloudflare.com OPTIONS 400s)
+function randomBlobBody(size: number): Blob {
+  return new Blob([randomBody(size)], { type: "text/plain" });
 }
 
 const SERVERS: SpeedServer[] = [
@@ -69,11 +80,7 @@ const SERVERS: SpeedServer[] = [
       lat: parseFloat(res.headers.get("x-lat") || "") || null,
       lon: parseFloat(res.headers.get("x-lon") || "") || null,
     }),
-    makeUploadBody: (size) => {
-      const d = new Uint8Array(size);
-      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
-      return d;
-    },
+    makeUploadBody: randomBody,
   },
   {
     id: "cf-speed",
@@ -98,12 +105,7 @@ const SERVERS: SpeedServer[] = [
         return { colo: null, lat: null, lon: null };
       }
     },
-    makeUploadBody: (size) => {
-      const d = new Uint8Array(size);
-      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
-      // text/plain => simple request, no CORS preflight (speed.cloudflare.com OPTIONS 400s)
-      return new Blob([d], { type: "text/plain" });
-    },
+    makeUploadBody: randomBlobBody,
   },
   {
     id: "custom",
@@ -115,12 +117,7 @@ const SERVERS: SpeedServer[] = [
       lat: parseFloat(res.headers.get("x-lat") || "") || null,
       lon: parseFloat(res.headers.get("x-lon") || "") || null,
     }),
-    makeUploadBody: (size) => {
-      const d = new Uint8Array(size);
-      for (let j = 0; j < size; j += 4096) d[j] = (Math.random() * 256) | 0;
-      // text/plain => simple request, no CORS preflight
-      return new Blob([d], { type: "text/plain" });
-    },
+    makeUploadBody: randomBlobBody,
   },
 ];
 
@@ -354,24 +351,24 @@ export const SpeedTest = {
   },
 
   getGrade(downloadMbps: number | null): SpeedGrade {
-    if (downloadMbps === null) return { grade: "—", label: "Unknown" };
-    if (downloadMbps >= 500) return { grade: "A+", label: "Exceptional" };
-    if (downloadMbps >= 200) return { grade: "A", label: "Excellent" };
-    if (downloadMbps >= 100) return { grade: "B+", label: "Very Good" };
-    if (downloadMbps >= 50) return { grade: "B", label: "Good" };
-    if (downloadMbps >= 25) return { grade: "C", label: "Average" };
-    if (downloadMbps >= 10) return { grade: "D", label: "Below Average" };
-    return { grade: "F", label: "Slow" };
+    if (downloadMbps === null) return { grade: "—", labelKey: "speed.grade.unknown" };
+    if (downloadMbps >= 500) return { grade: "A+", labelKey: "speed.grade.exceptional" };
+    if (downloadMbps >= 200) return { grade: "A", labelKey: "speed.grade.excellent" };
+    if (downloadMbps >= 100) return { grade: "B+", labelKey: "speed.grade.veryGood" };
+    if (downloadMbps >= 50) return { grade: "B", labelKey: "speed.grade.good" };
+    if (downloadMbps >= 25) return { grade: "C", labelKey: "speed.grade.average" };
+    if (downloadMbps >= 10) return { grade: "D", labelKey: "speed.grade.belowAvg" };
+    return { grade: "F", labelKey: "speed.grade.slow" };
   },
 
   // Waveform-style bufferbloat grading: ms of latency increase under a saturated link.
   getBufferbloatGrade(increaseMs: number | null): SpeedGrade {
-    if (increaseMs === null) return { grade: "—", label: "Unknown" };
-    if (increaseMs < 5) return { grade: "A+", label: "None" };
-    if (increaseMs < 30) return { grade: "A", label: "Minimal" };
-    if (increaseMs < 60) return { grade: "B", label: "Mild" };
-    if (increaseMs < 200) return { grade: "C", label: "Moderate" };
-    if (increaseMs < 400) return { grade: "D", label: "Significant" };
-    return { grade: "F", label: "Severe" };
+    if (increaseMs === null) return { grade: "—", labelKey: "speed.bb.unknown" };
+    if (increaseMs < 5) return { grade: "A+", labelKey: "speed.bb.none" };
+    if (increaseMs < 30) return { grade: "A", labelKey: "speed.bb.minimal" };
+    if (increaseMs < 60) return { grade: "B", labelKey: "speed.bb.mild" };
+    if (increaseMs < 200) return { grade: "C", labelKey: "speed.bb.moderate" };
+    if (increaseMs < 400) return { grade: "D", labelKey: "speed.bb.significant" };
+    return { grade: "F", labelKey: "speed.bb.severe" };
   },
 };

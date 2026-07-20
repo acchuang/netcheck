@@ -1,7 +1,7 @@
 import { runDnsChecks, runDnsLookup } from "./dns-check";
-import { AdBlockTest } from "./adblock-test";
+import { AdBlockTest, type Score, type CategoryResult } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
-import { SpeedTest, type SpeedTestResults, type SpeedTestPhase, setCustomServerUrl, probeServers } from "./speed-test";
+import { SpeedTest, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
@@ -149,6 +149,13 @@ function catDisplayName(name: string): string {
   return advice ? t(`adblock.cat.${advice.i18nKey}`) : name;
 }
 
+const PROBE_METHODS = new Set(["network", "loaded", "cosmetic", "visible", "timeout", "unknown"]);
+
+function methodLabel(method?: string): string {
+  if (!method) return "";
+  return PROBE_METHODS.has(method) ? t(`adblock.method.${method}`) : method;
+}
+
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
   renderCategorySkeletons(categoriesEl, 7);
@@ -228,16 +235,11 @@ async function runCustomUrlTest(): Promise<void> {
 
 function renderCustomUrlResults(tests: NonNullable<typeof lastCustomTests>): void {
   const results = document.getElementById("adblock-custom-results")!;
-  const methodLabel: Record<string, string> = {
-    network: t("adblock.method.network"), loaded: t("adblock.method.loaded"),
-    cosmetic: t("adblock.method.cosmetic"), visible: t("adblock.method.visible"),
-    timeout: t("adblock.method.timeout"), unknown: t("adblock.method.unknown"),
-  };
   results.innerHTML = tests.map((tt) => {
     const status = tt.blocked ? "blocked" : "not-blocked";
     const label = tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
     const iconSvg = tt.blocked ? '<polyline points="9 12 11.5 14.5 16 9.5"/>' : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-    const method = tt.method ? methodLabel[tt.method] || tt.method : "";
+    const method = methodLabel(tt.method);
     return `<div class="dns-check-item fade-in">
       <svg class="check-icon ${status === "blocked" ? "fail" : "pass"}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>${iconSvg}</svg>
       <span class="check-label" data-tooltip="${escapeHtml(method)}">${escapeHtml(tt.name)}</span>
@@ -276,7 +278,7 @@ const serverLabelKeys: Record<string, string> = {
   custom: "speed.server.custom",
 };
 
-const serverProbeState: Record<string, { reachable: boolean; latency: number | null; colo: string | null; lat: number | null; lon: number | null }> = {};
+const serverProbeState: Record<string, ServerProbeResult> = {};
 
 // Appends a live latency badge to each <option> and disables ones that failed to probe.
 function renderServerOptionLabels(): void {
@@ -331,7 +333,7 @@ async function initSpeedTest(): Promise<void> {
     if (!url) return;
     setCustomServerUrl(url);
     const [result] = await probeServers(["custom"]);
-    serverProbeState.custom = { reachable: result.reachable, latency: result.latency, colo: result.colo, lat: result.lat, lon: result.lon };
+    serverProbeState.custom = result;
     renderServerOptionLabels();
     if (sel?.value === "custom" && result.colo) updateServerBadge(result.colo, result.lat, result.lon);
   });
@@ -343,7 +345,7 @@ async function initSpeedTest(): Promise<void> {
 
   // probe-on-load: only the built-in servers, the custom one is probed on blur once a URL is entered
   const results = await probeServers(["edge", "cf-speed"]);
-  results.forEach((r) => { serverProbeState[r.id] = { reachable: r.reachable, latency: r.latency, colo: r.colo, lat: r.lat, lon: r.lon }; });
+  results.forEach((r) => { serverProbeState[r.id] = r; });
   updateServerValueLabel();
   renderServerOptionLabels();
 }
@@ -394,36 +396,26 @@ function drawSpeedGraph(): void {
   function drawLine(points: { time: number; value: number }[], color: string): void {
     if (points.length < 2) return;
     const maxTime = Math.max(...speedGraphData.download.concat(speedGraphData.upload).map((p) => p.time), 1);
+    const px = (p: { time: number }) => pad.left + (p.time / maxTime) * plotW;
+    const py = (p: { value: number }) => pad.top + plotH - (p.value / maxVal) * plotH;
+
+    const line = new Path2D();
+    points.forEach((p, i) => (i === 0 ? line.moveTo(px(p), py(p)) : line.lineTo(px(p), py(p))));
+
+    const area = new Path2D(line);
+    area.lineTo(px(points[points.length - 1]), pad.top + plotH);
+    area.lineTo(px(points[0]), pad.top + plotH);
+    area.closePath();
 
     const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
     grad.addColorStop(0, color.replace("1)", "0.15)"));
     grad.addColorStop(1, color.replace("1)", "0)"));
-
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = pad.left + (p.time / maxTime) * plotW;
-      const y = pad.top + plotH - (p.value / maxVal) * plotH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    const lastX = pad.left + (points[points.length - 1].time / maxTime) * plotW;
-    const firstX = pad.left + (points[0].time / maxTime) * plotW;
-    ctx.lineTo(lastX, pad.top + plotH);
-    ctx.lineTo(firstX, pad.top + plotH);
-    ctx.closePath();
     ctx.fillStyle = grad;
-    ctx.fill();
+    ctx.fill(area);
 
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = pad.left + (p.time / maxTime) * plotW;
-      const y = pad.top + plotH - (p.value / maxVal) * plotH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.stroke(line);
   }
 
   drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
@@ -447,7 +439,7 @@ async function runSpeedTest(): Promise<void> {
     setCustomServerUrl(url);
     if (!serverProbeState.custom || !serverProbeState.custom.reachable) {
       const [result] = await probeServers(["custom"]);
-      serverProbeState.custom = { reachable: result.reachable, latency: result.latency, colo: result.colo, lat: result.lat, lon: result.lon };
+      serverProbeState.custom = result;
       renderServerOptionLabels();
     }
     if (!serverProbeState.custom.reachable) {
@@ -540,7 +532,7 @@ function renderSpeedResults(results: SpeedTestResults): void {
   bbEl.textContent = bbGrade.grade;
   bbEl.style.color = gradeColors[bbGrade.grade] || "var(--text-primary)";
   document.getElementById("speed-bufferbloat-unit")!.textContent =
-    results.bufferbloatIncrease !== null ? `+${results.bufferbloatIncrease}ms · ${bbGrade.label}` : t("speed.grade");
+    results.bufferbloatIncrease !== null ? `+${results.bufferbloatIncrease}ms · ${t(bbGrade.labelKey)}` : t("speed.grade");
   const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
   bbBar.style.width = results.bufferbloatIncrease !== null ? "100%" : "0%";
   bbBar.style.background = gradeColors[bbGrade.grade] || "var(--brand)";
@@ -550,13 +542,7 @@ function renderSpeedResults(results: SpeedTestResults): void {
   gradeEl.textContent = grade.grade;
   gradeEl.classList.add("grade-reveal");
   setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
-  const gradeKeys: Record<string, string> = {
-    "Exceptional": "speed.grade.exceptional", "Excellent": "speed.grade.excellent",
-    "Very Good": "speed.grade.veryGood", "Good": "speed.grade.good",
-    "Average": "speed.grade.average", "Below Average": "speed.grade.belowAvg",
-    "Slow": "speed.grade.slow", "Unknown": "speed.grade.unknown",
-  };
-  document.getElementById("speed-grade-label")!.textContent = t(gradeKeys[grade.label] || grade.label);
+  document.getElementById("speed-grade-label")!.textContent = t(grade.labelKey);
 
   const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
   document.getElementById("speed-phase")!.textContent =
@@ -806,19 +792,7 @@ const CATEGORY_ADVICE: Record<string, CategoryAdviceDef> = {
   },
 };
 
-interface AdblockScore {
-  score: number;
-  total: number;
-  blocked: number;
-  passed: number;
-}
-
-interface CategoryResult {
-  name: string;
-  tests: { blocked: boolean; [key: string]: any }[];
-}
-
-function renderSuggestions(score: AdblockScore, results: CategoryResult[]): void {
+function renderSuggestions(score: Score, results: CategoryResult[]): void {
   const section = document.getElementById("suggestions-section")!;
   const subtitle = document.getElementById("suggestions-subtitle")!;
   const grid = document.getElementById("suggestions-grid")!;
@@ -881,15 +855,6 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
   const div = document.createElement("div");
   div.className = "test-category";
 
-  const methodLabel: Record<string, string> = {
-    network: t("adblock.method.network"),
-    loaded: t("adblock.method.loaded"),
-    cosmetic: t("adblock.method.cosmetic"),
-    visible: t("adblock.method.visible"),
-    timeout: t("adblock.method.timeout"),
-    unknown: t("adblock.method.unknown"),
-  };
-
   const testsHtml = tests
     .map((tt) => {
       const status = tt.uncertain ? "uncertain" : tt.blocked ? "blocked" : "not-blocked";
@@ -897,7 +862,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
       const iconSvg = tt.blocked
         ? '<polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-      const method = tt.method ? methodLabel[tt.method] || tt.method : "";
+      const method = methodLabel(tt.method);
 
       return `
       <div class="test-item">

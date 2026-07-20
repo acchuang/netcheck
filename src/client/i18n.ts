@@ -192,6 +192,13 @@ const en = {
   "speed.grade.belowAvg": "Below Average",
   "speed.grade.slow": "Slow",
   "speed.grade.unknown": "Unknown",
+  "speed.bb.none": "None",
+  "speed.bb.minimal": "Minimal",
+  "speed.bb.mild": "Mild",
+  "speed.bb.moderate": "Moderate",
+  "speed.bb.significant": "Significant",
+  "speed.bb.severe": "Severe",
+  "speed.bb.unknown": "Unknown",
 
   // Ad block section
   "adblock.title": "Ad Block Tester",
@@ -596,6 +603,13 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.grade.belowAvg": "低於平均",
   "speed.grade.slow": "緩慢",
   "speed.grade.unknown": "未知",
+  "speed.bb.none": "無",
+  "speed.bb.minimal": "極輕微",
+  "speed.bb.mild": "輕微",
+  "speed.bb.moderate": "中等",
+  "speed.bb.significant": "明顯",
+  "speed.bb.severe": "嚴重",
+  "speed.bb.unknown": "未知",
 
   // Ad block section
   "adblock.title": "廣告攔截測試",

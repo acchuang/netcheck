@@ -1,4 +1,5 @@
 import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test";
+import { t } from "./i18n";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test";
 import { FilterListDetector, type FilterListResult } from "./filter-lists";
 
@@ -155,7 +156,7 @@ export const ReportExporter = {
       ln(`| Latency | ${data.speed.latency ?? "\u2014"} ms |`);
       ln(`| Jitter | ${data.speed.jitter ?? "\u2014"} ms |`);
       if (data.speed.grade) {
-        ln(`| Grade | **${data.speed.grade.grade}** \u2014 ${data.speed.grade.label} |`);
+        ln(`| Grade | **${data.speed.grade.grade}** \u2014 ${t(data.speed.grade.labelKey)} |`);
       }
     } else {
       ln("*Speed test was not run.*");
