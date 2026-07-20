@@ -1,11 +1,6 @@
-import { t, tTag, onLocaleChange } from "./i18n";
-import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml } from "./ui-utils";
+import { t, onLocaleChange } from "./i18n";
+import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
-
-interface IpResult {
-  ip?: string;
-  error?: string;
-}
 
 interface DnsResult {
   Answer?: DnsAnswer[];
@@ -83,7 +78,7 @@ interface Suggestion {
 // --- Core API object ---
 
 export const DnsCheck = {
-  async detectIp(): Promise<IpResult> {
+  async detectIp(): Promise<IpData> {
     try {
       const res = await fetch("/api/ip");
       return await res.json();
@@ -425,32 +420,8 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
 
   const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
 
-  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-
   grid.innerHTML = relevant
-    .map((s, i) => {
-      const isTop = i === 0 && issues.length > 0;
-      const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
-        : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("dns.checkBrowser")}</span>`;
-
-      return `
-      <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
-        <div class="suggestion-top">
-          <div class="suggestion-icon">${s.icon}</div>
-          <div class="suggestion-info">
-            <div class="suggestion-name">${t(s.name + ".name")}</div>
-            <div class="suggestion-type">${t(s.name + ".type")}</div>
-          </div>
-          ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
-        </div>
-        <div class="suggestion-desc">${t(s.name + ".desc")}</div>
-        <div class="suggestion-tags">
-          ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
-        </div>
-        ${linkHtml}
-      </div>`;
-    })
+    .map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "dns.checkBrowser"))
     .join("");
 
   section.classList.add("visible");
@@ -489,13 +460,12 @@ function renderLookupResults(domain: string, allData: Record<string, any>): void
   let html = `<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>`;
   let hasRecords = false;
 
+  const RR_NAMES: Record<number, string> = { 1: "A", 2: "NS", 5: "CNAME", 6: "SOA", 12: "PTR", 15: "MX", 16: "TXT", 28: "AAAA", 33: "SRV" };
   for (const [recType, data] of Object.entries(allData)) {
     const answers = data?.Answer || [];
     for (const rec of answers) {
       hasRecords = true;
-      const typeName = rec.type === 1 ? "A" : rec.type === 28 ? "AAAA" : rec.type === 15 ? "MX"
-        : rec.type === 2 ? "NS" : rec.type === 16 ? "TXT" : rec.type === 5 ? "CNAME"
-        : rec.type === 6 ? "SOA" : rec.type === 33 ? "SRV" : rec.type === 12 ? "PTR" : recType;
+      const typeName = RR_NAMES[rec.type] ?? recType;
       html += `<tr><td><span class="dns-type-badge">${escapeHtml(typeName)}</span></td><td class="mono">${escapeHtml(rec.name || domain)}</td><td class="mono">${escapeHtml(rec.data)}</td><td>${escapeHtml(rec.TTL)}s</td></tr>`;
     }
   }

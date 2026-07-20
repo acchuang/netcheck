@@ -1,4 +1,4 @@
-import { t } from "./i18n";
+import { t, tTag } from "./i18n";
 
 const ESCAPE_MAP: Record<string, string> = {
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -53,6 +53,38 @@ export function createCheckItem(status: "pass" | "warn" | "fail", label: string,
     ${value ? `<span class="check-value">${escapeHtml(value)}</span>` : ""}
   `;
   return div;
+}
+
+export const ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+
+// Shared card markup for the DNS and speed suggestion grids. `s.name` is an
+// i18n key prefix (resolves .name/.type/.desc); noLinkKey is the fallback text
+// key when the suggestion has no URL.
+export function suggestionCardHtml(
+  s: { name: string; icon: string; tags: string[]; url: string | null },
+  isTop: boolean,
+  noLinkKey: string
+): string {
+  const linkHtml = s.url
+    ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${ARROW_SVG}</a>`
+    : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t(noLinkKey)}</span>`;
+
+  return `
+  <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
+    <div class="suggestion-top">
+      <div class="suggestion-icon">${s.icon}</div>
+      <div class="suggestion-info">
+        <div class="suggestion-name">${t(s.name + ".name")}</div>
+        <div class="suggestion-type">${t(s.name + ".type")}</div>
+      </div>
+      ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
+    </div>
+    <div class="suggestion-desc">${t(s.name + ".desc")}</div>
+    <div class="suggestion-tags">
+      ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
+    </div>
+    ${linkHtml}
+  </div>`;
 }
 
 export function setBadge(id: string, status: string, text: string): void {

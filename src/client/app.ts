@@ -7,8 +7,8 @@ import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
 import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
 import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint";
-import { t, tTag, onLocaleChange } from "./i18n";
-import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm } from "./ui-utils";
+import { t, onLocaleChange } from "./i18n";
+import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm, suggestionCardHtml, ARROW_SVG } from "./ui-utils";
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll(".speed-gauge").forEach((g, i) => {
@@ -628,32 +628,8 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
     .filter((s) => s.when(r))
     .slice(0, 6);
 
-  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-
   grid.innerHTML = relevant
-    .map((s, i) => {
-      const isTop = i === 0 && issues.length > 0;
-      const linkHtml = s.url
-        ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${arrowSvg}</a>`
-        : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t("speed.noSetup")}</span>`;
-
-      return `
-      <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
-        <div class="suggestion-top">
-          <div class="suggestion-icon">${s.icon}</div>
-          <div class="suggestion-info">
-            <div class="suggestion-name">${t(s.name + ".name")}</div>
-            <div class="suggestion-type">${t(s.name + ".type")}</div>
-          </div>
-          ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
-        </div>
-        <div class="suggestion-desc">${t(s.name + ".desc")}</div>
-        <div class="suggestion-tags">
-          ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
-        </div>
-        ${linkHtml}
-      </div>`;
-    })
+    .map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "speed.noSetup"))
     .join("");
 
   section.classList.add("visible");
@@ -811,8 +787,6 @@ function renderSuggestions(score: Score, results: CategoryResult[]): void {
 
   subtitle.textContent = t("adblock.suggestGaps", weakCategories.length, results.length);
 
-  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-
   grid.innerHTML = weakCategories
     .map((cat) => {
       const advice = CATEGORY_ADVICE[cat.name];
@@ -826,7 +800,7 @@ function renderSuggestions(score: Score, results: CategoryResult[]): void {
         const label = t(`${key}.fix${i + 1}`);
         const url = advice.fixUrls[i];
         return url
-          ? `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${arrowSvg}</a></li>`
+          ? `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${ARROW_SVG}</a></li>`
           : `<li>${label}</li>`;
       }).join("");
 
