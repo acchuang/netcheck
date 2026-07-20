@@ -33,6 +33,8 @@ interface ServerMeta {
 
 interface SpeedServer {
   id: string;
+  // plain display name for third-party nodes; built-in servers use i18n labels in app.ts
+  name?: string;
   pingUrl: () => string;
   downUrl: (bytes: number) => string;
   upUrl: () => string;
@@ -71,7 +73,20 @@ function randomBlobBody(size: number): Blob {
   return new Blob([randomBody(size)], { type: "text/plain" });
 }
 
-const SERVERS: SpeedServer[] = [
+// LibreSpeed HTTP protocol: empty.php for ping/upload, garbage.php?ckSize=<MB> for download.
+function librespeedServer(id: string, name: string, base: string): SpeedServer {
+  return {
+    id,
+    name,
+    pingUrl: () => `${base}/empty.php?r=${Date.now()}`,
+    downUrl: (bytes) => `${base}/garbage.php?ckSize=${Math.max(1, Math.round(bytes / 1e6))}&r=${Date.now()}`,
+    upUrl: () => `${base}/empty.php`,
+    parseMeta: () => ({ colo: null, lat: null, lon: null }),
+    makeUploadBody: randomBlobBody,
+  };
+}
+
+export const SERVERS: SpeedServer[] = [
   {
     id: "edge",
     pingUrl: () => `/api/speedtest/ping?_=${Date.now()}`,
@@ -109,6 +124,12 @@ const SERVERS: SpeedServer[] = [
     },
     makeUploadBody: randomBlobBody,
   },
+  // ponytail: only public LibreSpeed nodes that send CORS headers survive in a browser —
+  // 5 of 43 on the official list did (all Sharktech, verified 2026-07). Probe-on-load
+  // disables any that go away.
+  librespeedServer("ls-ams", "Amsterdam (Sharktech)", "https://amsspeed.sharktech.net/backend"),
+  librespeedServer("ls-chi", "Chicago (Sharktech)", "https://chispeed.sharktech.net/backend"),
+  librespeedServer("ls-lax", "Los Angeles (Sharktech)", "https://laxspeed.sharktech.net/backend"),
   {
     id: "custom",
     pingUrl: () => `${customBaseUrl}/api/speedtest/ping?_=${Date.now()}`,
