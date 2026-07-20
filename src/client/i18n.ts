@@ -34,6 +34,12 @@ const en = {
   "dns.lookupLoading": "Looking up...",
   "dns.rawJson": "Raw JSON",
   "dns.noRecords": "No records found",
+  "dns.compareBtn": "Compare Resolvers",
+  "dns.comparing": "Querying resolvers...",
+  "dns.compareUnreachable": "unreachable",
+  "dns.compareNoAnswer": "no A records",
+  "dns.compareAllMatch": "All resolvers agree — no sign of DNS interference.",
+  "dns.compareMismatch": "Resolvers returned different answers — often CDN geo-routing, occasionally DNS interference.",
   "dns.ptrReverse": "PTR (Reverse)",
   "dns.allRecords": "All Records",
   "dns.recommendations": "Recommendations",
@@ -448,6 +454,12 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.lookupLoading": "查詢中...",
   "dns.rawJson": "原始 JSON",
   "dns.noRecords": "未找到紀錄",
+  "dns.compareBtn": "比較解析器",
+  "dns.comparing": "正在查詢各解析器...",
+  "dns.compareUnreachable": "無法連線",
+  "dns.compareNoAnswer": "無 A 紀錄",
+  "dns.compareAllMatch": "所有解析器結果一致 — 未發現 DNS 干擾跡象。",
+  "dns.compareMismatch": "各解析器回應不同 — 通常是 CDN 地理路由，偶爾為 DNS 干擾。",
   "dns.ptrReverse": "PTR (反向查詢)",
   "dns.allRecords": "所有紀錄",
   "dns.recommendations": "建議",
@@ -925,6 +937,7 @@ function applyStaticTranslations(): void {
   s("dns-security-title", "dns.securityTitle");
   s("dns-lookup-title", "dns.lookupTitle");
   s("dns-lookup-btn", "dns.lookupBtn");
+  s("dns-compare-btn", "dns.compareBtn");
   s("dns-raw-json-summary", "dns.rawJson");
   s("dns-ptr-option", "dns.ptrReverse");
   s("dns-all-option", "dns.allRecords");

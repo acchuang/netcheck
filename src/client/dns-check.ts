@@ -276,6 +276,7 @@ let lastIpv6: string | null | undefined; // undefined = not yet probed
 let lastResolvers: ResolverResult[] | null = null;
 let lastSecurity: SecurityCheck[] | null = null;
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
+let lastCompare: CompareResult[] | null = null;
 
 onLocaleChange(() => {
   if (lastIp) renderIpInfo(lastIp);
@@ -290,6 +291,7 @@ onLocaleChange(() => {
     });
   }
   if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
+  if (lastCompare) renderCompareResults(lastCompare);
 });
 
 export async function runDnsChecks(): Promise<void> {
@@ -449,6 +451,53 @@ function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolv
     .join("");
 
   section.classList.add("visible");
+}
+
+// --- Resolver consistency check ---
+
+interface CompareResult {
+  name: string;
+  ok: boolean;
+  ips: string[];
+}
+
+export async function runDnsCompare(): Promise<void> {
+  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
+  if (!domain) return;
+
+  const container = document.getElementById("dns-compare-results")!;
+  container.classList.remove("hidden");
+  container.innerHTML = `<p class="info-muted">${t("dns.comparing")}</p>`;
+
+  try {
+    const res = await fetch(`/api/dns/compare?domain=${encodeURIComponent(domain)}`);
+    lastCompare = await res.json();
+    renderCompareResults(lastCompare!);
+  } catch {
+    container.innerHTML = `<p class="info-muted">${t("dns.failed")}</p>`;
+  }
+}
+
+function renderCompareResults(results: CompareResult[]): void {
+  const container = document.getElementById("dns-compare-results")!;
+  container.classList.remove("hidden");
+
+  const sig = (r: CompareResult) => r.ips.join(",");
+  const answering = results.filter((r) => r.ok && r.ips.length > 0);
+  const counts = new Map<string, number>();
+  answering.forEach((r) => counts.set(sig(r), (counts.get(sig(r)) || 0) + 1));
+  const majority = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const allAgree = answering.length > 0 && answering.every((r) => sig(r) === majority);
+
+  container.innerHTML = `<p class="info-muted">${t(allAgree ? "dns.compareAllMatch" : "dns.compareMismatch")}</p>`;
+  results.forEach((r) => {
+    let status: "pass" | "warn" | "fail";
+    let value: string;
+    if (!r.ok) { status = "fail"; value = t("dns.compareUnreachable"); }
+    else if (r.ips.length === 0) { status = "warn"; value = t("dns.compareNoAnswer"); }
+    else { status = sig(r) === majority ? "pass" : "warn"; value = r.ips.join(", "); }
+    container.appendChild(createCheckItem(status, r.name, value));
+  });
 }
 
 export async function runDnsLookup(): Promise<void> {

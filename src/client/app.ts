@@ -1,4 +1,4 @@
-import { runDnsChecks, runDnsLookup } from "./dns-check";
+import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
 import { AdBlockTest, type Score, type CategoryResult } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
@@ -94,6 +94,7 @@ function initTabs(): void {
 
   // DNS Lookup form
   document.getElementById("dns-lookup-btn")!.addEventListener("click", runDnsLookup);
+  document.getElementById("dns-compare-btn")!.addEventListener("click", runDnsCompare);
   document.getElementById("dns-lookup-domain")!.addEventListener("keydown", (e) => {
     if ((e as KeyboardEvent).key === "Enter") runDnsLookup();
   });

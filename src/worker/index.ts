@@ -24,6 +24,10 @@ export default {
       return handleResolverCheck();
     }
 
+    if (url.pathname === "/api/dns/compare") {
+      return handleDnsCompare(url);
+    }
+
     if (url.pathname === "/api/speedtest/ping") {
       const cf = getCf(request);
       const colo = cf.colo || "unknown";
@@ -192,6 +196,26 @@ async function testOneResolver(resolver: ResolverInfo) {
 
 async function handleResolverCheck(): Promise<Response> {
   const results = await Promise.all(RESOLVERS.map(testOneResolver));
+  return Response.json(results, { headers: corsHeaders() });
+}
+
+// Resolve the same domain through every resolver so the client can diff
+// answers (hijack / captive-portal signal; CDN geo-routing causes benign diffs).
+async function handleDnsCompare(url: URL): Promise<Response> {
+  const domain = url.searchParams.get("domain") || "example.com";
+  const results = await Promise.all(RESOLVERS.map(async (r) => {
+    try {
+      const res = await fetch(`https://${r.host}/dns-query?name=${encodeURIComponent(domain)}&type=A`, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(4000),
+      });
+      const data = await res.json() as { Answer?: { type: number; data: string }[] };
+      const ips = (data.Answer || []).filter((a) => a.type === 1).map((a) => a.data).sort();
+      return { name: r.name, ok: true, ips };
+    } catch {
+      return { name: r.name, ok: false, ips: [] as string[] };
+    }
+  }));
   return Response.json(results, { headers: corsHeaders() });
 }
 
