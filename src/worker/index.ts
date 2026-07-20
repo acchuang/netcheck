@@ -42,6 +42,10 @@ export default {
       });
     }
 
+    if (url.pathname === "/api/speedtest/fast-targets") {
+      return handleFastTargets();
+    }
+
     if (url.pathname === "/api/speedtest/down") {
       return handleSpeedDown(url);
     }
@@ -143,6 +147,25 @@ export function handleSpeedDown(url: URL): Response {
       "Cache-Control": "no-store",
     },
   });
+}
+
+// api.fast.com sends no CORS headers, so the browser can't do URL discovery
+// itself; proxy only this tiny JSON call — speed traffic goes browser -> OCA direct.
+// The token is the public one embedded in fast.com's own client JS (stable for years).
+async function handleFastTargets(): Promise<Response> {
+  try {
+    const res = await fetch(
+      "https://api.fast.com/netflix/speedtest/v2?https=true&token=YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm&urlCount=3",
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const data = await res.json();
+    return Response.json(data, { headers: corsHeaders() });
+  } catch (err) {
+    return Response.json(
+      { error: "fast.com discovery failed", detail: String(err) },
+      { status: 502, headers: corsHeaders() }
+    );
+  }
 }
 
 async function handleSpeedUp(request: Request): Promise<Response> {

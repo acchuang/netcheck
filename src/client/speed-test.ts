@@ -35,6 +35,8 @@ interface SpeedServer {
   id: string;
   // plain display name for third-party nodes; built-in servers use i18n labels in app.ts
   name?: string;
+  // async URL discovery; returns false if the node is unavailable
+  init?: () => Promise<boolean>;
   pingUrl: () => string;
   downUrl: (bytes: number) => string;
   upUrl: () => string;
@@ -73,18 +75,32 @@ function randomBlobBody(size: number): Blob {
   return new Blob([randomBody(size)], { type: "text/plain" });
 }
 
-// LibreSpeed HTTP protocol: empty.php for ping/upload, garbage.php?ckSize=<MB> for download.
-function librespeedServer(id: string, name: string, base: string): SpeedServer {
-  return {
-    id,
-    name,
-    pingUrl: () => `${base}/empty.php?r=${Date.now()}`,
-    downUrl: (bytes) => `${base}/garbage.php?ckSize=${Math.max(1, Math.round(bytes / 1e6))}&r=${Date.now()}`,
-    upUrl: () => `${base}/empty.php`,
-    parseMeta: () => ({ colo: null, lat: null, lon: null }),
-    makeUploadBody: randomBlobBody,
-  };
-}
+// Netflix OCA (fast.com) node. URL discovery goes through our worker because
+// api.fast.com sends no CORS headers; the speed traffic itself is browser -> OCA
+// direct, so measurements are unaffected. Target URLs embed an expiry (~hours);
+// re-running after that fails cleanly and a reload re-discovers.
+let fastTarget = "";
+
+const fastServer: SpeedServer = {
+  id: "fast",
+  name: "Netflix (fast.com)",
+  init: async () => {
+    if (fastTarget) return true;
+    try {
+      const res = await fetch("/api/speedtest/fast-targets", { signal: AbortSignal.timeout(5000) });
+      const data = (await res.json()) as { targets?: { url?: string }[] };
+      fastTarget = data.targets?.[0]?.url || "";
+      return fastTarget !== "";
+    } catch {
+      return false;
+    }
+  },
+  pingUrl: () => fastTarget.replace("/speedtest?", "/speedtest/range/0-0?"),
+  downUrl: (bytes) => fastTarget.replace("/speedtest?", `/speedtest/range/0-${bytes}?`),
+  upUrl: () => fastTarget.replace("/speedtest?", "/speedtest/range/0-0?"),
+  parseMeta: () => ({ colo: null, lat: null, lon: null }),
+  makeUploadBody: randomBlobBody,
+};
 
 export const SERVERS: SpeedServer[] = [
   {
@@ -124,12 +140,7 @@ export const SERVERS: SpeedServer[] = [
     },
     makeUploadBody: randomBlobBody,
   },
-  // ponytail: only public LibreSpeed nodes that send CORS headers survive in a browser —
-  // 5 of 43 on the official list did (all Sharktech, verified 2026-07). Probe-on-load
-  // disables any that go away.
-  librespeedServer("ls-ams", "Amsterdam (Sharktech)", "https://amsspeed.sharktech.net/backend"),
-  librespeedServer("ls-chi", "Chicago (Sharktech)", "https://chispeed.sharktech.net/backend"),
-  librespeedServer("ls-lax", "Los Angeles (Sharktech)", "https://laxspeed.sharktech.net/backend"),
+  fastServer,
   {
     id: "custom",
     pingUrl: () => `${customBaseUrl}/api/speedtest/ping?_=${Date.now()}`,
@@ -192,6 +203,9 @@ async function probeServer(id: string): Promise<ServerProbeResult> {
     return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
   }
   const server = getServer(id);
+  if (server.init && !(await server.init())) {
+    return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
+  }
   try {
     const start = performance.now();
     const res = await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
@@ -228,6 +242,9 @@ export const SpeedTest = {
       throw new Error("No custom server URL set");
     }
     const server = getServer(serverId);
+    if (server.init && !(await server.init())) {
+      throw new Error("Server unavailable");
+    }
     const cb: ProgressCallback = onProgress || (() => {});
     const loadedPings: number[] = [];
 
