@@ -48,13 +48,22 @@ export interface TestResult {
 
 type TestWithResult = Test & TestResult;
 
+export type Importance = "high" | "medium" | "low";
+
+// Importance-weighted scoring (like adblock-tester.com's category severity):
+// each category contributes to the score by its weight, not by its test count,
+// so blocking contextual ads counts more than blocking cookie banners.
+export const IMPORTANCE_WEIGHT: Record<Importance, number> = { high: 3, medium: 2, low: 1 };
+
 interface Category {
   name: string;
+  importance: Importance;
   tests: Test[];
 }
 
 export interface CategoryResult {
   name: string;
+  importance: Importance;
   tests: TestWithResult[];
 }
 
@@ -139,6 +148,7 @@ export const AdBlockTest = {
   categories: [
     {
       name: "Contextual Advertising",
+      importance: "high",
       tests: [
         { name: "Google AdSense", type: "script", url: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" },
         { name: "Google Publisher Tag", type: "script", url: "https://securepubads.g.doubleclick.net/tag/js/gpt.js" },
@@ -149,6 +159,7 @@ export const AdBlockTest = {
     },
     {
       name: "Analytics & Tracking",
+      importance: "high",
       tests: [
         { name: "Google Analytics", type: "script", url: "https://www.google-analytics.com/analytics.js" },
         { name: "Google Tag Manager", type: "script", url: "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXX" },
@@ -161,6 +172,7 @@ export const AdBlockTest = {
     },
     {
       name: "Banner & Display Ads",
+      importance: "medium",
       tests: [
         { name: "DoubleClick ad image", type: "image", url: "https://ad.doubleclick.net/favicon.ico" },
         { name: "Ad-sized iframe (728x90)", type: "iframe", width: 728, height: 90 },
@@ -171,6 +183,7 @@ export const AdBlockTest = {
     },
     {
       name: "Error Monitoring & Dev Tools",
+      importance: "low",
       tests: [
         { name: "Sentry", type: "script", url: "https://browser.sentry-cdn.com/7.0.0/bundle.min.js" },
         { name: "Bugsnag", type: "script", url: "https://d2wy8f7a9ursnm.cloudfront.net/v7/bugsnag.min.js" },
@@ -179,6 +192,7 @@ export const AdBlockTest = {
     },
     {
       name: "Social Media Trackers",
+      importance: "medium",
       tests: [
         { name: "Facebook SDK", type: "script", url: "https://connect.facebook.net/en_US/sdk.js" },
         { name: "Twitter widgets", type: "script", url: "https://platform.twitter.com/widgets.js" },
@@ -188,6 +202,7 @@ export const AdBlockTest = {
     },
     {
       name: "Fingerprint Protection",
+      importance: "high",
       tests: [
         { name: "Canvas fingerprint", type: "script", url: "https://cdn.jsdelivr.net/npm/fingerprintjs@0.5.3/fingerprint.min.js" },
         { name: "WebGL fingerprint probe", type: "element", className: "fp-canvas-probe" },
@@ -197,6 +212,7 @@ export const AdBlockTest = {
     },
     {
       name: "Cookie Consent & Annoyances",
+      importance: "low",
       tests: [
         { name: "Cookie notice banner", type: "element", className: "cookie-notice" },
         { name: "Cookie consent popup", type: "element", id: "cookie-consent-banner" },
@@ -214,7 +230,7 @@ export const AdBlockTest = {
     const container = hiddenTestContainer();
 
     for (const category of this.categories) {
-      const catResults: CategoryResult = { name: category.name, tests: [] };
+      const catResults: CategoryResult = { name: category.name, importance: category.importance, tests: [] };
 
       for (const test of category.tests) {
         const result = await probeTest(test, container);
@@ -246,16 +262,26 @@ export const AdBlockTest = {
   getScore(): Score {
     let total = 0;
     let blocked = 0;
+    let weightSum = 0;
+    let weightedBlocked = 0;
 
     for (const cat of this.results) {
+      let catTotal = 0;
+      let catBlocked = 0;
       for (const test of cat.tests) {
         total++;
-        if (test.blocked) blocked++;
+        catTotal++;
+        if (test.blocked) { blocked++; catBlocked++; }
+      }
+      if (catTotal > 0) {
+        const w = IMPORTANCE_WEIGHT[cat.importance];
+        weightSum += w;
+        weightedBlocked += w * (catBlocked / catTotal);
       }
     }
 
     return {
-      score: total > 0 ? Math.round((blocked / total) * 100) : 0,
+      score: weightSum > 0 ? Math.round((weightedBlocked / weightSum) * 100) : 0,
       total,
       blocked,
       passed: total - blocked,

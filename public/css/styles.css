@@ -874,6 +874,33 @@ select option {
   color: var(--text-tertiary);
 }
 
+.test-category-importance {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 5px;
+  cursor: help;
+  border: 1px solid transparent;
+}
+.test-category-importance.imp-high {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.test-category-importance.imp-medium {
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+  border-color: color-mix(in srgb, var(--amber) 28%, transparent);
+}
+.test-category-importance.imp-low {
+  color: var(--text-quaternary);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .test-category-body {
   max-height: 0;
   overflow: hidden;

@@ -1,5 +1,5 @@
 import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
-import { AdBlockTest, type CategoryResult } from "./adblock-test";
+import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
@@ -158,6 +158,14 @@ function methodLabel(method?: string): string {
   return PROBE_METHODS.has(method) ? t(`adblock.method.${method}`) : method;
 }
 
+// Importance-weighted scoring badge — label + how much the category counts toward the score.
+function importanceLabel(imp: Importance): string {
+  return t(`adblock.importance.${imp}`);
+}
+function importanceTip(imp: Importance): string {
+  return t("adblock.importanceTip", IMPORTANCE_WEIGHT[imp]);
+}
+
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
   renderCategorySkeletons(categoriesEl, 7);
@@ -179,7 +187,7 @@ function renderAdBlockResults(): void {
   categoriesEl.innerHTML = "";
   AdBlockTest.results.forEach((cat, i) => {
     const blocked = cat.tests.filter((t) => t.blocked).length;
-    const catEl = createCategoryWithResults(catDisplayName(cat.name), cat.tests, blocked);
+    const catEl = createCategoryWithResults(catDisplayName(cat.name), cat.tests, blocked, cat.importance);
     catEl.classList.add("stagger-item");
     if (openIdx.has(i)) catEl.classList.add("open");
     categoriesEl.appendChild(catEl);
@@ -863,7 +871,7 @@ function renderSuggestions(results: CategoryResult[]): void {
   section.classList.add("visible");
 }
 
-function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], blocked: number): HTMLDivElement {
+function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], blocked: number, importance: Importance): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "test-category";
 
@@ -891,6 +899,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
     <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
+      <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>
       <span class="test-category-score">${t("adblock.blockedOf", blocked, tests.length)}</span>
     </div>
     <div class="test-category-body">${testsHtml}</div>
