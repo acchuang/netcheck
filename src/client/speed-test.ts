@@ -35,6 +35,8 @@ interface SpeedServer {
   id: string;
   // plain display name for third-party nodes; built-in servers use i18n labels in app.ts
   name?: string;
+  // false if this server type never reports a colo/location (default: true)
+  locatable?: boolean;
   // async URL discovery; returns false if the node is unavailable
   init?: () => Promise<boolean>;
   pingUrl: () => string;
@@ -80,16 +82,22 @@ function randomBlobBody(size: number): Blob {
 // direct, so measurements are unaffected. Target URLs embed an expiry (~hours);
 // re-running after that fails cleanly and a reload re-discovers.
 let fastTarget = "";
+let fastTargetSetAt = 0;
+// ponytail: conservative fixed TTL well under the URL's real (~hours) expiry, since we
+// don't parse the expiry out of the target URL itself; re-init if a real expiry check is needed
+const FAST_TARGET_TTL_MS = 20 * 60 * 1000;
 
 const fastServer: SpeedServer = {
   id: "fast",
   name: "Netflix (fast.com)",
+  locatable: false,
   init: async () => {
-    if (fastTarget) return true;
+    if (fastTarget && Date.now() - fastTargetSetAt < FAST_TARGET_TTL_MS) return true;
     try {
       const res = await fetch("/api/speedtest/fast-targets", { signal: AbortSignal.timeout(5000) });
       const data = (await res.json()) as { targets?: { url?: string }[] };
       fastTarget = data.targets?.[0]?.url || "";
+      fastTargetSetAt = Date.now();
       return fastTarget !== "";
     } catch {
       return false;
@@ -185,7 +193,7 @@ function median(values: number[]): number | null {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-function getServer(id: string): SpeedServer {
+export function getServer(id: string): SpeedServer {
   return SERVERS.find((s) => s.id === id) || SERVERS[0];
 }
 

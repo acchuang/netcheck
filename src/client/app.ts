@@ -1,7 +1,7 @@
 import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
 import { AdBlockTest, type Score, type CategoryResult } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
-import { SpeedTest, SERVERS, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
+import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
 import { initHeadersCheck } from "./headers-check";
 import { initSnapshots, enableSaveButton } from "./snapshots";
@@ -114,7 +114,7 @@ function initTabs(): void {
     });
   });
   document.addEventListener("click", (e) => {
-    if (!(e.target as HTMLElement).closest(".export-dropdown")) ReportExporter.hideExportMenu();
+    if (!(e.target instanceof Element) || !e.target.closest(".export-dropdown")) ReportExporter.hideExportMenu();
   });
 }
 
@@ -277,13 +277,14 @@ const speedGraphData: { download: { time: number; value: number }[]; upload: { t
 const serverLabelKeys: Record<string, string> = {
   edge: "speed.server.edge",
   "cf-speed": "speed.server.cfSpeed",
+  fast: "speed.server.fast",
   custom: "speed.server.custom",
 };
 
 function serverLabel(id: string): string {
   const key = serverLabelKeys[id];
   if (key) return t(key);
-  return SERVERS.find((s) => s.id === id)?.name ?? id;
+  return getServer(id).name ?? id;
 }
 
 const serverProbeState: Record<string, ServerProbeResult> = {};
@@ -335,7 +336,18 @@ async function initSpeedTest(): Promise<void> {
     if (probe?.colo) updateServerBadge(probe.colo, probe.lat, probe.lon);
   }
 
-  sel?.addEventListener("change", updateServerValueLabel);
+  sel?.addEventListener("change", async () => {
+    updateServerValueLabel();
+    // lazy-probe servers with async discovery (e.g. fast.com) the first time they're picked,
+    // instead of contacting every third party on every page load
+    const id = sel.value;
+    if (getServer(id).init && !serverProbeState[id]) {
+      const [result] = await probeServers([id]);
+      serverProbeState[id] = result;
+      renderServerOptionLabels();
+      if (sel.value === id) updateServerValueLabel();
+    }
+  });
   updateServerValueLabel();
 
   customInput?.addEventListener("blur", async () => {
@@ -353,8 +365,9 @@ async function initSpeedTest(): Promise<void> {
     updateServerValueLabel();
   });
 
-  // probe-on-load: everything except custom, which is probed on blur once a URL is entered
-  const results = await probeServers(SERVERS.filter((s) => s.id !== "custom").map((s) => s.id));
+  // probe-on-load: skip "custom" (probed on blur) and servers needing async init/discovery
+  // (e.g. fast.com) — those are lazy-probed only once the user actually selects them.
+  const results = await probeServers(SERVERS.filter((s) => s.id !== "custom" && !s.init).map((s) => s.id));
   results.forEach((r) => { serverProbeState[r.id] = r; });
   updateServerValueLabel();
   renderServerOptionLabels();
@@ -474,7 +487,8 @@ async function runSpeedTest(): Promise<void> {
   document.getElementById("speed-bufferbloat")!.textContent = "—";
   document.getElementById("speed-bufferbloat-unit")!.textContent = t("speed.grade");
   (document.getElementById("speed-bufferbloat-bar") as HTMLElement).style.width = "0%";
-  document.getElementById("speed-server-value")!.textContent = t("speed.detecting");
+  document.getElementById("speed-server-value")!.textContent =
+    getServer(serverId).locatable === false ? serverLabel(serverId) : t("speed.detecting");
   (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
@@ -485,48 +499,49 @@ async function runSpeedTest(): Promise<void> {
 
   let results: SpeedTestResults;
   try {
-  results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
-    const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
-    document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
-    (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
-    setActiveGauge(phase);
+    results = await SpeedTest.run((phase: SpeedTestPhase, progress: number, data: SpeedTestResults) => {
+      const phaseLabel = phase === "latency" ? t("speed.measuringLatency") : phase === "download" ? t("speed.testingDownload") : t("speed.testingUpload");
+      document.getElementById("speed-phase")!.textContent = `${phaseLabel}... ${progress}%`;
+      (document.getElementById(`speed-${phase}-bar`) as HTMLElement).style.width = `${progress}%`;
+      setActiveGauge(phase);
 
-    if (data) {
-      if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
-      if (data.latency !== null) {
-        const el = document.getElementById("speed-latency")!;
-        animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
-        pulseValue(el);
-        prevValues.latency = data.latency;
+      if (data) {
+        if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
+        if (data.latency !== null) {
+          const el = document.getElementById("speed-latency")!;
+          animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
+          pulseValue(el);
+          prevValues.latency = data.latency;
+        }
+        if (data.jitter !== null) {
+          const el = document.getElementById("speed-jitter")!;
+          animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
+          pulseValue(el);
+          prevValues.jitter = data.jitter;
+        }
+        if (data.download !== null) {
+          const el = document.getElementById("speed-download")!;
+          animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
+          pulseValue(el);
+          prevValues.download = data.download;
+          speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
+          drawSpeedGraph();
+        }
+        if (data.upload !== null) {
+          const el = document.getElementById("speed-upload")!;
+          animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
+          pulseValue(el);
+          prevValues.upload = data.upload;
+          speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
+          drawSpeedGraph();
+        }
       }
-      if (data.jitter !== null) {
-        const el = document.getElementById("speed-jitter")!;
-        animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
-        pulseValue(el);
-        prevValues.jitter = data.jitter;
-      }
-      if (data.download !== null) {
-        const el = document.getElementById("speed-download")!;
-        animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
-        pulseValue(el);
-        prevValues.download = data.download;
-        speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
-        drawSpeedGraph();
-      }
-      if (data.upload !== null) {
-        const el = document.getElementById("speed-upload")!;
-        animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
-        pulseValue(el);
-        prevValues.upload = data.upload;
-        speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
-        drawSpeedGraph();
-      }
-    }
-  }, serverId);
+    }, serverId);
   } catch {
     // server refused init (e.g. fast.com discovery failed, expired target)
     setActiveGauge("");
     document.getElementById("speed-phase")!.textContent = t("speed.serverUnreachable");
+    document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
     btn.disabled = false;
     btn.textContent = t("speed.runBtn");
     return;
@@ -534,7 +549,7 @@ async function runSpeedTest(): Promise<void> {
 
   setActiveGauge(""); // clear active state
   renderSpeedResults(results);
-  // servers without colo metadata (LibreSpeed nodes) would otherwise stay on "detecting..."
+  // colo lookup failed this run (transient, or a non-locatable server like fast.com) — don't leave the label on "detecting..."
   if (!results.colo) document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
   drawSpeedGraph();
   enableSaveButton();

@@ -152,14 +152,26 @@ export function handleSpeedDown(url: URL): Response {
 // api.fast.com sends no CORS headers, so the browser can't do URL discovery
 // itself; proxy only this tiny JSON call — speed traffic goes browser -> OCA direct.
 // The token is the public one embedded in fast.com's own client JS (stable for years).
+// Cached across visitors via the edge Cache API — targets stay valid for hours, so there's
+// no need to hit api.fast.com on every single page load.
+const FAST_TARGETS_CACHE_KEY = new Request("https://netcheck.internal/cache/fast-targets");
+
 async function handleFastTargets(): Promise<Response> {
+  // ponytail: DOM lib's ambient `caches` shadows workers-types' (which has `.default`), and the
+  // global only exists in the Workers runtime — cast + access lazily so `node --test` (no `caches`
+  // global) can still import this file without touching the shared tsconfig's lib/types.
+  const edgeCache = caches as unknown as { default: { match(req: Request): Promise<Response | undefined>; put(req: Request, res: Response): Promise<void> } };
+  const cached = await edgeCache.default.match(FAST_TARGETS_CACHE_KEY);
+  if (cached) return cached;
   try {
     const res = await fetch(
       "https://api.fast.com/netflix/speedtest/v2?https=true&token=YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm&urlCount=3",
       { signal: AbortSignal.timeout(5000) }
     );
     const data = await res.json();
-    return Response.json(data, { headers: corsHeaders() });
+    const response = Response.json(data, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=900" } });
+    await edgeCache.default.put(FAST_TARGETS_CACHE_KEY, response.clone());
+    return response;
   } catch (err) {
     return Response.json(
       { error: "fast.com discovery failed", detail: String(err) },
