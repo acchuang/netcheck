@@ -1,5 +1,5 @@
 import { t, onLocaleChange } from "./i18n";
-import { setBadge, createCheckItem, renderSkeletonRows, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
+import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 
 interface DnsResult {
@@ -285,7 +285,6 @@ onLocaleChange(() => {
   if (lastSecurity) renderSecurity(lastSecurity);
   if (lastResolvers && lastSecurity) {
     renderDnsSuggestions({
-      resolvers: lastResolvers,
       securityChecks: lastSecurity,
       reachable: lastResolvers.filter((r) => r.reachable),
     });
@@ -316,7 +315,7 @@ export async function runDnsChecks(): Promise<void> {
   lastSecurity = securityChecks;
   renderSecurity(securityChecks);
 
-  renderDnsSuggestions({ resolvers, securityChecks, reachable: resolvers.filter((r) => r.reachable) });
+  renderDnsSuggestions({ securityChecks, reachable: resolvers.filter((r) => r.reachable) });
 }
 
 function renderIpv6(ip: string | null): void {
@@ -416,7 +415,7 @@ function renderSecurity(securityChecks: SecurityCheck[]): void {
   }
 }
 
-function renderDnsSuggestions({ resolvers, securityChecks, reachable }: { resolvers: ResolverResult[]; securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
+function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
   const section = document.getElementById("dns-suggestions-section")!;
   const subtitle = document.getElementById("dns-suggestions-subtitle")!;
   const grid = document.getElementById("dns-suggestions-grid")!;

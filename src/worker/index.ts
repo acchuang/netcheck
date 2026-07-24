@@ -1,7 +1,7 @@
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 
 export default {
-  async fetch(request: Request, env: Record<string, unknown>): Promise<Response> {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ip") {

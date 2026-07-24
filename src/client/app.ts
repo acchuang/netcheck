@@ -1,5 +1,5 @@
 import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
-import { AdBlockTest, type Score, type CategoryResult } from "./adblock-test";
+import { AdBlockTest, type CategoryResult } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
 import { ReportExporter } from "./export-report";
@@ -209,7 +209,7 @@ function renderAdBlockResults(): void {
   document.getElementById("score-detail")!.textContent =
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
-  renderSuggestions(score, AdBlockTest.results);
+  renderSuggestions(AdBlockTest.results);
 }
 
 // Feature 1 + re-test: custom URL test + re-run adblock tests
@@ -806,7 +806,7 @@ const CATEGORY_ADVICE: Record<string, CategoryAdviceDef> = {
   },
 };
 
-function renderSuggestions(score: Score, results: CategoryResult[]): void {
+function renderSuggestions(results: CategoryResult[]): void {
   const section = document.getElementById("suggestions-section")!;
   const subtitle = document.getElementById("suggestions-subtitle")!;
   const grid = document.getElementById("suggestions-grid")!;

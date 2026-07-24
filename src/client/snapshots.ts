@@ -1,4 +1,3 @@
-import type { SpeedTestResults } from "./speed-test";
 import { SpeedTest } from "./speed-test";
 import { loadHistory, persistHistory } from "./ui-utils";
 
