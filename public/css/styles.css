@@ -897,8 +897,8 @@ select option {
 }
 .test-category-importance.imp-low {
   color: var(--text-quaternary);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text-quaternary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--text-quaternary) 28%, transparent);
 }
 
 .test-category-body {
