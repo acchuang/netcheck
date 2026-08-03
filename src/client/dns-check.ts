@@ -1,6 +1,7 @@
 import { t, onLocaleChange } from "./i18n";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
+import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN } from "../shared/dns-wire";
 
 interface DnsResult {
   Answer?: DnsAnswer[];
@@ -18,8 +19,30 @@ interface DnsAnswer {
 interface ResolverResult extends ResolverInfo {
   reachable: boolean;
   latency: number | null;
-  dnssec: boolean;
+  /** null when the probe couldn't reach a verdict. */
+  validatesDnssec: boolean | null;
+  /** Extended DNS Error explaining the SERVFAIL, when the resolver sends one. */
+  dnssecDetail: string | null;
+  forwardsEcs: boolean | null;
+  ecsSubnet: string | null;
+  egressIp: string | null;
   filtering: boolean;
+  /** True once a browser-side probe replaced the Worker's numbers for this row. */
+  measuredFromBrowser?: boolean;
+}
+
+function blankResult(resolver: ResolverInfo): ResolverResult {
+  return {
+    ...resolver,
+    reachable: false,
+    latency: null,
+    validatesDnssec: null,
+    dnssecDetail: null,
+    forwardsEcs: null,
+    ecsSubnet: null,
+    egressIp: null,
+    filtering: false,
+  };
 }
 
 type SecurityStatus = "pass" | "warn" | "fail";
@@ -32,12 +55,6 @@ interface SecurityCheck {
   status: SecurityStatus;
   detailKey: string;
   detailArg?: string;
-}
-
-interface DohResponse {
-  AD?: boolean;
-  Answer?: DnsAnswer[];
-  Status?: number;
 }
 
 // --- Extended interfaces for UI ---
@@ -108,45 +125,65 @@ export const DnsCheck = {
   },
 
   async detectResolver(): Promise<ResolverResult[]> {
+    let results: ResolverResult[];
     try {
       const res = await fetch("/api/dns/check-resolvers");
-      if (res.ok) return await res.json();
-    } catch { /* fall through */ }
-
-    // Fallback client-side probing
-    const results: ResolverResult[] = [];
-    for (const resolver of RESOLVERS) {
-      try {
-        const start = performance.now();
-        const res = await fetch(`https://${resolver.host}/dns-query?name=example.com&type=A`, {
-          headers: { Accept: "application/dns-json" },
-          signal: AbortSignal.timeout(3000),
-        });
-        results.push({ ...resolver, reachable: res.ok, latency: res.ok ? Math.round(performance.now() - start) : null, dnssec: false, filtering: false });
-      } catch {
-        results.push({ ...resolver, reachable: false, latency: null, dnssec: false, filtering: false });
-      }
+      results = res.ok ? await res.json() : RESOLVERS.map(blankResult);
+    } catch {
+      results = RESOLVERS.map(blankResult);
     }
+    return DnsCheck.refineFromBrowser(results);
+  },
+
+  /**
+   * Re-probe the CORS-enabled resolvers from the browser and let those numbers
+   * win. The Worker's probe runs from Cloudflare's edge, so its latency is the
+   * edge's and any subnet it reports is the edge's — useless as *your* ECS
+   * exposure. A browser-origin query measures the real client path. Quad9 also
+   * refuses HTTP/1.1, so for it this is the only probe that connects at all.
+   */
+  async refineFromBrowser(results: ResolverResult[]): Promise<ResolverResult[]> {
+    await Promise.all(results.map(async (row) => {
+      if (!row.cors) return;
+      try {
+        const whoami = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 });
+        const { egressIp, ecsSubnet } = parseWhoami(whoami);
+        row.reachable = true;
+        row.latency = whoami.latency;
+        row.egressIp = egressIp;
+        row.ecsSubnet = ecsSubnet;
+        row.forwardsEcs = ecsSubnet !== null;
+        row.measuredFromBrowser = true;
+      } catch { /* keep whatever the Worker managed to learn */ }
+    }));
     return results;
   },
 
-  async checkDnsSecurity(): Promise<SecurityCheck[]> {
+  async checkDnsSecurity(resolvers: ResolverResult[]): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
 
-    // DNSSEC validation
-    try {
-      const res = await fetch("https://cloudflare-dns.com/dns-query?name=cloudflare.com&type=A&do=1", {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
-      });
-      const data: DohResponse = await res.json();
+    // DNSSEC validation. The old version asked Cloudflare's DoH for the AD flag
+    // on an already-signed domain, which every resolver sets — it reported
+    // Cloudflare's posture, not the visitor's, and could never fail. The real
+    // test is whether a resolver *rejects* a deliberately broken signature.
+    const tested = resolvers.filter((r) => r.validatesDnssec !== null);
+    const validating = tested.filter((r) => r.validatesDnssec === true);
+    if (tested.length === 0) {
+      checks.push({ id: "dnssec", status: "warn", detailKey: "dns.dnssecUnknown" });
+    } else if (validating.length === tested.length) {
       checks.push({
         id: "dnssec",
-        status: data.AD ? "pass" : "warn",
-        detailKey: data.AD ? "dns.dnssecPass" : "dns.dnssecWarn",
+        status: "pass",
+        detailKey: "dns.dnssecRejects",
+        detailArg: String(tested.length),
       });
-    } catch {
-      checks.push({ id: "dnssec", status: "warn", detailKey: "dns.dnssecUnknown" });
+    } else {
+      checks.push({
+        id: "dnssec",
+        status: "warn",
+        detailKey: "dns.dnssecPartial",
+        detailArg: `${validating.length}/${tested.length}`,
+      });
     }
 
     // DoH support
@@ -281,7 +318,10 @@ let lastCompare: CompareResult[] | null = null;
 onLocaleChange(() => {
   if (lastIp) renderIpInfo(lastIp);
   if (lastIpv6 !== undefined) renderIpv6(lastIpv6);
-  if (lastResolvers) renderResolvers(lastResolvers);
+  if (lastResolvers) {
+    renderResolvers(lastResolvers);
+    renderEcs(lastResolvers);
+  }
   if (lastSecurity) renderSecurity(lastSecurity);
   if (lastResolvers && lastSecurity) {
     renderDnsSuggestions({
@@ -310,8 +350,9 @@ export async function runDnsChecks(): Promise<void> {
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
   lastResolvers = resolvers;
   renderResolvers(resolvers);
+  renderEcs(resolvers);
 
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity();
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers);
   lastSecurity = securityChecks;
   renderSecurity(securityChecks);
 
@@ -362,7 +403,9 @@ function renderResolvers(resolvers: ResolverResult[]): void {
     const fastest = reachable.reduce((a, b) => ((a.latency ?? Infinity) < (b.latency ?? Infinity) ? a : b));
     reachable.forEach((r) => {
       const badges: string[] = [];
-      if (r.dnssec) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
+      if (r.validatesDnssec === true) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
+      if (r.validatesDnssec === false) badges.push('<span class="resolver-badge leak">NO DNSSEC</span>');
+      if (r.forwardsEcs === true) badges.push('<span class="resolver-badge leak">ECS</span>');
       if (r.filtering) badges.push('<span class="resolver-badge filter">Filtering</span>');
       const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
 
@@ -372,9 +415,15 @@ function renderResolvers(resolvers: ResolverResult[]): void {
       const iconSvg = status === "pass"
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+      const egress = r.egressIp
+        ? `<span class="check-sublabel">${t("dns.egressVia", r.egressIp)}</span>`
+        : "";
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
-        <span class="check-label">${r.name} <span class="resolver-ip">${r.ip}</span>${badgeHtml}</span>
+        <div class="check-label-block">
+          <span class="check-label">${escapeHtml(r.name)} <span class="resolver-ip">${escapeHtml(r.ip)}</span>${badgeHtml}</span>
+          ${egress}
+        </div>
         <span class="check-value">${r.latency}ms</span>
       `;
       resolverContainer.appendChild(div);
@@ -391,6 +440,47 @@ function renderResolvers(resolvers: ResolverResult[]): void {
     resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
     setBadge("dns-resolver-status", "error", t("dns.nonefound"));
   }
+}
+
+// EDNS Client Subnet: how much of your address the resolver hands to every
+// authoritative server it talks to. A /24 narrows you to ~256 addresses.
+function renderEcs(resolvers: ResolverResult[]): void {
+  const container = document.getElementById("dns-ecs-results")!;
+  const summary = document.getElementById("dns-ecs-summary")!;
+  container.innerHTML = "";
+
+  const known = resolvers.filter((r) => r.reachable && r.forwardsEcs !== null);
+  // Only a browser-side probe sees the visitor's own subnet; the Worker's probe
+  // would report Cloudflare's edge, so never show a subnet sourced from it.
+  const leaked = known.find((r) => r.measuredFromBrowser && r.ecsSubnet);
+
+  if (known.length === 0) {
+    summary.textContent = t("dns.ecsUnknown");
+    setBadge("dns-ecs-status", "error", t("dns.failed"));
+    return;
+  }
+
+  const forwarding = known.filter((r) => r.forwardsEcs);
+  if (leaked) {
+    summary.innerHTML = t("dns.ecsLeaking", `<span class="mono">${escapeHtml(leaked.ecsSubnet!)}</span>`);
+  } else if (forwarding.length > 0) {
+    summary.textContent = t("dns.ecsForwardOnly", String(forwarding.length), String(known.length));
+  } else {
+    summary.textContent = t("dns.ecsNone");
+  }
+
+  known.forEach((r) => {
+    const value = r.forwardsEcs
+      ? (r.measuredFromBrowser && r.ecsSubnet ? r.ecsSubnet : t("dns.ecsYes"))
+      : t("dns.ecsNo");
+    container.appendChild(createCheckItem(r.forwardsEcs ? "warn" : "pass", r.name, value));
+  });
+
+  setBadge(
+    "dns-ecs-status",
+    forwarding.length === 0 ? "done" : "error",
+    t("dns.ecsForwardingOf", String(forwarding.length), String(known.length))
+  );
 }
 
 function renderSecurity(securityChecks: SecurityCheck[]): void {

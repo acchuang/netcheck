@@ -1,4 +1,7 @@
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
+import {
+  dohQuery, parseWhoami, DNSSEC_BOGUS_DOMAIN, ECS_PROBE_DOMAIN, AD_PROBE_DOMAIN, type DnsMessage,
+} from "../shared/dns-wire.ts";
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -99,20 +102,26 @@ function handleIpCheck(request: Request): Response {
   }, { headers: corsHeaders() });
 }
 
+// Hostnames get encoded straight into a DNS packet, so validate at the boundary
+// rather than letting a malformed label produce a garbage query.
+const HOSTNAME_RE = /^(?=.{1,253}$)([a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9_])?\.)*[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9_])?\.?$/i;
+
+function isValidHostname(name: string): boolean {
+  return HOSTNAME_RE.test(name);
+}
+
 async function handleDnsCheck(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const domain = url.searchParams.get("domain") || "example.com";
   const type = url.searchParams.get("type") || "A";
 
-  // Use Cloudflare DoH to perform DNS lookups
-  const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`;
+  if (!isValidHostname(domain)) {
+    return Response.json({ error: "Invalid domain" }, { status: 400, headers: corsHeaders() });
+  }
 
   try {
-    const dnsResponse = await fetch(dohUrl, {
-      headers: { Accept: "application/dns-json" },
-    });
-    const dnsData = await dnsResponse.json();
-    return Response.json(dnsData, { headers: corsHeaders() });
+    const msg = await dohQuery("cloudflare-dns.com", domain, type, { dnssecOk: true });
+    return Response.json(msg, { headers: corsHeaders() });
   } catch (err) {
     return Response.json(
       { error: "DNS lookup failed", detail: String(err) },
@@ -185,48 +194,83 @@ async function handleSpeedUp(request: Request): Promise<Response> {
   return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
 }
 
-async function testOneResolver(resolver: ResolverInfo) {
-  const dohBase = `https://${resolver.host}/dns-query`;
+export interface ResolverProbe extends ResolverInfo {
+  reachable: boolean;
+  latency: number | null;
+  /** null when the probe couldn't reach a verdict. */
+  validatesDnssec: boolean | null;
+  /** Extended DNS Error text explaining a SERVFAIL, when the resolver sends one. */
+  dnssecDetail: string | null;
+  forwardsEcs: boolean | null;
+  /** Subnet the resolver forwarded — of *this Worker*, not the visitor. */
+  ecsSubnet: string | null;
+  egressIp: string | null;
+  filtering: boolean;
+}
 
+// 4 subrequests per resolver x 8 resolvers = 32, comfortably under the Workers
+// per-request subrequest cap. Add probes here with that ceiling in mind.
+async function testOneResolver(resolver: ResolverInfo): Promise<ResolverProbe> {
+  const base: ResolverProbe = {
+    ...resolver,
+    reachable: false,
+    latency: null,
+    validatesDnssec: null,
+    dnssecDetail: null,
+    forwardsEcs: null,
+    ecsSubnet: null,
+    egressIp: null,
+    filtering: false,
+  };
+
+  let control: DnsMessage & { latency: number };
   try {
-    // Latency + basic resolution
-    const start = Date.now();
-    const res = await fetch(`${dohBase}?name=example.com&type=A`, {
-      headers: { Accept: "application/dns-json" },
-      signal: AbortSignal.timeout(4000),
-    });
-    const latency = Date.now() - start;
-    if (!res.ok) return { ...resolver, reachable: false, latency: null, dnssec: false, filtering: false };
-
-    // DNSSEC check (AD flag on a signed domain)
-    let dnssec = false;
-    try {
-      const dnssecRes = await fetch(`${dohBase}?name=cloudflare.com&type=A&do=1`, {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
-      });
-      const dnssecData = await dnssecRes.json() as { AD?: boolean };
-      dnssec = !!dnssecData.AD;
-    } catch { /* ignore */ }
-
-    // Filtering check — resolve a known ad/tracker domain and see if it's blocked
-    let filtering = false;
-    try {
-      const filterRes = await fetch(`${dohBase}?name=ads.google.com&type=A`, {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(3000),
-      });
-      const filterData = await filterRes.json() as { Answer?: { data: string }[]; Status?: number };
-      const blocked = !filterData.Answer || filterData.Answer.length === 0 ||
-        filterData.Answer.some((a: { data: string }) => a.data === "0.0.0.0" || a.data === "127.0.0.1") ||
-        filterData.Status === 3;
-      filtering = blocked;
-    } catch { /* ignore */ }
-
-    return { ...resolver, reachable: true, latency, dnssec, filtering };
+    control = await dohQuery(resolver.host, "example.com", "A", { dnssecOk: true, timeoutMs: 4000 });
   } catch {
-    return { ...resolver, reachable: false, latency: null, dnssec: false, filtering: false };
+    return base;
   }
+  if (control.Status !== 0) return base;
+
+  const [bogus, whoami, filter] = await Promise.all([
+    dohQuery(resolver.host, DNSSEC_BOGUS_DOMAIN, "A", { dnssecOk: true, timeoutMs: 4000 }).catch(() => null),
+    dohQuery(resolver.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 }).catch(() => null),
+    dohQuery(resolver.host, AD_PROBE_DOMAIN, "A", { timeoutMs: 4000 }).catch(() => null),
+  ]);
+
+  // SERVFAIL on the bogus zone is the validation signal. The control query
+  // already proved the resolver works, so a failure here is about DNSSEC, not
+  // reachability. NXDOMAIN means the resolver blocked it for some other reason
+  // (filtering), which tells us nothing about validation.
+  let validatesDnssec: boolean | null = null;
+  let dnssecDetail: string | null = null;
+  if (bogus) {
+    if (bogus.Status === 2) {
+      validatesDnssec = true;
+      dnssecDetail = bogus.ede?.text || null;
+    } else if (bogus.Status === 0 && bogus.Answer.length > 0) {
+      validatesDnssec = false;
+    }
+  }
+
+  const { egressIp, ecsSubnet } = whoami ? parseWhoami(whoami) : { egressIp: null, ecsSubnet: null };
+
+  const filtering = filter
+    ? filter.Status === 3 ||
+      filter.Answer.length === 0 ||
+      filter.Answer.some((a) => a.data === "0.0.0.0" || a.data === "127.0.0.1" || a.data === "::")
+    : false;
+
+  return {
+    ...base,
+    reachable: true,
+    latency: control.latency,
+    validatesDnssec,
+    dnssecDetail,
+    forwardsEcs: whoami ? ecsSubnet !== null : null,
+    ecsSubnet,
+    egressIp,
+    filtering,
+  };
 }
 
 async function handleResolverCheck(): Promise<Response> {
@@ -238,14 +282,13 @@ async function handleResolverCheck(): Promise<Response> {
 // answers (hijack / captive-portal signal; CDN geo-routing causes benign diffs).
 async function handleDnsCompare(url: URL): Promise<Response> {
   const domain = url.searchParams.get("domain") || "example.com";
+  if (!isValidHostname(domain)) {
+    return Response.json({ error: "Invalid domain" }, { status: 400, headers: corsHeaders() });
+  }
   const results = await Promise.all(RESOLVERS.map(async (r) => {
     try {
-      const res = await fetch(`https://${r.host}/dns-query?name=${encodeURIComponent(domain)}&type=A`, {
-        headers: { Accept: "application/dns-json" },
-        signal: AbortSignal.timeout(4000),
-      });
-      const data = await res.json() as { Answer?: { type: number; data: string }[] };
-      const ips = (data.Answer || []).filter((a) => a.type === 1).map((a) => a.data).sort();
+      const msg = await dohQuery(r.host, domain, "A", { timeoutMs: 4000 });
+      const ips = msg.Answer.filter((a) => a.type === 1).map((a) => a.data).sort();
       return { name: r.name, ok: true, ips };
     } catch {
       return { name: r.name, ok: false, ips: [] as string[] };

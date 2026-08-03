@@ -648,6 +648,18 @@ body {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.resolver-badge.leak {
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.card-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-quaternary);
+  margin: 4px 0 14px;
+}
+
 /* Lookup Form */
 .lookup-form {
   display: flex;

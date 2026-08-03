@@ -19,6 +19,8 @@ interface DnsData {
   colo: string;
   resolvers: DnsCheckItem[];
   security: DnsCheckItem[];
+  ecs: DnsCheckItem[];
+  ecsSummary: string;
 }
 
 interface SpeedData {
@@ -54,6 +56,8 @@ export const ReportExporter = {
       colo: document.getElementById("ip-colo")?.textContent || "\u2014",
       resolvers: [],
       security: [],
+      ecs: [],
+      ecsSummary: document.getElementById("dns-ecs-summary")?.textContent?.trim() || "",
     };
 
     document.querySelectorAll("#dns-resolver-results .dns-check-item").forEach((item) => {
@@ -70,6 +74,14 @@ export const ReportExporter = {
       const icon = item.querySelector(".check-icon");
       const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
       dns.security.push({ label, value, status });
+    });
+
+    document.querySelectorAll("#dns-ecs-results .dns-check-item").forEach((item) => {
+      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
+      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
+      const icon = item.querySelector(".check-icon");
+      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
+      dns.ecs.push({ label, value, status });
     });
 
     // Speed
@@ -130,6 +142,19 @@ export const ReportExporter = {
       data.dns.resolvers.forEach((r) => {
         const icon = r.status === "pass" ? "\u2705" : r.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
         ln(`| ${r.label} | ${r.value} | ${icon} |`);
+      });
+      ln();
+    }
+
+    if (data.dns.ecs.length > 0) {
+      ln("### EDNS Client Subnet");
+      if (data.dns.ecsSummary) ln(`${data.dns.ecsSummary}`);
+      ln();
+      ln("| Resolver | Client subnet | Status |");
+      ln("|----------|---------------|--------|");
+      data.dns.ecs.forEach((e) => {
+        const icon = e.status === "pass" ? "\u2705" : e.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        ln(`| ${e.label} | ${e.value} | ${icon} |`);
       });
       ln();
     }

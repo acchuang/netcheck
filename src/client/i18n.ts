@@ -58,6 +58,18 @@ const en = {
   "dns.partial": "partial",
   "dns.reachableOf": "{0} of {1} reachable",
   "dns.noResolvers": "No resolvers detected",
+  "dns.egressVia": "queries authoritative servers from {0}",
+
+  // EDNS Client Subnet
+  "dns.ecsTitle": "EDNS Client Subnet",
+  "dns.ecsNote": "ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server — at the cost of revealing roughly where you are.",
+  "dns.ecsLeaking": "Your subnet is being shared with authoritative servers as {0}",
+  "dns.ecsForwardOnly": "{0} of {1} resolvers forward a client subnet",
+  "dns.ecsNone": "No resolver forwarded your subnet — authoritative servers only see the resolver",
+  "dns.ecsUnknown": "Could not determine client subnet behaviour",
+  "dns.ecsForwardingOf": "{0} of {1} forwarding",
+  "dns.ecsYes": "forwards subnet",
+  "dns.ecsNo": "does not forward",
 
   // DNS suggestions
   "dns.suggestGood": "Your DNS configuration looks solid. Here are tools to further enhance it:",
@@ -77,8 +89,8 @@ const en = {
   "dns.check.doh": "DNS-over-HTTPS",
   "dns.check.malware": "Malware Domain Filtering",
   "dns.check.webrtc": "WebRTC IP Leak",
-  "dns.dnssecPass": "DNS responses include DNSSEC authentication",
-  "dns.dnssecWarn": "No DNSSEC AD flag detected",
+  "dns.dnssecRejects": "All {0} tested resolvers rejected a deliberately broken signature",
+  "dns.dnssecPartial": "Only {0} tested resolvers rejected a deliberately broken signature",
   "dns.dnssecUnknown": "Could not verify",
   "dns.dohPass": "Connection is encrypted via DNS-over-HTTPS",
   "dns.webrtcLeak": "Local IP exposed: {0}",
@@ -483,6 +495,18 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.partial": "部分通過",
   "dns.reachableOf": "{1} 個中 {0} 個可連線",
   "dns.noResolvers": "未偵測到解析器",
+  "dns.egressVia": "以 {0} 查詢權威伺服器",
+
+  // EDNS Client Subnet
+  "dns.ecsTitle": "EDNS 用戶端子網路",
+  "dns.ecsNote": "ECS 讓解析器把您 IP 的一部分傳給它查詢的每一台權威伺服器，藉此為您導向較近的節點 — 代價是洩漏您的大致位置。",
+  "dns.ecsLeaking": "您的子網路正以 {0} 的形式傳給權威伺服器",
+  "dns.ecsForwardOnly": "{1} 個解析器中有 {0} 個會傳送用戶端子網路",
+  "dns.ecsNone": "沒有解析器傳送您的子網路 — 權威伺服器只看得到解析器",
+  "dns.ecsUnknown": "無法判斷用戶端子網路行為",
+  "dns.ecsForwardingOf": "{1} 個中 {0} 個會傳送",
+  "dns.ecsYes": "會傳送子網路",
+  "dns.ecsNo": "不傳送",
 
   // DNS suggestions
   "dns.suggestGood": "您的 DNS 設定良好。以下工具可進一步增強防護：",
@@ -502,8 +526,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.check.doh": "DNS-over-HTTPS",
   "dns.check.malware": "惡意網域過濾",
   "dns.check.webrtc": "WebRTC IP 洩漏",
-  "dns.dnssecPass": "DNS 回應包含 DNSSEC 驗證",
-  "dns.dnssecWarn": "未偵測到 DNSSEC AD 旗標",
+  "dns.dnssecRejects": "測試的 {0} 個解析器全數拒絕了刻意損毀的簽章",
+  "dns.dnssecPartial": "測試的解析器中只有 {0} 個拒絕了刻意損毀的簽章",
   "dns.dnssecUnknown": "無法驗證",
   "dns.dohPass": "連線已透過 DNS-over-HTTPS 加密",
   "dns.webrtcLeak": "本機 IP 已洩漏：{0}",
@@ -945,6 +969,8 @@ function applyStaticTranslations(): void {
   s("dns-colo-label", "dns.colo");
   s("dns-resolver-title", "dns.resolverTitle");
   s("dns-security-title", "dns.securityTitle");
+  s("dns-ecs-title", "dns.ecsTitle");
+  s("dns-ecs-note", "dns.ecsNote");
   s("dns-lookup-title", "dns.lookupTitle");
   s("dns-lookup-btn", "dns.lookupBtn");
   s("dns-compare-btn", "dns.compareBtn");
