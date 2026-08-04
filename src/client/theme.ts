@@ -1,4 +1,4 @@
-export type ThemeMode = "dark" | "light" | "system";
+type ThemeMode = "dark" | "light" | "system";
 
 const STORAGE_KEY = "netcheck-theme";
 

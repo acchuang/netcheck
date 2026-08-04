@@ -19,7 +19,7 @@ export interface SpeedGrade {
 
 export type SpeedTestPhase = "latency" | "download" | "upload";
 
-export type ProgressCallback = (
+type ProgressCallback = (
   phase: SpeedTestPhase,
   percent: number,
   results: SpeedTestResults

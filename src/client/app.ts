@@ -1,3 +1,5 @@
+import { initTheme } from "./theme";
+import { initI18n } from "./i18n";
 import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
@@ -8,6 +10,13 @@ import { initSnapshots, enableSaveButton } from "./snapshots";
 import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
 import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint";
 import { t, onLocaleChange } from "./i18n";
+
+initTheme();
+initI18n();
+
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+}
 import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm, suggestionCardHtml, ARROW_SVG } from "./ui-utils";
 
 function setActiveGauge(phase: string): void {

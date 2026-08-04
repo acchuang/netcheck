@@ -40,7 +40,7 @@ type Test = ScriptTest | ImageTest | PixelTest | IframeTest | ElementTest;
 //   cosmetic = element hidden via CSS (display/visibility/zero-size)
 //   visible  = element rendered normally — not blocked
 //   timeout  = no resolution in 3s — treated as blocked
-export interface TestResult {
+interface TestResult {
   blocked: boolean;
   uncertain?: boolean;
   method?: string;
@@ -75,7 +75,7 @@ export interface Score {
 }
 
 // Minimal shape shared with filter-lists.ts probes.
-export interface ProbeTarget {
+interface ProbeTarget {
   type: string;
   url?: string;
   className?: string;

@@ -10,21 +10,21 @@
 // Decoded answers use the DoH-JSON field names (name/type/TTL/data) so callers
 // that already speak that shape don't need to change.
 
-export const RR_TYPES: Record<string, number> = {
+const RR_TYPES: Record<string, number> = {
   A: 1, NS: 2, CNAME: 5, SOA: 6, PTR: 12, MX: 15, TXT: 16,
   AAAA: 28, SRV: 33, DS: 43, DNSKEY: 48, HTTPS: 65,
 };
 
-const RR_NAMES: Record<number, string> = Object.fromEntries(
+export const RR_NAMES: Record<number, string> = Object.fromEntries(
   Object.entries(RR_TYPES).map(([k, v]) => [v, k])
 );
 
-export const RCODE_NAMES: Record<number, string> = {
+const RCODE_NAMES: Record<number, string> = {
   0: "NOERROR", 1: "FORMERR", 2: "SERVFAIL", 3: "NXDOMAIN",
   4: "NOTIMP", 5: "REFUSED", 9: "NOTAUTH",
 };
 
-export interface DnsAnswer {
+interface DnsAnswer {
   name: string;
   type: number;
   TTL: number;
@@ -41,7 +41,7 @@ export interface DnsMessage {
   ede: { code: number; text: string } | null;
 }
 
-export interface QueryOptions {
+interface QueryOptions {
   /** DO bit — ask for DNSSEC records and a meaningful AD flag. */
   dnssecOk?: boolean;
   /** CD bit — disable validation, so bogus zones resolve anyway. */
@@ -50,7 +50,7 @@ export interface QueryOptions {
 
 // --- encoding ---
 
-function encodeName(name: string): Uint8Array {
+export function encodeName(name: string): Uint8Array {
   const labels = name.replace(/\.$/, "").split(".").filter((l) => l.length > 0);
   const parts: number[] = [];
   for (const label of labels) {
@@ -293,8 +293,83 @@ export function decodeMessage(buf: Uint8Array): DnsMessage {
   };
 }
 
-export function rrTypeName(type: number): string {
-  return RR_NAMES[type] ?? `TYPE${type}`;
+export interface DnsQuestion {
+  id: number;
+  opcode: number;
+  name: string;
+  type: number;
+  /** Client subnet the resolver forwarded, as "1.2.3.0/24", if it sent one. */
+  ecs: string | null;
+  /** Whether the query carried an OPT record — a response may only include one if it did. */
+  hasOpt: boolean;
+  /** UDP payload size the sender advertised, clamped to a sane floor. */
+  udpSize: number;
+}
+
+/**
+ * Parse an inbound query. Used by the probe nameserver, not by the browser —
+ * the client only ever decodes responses, so this is tree-shaken out of the
+ * web bundle. Returns null for anything malformed rather than throwing, since
+ * this runs on a raw public UDP socket where garbage is routine.
+ */
+export function decodeQuestion(buf: Uint8Array): DnsQuestion | null {
+  if (buf.length < 12) return null;
+
+  const flags = u16(buf, 2);
+  if ((flags & 0x8000) !== 0) return null; // a response, not a query
+  if (u16(buf, 4) !== 1) return null; // exactly one question, or we don't serve it
+
+  const cur: Cursor = { pos: 12 };
+  const name = readName(buf, cur);
+  if (cur.pos + 4 > buf.length) return null;
+  const type = u16(buf, cur.pos);
+
+  let pos = cur.pos + 4;
+  let ecs: string | null = null;
+  let hasOpt = false;
+  let udpSize = 512;
+
+  // OPT may sit anywhere in the additional section; walk what's left of the packet.
+  const arcount = u16(buf, 10);
+  for (let i = 0; i < arcount && pos < buf.length; i++) {
+    const rc: Cursor = { pos };
+    readName(buf, rc);
+    pos = rc.pos;
+    if (pos + 10 > buf.length) break;
+    const rtype = u16(buf, pos);
+    const rdlength = u16(buf, pos + 8);
+    const rdstart = pos + 10;
+
+    if (rtype === 41) {
+      hasOpt = true;
+      udpSize = Math.min(Math.max(u16(buf, pos + 2), 512), 4096);
+      let p = rdstart;
+      while (p + 4 <= rdstart + rdlength) {
+        const optCode = u16(buf, p);
+        const optLen = u16(buf, p + 2);
+        // RFC 7871: family(2) source-prefix(1) scope-prefix(1) then the
+        // truncated address, ceil(source-prefix / 8) bytes of it.
+        if (optCode === 8 && optLen >= 4) {
+          const family = u16(buf, p + 4);
+          const sourcePrefix = buf[p + 6];
+          const addrBytes = buf.subarray(p + 8, p + 4 + optLen);
+          if (family === 1) {
+            const octets = [0, 0, 0, 0];
+            addrBytes.forEach((b, i) => { if (i < 4) octets[i] = b; });
+            ecs = `${octets.join(".")}/${sourcePrefix}`;
+          } else if (family === 2) {
+            const full = new Uint8Array(16);
+            full.set(addrBytes.subarray(0, 16));
+            ecs = `${formatIpv6(full)}/${sourcePrefix}`;
+          }
+        }
+        p += 4 + optLen;
+      }
+    }
+    pos = rdstart + rdlength;
+  }
+
+  return { id: u16(buf, 0), opcode: (flags >> 11) & 0x0f, name, type, ecs, hasOpt, udpSize };
 }
 
 // --- probe targets, shared by the Worker and the browser ---
@@ -326,7 +401,7 @@ export const AD_PROBE_DOMAIN = "doubleclick.net";
 
 const WHOAMI_TXT_RE = /"([^"]*)"\s+"([^"]*)"/;
 
-export interface WhoamiResult {
+interface WhoamiResult {
   egressIp: string | null;
   /** Source prefix the resolver forwarded, e.g. "203.0.113.0/24". */
   ecsSubnet: string | null;

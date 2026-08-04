@@ -194,7 +194,7 @@ async function handleSpeedUp(request: Request): Promise<Response> {
   return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
 }
 
-export interface ResolverProbe extends ResolverInfo {
+interface ResolverProbe extends ResolverInfo {
   reachable: boolean;
   latency: number | null;
   /** null when the probe couldn't reach a verdict. */

@@ -1,4 +1,4 @@
-export type Locale = "en" | "zh-TW";
+type Locale = "en" | "zh-TW";
 
 const STORAGE_KEY = "netcheck-locale";
 
@@ -894,17 +894,13 @@ export function tTag(tag: string): string {
   return locales[current]?.[`tag.${tag}`] ?? tag;
 }
 
-export function getLocale(): Locale {
-  return current;
-}
-
 const localeChangeListeners: (() => void)[] = [];
 
 export function onLocaleChange(cb: () => void): void {
   localeChangeListeners.push(cb);
 }
 
-export function setLocale(locale: Locale): void {
+function setLocale(locale: Locale): void {
   current = locale;
   localStorage.setItem(STORAGE_KEY, locale);
   document.documentElement.lang = locale === "zh-TW" ? "zh-TW" : "en";

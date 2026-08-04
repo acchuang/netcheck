@@ -1,7 +1,7 @@
 import { t, onLocaleChange } from "./i18n";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
-import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN } from "../shared/dns-wire";
+import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire";
 
 interface DnsResult {
   Answer?: DnsAnswer[];
@@ -94,7 +94,7 @@ interface Suggestion {
 
 // --- Core API object ---
 
-export const DnsCheck = {
+const DnsCheck = {
   async detectIp(): Promise<IpData> {
     try {
       const res = await fetch("/api/ip");
@@ -622,7 +622,7 @@ function renderLookupResults(domain: string, allData: Record<string, any>): void
   let html = `<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>`;
   let hasRecords = false;
 
-  const RR_NAMES: Record<number, string> = { 1: "A", 2: "NS", 5: "CNAME", 6: "SOA", 12: "PTR", 15: "MX", 16: "TXT", 28: "AAAA", 33: "SRV" };
+
   for (const [recType, data] of Object.entries(allData)) {
     const answers = data?.Answer || [];
     for (const rec of answers) {
