@@ -8,8 +8,9 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### DNS Check
 - Public IP detection with geolocation, ISP/ASN, and Cloudflare PoP
-- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad)
+- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers
 - Security assessment: DNSSEC validation, DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection
+- ECS leak detection — checks whether resolvers forward your client subnet to upstreams and flags leaks
 - Interactive lookup tool for A, AAAA, MX, NS, TXT, CNAME, SOA, SRV records
 
 ### Speed Test
@@ -20,7 +21,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### Ad Block Test
 - 30+ tests across 7 categories: contextual ads, analytics & tracking, banner/display ads, error monitoring, social trackers, fingerprint protection, cookie/consent annoyances
-- Scores your blocker 0–100 with per-category breakdowns and per-test "why blocked" detail
+- Scores your blocker 0–100 with per-category breakdowns and per-test "why blocked" detail; categories are weighted by importance (high/medium/low) so blocking serious trackers counts more than cosmetic ads
 - Detects 10 filter lists (EasyList, EasyPrivacy, Fanboy's Annoyances/Social, Peter Lowe's, Malware Domains, uBlock Filters, AdGuard Base/Tracking) plus Acceptable Ads whitelist status
 - Identifies which blocker you're likely running (Brave Shields, uBlock Origin, AdGuard, browser-native, etc.)
 - Test any custom URL as script + image
@@ -28,6 +29,12 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 ### Security Headers
 - Scans any URL's HTTP response and grades it A–F against 10 security headers (HSTS, CSP, X-Frame-Options, COOP/COEP/CORP, etc.)
 - Explains what each header protects against and flags what's missing
+
+### Recursion-Path Probing
+
+- `probe-server/` is an authoritative nameserver for `p.oilygold.xyz` — the browser resolves `<token>.p.oilygold.xyz`, so every recursive resolver in the visitor's real path has to query it directly
+- The source IPs it records are the visitor's actual resolvers (the one view a DoH-only client can never see), along with any EDNS Client Subnet they forward
+- The Worker reads probe results back over HTTP and renders them in the DNS report
 
 ### Also
 - Speed and ad-block results snapshot to local storage, with color-coded deltas between runs
@@ -40,7 +47,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - **Frontend:** Vite + TypeScript, compiled to vanilla JS/CSS (no framework)
 - **Build:** [`@cloudflare/vite-plugin`](https://developers.cloudflare.com/workers/vite-plugin/) — Workers runtime integrated directly into Vite dev/build
 - **Design System:** [Linear](https://linear.app)-inspired dark theme — Inter Variable, `#08090a` canvas, indigo-violet accents
-- **DNS Lookups:** Cloudflare DNS-over-HTTPS (`cloudflare-dns.com/dns-query`)
+- **DNS Lookups:** resolvers probed over RFC 8484 DNS wire format (DoH POST) with a hand-rolled encoder/decoder in `src/shared/dns-wire.ts`; interactive lookups via Cloudflare DNS-over-HTTPS
 
 ## Project Structure
 
@@ -50,13 +57,14 @@ netcheck-site/
 ├── vite.config.ts             # Vite build configuration (Cloudflare plugin)
 ├── tsconfig.json              # TypeScript configuration
 ├── index.html                 # Single-page app shell
+├── probe-server/              # Authoritative nameserver for recursion-path probing
 ├── src/
 │   ├── client/                # Frontend logic (TypeScript)
-│   │   ├── main.ts            # Entry point
-│   │   ├── app.ts             # Tab routing, UI orchestration
+│   │   ├── app.ts             # Entry point — tab routing, UI orchestration
 │   │   ├── i18n.ts            # Bilingual (en/zh-TW) translation strings
 │   │   └── ...                # Domain-specific logic (dns-check, speed-test, adblock-test, etc.)
-│   ├── shared/                 # Code shared between client and worker
+│   ├── shared/                # Code shared between client, worker and probe server
+│   │   ├── dns-wire.ts        # RFC 8484 wire-format encoder/decoder
 │   │   └── resolvers.ts       # Public DNS resolver list
 │   └── worker/                # Backend logic (TypeScript)
 │       └── index.ts           # Worker — API routes
