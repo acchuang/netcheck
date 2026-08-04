@@ -538,7 +538,7 @@
           <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
         </div>
         <div class="card-body">
-          <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver and its security posture, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network — there's no backend collecting your results.</p>
+          <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network — there's no backend collecting your results.</p>
         </div>
       </div>
 
@@ -549,7 +549,7 @@
             <h2 class="card-title" id="about-feat-dns-title">DNS Check</h2>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-feat-dns-desc">Detects your IP, resolvers, and PoP; flags missing DNSSEC, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each.</p>
+            <p class="info-muted" id="about-feat-dns-desc">Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps — with fixes for each.</p>
           </div>
         </div>
         <div class="card">
