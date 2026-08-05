@@ -162,10 +162,10 @@ const ooklaServer: SpeedServer = {
       return false;
     }
   },
-  pingUrl: () => `${ooklaTarget.base}/speedtest/random500x500.jpg`,
+  pingUrl: () => `${ooklaTarget.base}/speedtest/random500x500.jpg?_=${Date.now()}`,
   downUrl: (bytes) => {
     const s = ooklaFileSize(bytes);
-    return `${ooklaTarget.base}/speedtest/random${s}x${s}.jpg`;
+    return `${ooklaTarget.base}/speedtest/random${s}x${s}.jpg?_=${Date.now()}`;
   },
   upUrl: () => `${ooklaTarget.base}/speedtest/upload.php`,
   fetchMeta: () => Promise.resolve({ colo: null, lat: ooklaTarget.lat, lon: ooklaTarget.lon }),
