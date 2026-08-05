@@ -14,7 +14,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - Interactive lookup tool for A, AAAA, MX, NS, TXT, CNAME, SOA, SRV records
 
 ### Speed Test
-- Download/upload bandwidth, latency, and jitter against Cloudflare's edge, `speed.cloudflare.com`, or a custom server
+- Download/upload bandwidth, latency, and jitter against Cloudflare's edge, `speed.cloudflare.com`, Netflix's fast.com, or Ookla Speedtest servers (nearest found via your city — proxies only the tiny discovery call; speed traffic goes browser → server direct)
 - Bufferbloat / loaded-latency grading — measures latency increase under a saturated link
 - Progressive chunk sizing that adapts to connection speed
 - Letter grades (A+ to F) for both raw speed and bufferbloat

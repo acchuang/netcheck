@@ -295,6 +295,7 @@ const serverLabelKeys: Record<string, string> = {
   edge: "speed.server.edge",
   "cf-speed": "speed.server.cfSpeed",
   fast: "speed.server.fast",
+  ookla: "speed.server.ookla",
   custom: "speed.server.custom",
 };
 

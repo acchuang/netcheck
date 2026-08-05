@@ -49,6 +49,10 @@ export default {
       return handleFastTargets();
     }
 
+    if (url.pathname === "/api/speedtest/ookla-targets") {
+      return handleOoklaTargets(request);
+    }
+
     if (url.pathname === "/api/speedtest/down") {
       return handleSpeedDown(url);
     }
@@ -184,6 +188,72 @@ async function handleFastTargets(): Promise<Response> {
   } catch (err) {
     return Response.json(
       { error: "fast.com discovery failed", detail: String(err) },
+      { status: 502, headers: corsHeaders() }
+    );
+  }
+}
+
+// Same pattern as fast.com: servers.php sends no CORS headers, so proxy the tiny
+// discovery call and let speed traffic go browser -> Ookla host direct. Targets
+// are rewritten to https — most Ookla hosts serve TLS on their 8080 port.
+// servers.php geolocates purely by the requesting IP (the worker's US egress,
+// useless to visitors) and ignores lat/lon params, but its `search` param is a
+// true text filter over name/country/sponsor. Search by the visitor's city from
+// request.cf, fall back to a country-name map, and key the cache per term.
+const COUNTRY_SEARCH: Record<string, string> = {
+  AU: "Australia", NZ: "New Zealand", US: "United States", CA: "Canada", GB: "United Kingdom",
+  IE: "Ireland", DE: "Germany", FR: "France", NL: "Netherlands", BE: "Belgium",
+  CH: "Switzerland", AT: "Austria", IT: "Italy", ES: "Spain", PT: "Portugal",
+  SE: "Sweden", NO: "Norway", FI: "Finland", DK: "Denmark", PL: "Poland",
+  CZ: "Czech Republic", RU: "Russia", UA: "Ukraine", RO: "Romania", GR: "Greece",
+  TR: "Turkey", IL: "Israel", AE: "United Arab Emirates", SA: "Saudi Arabia", ZA: "South Africa",
+  EG: "Egypt", NG: "Nigeria", IN: "India", PK: "Pakistan", BD: "Bangladesh",
+  LK: "Sri Lanka", TH: "Thailand", VN: "Vietnam", PH: "Philippines", ID: "Indonesia",
+  MY: "Malaysia", SG: "Singapore", HK: "Hong Kong", TW: "Taiwan", KR: "South Korea",
+  JP: "Japan", CN: "China", BR: "Brazil", MX: "Mexico", AR: "Argentina",
+  CL: "Chile", CO: "Colombia",
+};
+
+async function handleOoklaTargets(request: Request): Promise<Response> {
+  const cf = getCf(request);
+  const city = cf.city?.trim() || "";
+  const country = request.headers.get("cf-ipcountry")?.toUpperCase() || "";
+  const search = city || COUNTRY_SEARCH[country] || "";
+  const edgeCache = caches as unknown as { default: { match(req: Request): Promise<Response | undefined>; put(req: Request, res: Response): Promise<void> } };
+  const cacheKey = new Request(`https://netcheck.internal/cache/ookla-targets/${search || "any"}`);
+  const cached = await edgeCache.default.match(cacheKey);
+  if (cached) return cached;
+  try {
+    const q = search ? `&search=${encodeURIComponent(search)}` : "";
+    const res = await fetch(
+      `https://www.speedtest.net/api/js/servers.php?engine=js&limit=8${q}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const servers = (await res.json()) as {
+      url?: string;
+      lat?: string;
+      lon?: string;
+      name?: string;
+      sponsor?: string;
+      id?: string;
+      https_functional?: number;
+    }[];
+    const targets = servers
+      .filter((s) => s.https_functional === 1 && s.url?.startsWith("http://"))
+      .map((s) => ({
+        url: s.url!.replace("http://", "https://"),
+        name: s.name ?? "",
+        sponsor: s.sponsor ?? "",
+        id: s.id ?? "",
+        lat: s.lat != null ? parseFloat(s.lat) : null,
+        lon: s.lon != null ? parseFloat(s.lon) : null,
+      }));
+    const response = Response.json({ targets }, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=900" } });
+    await edgeCache.default.put(cacheKey, response.clone());
+    return response;
+  } catch (err) {
+    return Response.json(
+      { error: "Ookla discovery failed", detail: String(err) },
       { status: 502, headers: corsHeaders() }
     );
   }

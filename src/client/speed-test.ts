@@ -43,7 +43,7 @@ interface SpeedServer {
   downUrl: (bytes: number) => string;
   upUrl: () => string;
   // read colo + geo from the first ping response
-  parseMeta: (res: Response) => ServerMeta;
+  parseMeta?: (res: Response) => ServerMeta;
   // some servers (speed.cloudflare.com) don't expose colo/geo on the ping response —
   // they need a separate metadata request instead
   fetchMeta?: () => Promise<ServerMeta>;
@@ -53,7 +53,7 @@ interface SpeedServer {
 
 async function resolveMeta(server: SpeedServer, res: Response): Promise<ServerMeta> {
   if (server.fetchMeta) return server.fetchMeta();
-  return server.parseMeta(res);
+  return server.parseMeta?.(res) ?? { colo: null, lat: null, lon: null };
 }
 
 let customBaseUrl = "";
@@ -110,6 +110,68 @@ const fastServer: SpeedServer = {
   makeUploadBody: randomBlobBody,
 };
 
+let ooklaTarget = { base: "", lat: null, lon: null } as { base: string; lat: number | null; lon: number | null };
+let ooklaTargetSetAt = 0;
+
+const OOKLA_TARGET_TTL_MS = 20 * 60 * 1000;
+
+// Ookla serves fixed random{N}x{N}.jpg files; map the requested byte count to
+// the smallest file that covers it (the 4000 file covers the 25MB step).
+function ooklaFileSize(bytes: number): number {
+  if (bytes <= 100_000) return 500;
+  if (bytes <= 500_000) return 1000;
+  if (bytes <= 1_000_000) return 2000;
+  if (bytes <= 5_000_000) return 3000;
+  if (bytes <= 10_000_000) return 3500;
+  return 4000;
+}
+
+const ooklaServer: SpeedServer = {
+  id: "ookla",
+  name: "Ookla Speedtest",
+  locatable: true,
+  init: async () => {
+    if (ooklaTarget.base && Date.now() - ooklaTargetSetAt < OOKLA_TARGET_TTL_MS) return true;
+    try {
+      const res = await fetch("/api/speedtest/ookla-targets", { signal: AbortSignal.timeout(5000) });
+      const data = (await res.json()) as { targets?: { url?: string; lat?: number | null; lon?: number | null }[] };
+      for (const t of data.targets ?? []) {
+        if (!t.url) continue;
+        try {
+          // Browser fetch fails on missing CORS headers, so a 200 here also
+          // proves the host allows us; try the next target otherwise.
+          const probe = await fetch(t.url.replace("/speedtest/upload.php", "/speedtest/random500x500.jpg"), {
+            cache: "no-store",
+            signal: AbortSignal.timeout(3000),
+          });
+          if (probe.ok) {
+            ooklaTarget = {
+              base: t.url.replace("/speedtest/upload.php", ""),
+              lat: t.lat ?? null,
+              lon: t.lon ?? null,
+            };
+            ooklaTargetSetAt = Date.now();
+            return true;
+          }
+        } catch {
+          // try next target
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
+  pingUrl: () => `${ooklaTarget.base}/speedtest/random500x500.jpg`,
+  downUrl: (bytes) => {
+    const s = ooklaFileSize(bytes);
+    return `${ooklaTarget.base}/speedtest/random${s}x${s}.jpg`;
+  },
+  upUrl: () => `${ooklaTarget.base}/speedtest/upload.php`,
+  fetchMeta: () => Promise.resolve({ colo: null, lat: ooklaTarget.lat, lon: ooklaTarget.lon }),
+  makeUploadBody: randomBlobBody,
+};
+
 export const SERVERS: SpeedServer[] = [
   {
     id: "edge",
@@ -149,6 +211,7 @@ export const SERVERS: SpeedServer[] = [
     makeUploadBody: randomBlobBody,
   },
   fastServer,
+  ooklaServer,
   {
     id: "custom",
     pingUrl: () => `${customBaseUrl}/api/speedtest/ping?_=${Date.now()}`,
