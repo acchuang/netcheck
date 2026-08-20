@@ -7,7 +7,7 @@ const ZONE = "p.oilygold.xyz";
 const TOKEN = "a1b2c3d4e5f60718";
 
 test("decodeQuestion round-trips a query built by our own encoder", () => {
-  const q = decodeQuestion(encodeQuery(`${TOKEN}.${ZONE}`, "A"));
+  const q = decodeQuestion(encodeQuery(`${TOKEN}.${ZONE}`, "A"))!;
   assert.ok(q);
   assert.equal(q.name, `${TOKEN}.${ZONE}.`);
   assert.equal(q.type, 1);
@@ -27,7 +27,7 @@ test("decodeQuestion reads an EDNS client subnet option", () => {
   msg.set(head, 0);
   msg.set(opt, head.length);
 
-  const q = decodeQuestion(msg);
+  const q = decodeQuestion(msg)!;
   assert.ok(q);
   assert.equal(q.ecs, "203.0.113.0/24");
 });

@@ -59,6 +59,9 @@ const en = {
   "dns.reachableOf": "{0} of {1} reachable",
   "dns.noResolvers": "No resolvers detected",
   "dns.egressVia": "queries authoritative servers from {0}",
+  "dns.actualResolver": "Observed Recursive Resolver",
+  "dns.observedByNs": "Seen by authoritative nameserver probe",
+  "dns.recursionActive": "active",
 
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS Client Subnet",
@@ -497,6 +500,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.reachableOf": "{1} 個中 {0} 個可連線",
   "dns.noResolvers": "未偵測到解析器",
   "dns.egressVia": "以 {0} 查詢權威伺服器",
+  "dns.actualResolver": "實際遞迴解析器",
+  "dns.observedByNs": "由權威名稱伺服器探測記錄",
+  "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS 用戶端子網路",

@@ -1,15 +1,28 @@
 // Smoke test — runs with `npm test` (node --test, native type stripping).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handleSpeedDown } from "../src/worker/index.ts";
+import worker, { handleSpeedDown } from "../src/worker/index.ts";
 import { encodeQuery, toBase64Url, decodeMessage } from "../src/shared/dns-wire.ts";
 
-test("speed download endpoint caps bytes and handles missing param", async () => {
+test("speed download endpoint caps bytes, streams data, and handles missing param", async () => {
   const capped = handleSpeedDown(new URL("https://x/api/speedtest/down?bytes=999999999"));
   assert.equal(capped.headers.get("Content-Length"), "100000000");
 
   const empty = handleSpeedDown(new URL("https://x/api/speedtest/down"));
   assert.equal(await empty.text(), "");
+
+  // Verify stream delivers the exact byte count
+  const streamRes = handleSpeedDown(new URL("https://x/api/speedtest/down?bytes=131072"));
+  assert.equal(streamRes.headers.get("Content-Length"), "131072");
+  const reader = streamRes.body?.getReader();
+  assert.ok(reader);
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+  }
+  assert.equal(receivedBytes, 131072);
 });
 
 // Byte-for-byte against a packet dig/cloudflare-dns accepts. The DO bit is the
@@ -73,4 +86,25 @@ test("decodeMessage formats TXT records dig-style", () => {
     "000f" + "03" + "656373" + "0a" + "312e322e332e302f3234"
   ));
   assert.equal(msg.Answer[0].data, '"ecs" "1.2.3.0/24"');
+});
+
+test("worker handles OPTIONS preflight request with 204 and CORS headers", async () => {
+  const req = new Request("https://netcheck.internal/api/speedtest/up", { method: "OPTIONS" });
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*");
+  assert.match(res.headers.get("Access-Control-Allow-Methods") || "", /POST/);
+});
+
+test("probe-result endpoint validates token format", async () => {
+  const badReq = new Request("https://netcheck.internal/api/dns/probe-result?token=bad-token");
+  const badRes = await worker.fetch(badReq);
+  assert.equal(badRes.status, 400);
+
+  const goodReq = new Request("https://netcheck.internal/api/dns/probe-result?token=a1b2c3d4e5f60718");
+  const goodRes = await worker.fetch(goodReq);
+  assert.equal(goodRes.status, 200);
+  const data = (await goodRes.json()) as { token: string; resolvers: unknown[] };
+  assert.equal(data.token, "a1b2c3d4e5f60718");
+  assert.ok(Array.isArray(data.resolvers));
 });

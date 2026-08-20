@@ -906,7 +906,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
     .join("");
 
   div.innerHTML = `
-    <div class="test-category-header" onclick="this.parentElement.classList.toggle('open')">
+    <div class="test-category-header" role="button" tabindex="0" aria-expanded="false" onclick="const p=this.parentElement;p.classList.toggle('open');this.setAttribute('aria-expanded',p.classList.contains('open')?'true':'false');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();const p=this.parentElement;p.classList.toggle('open');this.setAttribute('aria-expanded',p.classList.contains('open')?'true':'false');}">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
       <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>

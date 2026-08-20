@@ -159,6 +159,31 @@ const DnsCheck = {
     return results;
   },
 
+  async probeRecursionPath(): Promise<{ token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null> {
+    try {
+      const bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      const domain = `${token}.p.oilygold.xyz`;
+
+      // Trigger system recursive resolver by fetching canary image
+      await fetch(`https://${domain}/pixel.png?_=${Date.now()}`, {
+        mode: "no-cors",
+        signal: AbortSignal.timeout(2500),
+      }).catch(() => null);
+
+      await new Promise((r) => setTimeout(r, 600));
+
+      const res = await fetch(`/api/dns/probe-result?token=${token}`);
+      if (res.ok) {
+        return (await res.json()) as { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] };
+      }
+    } catch {
+      // probe server unavailable or offline
+    }
+    return null;
+  },
+
   async checkDnsSecurity(resolvers: ResolverResult[]): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
 
@@ -311,6 +336,7 @@ const dnsSuggestions: Suggestion[] = [
 let lastIp: IpData | null = null;
 let lastIpv6: string | null | undefined; // undefined = not yet probed
 let lastResolvers: ResolverResult[] | null = null;
+let lastProbeResult: { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null = null;
 let lastSecurity: SecurityCheck[] | null = null;
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 let lastCompare: CompareResult[] | null = null;
@@ -319,7 +345,7 @@ onLocaleChange(() => {
   if (lastIp) renderIpInfo(lastIp);
   if (lastIpv6 !== undefined) renderIpv6(lastIpv6);
   if (lastResolvers) {
-    renderResolvers(lastResolvers);
+    renderResolvers(lastResolvers, lastProbeResult);
     renderEcs(lastResolvers);
   }
   if (lastSecurity) renderSecurity(lastSecurity);
@@ -347,9 +373,17 @@ export async function runDnsChecks(): Promise<void> {
     setBadge("ip-status", "error", t("dns.failed"));
   }
 
+  // Run recursion probe in background to catch the visitor's real recursion path
+  DnsCheck.probeRecursionPath().then((probe) => {
+    if (probe && probe.resolvers.length > 0) {
+      lastProbeResult = probe;
+      if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
+    }
+  });
+
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
   lastResolvers = resolvers;
-  renderResolvers(resolvers);
+  renderResolvers(resolvers, lastProbeResult);
   renderEcs(resolvers);
 
   const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers);
@@ -394,9 +428,29 @@ function renderIpInfo(ipData: IpData): void {
   setBadge("ip-status", "done", t("dns.detected"));
 }
 
-function renderResolvers(resolvers: ResolverResult[]): void {
+function renderResolvers(
+  resolvers: ResolverResult[],
+  probeResult?: { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null
+): void {
   const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
+
+  if (probeResult && probeResult.resolvers.length > 0) {
+    probeResult.resolvers.forEach((obs) => {
+      const div = document.createElement("div");
+      div.className = "dns-check-item fade-in";
+      const ecsHtml = obs.ecs ? ` · ECS: ${escapeHtml(obs.ecs)}` : "";
+      div.innerHTML = `
+        <svg class="check-icon pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+        <div class="check-label-block">
+          <span class="check-label">${escapeHtml(t("dns.actualResolver"))} <span class="resolver-ip">${escapeHtml(obs.ip)}</span></span>
+          <span class="check-sublabel">${escapeHtml(t("dns.observedByNs"))}${ecsHtml}</span>
+        </div>
+        <span class="check-value pass">${escapeHtml(t("dns.recursionActive"))}</span>
+      `;
+      resolverContainer.appendChild(div);
+    });
+  }
 
   const reachable = resolvers.filter((r) => r.reachable);
   if (reachable.length > 0) {

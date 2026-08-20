@@ -1,5 +1,5 @@
-const CACHE = "netcheck-v2";
-const SHELL = ["/", "/index.html", "/manifest.json", "/icon.svg"];
+const CACHE = "netcheck-v3";
+const SHELL = ["/", "/index.html", "/manifest.json", "/icon.svg", "/css/styles.css"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

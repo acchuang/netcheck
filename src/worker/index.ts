@@ -4,7 +4,14 @@ import {
 } from "../shared/dns-wire.ts";
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env?: Record<string, string>): Promise<Response> {
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(),
+      });
+    }
+
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ip") {
@@ -13,6 +20,10 @@ export default {
 
     if (url.pathname === "/api/dns") {
       return handleDnsCheck(request);
+    }
+
+    if (url.pathname === "/api/dns/probe-result") {
+      return handleProbeResult(request, env);
     }
 
     if (url.pathname === "/api/headers") {
@@ -143,16 +154,31 @@ function handleHeaders(request: Request): Response {
 }
 
 export function handleSpeedDown(url: URL): Response {
-  const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100000000);
+  const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100_000_000);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
   }
-  // Generate random-ish data to prevent compression
-  const data = new Uint8Array(bytes);
-  for (let i = 0; i < bytes; i += 1024) {
-    data[i] = (i * 7 + 13) & 0xff;
+
+  const CHUNK_SIZE = 64 * 1024;
+  const chunk = new Uint8Array(CHUNK_SIZE);
+  for (let i = 0; i < CHUNK_SIZE; i += 1024) {
+    chunk[i] = (i * 7 + 13) & 0xff;
   }
-  return new Response(data, {
+
+  let remaining = bytes;
+  const stream = new ReadableStream({
+    pull(controller) {
+      if (remaining <= 0) {
+        controller.close();
+        return;
+      }
+      const sendSize = Math.min(remaining, CHUNK_SIZE);
+      controller.enqueue(sendSize === CHUNK_SIZE ? chunk : chunk.subarray(0, sendSize));
+      remaining -= sendSize;
+    },
+  });
+
+  return new Response(stream, {
     headers: {
       ...corsHeaders(),
       "Content-Type": "application/octet-stream",
@@ -380,7 +406,139 @@ const SECURITY_HEADERS = [
   { key: "cross-origin-resource-policy", name: "Cross-Origin-Resource-Policy (CORP)", desc: "Controls which origins can embed this resource" },
 ];
 
+// --- SSRF guard ---
+//
+// This endpoint fetches an arbitrary caller-supplied URL server-side. Reject
+// non-http(s) schemes outright, and resolve the hostname via DoH (Workers have
+// no raw socket DNS) so we can block private/loopback/link-local/multicast
+// targets — including the 169.254.169.254 cloud metadata address — before the
+// real fetch ever goes out.
+const PRIVATE_V4_RANGES: [number, number, number][] = [
+  // [network, prefixLen] as (base, mask)
+  [0x7f000000, 8, 0xff000000], // 127.0.0.0/8
+  [0x0a000000, 8, 0xff000000], // 10.0.0.0/8
+  [0xac100000, 12, 0xfff00000], // 172.16.0.0/12
+  [0xc0a80000, 16, 0xffff0000], // 192.168.0.0/16
+  [0xa9fe0000, 16, 0xffff0000], // 169.254.0.0/16 (incl. 169.254.169.254 metadata)
+  [0xe0000000, 4, 0xf0000000], // 224.0.0.0/4 multicast
+];
+
+function ipv4ToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    if (!/^\d{1,3}$/.test(p)) return null;
+    const v = Number(p);
+    if (v > 255) return null;
+    n = (n << 8) | v;
+  }
+  return n >>> 0;
+}
+
+function isPrivateIpv4(ip: string): boolean {
+  const n = ipv4ToInt(ip);
+  if (n === null) return false;
+  return PRIVATE_V4_RANGES.some(([base, , mask]) => (n & mask) === base);
+}
+
+function isPrivateIpv6(ip: string): boolean {
+  const norm = ip.toLowerCase();
+  if (norm === "::1") return true; // loopback
+  if (norm.startsWith("::ffff:")) {
+    // IPv4-mapped — check the embedded v4 address.
+    const v4 = norm.slice(7);
+    return /^\d+\.\d+\.\d+\.\d+$/.test(v4) ? isPrivateIpv4(v4) : false;
+  }
+  const firstGroup = norm.split(":")[0];
+  const firstByte = parseInt(firstGroup.padStart(4, "0").slice(0, 2), 16);
+  if ((firstByte & 0xfe) === 0xfc) return true; // fc00::/7 unique local
+  if (firstByte === 0xfe) {
+    const secondByte = parseInt(firstGroup.padStart(4, "0").slice(2, 4), 16);
+    if ((secondByte & 0xc0) === 0x80) return true; // fe80::/10 link-local
+  }
+  if (firstByte === 0xff) return true; // ff00::/8 multicast
+  return false;
+}
+
+function isPrivateOrReservedIp(ip: string): boolean {
+  return ip.includes(":") ? isPrivateIpv6(ip) : isPrivateIpv4(ip);
+}
+
+async function resolvesToPrivateIp(hostname: string): Promise<boolean> {
+  // A bare IP literal as the hostname — no DNS involved.
+  if (isPrivateOrReservedIp(hostname)) return true;
+
+  const results = await Promise.allSettled([
+    dohQuery("cloudflare-dns.com", hostname, "A", { timeoutMs: 4000 }),
+    dohQuery("cloudflare-dns.com", hostname, "AAAA", { timeoutMs: 4000 }),
+  ]);
+
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    for (const answer of r.value.Answer) {
+      if ((answer.type === 1 || answer.type === 28) && isPrivateOrReservedIp(answer.data)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// --- per-IP rate limit (mirrors probe-server/server.ts's crude in-memory counter) ---
+// ponytail: per-isolate, not durable/global — fine for "resist casual abuse",
+// swap for a Workers Rate Limiting binding if this needs to hold across isolates.
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX = 20;
+const headersCheckRate = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = headersCheckRate.get(ip);
+  if (!entry || now > entry.resetAt) {
+    headersCheckRate.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  if (headersCheckRate.size > 10_000) {
+    for (const [k, e] of headersCheckRate) if (now > e.resetAt) headersCheckRate.delete(k);
+  }
+  return entry.count > RATE_MAX;
+}
+
+const TOKEN_RE = /^[a-f0-9]{16,64}$/;
+
+async function handleProbeResult(request: Request, env?: Record<string, string>): Promise<Response> {
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token") || "";
+  if (!TOKEN_RE.test(token)) {
+    return Response.json({ error: "Invalid or missing token" }, { status: 400, headers: corsHeaders() });
+  }
+
+  const probeUrl = env?.PROBE_SERVER_URL || "http://127.0.0.1:8099";
+  const probeSecret = env?.PROBE_SECRET || "dev";
+
+  try {
+    const res = await fetch(`${probeUrl}/lookup?token=${encodeURIComponent(token)}`, {
+      headers: { "x-probe-secret": probeSecret },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Response.json(data, { headers: corsHeaders() });
+    }
+  } catch {
+    // Probe server may be offline or unconfigured in dev/preview
+  }
+  return Response.json({ token, resolvers: [] }, { headers: corsHeaders() });
+}
+
 async function handleHeadersCheck(request: Request): Promise<Response> {
+  const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
+  if (isRateLimited(clientIp)) {
+    return Response.json({ error: "Rate limit exceeded, try again shortly" }, { status: 429, headers: corsHeaders() });
+  }
+
   const url = new URL(request.url);
   const target = url.searchParams.get("url");
 
@@ -391,18 +549,58 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
   let targetUrl: string;
   try {
     const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return Response.json({ error: "Only http(s) URLs are allowed" }, { status: 400, headers: corsHeaders() });
+    }
     targetUrl = parsed.href;
   } catch {
     return Response.json({ error: "Invalid URL" }, { status: 400, headers: corsHeaders() });
   }
 
   try {
-    const res = await fetch(targetUrl, {
-      method: "GET",
-      redirect: "follow",
-      signal: AbortSignal.timeout(8000),
-      headers: { "User-Agent": "NetCheck Security Scanner/1.0" },
-    });
+    let currentUrl = targetUrl;
+    let res: Response | null = null;
+    const MAX_REDIRECTS = 5;
+
+    for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
+      const parsedUrl = new URL(currentUrl);
+      if (await resolvesToPrivateIp(parsedUrl.hostname)) {
+        return Response.json(
+          { error: "Target resolves to a private, loopback, link-local, or multicast address" },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      res = await fetch(currentUrl, {
+        method: "GET",
+        redirect: "manual",
+        signal: AbortSignal.timeout(8000),
+        headers: { "User-Agent": "NetCheck Security Scanner/1.0" },
+      });
+
+      if ([301, 302, 303, 307, 308].includes(res.status)) {
+        const location = res.headers.get("location");
+        if (!location) break;
+        try {
+          const nextUrl = new URL(location, currentUrl);
+          if (nextUrl.protocol !== "http:" && nextUrl.protocol !== "https:") {
+            return Response.json({ error: "Redirected to non-http(s) URL" }, { status: 400, headers: corsHeaders() });
+          }
+          currentUrl = nextUrl.href;
+          if (redirectCount === MAX_REDIRECTS) {
+            return Response.json({ error: "Too many redirects" }, { status: 400, headers: corsHeaders() });
+          }
+          continue;
+        } catch {
+          break;
+        }
+      }
+      break;
+    }
+
+    if (!res) {
+      return Response.json({ error: "Failed to fetch URL" }, { status: 500, headers: corsHeaders() });
+    }
 
     const headers: Record<string, string> = {};
     for (const [key, value] of res.headers) {
@@ -425,7 +623,7 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
 
     return Response.json({
-      url: targetUrl,
+      url: currentUrl,
       statusCode: res.status,
       grade,
       score: { present, total },
@@ -444,7 +642,9 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 function corsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, Range",
+    "Access-Control-Max-Age": "86400",
     "Content-Type": "application/json",
   };
 }

@@ -77,7 +77,7 @@ function renderHistory(): void {
       return `<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
         <span class="snap-val" style="color:${color};font-weight:600">${s.score}/100 ${scoreDelta}</span>
-        <span class="snap-val">${s.blocked}/${s.total} ${isLatest ? fmtDelta(s.blocked, prev?.blocked, true) : ""}</span>
+        <span class="snap-val">${s.blocked}/${s.total} ${isLatest ? fmtDelta(s.blocked, prev?.blocked) : ""}</span>
         <span class="snap-val snap-colo">${s.cats.map((c) => `${c.name.split(" ")[0]}:${c.pct}%`).join(" ")}</span>
       </div>`;
     })
