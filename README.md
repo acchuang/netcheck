@@ -28,18 +28,20 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### Security Headers
 - Scans any URL's HTTP response and grades it A–F against 10 security headers (HSTS, CSP, X-Frame-Options, COOP/COEP/CORP, etc.)
+- Multi-hop SSRF guard with private/loopback/link-local/multicast IP filtering and redirect destination re-validation
 - Explains what each header protects against and flags what's missing
 
 ### Recursion-Path Probing
-
-- `probe-server/` is an authoritative nameserver for `p.oilygold.xyz` — the browser resolves `<token>.p.oilygold.xyz`, so every recursive resolver in the visitor's real path has to query it directly
-- The source IPs it records are the visitor's actual resolvers (the one view a DoH-only client can never see), along with any EDNS Client Subnet they forward
-- The Worker reads probe results back over HTTP and renders them in the DNS report
+- `probe-server/` is an authoritative nameserver for `p.oilygold.xyz` — the browser resolves `<token>.p.oilygold.xyz`, forcing every recursive resolver in the visitor's real path to query it directly
+- Records the visitor's actual resolver IPs (the one view a DoH-only client can never see), along with any EDNS Client Subnet forwarded
+- The Worker reads probe results back over HTTP and renders live recursive resolver observations in the DNS report
 
 ### Also
 - Speed and ad-block results snapshot to local storage, with color-coded deltas between runs
-- Export a full diagnostic report as Markdown or PDF — nothing leaves your device
-- Bilingual UI (English / Traditional Chinese)
+- Memory-efficient streaming speed downloads via `ReadableStream`
+- PWA with offline precaching and responsive Linear-inspired dark/light theme
+- Export a full diagnostic report as Markdown or printable PDF — nothing leaves your device
+- Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
 
 ## Tech Stack
 
