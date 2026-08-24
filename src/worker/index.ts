@@ -13,12 +13,14 @@ export default {
     }
 
     const url = new URL(request.url);
+    const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
 
     if (url.pathname === "/api/ip") {
       return handleIpCheck(request);
     }
 
     if (url.pathname === "/api/dns") {
+      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
       return handleDnsCheck(request);
     }
 
@@ -31,14 +33,17 @@ export default {
     }
 
     if (url.pathname === "/api/headers/check") {
+      if (isRateLimited(clientIp, "headers-check")) return rateLimitedResponse();
       return handleHeadersCheck(request);
     }
 
     if (url.pathname === "/api/dns/check-resolvers") {
+      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
       return handleResolverCheck();
     }
 
     if (url.pathname === "/api/dns/compare") {
+      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
       return handleDnsCompare(url);
     }
 
@@ -515,22 +520,29 @@ async function resolvesToPrivateIp(hostname: string): Promise<boolean> {
 // --- per-IP rate limit (mirrors probe-server/server.ts's crude in-memory counter) ---
 // ponytail: per-isolate, not durable/global — fine for "resist casual abuse",
 // swap for a Workers Rate Limiting binding if this needs to hold across isolates.
+// "dns" also covers /api/dns/check-resolvers and /api/dns/compare, which each
+// fan out to all 8 resolvers per request — same abuse shape as headers-check.
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 20;
-const headersCheckRate = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMITS: Record<string, number> = { "headers-check": 20, dns: 20 };
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(ip: string, bucket: keyof typeof RATE_LIMITS): boolean {
+  const key = `${bucket}:${ip}`;
   const now = Date.now();
-  const entry = headersCheckRate.get(ip);
+  const entry = rateBuckets.get(key);
   if (!entry || now > entry.resetAt) {
-    headersCheckRate.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    rateBuckets.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return false;
   }
   entry.count += 1;
-  if (headersCheckRate.size > 10_000) {
-    for (const [k, e] of headersCheckRate) if (now > e.resetAt) headersCheckRate.delete(k);
+  if (rateBuckets.size > 10_000) {
+    for (const [k, e] of rateBuckets) if (now > e.resetAt) rateBuckets.delete(k);
   }
-  return entry.count > RATE_MAX;
+  return entry.count > RATE_LIMITS[bucket];
+}
+
+function rateLimitedResponse(): Response {
+  return Response.json({ error: "Rate limit exceeded, try again shortly" }, { status: 429, headers: corsHeaders() });
 }
 
 const TOKEN_RE = /^[a-f0-9]{16,64}$/;
@@ -561,11 +573,6 @@ async function handleProbeResult(request: Request, env?: Record<string, string>)
 }
 
 async function handleHeadersCheck(request: Request): Promise<Response> {
-  const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
-  if (isRateLimited(clientIp)) {
-    return Response.json({ error: "Rate limit exceeded, try again shortly" }, { status: 429, headers: corsHeaders() });
-  }
-
   const url = new URL(request.url);
   const target = url.searchParams.get("url");
 
