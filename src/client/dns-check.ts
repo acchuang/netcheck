@@ -617,7 +617,7 @@ export async function runDnsCompare(): Promise<void> {
     lastCompare = await res.json();
     renderCompareResults(lastCompare!);
   } catch {
-    container.innerHTML = `<p class="info-muted">${t("dns.failed")}</p>`;
+    container.innerHTML = `<p class="error-message">${t("dns.failed")}</p>`;
   }
 }
 

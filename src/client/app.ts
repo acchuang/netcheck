@@ -94,8 +94,12 @@ function initTabs(): void {
       e.preventDefault();
       const tab = link.dataset.tab!;
 
-      document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
+      document.querySelectorAll(".nav-link").forEach((l) => {
+        l.classList.remove("active");
+        l.setAttribute("aria-selected", "false");
+      });
       link.classList.add("active");
+      link.setAttribute("aria-selected", "true");
 
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       document.getElementById(tab)!.classList.add("active");

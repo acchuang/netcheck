@@ -56,7 +56,7 @@ async function runHeadersCheck(): Promise<void> {
     const data: HeadersResponse = await res.json();
 
     if (data.error) {
-      checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}: ${data.error}</p>`;
+      checkResults.innerHTML = `<p class="error-message">${t("headers.error")}: ${escapeHtml(data.error)}</p>`;
       btn.disabled = false;
       btn.textContent = t("headers.scan");
       return;
@@ -65,7 +65,7 @@ async function runHeadersCheck(): Promise<void> {
     lastHeadersData = data;
     renderHeadersResults(data);
   } catch {
-    checkResults.innerHTML = `<p class="info-muted">${t("headers.error")}</p>`;
+    checkResults.innerHTML = `<p class="error-message">${t("headers.error")}</p>`;
   }
 
   btn.disabled = false;

@@ -91,6 +91,7 @@ export function setBadge(id: string, status: string, text: string): void {
   const el = document.getElementById(id)!;
   el.className = `status-badge ${status}`;
   el.textContent = text;
+  el.setAttribute("aria-live", "polite");
 }
 
 export function renderSkeletonRows(container: HTMLElement, count: number): void {
