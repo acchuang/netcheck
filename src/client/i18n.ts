@@ -437,7 +437,7 @@ const en = {
   "about.feat.adblock.title": "Ad Block Test",
   "about.feat.adblock.desc": "Runs 30+ tests across 7 categories with weighted scoring, detects filter lists, identifies which blocker you're running, and tests any custom URL.",
   "about.feat.headers.title": "Security Headers",
-  "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
+  "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
   "about.privacy.desc": "All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine — nothing is sent to a server.",
 
@@ -878,7 +878,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.feat.adblock.title": "廣告攔截測試",
   "about.feat.adblock.desc": "在 7 個類別中執行 30+ 項加權評分測試，偵測過濾清單、辨識你使用的攔截器，並可測試任何自訂網址。",
   "about.feat.headers.title": "安全標頭",
-  "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，具備多跳 SSRF 防護並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
+  "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，具備多跳、附速率限制的 SSRF 防護，並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
   "about.privacy.title": "隱私",
   "about.privacy.desc": "所有檢測都在你的瀏覽器中執行。快照與廣告攔截記錄僅儲存於裝置的本機儲存空間，不會上傳到任何地方。匯出功能會在你的裝置上產生 Markdown 或 PDF 檔案 — 不會傳送到伺服器。",
 

@@ -28,7 +28,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### Security Headers
 - Scans any URL's HTTP response and grades it A–F against 10 security headers (HSTS, CSP, X-Frame-Options, COOP/COEP/CORP, etc.)
-- Multi-hop SSRF guard with private/loopback/link-local/multicast IP filtering and redirect destination re-validation
+- Multi-hop SSRF guard with private/loopback/link-local/multicast IP filtering (IPv4, IPv6, and IPv4-mapped IPv6) and redirect destination re-validation, rate-limited per IP
 - Explains what each header protects against and flags what's missing
 
 ### Recursion-Path Probing
@@ -42,6 +42,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - PWA with offline precaching and responsive Linear-inspired dark/light theme
 - Export a full diagnostic report as Markdown or printable PDF — nothing leaves your device
 - Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
+- Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited to resist abuse
 
 ## Tech Stack
 
