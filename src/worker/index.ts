@@ -413,6 +413,17 @@ const SECURITY_HEADERS = [
 // no raw socket DNS) so we can block private/loopback/link-local/multicast
 // targets — including the 169.254.169.254 cloud metadata address — before the
 // real fetch ever goes out.
+//
+// ponytail: this is check-then-use, not a hard pin — `fetch()`'s own DNS
+// resolution happens independently of the DoH check above, so a rebinding
+// attacker who flips A/AAAA between the two lookups could slip through.
+// Workers' only IP-pinning knob (`cf.resolveOverride`) only works for
+// hostnames proxied on this zone, so it can't pin a fetch to an arbitrary
+// external target — a real fix needs a hand-rolled TLS+HTTP client over
+// `cloudflare:sockets`. Not worth it here: Workers egress has no metadata
+// service or internal network behind it, so the worst a rebind reaches is
+// the sandboxed runtime's own loopback. Revisit if this Worker ever gets a
+// service binding, Tunnel, or VPC route into something private.
 const PRIVATE_V4_RANGES: [number, number, number][] = [
   // [network, prefixLen] as (base, mask)
   [0x7f000000, 8, 0xff000000], // 127.0.0.0/8
@@ -439,16 +450,29 @@ function ipv4ToInt(ip: string): number | null {
 function isPrivateIpv4(ip: string): boolean {
   const n = ipv4ToInt(ip);
   if (n === null) return false;
-  return PRIVATE_V4_RANGES.some(([base, , mask]) => (n & mask) === base);
+  // `&` runs on signed 32-bit ints in JS: any range whose base has the top
+  // bit set (172.16/12, 192.168/16, 169.254/16, 224/4) comes back negative
+  // and would never equal the positive `base` literal without `>>> 0`.
+  return PRIVATE_V4_RANGES.some(([base, , mask]) => ((n & mask) >>> 0) === base);
 }
 
 function isPrivateIpv6(ip: string): boolean {
   const norm = ip.toLowerCase();
   if (norm === "::1") return true; // loopback
   if (norm.startsWith("::ffff:")) {
-    // IPv4-mapped — check the embedded v4 address.
-    const v4 = norm.slice(7);
-    return /^\d+\.\d+\.\d+\.\d+$/.test(v4) ? isPrivateIpv4(v4) : false;
+    // IPv4-mapped. WHATWG URL normalizes the embedded address to two hex
+    // groups ("::ffff:7f00:1"), not the dotted form we'd get typing it by
+    // hand ("::ffff:127.0.0.1") — by the time `hostname` reaches us it's
+    // always hex, so dotted-only matching here never fires on real input.
+    const rest = norm.slice(7);
+    const dotted = /^\d+\.\d+\.\d+\.\d+$/.test(rest) ? rest : null;
+    const hexMatch = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(rest);
+    const fromHex = hexMatch
+      ? [parseInt(hexMatch[1], 16) >> 8, parseInt(hexMatch[1], 16) & 0xff,
+         parseInt(hexMatch[2], 16) >> 8, parseInt(hexMatch[2], 16) & 0xff].join(".")
+      : null;
+    const v4 = dotted ?? fromHex;
+    return v4 ? isPrivateIpv4(v4) : false;
   }
   const firstGroup = norm.split(":")[0];
   const firstByte = parseInt(firstGroup.padStart(4, "0").slice(0, 2), 16);
@@ -462,7 +486,10 @@ function isPrivateIpv6(ip: string): boolean {
 }
 
 function isPrivateOrReservedIp(ip: string): boolean {
-  return ip.includes(":") ? isPrivateIpv6(ip) : isPrivateIpv4(ip);
+  // URL.hostname keeps the brackets on an IPv6 literal ("[::1]") — strip them
+  // before matching, or every bracketed literal silently skips the blocklist.
+  const bare = ip.startsWith("[") && ip.endsWith("]") ? ip.slice(1, -1) : ip;
+  return bare.includes(":") ? isPrivateIpv6(bare) : isPrivateIpv4(bare);
 }
 
 async function resolvesToPrivateIp(hostname: string): Promise<boolean> {
@@ -548,7 +575,12 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 
   let targetUrl: string;
   try {
-    const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
+    // Only skip the https:// prefix when the input already names a scheme —
+    // `target.startsWith("http")` alone let "ftp://…" through un-prefixed,
+    // which `new URL` then parsed as host "ftp" under an https:// scheme
+    // instead of the ftp: scheme it should have been rejected for.
+    const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(target);
+    const parsed = new URL(hasScheme ? target : `https://${target}`);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return Response.json({ error: "Only http(s) URLs are allowed" }, { status: 400, headers: corsHeaders() });
     }
