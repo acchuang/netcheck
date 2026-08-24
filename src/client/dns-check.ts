@@ -643,6 +643,84 @@ function renderCompareResults(results: CompareResult[]): void {
   });
 }
 
+export async function runDomainHealthCheck(): Promise<void> {
+  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
+  const selector = (document.getElementById("dns-health-selector") as HTMLInputElement).value.trim();
+  if (!domain) return;
+
+  const container = document.getElementById("dns-health-results")!;
+  container.classList.remove("hidden");
+  container.innerHTML = `<p class="info-muted">${t("dns.healthChecking")}</p>`;
+
+  try {
+    const [mx, txt, dmarc, dkim] = await Promise.all([
+      DnsCheck.lookupDns(domain, "MX"),
+      DnsCheck.lookupDns(domain, "TXT"),
+      DnsCheck.lookupDns(`_dmarc.${domain}`, "TXT"),
+      selector ? DnsCheck.lookupDns(`${selector}._domainkey.${domain}`, "TXT") : Promise.resolve(null),
+    ]);
+    renderHealthResults(mx, txt, dmarc, dkim, selector);
+  } catch {
+    container.innerHTML = `<p class="error-message">${t("dns.failed")}</p>`;
+  }
+}
+
+function renderHealthResults(
+  mx: DnsResult,
+  txt: DnsResult,
+  dmarc: DnsResult,
+  dkim: DnsResult | null,
+  selector: string
+): void {
+  const container = document.getElementById("dns-health-results")!;
+  container.innerHTML = "";
+
+  const mxHosts = (mx.Answer || []).filter((a) => a.type === 15);
+  if (mxHosts.length === 0) {
+    container.appendChild(createCheckItem("fail", t("dns.healthMx"), t("dns.healthMxNone")));
+  } else {
+    container.appendChild(createCheckItem(
+      "pass", t("dns.healthMx"), t("dns.healthMxFound", mxHosts.length),
+      mxHosts.map((a) => a.data).join(", ")
+    ));
+  }
+
+  // TXT strings render dig-style as `"v=spf1 ..." ` — a leading quote is expected, not a parse failure.
+  const spfRecords = (txt.Answer || []).filter((a) => a.type === 16 && /^"?v=spf1\b/i.test(a.data));
+  if (spfRecords.length === 0) {
+    container.appendChild(createCheckItem("fail", t("dns.healthSpf"), t("dns.healthSpfNone")));
+  } else if (spfRecords.length > 1) {
+    container.appendChild(createCheckItem("warn", t("dns.healthSpf"), t("dns.healthSpfMultiple")));
+  } else if (/\+all\b/i.test(spfRecords[0].data)) {
+    container.appendChild(createCheckItem("warn", t("dns.healthSpf"), t("dns.healthSpfPermissive"), spfRecords[0].data));
+  } else {
+    container.appendChild(createCheckItem("pass", t("dns.healthSpf"), t("dns.healthSpfOk"), spfRecords[0].data));
+  }
+
+  const dmarcRecords = (dmarc.Answer || []).filter((a) => a.type === 16 && /v=dmarc1\b/i.test(a.data));
+  if (dmarcRecords.length === 0) {
+    container.appendChild(createCheckItem("fail", t("dns.healthDmarc"), t("dns.healthDmarcNone")));
+  } else {
+    const policy = /p=(\w+)/i.exec(dmarcRecords[0].data)?.[1] ?? "none";
+    if (policy.toLowerCase() === "none") {
+      container.appendChild(createCheckItem("warn", t("dns.healthDmarc"), t("dns.healthDmarcWeak"), dmarcRecords[0].data));
+    } else {
+      container.appendChild(createCheckItem("pass", t("dns.healthDmarc"), t("dns.healthDmarcOk", policy), dmarcRecords[0].data));
+    }
+  }
+
+  if (!selector) {
+    container.appendChild(createCheckItem("warn", t("dns.healthDkim"), t("dns.healthDkimNoSelector")));
+  } else {
+    const dkimRecords = (dkim?.Answer || []).filter((a) => a.type === 16);
+    if (dkimRecords.length === 0) {
+      container.appendChild(createCheckItem("fail", t("dns.healthDkim"), t("dns.healthDkimNone", selector)));
+    } else {
+      container.appendChild(createCheckItem("pass", t("dns.healthDkim"), t("dns.healthDkimFound", selector), dkimRecords[0].data));
+    }
+  }
+}
+
 export async function runDnsLookup(): Promise<void> {
   const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
   const type = (document.getElementById("dns-lookup-type") as unknown as HTMLSelectElement).value;

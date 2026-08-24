@@ -1,6 +1,6 @@
 import { initTheme } from "./theme";
 import { initI18n } from "./i18n";
-import { runDnsChecks, runDnsLookup, runDnsCompare } from "./dns-check";
+import { runDnsChecks, runDnsLookup, runDnsCompare, runDomainHealthCheck } from "./dns-check";
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test";
 import { FilterListDetector } from "./filter-lists";
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
@@ -109,6 +109,7 @@ function initTabs(): void {
   // DNS Lookup form
   document.getElementById("dns-lookup-btn")!.addEventListener("click", runDnsLookup);
   document.getElementById("dns-compare-btn")!.addEventListener("click", runDnsCompare);
+  document.getElementById("dns-health-btn")!.addEventListener("click", runDomainHealthCheck);
   document.getElementById("dns-lookup-domain")!.addEventListener("keydown", (e) => {
     if ((e as KeyboardEvent).key === "Enter") runDnsLookup();
   });
