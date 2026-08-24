@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker, { handleSpeedDown } from "../src/worker/index.ts";
-import { encodeQuery, toBase64Url, decodeMessage } from "../src/shared/dns-wire.ts";
+import { encodeQuery, encodeName, toBase64Url, decodeMessage } from "../src/shared/dns-wire.ts";
 
 test("speed download endpoint caps bytes, streams data, and handles missing param", async () => {
   const capped = handleSpeedDown(new URL("https://x/api/speedtest/down?bytes=999999999"));
@@ -88,12 +88,80 @@ test("decodeMessage formats TXT records dig-style", () => {
   assert.equal(msg.Answer[0].data, '"ecs" "1.2.3.0/24"');
 });
 
+test("encodeName rejects oversized labels and names", () => {
+  assert.throws(() => encodeName("a".repeat(64) + ".com"), /label too long/i);
+  const longName = Array.from({ length: 40 }, () => "aaaaaa").join(".");
+  assert.throws(() => encodeName(longName), /name too long/i);
+});
+
+// Hand-built: header + question for "example.com. AAAA" + one AAAA answer
+// via a compression pointer to the question name, address 2001:db8::1.
+test("decodeMessage formats AAAA addresses with zero-run compression", () => {
+  const qname = encodeName("example.com");
+  const header = Uint8Array.from([0, 0, 0x81, 0x80, 0, 1, 0, 1, 0, 0, 0, 0]);
+  const question = Uint8Array.from([...qname, 0, 28, 0, 1]);
+  const addr = [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]; // 2001:db8::1
+  const answer = Uint8Array.from([0xc0, 0x0c, 0, 28, 0, 1, 0, 0, 0x01, 0x2c, 0, 16, ...addr]);
+  const msg = new Uint8Array(header.length + question.length + answer.length);
+  msg.set(header, 0);
+  msg.set(question, header.length);
+  msg.set(answer, header.length + question.length);
+
+  const decoded = decodeMessage(msg);
+  assert.equal(decoded.Answer.length, 1);
+  assert.equal(decoded.Answer[0].data, "2001:db8::1");
+  assert.equal(decoded.Answer[0].TTL, 300);
+});
+
 test("worker handles OPTIONS preflight request with 204 and CORS headers", async () => {
   const req = new Request("https://netcheck.internal/api/speedtest/up", { method: "OPTIONS" });
   const res = await worker.fetch(req);
   assert.equal(res.status, 204);
   assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*");
   assert.match(res.headers.get("Access-Control-Allow-Methods") || "", /POST/);
+});
+
+// SSRF guard: IP literals are checked synchronously (no DoH round-trip), so
+// these hit the guard's range math directly without touching the network.
+test("headers/check blocks private, loopback, link-local, and multicast IP literals", async () => {
+  const blocked = [
+    "http://127.0.0.1/", "http://10.1.2.3/", "http://172.16.0.1/", "http://192.168.1.1/",
+    "http://169.254.169.254/", // cloud metadata
+    "http://224.0.0.1/", // multicast
+    "http://[::1]/", "http://[fc00::1]/", "http://[fe80::1]/", "http://[ff02::1]/",
+    "http://[::ffff:127.0.0.1]/", // IPv4-mapped loopback
+  ];
+  for (const url of blocked) {
+    const req = new Request(`https://netcheck.internal/api/headers/check?url=${encodeURIComponent(url)}`);
+    const res = await worker.fetch(req);
+    assert.equal(res.status, 400, url);
+    const data = (await res.json()) as { error: string };
+    assert.match(data.error, /private|loopback|link-local|multicast/);
+  }
+});
+
+test("headers/check rejects non-http(s) schemes before any fetch", async () => {
+  const req = new Request("https://netcheck.internal/api/headers/check?url=" + encodeURIComponent("ftp://example.com/"));
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 400);
+});
+
+test("dns endpoints are rate-limited per IP, headers-check has its own bucket", async () => {
+  const dnsIp = "203.0.113.201";
+  let last!: Response;
+  for (let i = 0; i < 21; i++) {
+    last = await worker.fetch(new Request("https://netcheck.internal/api/dns?domain=..bad..", {
+      headers: { "cf-connecting-ip": dnsIp },
+    }));
+  }
+  assert.equal(last.status, 429);
+
+  // A different bucket (headers-check) for the same IP is unaffected.
+  const spared = await worker.fetch(new Request(
+    "https://netcheck.internal/api/headers/check?url=" + encodeURIComponent("http://127.0.0.1/"),
+    { headers: { "cf-connecting-ip": dnsIp } }
+  ));
+  assert.equal(spared.status, 400); // blocked by SSRF guard, not rate limit
 });
 
 test("probe-result endpoint validates token format", async () => {
