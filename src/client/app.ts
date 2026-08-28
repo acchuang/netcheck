@@ -325,10 +325,10 @@ function renderServerOptionLabels(): void {
       return;
     }
     if (probe.reachable) {
-      opt.textContent = `${base} — ${probe.latency}ms`;
+      opt.textContent = `${base} (${probe.latency}ms)`;
       opt.disabled = false;
     } else {
-      opt.textContent = `${base} — ${t("speed.server.unreachable")}`;
+      opt.textContent = `${base} (${t("speed.server.unreachable")})`;
       opt.disabled = true;
     }
   });

@@ -7,10 +7,10 @@
   <link rel="apple-touch-icon" href="/icon.svg">
   <meta name="theme-color" content="#08090a">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetCheck — DNS & Ad Block Tester</title>
+  <title>NetCheck - DNS & Ad Block Tester</title>
   <meta name="description" content="Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.">
-  <meta property="og:title" content="NetCheck — DNS & Ad Block Tester">
-  <meta property="og:description" content="Check your DNS security, connection speed, ad blocker effectiveness, and any site's security headers — entirely in your browser.">
+  <meta property="og:title" content="NetCheck - DNS & Ad Block Tester">
+  <meta property="og:description" content="Check your DNS security, connection speed, ad blocker effectiveness, and any site's security headers, entirely in your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netcheck.oilygold.xyz">
   <meta name="twitter:card" content="summary">
@@ -189,7 +189,7 @@
           </div>
           <div class="card-body">
             <p class="info-muted" id="dns-ecs-summary">Checking which resolvers reveal your subnet...</p>
-            <p class="card-note" id="dns-ecs-note">ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server — at the cost of revealing roughly where you are.</p>
+            <p class="card-note" id="dns-ecs-note">ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server, at the cost of revealing roughly where you are.</p>
             <div id="dns-ecs-results"></div>
           </div>
         </div>
@@ -259,7 +259,7 @@
             </svg>
             <div class="server-badge-info">
               <span class="server-badge-label" id="speed-server-label">Test Server</span>
-              <span class="server-badge-value" id="speed-server-value">Automatic — nearest edge</span>
+              <span class="server-badge-value" id="speed-server-value">Automatic (nearest edge)</span>
             </div>
             <select id="speed-server-select" class="input select server-select" aria-label="Test server">
               <option value="edge">Nearest Edge (Worker)</option>
@@ -311,7 +311,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-jitter-label" data-tooltip="Variation in latency — lower is better for gaming and video calls">Jitter</div>
+            <div class="speed-gauge-label" id="speed-jitter-label" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</div>
             <div class="speed-gauge-value" id="speed-jitter">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
@@ -319,7 +319,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="Latency increase while the link is saturated by the download/upload test — lower is better for gaming and video calls">Bufferbloat</div>
+            <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</div>
             <div class="speed-gauge-value" id="speed-bufferbloat">—</div>
             <div class="speed-gauge-unit" id="speed-bufferbloat-unit">grade</div>
             <div class="speed-progress-bar">
@@ -530,8 +530,8 @@
     <!-- About Section -->
     <section id="about" class="section" role="tabpanel" aria-labelledby="tab-about">
       <div class="section-header">
-        <h1 class="display" id="about-title">About NetCheck</h1>
-        <p class="subtitle" id="about-subtitle">A browser-based network diagnostics toolkit — no installs, no accounts, nothing leaves your device except the checks themselves</p>
+        <h1 class="display display-hero" id="about-title">About NetCheck</h1>
+        <p class="subtitle" id="about-subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
       </div>
 
       <div class="card card-wide">
@@ -544,18 +544,18 @@
           <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
         </div>
         <div class="card-body">
-          <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network — there's no backend collecting your results.</p>
+          <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.</p>
         </div>
       </div>
 
-      <div class="cards-grid">
+      <div class="cards-grid cards-grid-2up">
         <div class="card">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <h2 class="card-title" id="about-feat-dns-title">DNS Check</h2>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-feat-dns-desc">Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps — with fixes for each.</p>
+            <p class="info-muted" id="about-feat-dns-desc">Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each.</p>
           </div>
         </div>
         <div class="card">
@@ -595,7 +595,7 @@
           <h2 class="card-title" id="about-privacy-title">Privacy</h2>
         </div>
         <div class="card-body">
-          <p class="info-muted" id="about-privacy-desc">All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine — nothing is sent to a server.</p>
+          <p class="info-muted" id="about-privacy-desc">All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.</p>
         </div>
       </div>
     </section>
@@ -603,7 +603,7 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-text" id="footer-text">NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
+    <p class="footer-text" id="footer-text">NetCheck - DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
     <a href="https://github.com/acchuang/netcheck" target="_blank" rel="noopener noreferrer" class="footer-link">
       <svg class="footer-gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       GitHub

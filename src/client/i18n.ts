@@ -38,22 +38,22 @@ const en = {
   "dns.comparing": "Querying resolvers...",
   "dns.compareUnreachable": "unreachable",
   "dns.compareNoAnswer": "no A records",
-  "dns.compareAllMatch": "All resolvers agree — no sign of DNS interference.",
-  "dns.compareMismatch": "Resolvers returned different answers — often CDN geo-routing, occasionally DNS interference.",
+  "dns.compareAllMatch": "All resolvers agree. No sign of DNS interference.",
+  "dns.compareMismatch": "Resolvers returned different answers. Often CDN geo-routing, occasionally DNS interference.",
   "dns.healthBtn": "Check Domain Health",
   "dns.healthSelectorPlaceholder": "DKIM selector (optional)",
   "dns.healthChecking": "Checking domain health...",
   "dns.healthMx": "MX Records",
-  "dns.healthMxNone": "No MX records — domain cannot receive mail",
+  "dns.healthMxNone": "No MX records: domain cannot receive mail",
   "dns.healthMxFound": "{0} mail server(s) configured",
   "dns.healthSpf": "SPF",
   "dns.healthSpfNone": "No SPF record found",
-  "dns.healthSpfMultiple": "Multiple SPF records found — invalid, resolvers may disagree",
+  "dns.healthSpfMultiple": "Multiple SPF records found: invalid, resolvers may disagree",
   "dns.healthSpfPermissive": "SPF allows any server to send mail (+all)",
   "dns.healthSpfOk": "SPF record found",
   "dns.healthDmarc": "DMARC",
   "dns.healthDmarcNone": "No DMARC record found",
-  "dns.healthDmarcWeak": "DMARC policy is \"none\" — monitoring only, not enforced",
+  "dns.healthDmarcWeak": "DMARC policy is \"none\": monitoring only, not enforced",
   "dns.healthDmarcOk": "DMARC enforced ({0})",
   "dns.healthDkim": "DKIM",
   "dns.healthDkimNoSelector": "Provide a selector above to check DKIM",
@@ -84,10 +84,10 @@ const en = {
 
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS Client Subnet",
-  "dns.ecsNote": "ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server — at the cost of revealing roughly where you are.",
+  "dns.ecsNote": "ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server, at the cost of revealing roughly where you are.",
   "dns.ecsLeaking": "Your subnet is being shared with authoritative servers as {0}",
   "dns.ecsForwardOnly": "{0} of {1} resolvers forward a client subnet",
-  "dns.ecsNone": "No resolver forwarded your subnet — authoritative servers only see the resolver",
+  "dns.ecsNone": "No resolver forwarded your subnet: authoritative servers only see the resolver",
   "dns.ecsUnknown": "Could not determine client subnet behaviour",
   "dns.ecsForwardingOf": "{0} of {1} forwarding",
   "dns.ecsYes": "forwards subnet",
@@ -105,8 +105,8 @@ const en = {
   "dns.topFix": "Top Fix",
   "dns.learnMore": "Learn more",
   "dns.checkBrowser": "Check browser settings",
-  "dns.malwareFiltered": "Malware test domain blocked by your resolver — filtering is active",
-  "dns.malwareNotFiltered": "Malware test domain resolved via your resolver — consider a filtering DNS",
+  "dns.malwareFiltered": "Malware test domain blocked by your resolver: filtering is active",
+  "dns.malwareNotFiltered": "Malware test domain resolved via your resolver: consider a filtering DNS",
   "dns.check.dnssec": "DNSSEC Validation",
   "dns.check.doh": "DNS-over-HTTPS",
   "dns.check.malware": "Malware Domain Filtering",
@@ -164,7 +164,7 @@ const en = {
   "speed.customUrlRequired": "Enter a server URL first",
   "speed.customUrlHint": "Must implement /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "Selected server is unreachable",
-  "speed.autoNearest": "Automatic — nearest edge",
+  "speed.autoNearest": "Automatic (nearest edge)",
   "speed.you": "You",
   "speed.download": "Download",
   "speed.upload": "Upload",
@@ -175,8 +175,8 @@ const en = {
   "speed.tip.download": "Maximum download speed measured via progressive file transfers",
   "speed.tip.upload": "Maximum upload speed measured via progressive data transfers",
   "speed.tip.latency": "Round-trip time to the nearest Cloudflare edge server (median of 10 pings)",
-  "speed.tip.jitter": "Variation in latency — lower is better for gaming and video calls",
-  "speed.tip.bufferbloat": "Latency increase while the link is saturated by the download/upload test — lower is better for gaming and video calls",
+  "speed.tip.jitter": "Variation in latency. Lower is better for gaming and video calls",
+  "speed.tip.bufferbloat": "Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls",
   "speed.waiting": "Waiting to start",
   "speed.clickBegin": "Click the button below to begin",
   "speed.runBtn": "Run Speed Test",
@@ -299,7 +299,7 @@ const en = {
   // Ad block category advice
   "adblock.advice.contextual.title": "Ads are getting through",
   "adblock.advice.contextual.desc": "Google AdSense, Amazon ads, or ad-serving scripts are loading. These inject display ads and track your browsing for targeting.",
-  "adblock.advice.contextual.fix1": "Install uBlock Origin — blocks 99% of known ad scripts",
+  "adblock.advice.contextual.fix1": "Install uBlock Origin: blocks 99% of known ad scripts",
   "adblock.advice.contextual.fix2": "Enable EasyList in your blocker (usually on by default)",
   "adblock.advice.contextual.fix3": "Use DNS-level blocking (Pi-hole or NextDNS) for network-wide coverage",
 
@@ -318,7 +318,7 @@ const en = {
 
   "adblock.advice.devtools.title": "Dev tool scripts are loading",
   "adblock.advice.devtools.desc": "Error monitoring services like Sentry, Bugsnag, or LogRocket are loading. While useful for developers, they can capture session replays and user interactions.",
-  "adblock.advice.devtools.fix1": "These are often acceptable — devs use them to fix bugs",
+  "adblock.advice.devtools.fix1": "These are often acceptable: devs use them to fix bugs",
   "adblock.advice.devtools.fix2": "To block: add custom rules in uBlock for cdn.sentry.io, bugsnag.com, logrocket.com",
   "adblock.advice.devtools.fix3": "Use a privacy-respecting browser that limits script execution",
 
@@ -331,7 +331,7 @@ const en = {
 
   "adblock.advice.fingerprint.title": "Fingerprinting is possible",
   "adblock.advice.fingerprint.desc": "Your browser allows canvas, WebGL, AudioContext, and ClientRects fingerprinting. These techniques uniquely identify you without cookies.",
-  "adblock.advice.fingerprint.fix1": "Use Brave Browser — it randomizes fingerprint surfaces by default",
+  "adblock.advice.fingerprint.fix1": "Use Brave Browser: it randomizes fingerprint surfaces by default",
   "adblock.advice.fingerprint.fix2": "Enable fingerprint protection in Firefox (about:config → privacy.resistFingerprinting)",
   "adblock.advice.fingerprint.fix3": "Install CanvasBlocker extension for Firefox",
   "adblock.advice.fingerprint.fix4": "Tor Browser provides the strongest fingerprint resistance",
@@ -446,11 +446,11 @@ const en = {
   // About section
   "nav.about": "About",
   "about.title": "About NetCheck",
-  "about.subtitle": "A browser-based network diagnostics toolkit — no installs, no accounts, nothing leaves your device except the checks themselves",
+  "about.subtitle": "A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves",
   "about.what.title": "What is NetCheck?",
-  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network — there's no backend collecting your results.",
+  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.",
   "about.feat.dns.title": "DNS Check",
-  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps — with fixes for each.",
+  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each.",
   "about.feat.speed.title": "Speed Test",
   "about.feat.speed.desc": "Measures download, upload, latency, jitter, and bufferbloat against Cloudflare's edge, Cloudflare Speed Test, Netflix Fast.com, Ookla Speedtest, or a custom server with memory-efficient streaming.",
   "about.feat.adblock.title": "Ad Block Test",
@@ -458,10 +458,10 @@ const en = {
   "about.feat.headers.title": "Security Headers",
   "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
-  "about.privacy.desc": "All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine — nothing is sent to a server.",
+  "about.privacy.desc": "All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.",
 
   // Footer
-  "footer.text": "NetCheck — DNS & Ad Block diagnostics. All tests run locally in your browser.",
+  "footer.text": "NetCheck - DNS & Ad Block diagnostics. All tests run locally in your browser.",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
@@ -498,22 +498,22 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.comparing": "正在查詢各解析器...",
   "dns.compareUnreachable": "無法連線",
   "dns.compareNoAnswer": "無 A 紀錄",
-  "dns.compareAllMatch": "所有解析器結果一致 — 未發現 DNS 干擾跡象。",
-  "dns.compareMismatch": "各解析器回應不同 — 通常是 CDN 地理路由，偶爾為 DNS 干擾。",
+  "dns.compareAllMatch": "所有解析器結果一致，未發現 DNS 干擾跡象。",
+  "dns.compareMismatch": "各解析器回應不同，通常是 CDN 地理路由，偶爾為 DNS 干擾。",
   "dns.healthBtn": "檢查網域健康狀態",
   "dns.healthSelectorPlaceholder": "DKIM selector（選填）",
   "dns.healthChecking": "正在檢查網域健康狀態...",
   "dns.healthMx": "MX 紀錄",
-  "dns.healthMxNone": "未找到 MX 紀錄 — 此網域無法接收郵件",
+  "dns.healthMxNone": "未找到 MX 紀錄：此網域無法接收郵件",
   "dns.healthMxFound": "已設定 {0} 台郵件伺服器",
   "dns.healthSpf": "SPF",
   "dns.healthSpfNone": "未找到 SPF 紀錄",
-  "dns.healthSpfMultiple": "找到多筆 SPF 紀錄 — 不符合規範，解析器可能有不同解讀",
+  "dns.healthSpfMultiple": "找到多筆 SPF 紀錄：不符合規範，解析器可能有不同解讀",
   "dns.healthSpfPermissive": "SPF 允許任何伺服器寄送郵件（+all）",
   "dns.healthSpfOk": "已找到 SPF 紀錄",
   "dns.healthDmarc": "DMARC",
   "dns.healthDmarcNone": "未找到 DMARC 紀錄",
-  "dns.healthDmarcWeak": "DMARC 政策為「none」— 僅監控，未強制執行",
+  "dns.healthDmarcWeak": "DMARC 政策為「none」：僅監控，未強制執行",
   "dns.healthDmarcOk": "DMARC 已強制執行（{0}）",
   "dns.healthDkim": "DKIM",
   "dns.healthDkimNoSelector": "請於上方輸入 selector 以檢查 DKIM",
@@ -544,10 +544,10 @@ const zhTW: Record<keyof typeof en, string> = {
 
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS 用戶端子網路",
-  "dns.ecsNote": "ECS 讓解析器把您 IP 的一部分傳給它查詢的每一台權威伺服器，藉此為您導向較近的節點 — 代價是洩漏您的大致位置。",
+  "dns.ecsNote": "ECS 讓解析器把您 IP 的一部分傳給它查詢的每一台權威伺服器，藉此為您導向較近的節點，代價是洩漏您的大致位置。",
   "dns.ecsLeaking": "您的子網路正以 {0} 的形式傳給權威伺服器",
   "dns.ecsForwardOnly": "{1} 個解析器中有 {0} 個會傳送用戶端子網路",
-  "dns.ecsNone": "沒有解析器傳送您的子網路 — 權威伺服器只看得到解析器",
+  "dns.ecsNone": "沒有解析器傳送您的子網路：權威伺服器只看得到解析器",
   "dns.ecsUnknown": "無法判斷用戶端子網路行為",
   "dns.ecsForwardingOf": "{1} 個中 {0} 個會傳送",
   "dns.ecsYes": "會傳送子網路",
@@ -565,8 +565,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.topFix": "首要修正",
   "dns.learnMore": "了解更多",
   "dns.checkBrowser": "檢查瀏覽器設定",
-  "dns.malwareFiltered": "惡意測試網域已被您的解析器阻擋 — 過濾功能已啟用",
-  "dns.malwareNotFiltered": "惡意測試網域經您的解析器解析 — 建議使用具過濾功能的 DNS",
+  "dns.malwareFiltered": "惡意測試網域已被您的解析器阻擋：過濾功能已啟用",
+  "dns.malwareNotFiltered": "惡意測試網域經您的解析器解析：建議使用具過濾功能的 DNS",
   "dns.check.dnssec": "DNSSEC 驗證",
   "dns.check.doh": "DNS-over-HTTPS",
   "dns.check.malware": "惡意網域過濾",
@@ -624,7 +624,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.customUrlRequired": "請先輸入伺服器網址",
   "speed.customUrlHint": "必須實作 /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "所選伺服器無法連線",
-  "speed.autoNearest": "自動 — 最近節點",
+  "speed.autoNearest": "自動（最近節點）",
   "speed.you": "您",
   "speed.download": "下載",
   "speed.upload": "上傳",
@@ -635,8 +635,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.tip.download": "透過漸進式檔案傳輸測量的最大下載速度",
   "speed.tip.upload": "透過漸進式資料傳輸測量的最大上傳速度",
   "speed.tip.latency": "到最近 Cloudflare 邊緣伺服器的往返時間（10 次 ping 的中位數）",
-  "speed.tip.jitter": "延遲的變化量 — 越低越好，適用於遊戲和視訊通話",
-  "speed.tip.bufferbloat": "下載/上傳測試使連線飽和時的延遲增加量 — 越低越好，適用於遊戲和視訊通話",
+  "speed.tip.jitter": "延遲的變化量：越低越好，適用於遊戲和視訊通話",
+  "speed.tip.bufferbloat": "下載/上傳測試使連線飽和時的延遲增加量：越低越好，適用於遊戲和視訊通話",
   "speed.waiting": "等待開始",
   "speed.clickBegin": "按下方按鈕開始測試",
   "speed.runBtn": "開始測速",
@@ -759,7 +759,7 @@ const zhTW: Record<keyof typeof en, string> = {
   // Ad block category advice
   "adblock.advice.contextual.title": "廣告正在載入",
   "adblock.advice.contextual.desc": "Google AdSense、Amazon 廣告或廣告投放腳本正在載入。這些會注入展示廣告並追蹤您的瀏覽行為。",
-  "adblock.advice.contextual.fix1": "安裝 uBlock Origin — 可攔截 99% 已知廣告腳本",
+  "adblock.advice.contextual.fix1": "安裝 uBlock Origin：可攔截 99% 已知廣告腳本",
   "adblock.advice.contextual.fix2": "在攔截器中啟用 EasyList（通常預設開啟）",
   "adblock.advice.contextual.fix3": "使用 DNS 層級攔截（Pi-hole 或 NextDNS）實現全網路覆蓋",
 
@@ -778,7 +778,7 @@ const zhTW: Record<keyof typeof en, string> = {
 
   "adblock.advice.devtools.title": "開發工具腳本正在載入",
   "adblock.advice.devtools.desc": "Sentry、Bugsnag 或 LogRocket 等錯誤監控服務正在載入。雖然對開發者有用，但可能擷取工作階段重播和使用者互動。",
-  "adblock.advice.devtools.fix1": "這些通常是可接受的 — 開發者用來修復錯誤",
+  "adblock.advice.devtools.fix1": "這些通常是可接受的：開發者用來修復錯誤",
   "adblock.advice.devtools.fix2": "若要攔截：在 uBlock 中為 cdn.sentry.io、bugsnag.com、logrocket.com 新增自訂規則",
   "adblock.advice.devtools.fix3": "使用注重隱私的瀏覽器來限制腳本執行",
 
@@ -791,7 +791,7 @@ const zhTW: Record<keyof typeof en, string> = {
 
   "adblock.advice.fingerprint.title": "可被指紋辨識",
   "adblock.advice.fingerprint.desc": "您的瀏覽器允許 Canvas、WebGL、AudioContext 和 ClientRects 指紋辨識。這些技術無需 Cookie 即可唯一識別您。",
-  "adblock.advice.fingerprint.fix1": "使用 Brave 瀏覽器 — 預設隨機化指紋特徵",
+  "adblock.advice.fingerprint.fix1": "使用 Brave 瀏覽器：預設隨機化指紋特徵",
   "adblock.advice.fingerprint.fix2": "在 Firefox 中啟用指紋保護（about:config → privacy.resistFingerprinting）",
   "adblock.advice.fingerprint.fix3": "為 Firefox 安裝 CanvasBlocker 擴充功能",
   "adblock.advice.fingerprint.fix4": "Tor 瀏覽器提供最強的指紋抵抗力",
@@ -906,22 +906,22 @@ const zhTW: Record<keyof typeof en, string> = {
   // About section
   "nav.about": "關於",
   "about.title": "關於 NetCheck",
-  "about.subtitle": "純瀏覽器端的網路診斷工具 — 免安裝、免帳號，除了檢測本身之外不會有任何資料離開你的裝置",
+  "about.subtitle": "純瀏覽器端的網路診斷工具，免安裝、免帳號，除了檢測本身之外不會有任何資料離開您的裝置",
   "about.what.title": "NetCheck 是什麼？",
-  "about.what.desc": "NetCheck 直接在你的瀏覽器中執行一系列網路與隱私診斷：你的 DNS 解析器、其安全性與流量的真實遞迴路徑、真實的下載/上傳速度與緩衝膨脹、廣告與追蹤器攔截器的表現，以及任何網站的安全標頭。所有測試都在客戶端透過 Cloudflare 邊緣網路執行 — 沒有後端伺服器收集你的結果。",
+  "about.what.desc": "NetCheck 直接在您的瀏覽器中執行一系列網路與隱私診斷：您的 DNS 解析器、其安全性與流量的真實遞迴路徑、真實的下載/上傳速度與緩衝膨脹、廣告與追蹤器攔截器的表現，以及任何網站的安全標頭。所有測試都在客戶端透過 Cloudflare 邊緣網路執行，沒有後端伺服器收集您的結果。",
   "about.feat.dns.title": "DNS 檢測",
-  "about.feat.dns.desc": "偵測你的 IP、解析器與 PoP；透過站內探測伺服器追蹤你的真實遞迴路徑，以加密 DNS 測試 8 個公共解析器，並標示缺失的 DNSSEC、ECS 子網路洩漏、未加密的 DNS、WebRTC 洩漏與惡意軟體過濾漏洞 — 且附上對應修正方式。",
+  "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測伺服器追蹤您的真實遞迴路徑，以加密 DNS 測試 8 個公共解析器，並標示缺失的 DNSSEC、ECS 子網路洩漏、未加密的 DNS、WebRTC 洩漏與惡意軟體過濾漏洞，且附上對應修正方式。",
   "about.feat.speed.title": "速度測試",
   "about.feat.speed.desc": "針對 Cloudflare 邊緣節點、Cloudflare 自家測速、Netflix Fast.com、Ookla 測速或自訂伺服器，以高效串流測量下載、上傳、延遲、抖動與緩衝膨脹。",
   "about.feat.adblock.title": "廣告攔截測試",
-  "about.feat.adblock.desc": "在 7 個類別中執行 30+ 項加權評分測試，偵測過濾清單、辨識你使用的攔截器，並可測試任何自訂網址。",
+  "about.feat.adblock.desc": "在 7 個類別中執行 30+ 項加權評分測試，偵測過濾清單、辨識您使用的攔截器，並可測試任何自訂網址。",
   "about.feat.headers.title": "安全標頭",
   "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，具備多跳、附速率限制的 SSRF 防護，並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
   "about.privacy.title": "隱私",
-  "about.privacy.desc": "所有檢測都在你的瀏覽器中執行。快照與廣告攔截記錄僅儲存於裝置的本機儲存空間，不會上傳到任何地方。匯出功能會在你的裝置上產生 Markdown 或 PDF 檔案 — 不會傳送到伺服器。",
+  "about.privacy.desc": "所有檢測都在您的瀏覽器中執行。快照與廣告攔截記錄僅儲存於裝置的本機儲存空間，不會上傳到任何地方。匯出功能會在您的裝置上產生 Markdown 或 PDF 檔案，不會傳送到伺服器。",
 
   // Footer
-  "footer.text": "NetCheck — DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
+  "footer.text": "NetCheck - DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
@@ -1095,5 +1095,5 @@ function applyStaticTranslations(): void {
   s("footer-text", "footer.text");
 
   // Page title
-  document.title = current === "zh-TW" ? "NetCheck — DNS 與廣告攔截測試" : "NetCheck — DNS & Ad Block Tester";
+  document.title = current === "zh-TW" ? "NetCheck - DNS 與廣告攔截測試" : "NetCheck - DNS & Ad Block Tester";
 }
