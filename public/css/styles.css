@@ -113,6 +113,7 @@
   --emerald: #10b981;
   --red: #ef4444;
   --amber: #f59e0b;
+  --teal: #2dd4bf;
 
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-standard: rgba(255, 255, 255, 0.08);
@@ -142,10 +143,13 @@
   --accent: #5e5eff;
   --accent-hover: #4a4aee;
 
-  --green: #16a34a;
-  --emerald: #059669;
-  --red: #dc2626;
-  --amber: #d97706;
+  /* darker than the dark-theme pair: these carry small text on light tint
+     backgrounds, where the 500-weight shades fall under 4.5:1 */
+  --green: #166534;
+  --emerald: #047857;
+  --red: #b91c1c;
+  --amber: #92400e;
+  --teal: #0f766e;
 
   --border-subtle: rgba(0, 0, 0, 0.04);
   --border-standard: rgba(0, 0, 0, 0.08);
@@ -426,13 +430,21 @@ body {
   margin-bottom: 40px;
 }
 
+/* Heading 1 scale: these head task surfaces, not marketing sections. */
 .display {
-  font-size: 48px;
+  font-size: 32px;
   font-weight: 510;
   color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.704px;
+  margin-bottom: 12px;
+}
+
+/* Display scale, reserved for About, the one page that is a read, not a tool. */
+.display-hero {
+  font-size: 48px;
   line-height: 1.0;
   letter-spacing: -1.056px;
-  margin-bottom: 12px;
 }
 
 .subtitle {
@@ -449,6 +461,11 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 16px;
   margin-bottom: 16px;
+}
+
+/* 4-card grids: 2x2. auto-fit would give a 3-up row plus a lone orphan. */
+.cards-grid-2up {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .card {
@@ -728,23 +745,49 @@ select option {
   font-weight: 510;
   padding: 8px 16px;
   border-radius: var(--radius-md);
-  border: none;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-standard);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
   white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--hover-border);
+  color: var(--text-primary);
 }
 
 .btn:active {
   transform: scale(0.97);
 }
 
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--card-bg);
+  border-color: var(--border-standard);
+  color: var(--text-tertiary);
+  transform: none;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .btn-primary {
   background: var(--brand);
+  border-color: transparent;
   color: #fff;
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
+  border-color: transparent;
+  color: #fff;
 }
 
 .lookup-results {
@@ -874,7 +917,7 @@ select option {
 }
 
 .test-category-header:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--hover-bg);
 }
 
 .test-category-chevron {
@@ -1174,12 +1217,12 @@ select option {
 }
 
 .suggestion-score.partial {
-  color: #f59e0b;
+  color: var(--amber);
   background: rgba(245, 158, 11, 0.12);
 }
 
 .suggestion-score.low {
-  color: #ef4444;
+  color: var(--red);
   background: rgba(239, 68, 68, 0.12);
 }
 
@@ -1333,7 +1376,7 @@ select option {
 
 .route-server {
   background: rgba(45, 212, 191, 0.15);
-  color: #2dd4bf;
+  color: var(--teal);
 }
 
 .route-line {
@@ -1488,11 +1531,6 @@ select option {
   font-size: 14px;
 }
 
-.btn-large:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Filter List Detector */
 .filter-list-section {
   margin-top: 32px;
@@ -1572,7 +1610,7 @@ select option {
 
 .filter-list-badge.inactive {
   color: var(--text-quaternary);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--hover-bg);
 }
 
 .filter-list-badge.warning {
@@ -1741,12 +1779,14 @@ select option {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .display {
+  .display-hero {
     font-size: 32px;
+    line-height: 1.1;
     letter-spacing: -0.704px;
   }
 
-  .cards-grid {
+  .cards-grid,
+  .cards-grid-2up {
     grid-template-columns: 1fr;
   }
 
