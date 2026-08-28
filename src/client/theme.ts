@@ -20,6 +20,9 @@ function resolvedTheme(): "dark" | "light" {
 }
 
 function enableThemeTransition(): void {
+  // Injected after the stylesheet with !important, so it would otherwise
+  // outrank the prefers-reduced-motion block in styles.css.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const style = document.createElement("style");
   style.id = "theme-transition";
   style.textContent = "*, *::before, *::after { transition: background-color 0.3s, color 0.3s, border-color 0.3s !important; }";
