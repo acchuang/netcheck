@@ -4,6 +4,7 @@ node_modules/
 dist/
 
 # Tool-generated
+.claude/
 .codegraph/
 .opencode/
 .playwright-mcp/
