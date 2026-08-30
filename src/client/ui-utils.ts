@@ -87,6 +87,52 @@ export function suggestionCardHtml(
   </div>`;
 }
 
+const VERDICT_ICONS: Record<VerdictLevel, string> = {
+  pass: '<polyline points="4 12 9.5 17.5 20 7"/>',
+  warn: '<path d="M12 3 22 20H2Z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  fail: '<circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+};
+
+export type VerdictLevel = "pass" | "warn" | "fail";
+
+// The one-line answer that sits above a tool's card grid. `grade` replaces the
+// status icon for tools that already produce a letter grade.
+export function renderVerdict(
+  id: string,
+  level: VerdictLevel,
+  headline: string,
+  detail: string,
+  grade?: string
+): void {
+  const el = document.getElementById(id)!;
+  el.className = `verdict verdict-${level}`;
+  el.innerHTML = `
+    ${grade
+      ? `<span class="verdict-grade">${escapeHtml(grade)}</span>`
+      : `<span class="verdict-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${VERDICT_ICONS[level]}</svg></span>`}
+    <span class="verdict-body">
+      <span class="verdict-headline">${escapeHtml(headline)}</span>
+      <span class="verdict-detail">${escapeHtml(detail)}</span>
+    </span>
+  `;
+  el.hidden = false;
+}
+
+// A stale verdict above a running test reads as the result of that run.
+export function hideVerdict(id: string): void {
+  document.getElementById(id)!.hidden = true;
+}
+
+// Issue count drives the level everywhere, so the thresholds live in one place.
+export function verdictLevel(issueCount: number): VerdictLevel {
+  if (issueCount === 0) return "pass";
+  return issueCount >= 3 ? "fail" : "warn";
+}
+
+export function issueHeadline(issues: string[]): string {
+  return issues.length === 1 ? t("verdict.oneIssue") : t("verdict.issues", issues.length);
+}
+
 export function setBadge(id: string, status: string, text: string): void {
   const el = document.getElementById(id)!;
   el.className = `status-badge ${status}`;

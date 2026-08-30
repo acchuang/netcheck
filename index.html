@@ -14,8 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netcheck.oilygold.xyz">
   <meta name="twitter:card" content="summary">
-  <link rel="preconnect" href="https://rsms.me/">
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -96,6 +95,8 @@
         <h1 class="display" id="dns-title">DNS & Network Check</h1>
         <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
       </div>
+
+      <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
 
       <div class="cards-grid">
         <!-- IP Info Card -->
@@ -284,11 +285,13 @@
         </div>
       </div>
 
+      <div class="verdict" id="speed-verdict" role="status" aria-live="polite" hidden></div>
+
       <div class="speed-dashboard">
         <div class="speed-gauge-row">
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-download-label" data-tooltip="Maximum download speed measured via progressive file transfers">Download</div>
-            <div class="speed-gauge-value" id="speed-download">—</div>
+            <div class="speed-gauge-value placeholder" id="speed-download">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
               <div class="speed-progress-fill download" id="speed-download-bar"></div>
@@ -296,7 +299,7 @@
           </div>
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-upload-label" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</div>
-            <div class="speed-gauge-value" id="speed-upload">—</div>
+            <div class="speed-gauge-value placeholder" id="speed-upload">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
               <div class="speed-progress-fill upload" id="speed-upload-bar"></div>
@@ -304,7 +307,7 @@
           </div>
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-latency-label" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</div>
-            <div class="speed-gauge-value" id="speed-latency">—</div>
+            <div class="speed-gauge-value placeholder" id="speed-latency">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
               <div class="speed-progress-fill latency" id="speed-latency-bar"></div>
@@ -312,7 +315,7 @@
           </div>
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-jitter-label" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</div>
-            <div class="speed-gauge-value" id="speed-jitter">—</div>
+            <div class="speed-gauge-value placeholder" id="speed-jitter">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
               <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
@@ -320,7 +323,7 @@
           </div>
           <div class="speed-gauge">
             <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</div>
-            <div class="speed-gauge-value" id="speed-bufferbloat">—</div>
+            <div class="speed-gauge-value placeholder" id="speed-bufferbloat">—</div>
             <div class="speed-gauge-unit" id="speed-bufferbloat-unit">grade</div>
             <div class="speed-progress-bar">
               <div class="speed-progress-fill bufferbloat" id="speed-bufferbloat-bar"></div>
@@ -413,6 +416,7 @@
           <p class="score-summary" id="score-summary">Running tests...</p>
           <p class="score-detail" id="score-detail"></p>
         </div>
+        <div class="score-breakdown" id="score-breakdown"></div>
       </div>
 
       <div class="test-categories" id="test-categories">
@@ -457,6 +461,8 @@
         <p class="subtitle" id="headers-subtitle">Analyze HTTP security headers of any website</p>
       </div>
 
+      <div class="verdict" id="headers-verdict" role="status" aria-live="polite" hidden></div>
+
       <div class="card card-wide">
         <div class="card-header">
           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -473,44 +479,20 @@
         </div>
       </div>
 
-      <div id="headers-results" class="hidden">
-        <div class="cards-grid cards-grid-2">
-          <!-- Grade Card -->
-          <div class="card">
-            <div class="card-header">
-              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              <h2 class="card-title" id="headers-grade-title">Security Grade</h2>
-              <span class="status-badge" id="headers-status">—</span>
-            </div>
-            <div class="card-body">
-              <div class="headers-grade-display">
-                <span class="speed-grade" id="headers-grade">—</span>
-                <div class="headers-grade-meta">
-                  <p class="headers-grade-score" id="headers-score"></p>
-                  <p class="info-muted" id="headers-server-info"></p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Info Card -->
-          <div class="card">
-            <div class="card-header">
-              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              <h2 class="card-title" id="headers-info-title">About Security Headers</h2>
-            </div>
-            <div class="card-body">
-              <p class="info-muted" id="headers-info-desc">Security headers protect against common web attacks like XSS, clickjacking, and MIME sniffing. A higher score means better protection for visitors.</p>
-            </div>
-          </div>
+      <div class="empty-state" id="headers-empty">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <p class="empty-state-title" id="headers-empty-title">No site scanned yet</p>
+        <p class="empty-state-desc" id="headers-empty-desc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
+        <div class="empty-state-actions">
+          <button class="btn btn-small" data-headers-example="github.com">github.com</button>
+          <button class="btn btn-small" data-headers-example="cloudflare.com">cloudflare.com</button>
+          <button class="btn btn-small" data-headers-example="wikipedia.org">wikipedia.org</button>
         </div>
+      </div>
 
+      <div id="headers-results" class="hidden">
         <!-- Headers List -->
         <div class="card card-wide">
           <div class="card-header">
@@ -519,8 +501,10 @@
               <polyline points="14 2 14 8 20 8"/>
             </svg>
             <h2 class="card-title" id="headers-detail-title">Header Analysis</h2>
+            <span class="status-badge" id="headers-status">—</span>
           </div>
           <div class="card-body">
+            <p class="info-muted" id="headers-server-info"></p>
             <div id="headers-check-results"></div>
           </div>
         </div>
@@ -534,21 +518,31 @@
         <p class="subtitle" id="about-subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
       </div>
 
-      <div class="card card-wide">
-        <div class="card-header">
-          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="16" x2="12" y2="12"/>
-            <line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
-          <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
-        </div>
-        <div class="card-body">
-          <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.</p>
-        </div>
-      </div>
-
       <div class="cards-grid cards-grid-2up">
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <h2 class="card-title" id="about-privacy-title">Privacy</h2>
+          </div>
+          <div class="card-body">
+            <p class="info-muted" id="about-privacy-desc">All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.</p>
+          </div>
+        </div>
         <div class="card">
           <div class="card-header">
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -584,18 +578,6 @@
           <div class="card-body">
             <p class="info-muted" id="about-feat-headers-desc">Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.</p>
           </div>
-        </div>
-      </div>
-
-      <div class="card card-wide">
-        <div class="card-header">
-          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-          <h2 class="card-title" id="about-privacy-title">Privacy</h2>
-        </div>
-        <div class="card-body">
-          <p class="info-muted" id="about-privacy-desc">All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.</p>
         </div>
       </div>
     </section>

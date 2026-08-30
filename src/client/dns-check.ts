@@ -1,5 +1,5 @@
 import { t, onLocaleChange } from "./i18n";
-import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml } from "./ui-utils";
+import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire";
 
@@ -360,6 +360,8 @@ onLocaleChange(() => {
 });
 
 export async function runDnsChecks(): Promise<void> {
+  hideVerdict("dns-verdict");
+
   DnsCheck.detectIpv6().then((v6) => {
     lastIpv6 = v6;
     renderIpv6(v6);
@@ -583,8 +585,10 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
 
   if (issues.length === 0) {
     subtitle.textContent = t("dns.suggestGood");
+    renderVerdict("dns-verdict", "pass", t("verdict.dnsPass"), t("verdict.dnsPassDetail"));
   } else {
     subtitle.textContent = t("dns.suggestIssues", issues.join(", "));
+    renderVerdict("dns-verdict", verdictLevel(issues.length), issueHeadline(issues), issues.join(" · "));
   }
 
   const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
