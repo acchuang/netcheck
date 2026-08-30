@@ -134,12 +134,17 @@
   --text-primary: #f7f8f8;
   --text-secondary: #d0d6e0;
   --text-tertiary: #8a8f98;
-  --text-quaternary: #62666d;
+  /* The muted floor, and the tier most likely to be set too dark. It carries
+     real content — .check-sublabel, .suggestion-tag, gauge units — so it is
+     tuned to clear 4.5:1 on the lightest surface it lands on, not on the
+     canvas. Every theme keeps the four tiers strictly ascending from here. */
+  --text-quaternary: #7f848c;
 
   /* --brand fills; --accent draws. A theme is free to darken --brand until only
      --on-brand is legible on it, so nothing painted straight onto the canvas —
      text, icon, border, tint — may use --brand. */
   --brand: #5e6ad2;
+  --brand-hover: #545fca;
   /* Tuned against --bg-elevated, not the canvas. --accent carries small text on
      chips and badges that sit two surfaces up, and #7170ff only cleared 4.5:1
      on the bare canvas — every elevation under it ate the margin. */
@@ -202,10 +207,11 @@
 
   --text-primary: #1a1a2e;
   --text-secondary: #3a3a4a;
-  --text-tertiary: #6b7280;
-  --text-quaternary: #9ca3af;
+  --text-tertiary: #4e535e;
+  --text-quaternary: #646d7c;
 
   --brand: #4f5bc7;
+  --brand-hover: #454fb0;
   /* #5e5eff measured 4.41:1 on this canvas — a hair under AA, and this token
      carries link text, not just chrome. Darkened again for the elevated
      surfaces it sits on; see the dark block. */
@@ -268,9 +274,10 @@
   --text-primary: #d3f9d8;
   --text-secondary: #a7d7ae;
   --text-tertiary: #6f9a76;
-  --text-quaternary: #4d6b52;
+  --text-quaternary: #628868;
 
   --brand: #22c55e;
+  --brand-hover: #3ad674;
   --accent: #4ade80;
   --accent-hover: #86efac;
   /* Phosphor green is too bright to carry white text — 2.2:1. Dark ink on the
@@ -328,13 +335,14 @@
 
   --text-primary: #eceff4;
   --text-secondary: #d8dee9;
-  --text-tertiary: #a9b4c6;
-  --text-quaternary: #7b88a1;
+  --text-tertiary: #bec7d4;
+  --text-quaternary: #a8b0c1;
 
   /* nord10 (#5e81ac) sits mid-luminance: neither white nor nord0 text clears
      4.5:1 on it, and it is the one surface --on-brand has to work against.
      Darkened until white passes. */
   --brand: #4c6a92;
+  --brand-hover: #435f83;
   --accent: #93c6d4;
   --accent-hover: #a3d3e0;
   --on-brand: #eceff4;
@@ -344,8 +352,9 @@
   --grade-mid: #88c0d0;
   --amber: #ebcb8b;
   /* nord11 (#bf616a) is 2.3:1 on nord1 — unreadable for the "missing"/"failed"
-     labels it would carry. Lightened to clear AA. */
-  --red: #e8909a;
+     labels it would carry. Lightened to clear AA on the worst case it lands on,
+     which is a red-tinted chip on an elevated surface, not the bare canvas. */
+  --red: #eda3ac;
   --teal: #9ec5c4;
 
   --border-subtle: rgba(216, 222, 233, 0.06);
@@ -389,9 +398,10 @@
   --text-primary: #fbfbfd;
   --text-secondary: #d4d6e0;
   --text-tertiary: #8e91a0;
-  --text-quaternary: #64677a;
+  --text-quaternary: #7b7e92;
 
   --brand: #5e6ad2;
+  --brand-hover: #545fca;
   --accent: #7e7dff;
   --accent-hover: #9694ff;
   --on-brand: #ffffff;
@@ -399,7 +409,9 @@
   --green: #27a644;
   --emerald: #10b981;
   --grade-mid: #7170ff;
-  --red: #ef4444;
+  /* Lighter than the dark theme's: the glass panes composite lighter than a
+     flat surface, so #ef4444 lost AA on tinted chips here. */
+  --red: #f87171;
   --amber: #f59e0b;
   --teal: #2dd4bf;
 
@@ -460,6 +472,7 @@
   --text-quaternary: #b8b8b8;
 
   --brand: #0b3d91;
+  --brand-hover: #17529f;
   --accent: #7dd3fc;
   --accent-hover: #bae6fd;
   --on-brand: #ffffff;
@@ -1056,12 +1069,12 @@ html::before {
 
 .status-badge.done {
   color: var(--emerald);
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: color-mix(in srgb, var(--emerald) 30%, transparent);
 }
 
 .status-badge.error {
   color: var(--red);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
 }
 
 /* Info Rows */
@@ -1205,17 +1218,17 @@ html::before {
 
 .resolver-badge.pass {
   color: var(--emerald);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid color-mix(in srgb, var(--emerald) 30%, transparent);
 }
 
 .resolver-badge.filter {
   color: var(--amber);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
 }
 
 .resolver-badge.leak {
   color: var(--red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
 }
 
 .card-note {
@@ -1314,8 +1327,11 @@ select option {
   color: var(--on-brand);
 }
 
+/* Hover moves --brand away from --on-brand, never toward --accent-hover: that
+   token is tuned to be legible *on* a surface, so filling with it and keeping
+   the --on-brand label on top inverts the pair (white on #9a99ff is 2.5:1). */
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: var(--brand-hover);
   border-color: transparent;
   color: var(--on-brand);
 }
@@ -1556,10 +1572,13 @@ select option {
   background: color-mix(in srgb, var(--amber) 12%, transparent);
   border-color: color-mix(in srgb, var(--amber) 28%, transparent);
 }
+/* Neutral chip, unlike its .imp-high and .imp-medium siblings. Those tint with
+   their own hue and can afford it; --text-quaternary is the floor of the text
+   scale, so a tint of itself under itself has no contrast left to give. */
 .test-category-importance.imp-low {
-  color: var(--text-quaternary);
-  background: color-mix(in srgb, var(--text-quaternary) 12%, transparent);
-  border-color: color-mix(in srgb, var(--text-quaternary) 28%, transparent);
+  color: var(--text-tertiary);
+  background: var(--icon-bg);
+  border-color: var(--border-subtle);
 }
 
 .test-category-body {
@@ -1620,17 +1639,17 @@ select option {
 
 .test-result.blocked {
   color: var(--emerald);
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in srgb, var(--emerald) 10%, transparent);
 }
 
 .test-result.not-blocked {
   color: var(--red);
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
 }
 
 .test-result.uncertain {
   color: var(--amber);
-  background: rgba(245, 158, 11, 0.1);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
 }
 
 /* Suggestions */
@@ -1806,12 +1825,12 @@ select option {
 
 .suggestion-score.partial {
   color: var(--amber);
-  background: rgba(245, 158, 11, 0.12);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
 }
 
 .suggestion-score.low {
   color: var(--red);
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--icon-bg);
 }
 
 .suggestion-fixes {
@@ -2150,7 +2169,7 @@ select option {
 }
 
 .filter-list-item.detected {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: color-mix(in srgb, var(--emerald) 30%, transparent);
 }
 
 .filter-list-item.not-detected {
@@ -2199,17 +2218,17 @@ select option {
 
 .filter-list-badge.active {
   color: var(--emerald);
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in srgb, var(--emerald) 10%, transparent);
 }
 
 .filter-list-badge.inactive {
-  color: var(--text-quaternary);
-  background: var(--hover-bg);
+  color: var(--text-tertiary);
+  background: var(--icon-bg);
 }
 
 .filter-list-badge.warning {
   color: var(--amber);
-  background: rgba(245, 158, 11, 0.1);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
 }
 
 /* DNS Lookup Table */
