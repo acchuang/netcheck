@@ -218,7 +218,7 @@ function renderAdBlockResults(): void {
     ring.style.stroke = "var(--emerald)";
     document.getElementById("score-summary")!.textContent = t("adblock.excellent");
   } else if (score.score >= 50) {
-    ring.style.stroke = "var(--accent)";
+    ring.style.stroke = "var(--grade-mid)";
     document.getElementById("score-summary")!.textContent = t("adblock.good");
   } else if (score.score >= 20) {
     ring.style.stroke = "var(--amber)";
@@ -613,7 +613,7 @@ function renderSpeedResults(results: SpeedTestResults): void {
   setGauge("speed-jitter", results.jitter !== null ? String(results.jitter) : null);
 
   const bbGrade = SpeedTest.getBufferbloatGrade(results.bufferbloatIncrease);
-  const gradeColors: Record<string, string> = { "A+": "var(--emerald)", A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
+  const gradeColors: Record<string, string> = { "A+": "var(--emerald)", A: "var(--emerald)", B: "var(--grade-mid)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
   const bbEl = document.getElementById("speed-bufferbloat")!;
   bbEl.textContent = bbGrade.grade;
   bbEl.style.color = gradeColors[bbGrade.grade] || "";

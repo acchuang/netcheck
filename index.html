@@ -14,6 +14,20 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netcheck.oilygold.xyz">
   <meta name="twitter:card" content="summary">
+  <script>
+    // Runs before the stylesheet so the first painted frame is already the right
+    // theme. The bundle applies it too, but only after parse — long enough that a
+    // light-theme user saw a dark flash on every load. An unknown value is safe:
+    // the dark tokens are also on :root, so it falls back rather than unstyling.
+    // Storage key must match STORAGE_KEY in src/client/theme.ts.
+    try {
+      var t = localStorage.getItem("netcheck-theme") || "dark";
+      if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {
+      /* private mode can throw on localStorage; the markup default stands */
+    }
+  </script>
   <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/styles.css">
 </head>

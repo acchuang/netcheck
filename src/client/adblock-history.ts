@@ -72,7 +72,7 @@ function renderHistory(): void {
       const prev = i < snapshots.length - 1 ? snapshots[snapshots.length - 2 - i] : undefined;
       const isLatest = i === 0;
       const scoreDelta = isLatest ? fmtDelta(s.score, prev?.score) : "";
-      const color = s.score >= 80 ? "var(--emerald)" : s.score >= 50 ? "var(--accent)" : s.score >= 20 ? "var(--amber)" : "var(--red)";
+      const color = s.score >= 80 ? "var(--emerald)" : s.score >= 50 ? "var(--grade-mid)" : s.score >= 20 ? "var(--amber)" : "var(--red)";
 
       return `<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
