@@ -121,7 +121,10 @@
    fill:both parks the card in its before-phase — opacity 0, forever. Fixed
    delays waste an animation on offscreen cards; that is the cheaper failure. */
 
-/* Dark theme (default) */
+/* Dark theme, and the fallback for any unrecognised data-theme value. A stale
+   or hand-edited localStorage entry would otherwise leave the page with no
+   colour tokens at all. */
+:root,
 [data-theme="dark"] {
   --bg-black: #08090a;
   --bg-panel: #0f1011;
@@ -136,12 +139,19 @@
   --brand: #5e6ad2;
   --accent: #7170ff;
   --accent-hover: #828fff;
+  /* Text and icons sitting on top of a --brand fill. Not always white: a theme
+     with a pale accent needs dark ink here. */
+  --on-brand: #ffffff;
 
   --green: #27a644;
   --emerald: #10b981;
   --red: #ef4444;
   --amber: #f59e0b;
   --teal: #2dd4bf;
+  /* The band between "good" and "warn" on every score: B grades, 50-79 ad-block
+     scores. Its own token because it is a verdict, not chrome — re-theming the
+     accent should not silently re-grade anything. */
+  --grade-mid: #7170ff;
 
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-standard: rgba(255, 255, 255, 0.08);
@@ -185,6 +195,7 @@
   --brand: #4f5bc7;
   --accent: #5e5eff;
   --accent-hover: #4a4aee;
+  --on-brand: #ffffff;
 
   /* darker than the dark-theme pair: these carry small text on light tint
      backgrounds, where the 500-weight shades fall under 4.5:1 */
@@ -193,6 +204,10 @@
   --red: #b91c1c;
   --amber: #92400e;
   --teal: #0f766e;
+  /* Darker than --accent for the same reason the shades above are: the accent
+     was never contrast-checked as a text colour, and at #5e5eff it sits around
+     3.9:1 on white. */
+  --grade-mid: #4338ca;
 
   --border-subtle: rgba(0, 0, 0, 0.04);
   --border-standard: rgba(0, 0, 0, 0.08);
@@ -960,13 +975,13 @@ select option {
 .btn-primary {
   background: var(--brand);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-brand);
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-brand);
 }
 
 .lookup-results {

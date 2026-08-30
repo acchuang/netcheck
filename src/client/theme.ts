@@ -34,8 +34,11 @@ function apply(animate = false): void {
   if (animate) enableThemeTransition();
   const theme = resolvedTheme();
   document.documentElement.setAttribute("data-theme", theme);
-  document.querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", theme === "light" ? "#f8f9fa" : "#08090a");
+  // Read the canvas back off the stylesheet rather than keeping a second copy of
+  // every theme's hex here. getComputedStyle forces the recalc, so this sees the
+  // attribute set on the line above.
+  const canvas = getComputedStyle(document.documentElement).getPropertyValue("--bg-black").trim();
+  if (canvas) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", canvas);
   const btn = document.getElementById("theme-toggle");
   if (btn) {
     const svg = btn.querySelector("svg");
