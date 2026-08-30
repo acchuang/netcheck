@@ -14,6 +14,12 @@ const en = {
   "nav.downloadMd": "Download Markdown",
   "nav.savePdf": "Save as PDF",
 
+  // Themes
+  "theme.label": "Theme",
+  "theme.system": "System",
+  "theme.dark": "Dark",
+  "theme.light": "Light",
+
   // DNS section
   "dns.title": "DNS & Network Check",
   "dns.subtitle": "Detect your IP, DNS resolvers, and network configuration",
@@ -486,6 +492,11 @@ const zhTW: Record<keyof typeof en, string> = {
   "nav.exportReport": "匯出報告",
   "nav.downloadMd": "下載 Markdown",
   "nav.savePdf": "儲存為 PDF",
+
+  "theme.label": "主題",
+  "theme.system": "跟隨系統",
+  "theme.dark": "深色",
+  "theme.light": "淺色",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",

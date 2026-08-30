@@ -73,11 +73,15 @@
           </svg>
           <span class="lang-label">中文</span>
         </button>
-        <button class="btn-nav-action" id="theme-toggle" title="Theme: dark">
-          <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-        </button>
+        <div class="theme-dropdown">
+          <button class="btn-nav-action" id="theme-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Theme">
+            <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+          <!-- Options are rendered by src/client/theme.ts from its THEMES array. -->
+          <div class="theme-menu" id="theme-menu" role="menu"></div>
+        </div>
         <div class="export-dropdown">
           <button class="btn-export" id="export-btn" title="Export Report">
             <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
