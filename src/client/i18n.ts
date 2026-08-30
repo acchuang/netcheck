@@ -178,7 +178,9 @@ const en = {
   "speed.tip.jitter": "Variation in latency. Lower is better for gaming and video calls",
   "speed.tip.bufferbloat": "Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls",
   "speed.waiting": "Waiting to start",
-  "speed.clickBegin": "Click the button below to begin",
+  "speed.complete": "Test complete",
+  "speed.compareHint": "Run again to compare",
+  "speed.clickBegin": "Measures download, upload, latency, jitter, and bufferbloat",
   "speed.runBtn": "Run Speed Test",
   "speed.running": "Running...",
   "speed.runAgain": "Run Again",
@@ -268,6 +270,9 @@ const en = {
   "adblock.importance.medium": "medium",
   "adblock.importance.low": "low",
   "adblock.importanceTip": "Weighted {0}× in your score",
+  "adblock.risk.high": "High risk",
+  "adblock.risk.medium": "Medium risk",
+  "adblock.risk.low": "Low risk",
   "adblock.fp.high": "high",
   "adblock.fp.medium": "medium",
   "adblock.fp.low": "low",
@@ -421,9 +426,6 @@ const en = {
   "headers.checkTitle": "Check URL",
   "headers.scan": "Scan",
   "headers.scanning": "Scanning...",
-  "headers.gradeTitle": "Security Grade",
-  "headers.infoTitle": "About Security Headers",
-  "headers.infoDesc": "Security headers protect against common web attacks like XSS, clickjacking, and MIME sniffing. A higher score means better protection for visitors.",
   "headers.detailTitle": "Header Analysis",
   "headers.scoreOf": "{0} of {1} security headers present",
   "headers.missing": "missing",
@@ -437,11 +439,11 @@ const en = {
   "headers.desc.cross-origin-opener-policy": "Isolates browsing context from cross-origin popups",
   "headers.desc.cross-origin-embedder-policy": "Requires CORS/CORP for all cross-origin resources",
   "headers.desc.cross-origin-resource-policy": "Controls which origins can embed this resource",
-  "headers.excellent": "excellent",
-  "headers.good": "good",
-  "headers.fair": "fair",
-  "headers.poor": "poor",
+  "headers.allPresent": "all present",
+  "headers.nMissing": "{0} missing",
   "headers.error": "Failed to scan URL",
+  "headers.emptyTitle": "No site scanned yet",
+  "headers.emptyDesc": "Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:",
 
   // About section
   "nav.about": "About",
@@ -459,6 +461,17 @@ const en = {
   "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
   "about.privacy.desc": "All checks run in your browser. Snapshots and adblock history are saved only to your device's local storage, never uploaded anywhere. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.",
+
+  // Verdict bars
+  "verdict.oneIssue": "1 issue found",
+  "verdict.issues": "{0} issues found",
+  "verdict.dnsPass": "No DNS problems found",
+  "verdict.dnsPassDetail": "Encryption, DNSSEC, filtering, WebRTC leaks and resolver latency all checked out.",
+  "verdict.speedPass": "Your connection is performing well",
+  "verdict.speedDetail": "{0} down · {1} up · {2} ms latency · {3} ms jitter",
+  "verdict.headersPass": "Strong header configuration",
+  "verdict.headersWarn": "Some protections are missing",
+  "verdict.headersFail": "Weak header configuration",
 
   // Footer
   "footer.text": "NetCheck - DNS & Ad Block diagnostics. All tests run locally in your browser.",
@@ -638,7 +651,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.tip.jitter": "延遲的變化量：越低越好，適用於遊戲和視訊通話",
   "speed.tip.bufferbloat": "下載/上傳測試使連線飽和時的延遲增加量：越低越好，適用於遊戲和視訊通話",
   "speed.waiting": "等待開始",
-  "speed.clickBegin": "按下方按鈕開始測試",
+  "speed.complete": "測試完成",
+  "speed.compareHint": "再測一次以比較",
+  "speed.clickBegin": "測量下載、上傳、延遲、抖動與緩衝膨脹",
   "speed.runBtn": "開始測速",
   "speed.running": "測試中...",
   "speed.runAgain": "重新測試",
@@ -728,6 +743,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.importance.medium": "中",
   "adblock.importance.low": "低",
   "adblock.importanceTip": "在評分中的權重為 {0} 倍",
+  "adblock.risk.high": "高風險",
+  "adblock.risk.medium": "中風險",
+  "adblock.risk.low": "低風險",
   "adblock.fp.high": "高",
   "adblock.fp.medium": "中",
   "adblock.fp.low": "低",
@@ -881,9 +899,6 @@ const zhTW: Record<keyof typeof en, string> = {
   "headers.checkTitle": "檢查 URL",
   "headers.scan": "掃描",
   "headers.scanning": "掃描中...",
-  "headers.gradeTitle": "安全等級",
-  "headers.infoTitle": "關於安全標頭",
-  "headers.infoDesc": "安全標頭可防護常見的 Web 攻擊，如 XSS、點擊劫持和 MIME 嗅探。分數越高代表對訪客的保護越好。",
   "headers.detailTitle": "標頭分析",
   "headers.scoreOf": "{1} 個安全標頭中有 {0} 個存在",
   "headers.missing": "缺失",
@@ -897,11 +912,11 @@ const zhTW: Record<keyof typeof en, string> = {
   "headers.desc.cross-origin-opener-policy": "將瀏覽情境與跨來源彈出視窗隔離",
   "headers.desc.cross-origin-embedder-policy": "要求所有跨來源資源皆須 CORS/CORP",
   "headers.desc.cross-origin-resource-policy": "控制哪些來源可以嵌入此資源",
-  "headers.excellent": "優秀",
-  "headers.good": "良好",
-  "headers.fair": "一般",
-  "headers.poor": "不佳",
+  "headers.allPresent": "全部具備",
+  "headers.nMissing": "缺少 {0} 項",
   "headers.error": "掃描 URL 失敗",
+  "headers.emptyTitle": "尚未掃描任何網站",
+  "headers.emptyDesc": "在上方輸入網址，檢查其回應標頭對 XSS、點擊劫持與 MIME 探測的防護。或先試試以下網站：",
 
   // About section
   "nav.about": "關於",
@@ -921,6 +936,17 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.privacy.desc": "所有檢測都在您的瀏覽器中執行。快照與廣告攔截記錄僅儲存於裝置的本機儲存空間，不會上傳到任何地方。匯出功能會在您的裝置上產生 Markdown 或 PDF 檔案，不會傳送到伺服器。",
 
   // Footer
+  // Verdict bars
+  "verdict.oneIssue": "發現 1 個問題",
+  "verdict.issues": "發現 {0} 個問題",
+  "verdict.dnsPass": "未發現 DNS 問題",
+  "verdict.dnsPassDetail": "加密、DNSSEC、惡意網域過濾、WebRTC 洩漏與解析器延遲皆正常。",
+  "verdict.speedPass": "連線表現良好",
+  "verdict.speedDetail": "下載 {0} · 上傳 {1} · 延遲 {2} ms · 抖動 {3} ms",
+  "verdict.headersPass": "標頭設定完善",
+  "verdict.headersWarn": "部分防護缺失",
+  "verdict.headersFail": "標頭設定薄弱",
+
   "footer.text": "NetCheck - DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
 };
 
@@ -1070,10 +1096,9 @@ function applyStaticTranslations(): void {
   s("headers-subtitle", "headers.subtitle");
   s("headers-check-title", "headers.checkTitle");
   s("headers-check-btn", "headers.scan");
-  s("headers-grade-title", "headers.gradeTitle");
-  s("headers-info-title", "headers.infoTitle");
-  s("headers-info-desc", "headers.infoDesc");
   s("headers-detail-title", "headers.detailTitle");
+  s("headers-empty-title", "headers.emptyTitle");
+  s("headers-empty-desc", "headers.emptyDesc");
 
   // About section
   s("about-title", "about.title");

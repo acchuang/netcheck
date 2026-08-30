@@ -1,5 +1,5 @@
 import { t, onLocaleChange } from "./i18n";
-import { setBadge, renderSkeletonRows, escapeHtml } from "./ui-utils";
+import { setBadge, renderSkeletonRows, escapeHtml, renderVerdict, hideVerdict } from "./ui-utils";
 
 interface HeaderCheckResult {
   name: string;
@@ -31,6 +31,13 @@ export function initHeadersCheck(): void {
     if (e.key === "Enter") runHeadersCheck();
   });
 
+  document.querySelectorAll<HTMLElement>("[data-headers-example]").forEach((el) => {
+    el.addEventListener("click", () => {
+      input.value = el.dataset.headersExample!;
+      runHeadersCheck();
+    });
+  });
+
   onLocaleChange(() => {
     if (lastHeadersData) renderHeadersResults(lastHeadersData);
   });
@@ -47,9 +54,11 @@ async function runHeadersCheck(): Promise<void> {
 
   const resultsContainer = document.getElementById("headers-results")!;
   resultsContainer.classList.remove("hidden");
+  document.getElementById("headers-empty")!.classList.add("hidden");
 
   const checkResults = document.getElementById("headers-check-results")!;
   renderSkeletonRows(checkResults, 10);
+  hideVerdict("headers-verdict");
 
   try {
     const res = await fetch(`/api/headers/check?url=${encodeURIComponent(url)}`);
@@ -75,25 +84,25 @@ async function runHeadersCheck(): Promise<void> {
 function renderHeadersResults(data: HeadersResponse): void {
   const checkResults = document.getElementById("headers-check-results")!;
 
-  // Grade display
-  const gradeEl = document.getElementById("headers-grade")!;
-  gradeEl.textContent = data.grade;
-  gradeEl.className = "speed-grade";
-
-  const gradeColors: Record<string, string> = { A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
-  gradeEl.style.color = gradeColors[data.grade] || "var(--text-primary)";
-
-  document.getElementById("headers-score")!.textContent =
-    t("headers.scoreOf", data.score.present, data.score.total);
-
   const serverParts: string[] = [];
   if (data.server) serverParts.push(`Server: ${data.server}`);
   if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
   serverParts.push(`HTTP ${data.statusCode}`);
   document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
 
-  setBadge("headers-status", data.grade === "A" || data.grade === "B" ? "done" : data.grade === "C" ? "done" : "error",
-    data.grade === "A" ? t("headers.excellent") : data.grade === "B" ? t("headers.good") : data.grade === "C" ? t("headers.fair") : t("headers.poor"));
+  const missing = data.score.total - data.score.present;
+  // The verdict above grades the site; this badge counts what the rows below show.
+  setBadge("headers-status", missing === 0 ? "done" : "error",
+    missing === 0 ? t("headers.allPresent") : t("headers.nMissing", missing));
+
+  const level = missing === 0 ? "pass" : data.grade === "A" || data.grade === "B" ? "warn" : "fail";
+  renderVerdict(
+    "headers-verdict",
+    level,
+    level === "pass" ? t("verdict.headersPass") : level === "warn" ? t("verdict.headersWarn") : t("verdict.headersFail"),
+    `${data.url} · ${t("headers.scoreOf", data.score.present, data.score.total)}`,
+    data.grade
+  );
 
   // Individual header checks
   checkResults.innerHTML = "";

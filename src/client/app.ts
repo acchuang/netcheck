@@ -17,7 +17,7 @@ initI18n();
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
 }
-import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm, suggestionCardHtml, ARROW_SVG } from "./ui-utils";
+import { escapeHtml, animateNumber, pulseValue, renderSkeletonRows, CF_POPS, haversineKm, suggestionCardHtml, ARROW_SVG, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils";
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll(".speed-gauge").forEach((g, i) => {
@@ -231,7 +231,26 @@ function renderAdBlockResults(): void {
   document.getElementById("score-detail")!.textContent =
     t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
+  renderScoreBreakdown();
   renderSuggestions(AdBlockTest.results);
+}
+
+// Blocked share per risk tier, aggregated from the same category results the
+// rows below expand. Fills the score card's empty right half with the one thing
+// the ring can't say: which kind of tracker is getting through.
+function renderScoreBreakdown(): void {
+  const tiers = ["high", "medium", "low"] as const;
+  document.getElementById("score-breakdown")!.innerHTML = tiers
+    .map((imp) => {
+      const tests = AdBlockTest.results.filter((c) => c.importance === imp).flatMap((c) => c.tests);
+      if (tests.length === 0) return "";
+      const blocked = tests.filter((x) => x.blocked).length;
+      return `<div class="info-row">
+        <span class="info-label">${t(`adblock.risk.${imp}`)}</span>
+        <span class="info-value">${t("adblock.blockedOf", blocked, tests.length)}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 // Feature 1 + re-test: custom URL test + re-run adblock tests
@@ -497,17 +516,16 @@ async function runSpeedTest(): Promise<void> {
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   btn.disabled = true;
   btn.textContent = t("speed.running");
+  hideVerdict("speed-verdict");
 
   speedGraphData.download = [];
   speedGraphData.upload = [];
   document.querySelector(".speed-graph-card")?.removeAttribute("hidden");
   drawSpeedGraph();
 
-  document.getElementById("speed-download")!.textContent = "—";
-  document.getElementById("speed-upload")!.textContent = "—";
-  document.getElementById("speed-latency")!.textContent = "—";
-  document.getElementById("speed-jitter")!.textContent = "—";
-  document.getElementById("speed-bufferbloat")!.textContent = "—";
+  document.getElementById("speed-grade")!.hidden = false;
+  (["download", "upload", "latency", "jitter", "bufferbloat"] as const).forEach((k) => setGauge(`speed-${k}`, null));
+  document.getElementById("speed-bufferbloat")!.style.color = "";
   document.getElementById("speed-bufferbloat-unit")!.textContent = t("speed.grade");
   (document.getElementById("speed-bufferbloat-bar") as HTMLElement).style.width = "0%";
   document.getElementById("speed-server-value")!.textContent =
@@ -580,34 +598,39 @@ async function runSpeedTest(): Promise<void> {
   btn.textContent = t("speed.runAgain");
 }
 
+// A bare dash at 32px reads as a measurement. Dim it so an unmeasured gauge
+// looks unmeasured.
+function setGauge(id: string, text: string | null): void {
+  const el = document.getElementById(id)!;
+  el.textContent = text ?? "—";
+  el.classList.toggle("placeholder", text === null);
+}
+
 function renderSpeedResults(results: SpeedTestResults): void {
-  document.getElementById("speed-download")!.textContent = results.download !== null ? results.download.toFixed(1) : "—";
-  document.getElementById("speed-upload")!.textContent = results.upload !== null ? results.upload.toFixed(1) : "—";
-  document.getElementById("speed-latency")!.textContent = results.latency !== null ? String(results.latency) : "—";
-  document.getElementById("speed-jitter")!.textContent = results.jitter !== null ? String(results.jitter) : "—";
+  setGauge("speed-download", results.download !== null ? results.download.toFixed(1) : null);
+  setGauge("speed-upload", results.upload !== null ? results.upload.toFixed(1) : null);
+  setGauge("speed-latency", results.latency !== null ? String(results.latency) : null);
+  setGauge("speed-jitter", results.jitter !== null ? String(results.jitter) : null);
 
   const bbGrade = SpeedTest.getBufferbloatGrade(results.bufferbloatIncrease);
   const gradeColors: Record<string, string> = { "A+": "var(--emerald)", A: "var(--emerald)", B: "var(--accent)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
   const bbEl = document.getElementById("speed-bufferbloat")!;
   bbEl.textContent = bbGrade.grade;
-  bbEl.style.color = gradeColors[bbGrade.grade] || "var(--text-primary)";
+  bbEl.style.color = gradeColors[bbGrade.grade] || "";
+  bbEl.classList.toggle("placeholder", results.bufferbloatIncrease === null);
   document.getElementById("speed-bufferbloat-unit")!.textContent =
     results.bufferbloatIncrease !== null ? `+${results.bufferbloatIncrease}ms · ${t(bbGrade.labelKey)}` : t("speed.grade");
   const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
   bbBar.style.width = results.bufferbloatIncrease !== null ? "100%" : "0%";
   bbBar.style.background = gradeColors[bbGrade.grade] || "var(--brand)";
 
-  const grade = SpeedTest.getGrade(results.download);
-  const gradeEl = document.getElementById("speed-grade")!;
-  gradeEl.textContent = grade.grade;
-  gradeEl.classList.add("grade-reveal");
-  setTimeout(() => gradeEl.classList.remove("grade-reveal"), 400);
-  document.getElementById("speed-grade-label")!.textContent = t(grade.labelKey);
-
-  const uploadStr = results.upload !== null ? `↑ ${SpeedTest.formatSpeed(results.upload)} · ` : "";
-  const lossStr = results.packetLoss !== null ? ` · ${results.packetLoss}% ${t("speed.loss")}` : "";
+  // The verdict bar above carries the grade and the headline numbers now, so the
+  // status row drops back to being a control strip: state, the one metric the
+  // verdict has no room for, and the buttons.
+  document.getElementById("speed-grade")!.hidden = true;
+  document.getElementById("speed-grade-label")!.textContent = t("speed.complete");
   document.getElementById("speed-phase")!.textContent =
-    `↓ ${SpeedTest.formatSpeed(results.download)} · ${uploadStr}${results.latency}ms ${t("speed.latency").toLowerCase()}${lossStr}`;
+    results.packetLoss !== null ? `${results.packetLoss}% ${t("speed.loss")}` : t("speed.compareHint");
 
   renderSpeedSuggestions(results);
 }
@@ -683,6 +706,15 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
   } else {
     subtitle.textContent = t("speed.suggestIssues", issues.join(", "));
   }
+
+  const detail = t("verdict.speedDetail", SpeedTest.formatSpeed(results.download), SpeedTest.formatSpeed(results.upload), lat, jit);
+  renderVerdict(
+    "speed-verdict",
+    verdictLevel(issues.length),
+    issues.length === 0 ? t("verdict.speedPass") : issueHeadline(issues),
+    detail,
+    SpeedTest.getGrade(results.download).grade
+  );
 
   const r = { download: dl, upload: ul, latency: lat, jitter: jit };
   const relevant = speedSuggestions
