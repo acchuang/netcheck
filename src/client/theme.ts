@@ -1,6 +1,6 @@
 import { t, onLocaleChange } from "./i18n";
 
-export type ThemeId = "system" | "dark" | "light";
+export type ThemeId = "system" | "dark" | "light" | "phosphor" | "nord" | "glass" | "contrast";
 
 interface ThemeDef {
   id: ThemeId;
@@ -17,6 +17,12 @@ const SUN =
   '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 const MONITOR =
   '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>';
+const TERMINAL = '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>';
+const SNOW =
+  '<line x1="12" y1="2" x2="12" y2="22"/><line x1="3.5" y1="7" x2="20.5" y2="17"/><line x1="3.5" y1="17" x2="20.5" y2="7"/>';
+const LAYERS =
+  '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/>';
+const CONTRAST = '<circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/>';
 
 // Adding a theme is this array plus a [data-theme] block in styles.css. The
 // swatch is stated here rather than read from the tokens because reading it
@@ -25,6 +31,10 @@ const THEMES: ThemeDef[] = [
   { id: "system", labelKey: "theme.system", icon: MONITOR },
   { id: "dark", labelKey: "theme.dark", swatch: "#08090a", icon: MOON },
   { id: "light", labelKey: "theme.light", swatch: "#f8f9fa", icon: SUN },
+  { id: "phosphor", labelKey: "theme.phosphor", swatch: "#4ade80", icon: TERMINAL },
+  { id: "nord", labelKey: "theme.nord", swatch: "#88c0d0", icon: SNOW },
+  { id: "glass", labelKey: "theme.glass", swatch: "#7170ff", icon: LAYERS },
+  { id: "contrast", labelKey: "theme.contrast", swatch: "#ffffff", icon: CONTRAST },
 ];
 
 const CHECK = '<polyline points="20 6 9 17 4 12"/>';
