@@ -136,9 +136,15 @@
   --text-tertiary: #8a8f98;
   --text-quaternary: #62666d;
 
+  /* --brand fills; --accent draws. A theme is free to darken --brand until only
+     --on-brand is legible on it, so nothing painted straight onto the canvas —
+     text, icon, border, tint — may use --brand. */
   --brand: #5e6ad2;
-  --accent: #7170ff;
-  --accent-hover: #828fff;
+  /* Tuned against --bg-elevated, not the canvas. --accent carries small text on
+     chips and badges that sit two surfaces up, and #7170ff only cleared 4.5:1
+     on the bare canvas — every elevation under it ate the margin. */
+  --accent: #8382ff;
+  --accent-hover: #9a99ff;
   /* Text and icons sitting on top of a --brand fill. Not always white: a theme
      with a pale accent needs dark ink here. */
   --on-brand: #ffffff;
@@ -201,9 +207,10 @@
 
   --brand: #4f5bc7;
   /* #5e5eff measured 4.41:1 on this canvas — a hair under AA, and this token
-     carries link text, not just chrome. */
-  --accent: #5654e6;
-  --accent-hover: #4a4aee;
+     carries link text, not just chrome. Darkened again for the elevated
+     surfaces it sits on; see the dark block. */
+  --accent: #4f4de5;
+  --accent-hover: #4341d0;
   --on-brand: #ffffff;
 
   /* darker than the dark-theme pair: these carry small text on light tint
@@ -212,7 +219,7 @@
   --emerald: #047857;
   --red: #b91c1c;
   --amber: #92400e;
-  --teal: #0f766e;
+  --teal: #0e7169;
   /* Darker than --accent for the same reason the shades above are: the accent
      was never contrast-checked as a text colour, and at #5e5eff it sits around
      3.9:1 on white. */
@@ -328,7 +335,7 @@
      4.5:1 on it, and it is the one surface --on-brand has to work against.
      Darkened until white passes. */
   --brand: #4c6a92;
-  --accent: #88c0d0;
+  --accent: #93c6d4;
   --accent-hover: #a3d3e0;
   --on-brand: #eceff4;
 
@@ -339,7 +346,7 @@
   /* nord11 (#bf616a) is 2.3:1 on nord1 — unreadable for the "missing"/"failed"
      labels it would carry. Lightened to clear AA. */
   --red: #e8909a;
-  --teal: #8fbcbb;
+  --teal: #9ec5c4;
 
   --border-subtle: rgba(216, 222, 233, 0.06);
   --border-standard: rgba(216, 222, 233, 0.1);
@@ -385,7 +392,7 @@
   --text-quaternary: #64677a;
 
   --brand: #5e6ad2;
-  --accent: #7170ff;
+  --accent: #7e7dff;
   --accent-hover: #9694ff;
   --on-brand: #ffffff;
 
@@ -1676,7 +1683,7 @@ select option {
 }
 
 .suggestion-card.recommended {
-  border-color: rgba(94, 106, 210, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .suggestion-top {
@@ -1724,7 +1731,7 @@ select option {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   color: var(--accent);
-  background: rgba(94, 106, 210, 0.15);
+  background: var(--icon-bg);
   white-space: nowrap;
   align-self: flex-start;
 }
@@ -1873,7 +1880,7 @@ select option {
 }
 
 .speed-server-badge.active {
-  border-color: var(--brand);
+  border-color: var(--accent);
 }
 
 .server-badge-row {
@@ -1893,7 +1900,7 @@ select option {
 .server-badge-icon {
   width: 18px;
   height: 18px;
-  color: var(--brand);
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -1950,13 +1957,16 @@ select option {
   white-space: nowrap;
 }
 
+/* Neutral chip, coloured text. A tint of the text's own hue costs about 1.4
+   points of contrast at these sizes, which put both of these under 4.5:1 at
+   11px/600 in four of the six themes. The hue lives in the text instead. */
 .route-you {
-  background: rgba(94, 106, 210, 0.15);
-  color: var(--brand);
+  background: var(--icon-bg);
+  color: var(--accent);
 }
 
 .route-server {
-  background: rgba(45, 212, 191, 0.15);
+  background: var(--icon-bg);
   color: var(--teal);
 }
 
@@ -2004,7 +2014,7 @@ select option {
 }
 
 .speed-gauge.active {
-  border-color: var(--brand);
+  border-color: var(--accent);
 }
 
 .speed-gauge-value.updating {
@@ -2245,7 +2255,7 @@ select option {
   font-size: 11px;
   font-weight: 600;
   font-family: var(--font-mono);
-  background: rgba(94, 106, 210, 0.12);
+  background: var(--icon-bg);
   color: var(--accent);
   letter-spacing: 0.3px;
 }
