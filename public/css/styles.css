@@ -178,6 +178,12 @@
   --grain-opacity: 0.028;
   --scanline-opacity: 0;
   --bloom-color: rgba(94, 106, 210, 0.14);
+
+  /* Glass hooks. The null value for an inset is a transparent shadow, not
+     `none` — .card:hover composes it with --shadow-md, and `none, <shadow>` is
+     not a valid box-shadow list. */
+  --card-sheen: none;
+  --card-inset: 0 0 transparent;
   color-scheme: dark;
 }
 
@@ -194,7 +200,9 @@
   --text-quaternary: #9ca3af;
 
   --brand: #4f5bc7;
-  --accent: #5e5eff;
+  /* #5e5eff measured 4.41:1 on this canvas — a hair under AA, and this token
+     carries link text, not just chrome. */
+  --accent: #5654e6;
   --accent-hover: #4a4aee;
   --on-brand: #ffffff;
 
@@ -234,7 +242,257 @@
   --grain-opacity: 0.02;
   --scanline-opacity: 0;
   --bloom-color: rgba(79, 91, 199, 0.09);
+
+  --card-sheen: none;
+  --card-inset: 0 0 transparent;
   color-scheme: light;
+}
+
+/* Phosphor. A terminal, so everything is mono — that is one --font-sans
+   override rather than a display-font token threaded through every heading. */
+[data-theme="phosphor"] {
+  --font-sans: var(--font-mono);
+
+  --bg-black: #050805;
+  --bg-panel: #0a0f0a;
+  --bg-surface: #0f150f;
+  --bg-elevated: #182018;
+
+  --text-primary: #d3f9d8;
+  --text-secondary: #a7d7ae;
+  --text-tertiary: #6f9a76;
+  --text-quaternary: #4d6b52;
+
+  --brand: #22c55e;
+  --accent: #4ade80;
+  --accent-hover: #86efac;
+  /* Phosphor green is too bright to carry white text — 2.2:1. Dark ink on the
+     button instead, which is the whole reason --on-brand is a token. */
+  --on-brand: #04150a;
+
+  --green: #22c55e;
+  /* "Good" and the accent would be the same green, so the verdict colours step
+     away from it: bright green, lime, amber, salmon. */
+  --emerald: #4ade80;
+  --grade-mid: #a3e635;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --teal: #2dd4bf;
+
+  --border-subtle: rgba(74, 222, 128, 0.08);
+  --border-standard: rgba(74, 222, 128, 0.14);
+  --border-solid: #1c2b1e;
+
+  --hover-bg: rgba(74, 222, 128, 0.06);
+  --active-bg: rgba(74, 222, 128, 0.1);
+  --hover-border: rgba(74, 222, 128, 0.25);
+  --card-bg: var(--surface-1);
+  --icon-bg: rgba(74, 222, 128, 0.07);
+
+  --surface-1: rgba(74, 222, 128, 0.02);
+  --surface-2: rgba(74, 222, 128, 0.04);
+  --surface-3: rgba(74, 222, 128, 0.06);
+
+  --shadow-hue: 130 25% 3%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-hue) / 0.5);
+  --shadow-md: 0 2px 8px hsl(var(--shadow-hue) / 0.55);
+  --shadow-lg: 0 8px 24px hsl(var(--shadow-hue) / 0.65);
+
+  --grain-opacity: 0.03;
+  /* Kept low deliberately. This is a table of resolver latencies, not a prop in
+     a film — scanlines dark enough to read as CRT also make the numbers harder
+     to read. */
+  --scanline-opacity: 0.18;
+  --bloom-color: rgba(74, 222, 128, 0.1);
+
+  --card-sheen: none;
+  --card-inset: 0 0 transparent;
+  color-scheme: dark;
+}
+
+/* Nord. Adapted, not transcribed: several of the published Nord colours are
+   below 4.5:1 as small text on nord1, which is how this UI uses them. Each
+   deviation is noted. */
+[data-theme="nord"] {
+  --bg-black: #2e3440;
+  --bg-panel: #333b4a;
+  --bg-surface: #3b4252;
+  --bg-elevated: #434c5e;
+
+  --text-primary: #eceff4;
+  --text-secondary: #d8dee9;
+  --text-tertiary: #a9b4c6;
+  --text-quaternary: #7b88a1;
+
+  /* nord10 (#5e81ac) sits mid-luminance: neither white nor nord0 text clears
+     4.5:1 on it, and it is the one surface --on-brand has to work against.
+     Darkened until white passes. */
+  --brand: #4c6a92;
+  --accent: #88c0d0;
+  --accent-hover: #a3d3e0;
+  --on-brand: #eceff4;
+
+  --green: #a3be8c;
+  --emerald: #a3be8c;
+  --grade-mid: #88c0d0;
+  --amber: #ebcb8b;
+  /* nord11 (#bf616a) is 2.3:1 on nord1 — unreadable for the "missing"/"failed"
+     labels it would carry. Lightened to clear AA. */
+  --red: #e8909a;
+  --teal: #8fbcbb;
+
+  --border-subtle: rgba(216, 222, 233, 0.06);
+  --border-standard: rgba(216, 222, 233, 0.1);
+  --border-solid: #4c566a;
+
+  --hover-bg: rgba(216, 222, 233, 0.05);
+  --active-bg: rgba(216, 222, 233, 0.08);
+  --hover-border: rgba(216, 222, 233, 0.18);
+  --card-bg: var(--surface-1);
+  --icon-bg: rgba(216, 222, 233, 0.06);
+
+  --surface-1: rgba(216, 222, 233, 0.03);
+  --surface-2: rgba(216, 222, 233, 0.05);
+  --surface-3: rgba(216, 222, 233, 0.08);
+
+  --shadow-hue: 220 16% 14%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-hue) / 0.4);
+  --shadow-md: 0 2px 8px hsl(var(--shadow-hue) / 0.45);
+  --shadow-lg: 0 8px 24px hsl(var(--shadow-hue) / 0.55);
+
+  --grain-opacity: 0.02;
+  --scanline-opacity: 0;
+  --bloom-color: rgba(136, 192, 208, 0.1);
+
+  --card-sheen: none;
+  --card-inset: 0 0 transparent;
+  color-scheme: dark;
+}
+
+/* Glass. No backdrop-filter anywhere: on .nav it would create a containing
+   block and break the fixed mobile tab bar (see the note on .nav), and on cards
+   it would repaint the blur every scroll frame. The look comes from a layered
+   sheen and an inset top highlight instead, which cost nothing. */
+[data-theme="glass"] {
+  --bg-black: #050505;
+  --bg-panel: #0a0a0c;
+  --bg-surface: #121216;
+  --bg-elevated: #1c1c22;
+
+  --text-primary: #fbfbfd;
+  --text-secondary: #d4d6e0;
+  --text-tertiary: #8e91a0;
+  --text-quaternary: #64677a;
+
+  --brand: #5e6ad2;
+  --accent: #7170ff;
+  --accent-hover: #9694ff;
+  --on-brand: #ffffff;
+
+  --green: #27a644;
+  --emerald: #10b981;
+  --grade-mid: #7170ff;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --teal: #2dd4bf;
+
+  /* Brighter than the dark theme's. An edge is the only thing separating one
+     translucent pane from the next. */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-standard: rgba(255, 255, 255, 0.11);
+  --border-solid: #2a2a33;
+
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --active-bg: rgba(255, 255, 255, 0.08);
+  --hover-border: rgba(255, 255, 255, 0.2);
+  --card-bg: var(--surface-1);
+  --icon-bg: rgba(255, 255, 255, 0.07);
+
+  --surface-1: rgba(255, 255, 255, 0.055);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.11);
+
+  --shadow-hue: 250 20% 2%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-hue) / 0.6);
+  --shadow-md: 0 4px 16px hsl(var(--shadow-hue) / 0.7);
+  --shadow-lg: 0 16px 48px hsl(var(--shadow-hue) / 0.8);
+
+  --grain-opacity: 0.035;
+  --scanline-opacity: 0;
+  --bloom-color: rgba(113, 112, 255, 0.22);
+
+  --card-sheen: linear-gradient(158deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 45%, transparent 72%);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color-scheme: dark;
+}
+
+/* A translucent pane over a flat black canvas is just a slightly grey pane —
+   which is what this theme was until the canvas had something behind it. The
+   bloom becomes a full-height three-orb mesh so the panes have colour to sit
+   over. Still one fixed, non-interactive layer: no scroll repaint. */
+[data-theme="glass"] body::before {
+  height: 100%;
+  background:
+    radial-gradient(38% 44% at 18% 8%, rgba(113, 112, 255, 0.3), transparent 68%),
+    radial-gradient(42% 38% at 88% 24%, rgba(45, 212, 191, 0.16), transparent 66%),
+    radial-gradient(52% 46% at 52% 96%, rgba(168, 85, 247, 0.16), transparent 70%);
+}
+
+/* High contrast. An accessibility mode, not a look: pure black, opaque borders,
+   every foreground above 7:1 on the surface it sits on. Grain and bloom off —
+   both work by lowering contrast. */
+[data-theme="contrast"] {
+  --bg-black: #000000;
+  --bg-panel: #000000;
+  --bg-surface: #0d0d0d;
+  --bg-elevated: #1a1a1a;
+
+  --text-primary: #ffffff;
+  --text-secondary: #f0f0f0;
+  --text-tertiary: #d4d4d4;
+  --text-quaternary: #b8b8b8;
+
+  --brand: #0b3d91;
+  --accent: #7dd3fc;
+  --accent-hover: #bae6fd;
+  --on-brand: #ffffff;
+
+  --green: #4ade80;
+  --emerald: #4ade80;
+  --grade-mid: #7dd3fc;
+  --amber: #fcd34d;
+  /* #ef4444 is 4.6:1 on black: AA, not AAA. */
+  --red: #ff8a8a;
+  --teal: #5eead4;
+
+  /* Opaque greys. A 5%-alpha border over pure black is invisible, which is the
+     one thing this theme cannot afford. */
+  --border-subtle: #3d3d3d;
+  --border-standard: #6b6b6b;
+  --border-solid: #a3a3a3;
+
+  --hover-bg: #1f1f1f;
+  --active-bg: #2b2b2b;
+  --hover-border: #ffffff;
+  --card-bg: var(--surface-1);
+  --icon-bg: #1a1a1a;
+
+  --surface-1: #0d0d0d;
+  --surface-2: #141414;
+  --surface-3: #1c1c1c;
+
+  --shadow-hue: 0 0% 0%;
+  --shadow-sm: 0 0 0 1px #3d3d3d;
+  --shadow-md: 0 0 0 1px #6b6b6b;
+  --shadow-lg: 0 0 0 2px #a3a3a3;
+
+  --grain-opacity: 0;
+  --scanline-opacity: 0;
+  --bloom-color: transparent;
+
+  --card-sheen: none;
+  --card-inset: 0 0 transparent;
+  color-scheme: dark;
 }
 
 *,
@@ -733,15 +991,17 @@ html::before {
 
 .card {
   background: var(--card-bg);
+  background-image: var(--card-sheen);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: var(--card-inset);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
   border-color: var(--hover-border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--card-inset), var(--shadow-md);
 }
 
 .card-wide {

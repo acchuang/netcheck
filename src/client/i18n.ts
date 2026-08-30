@@ -19,6 +19,10 @@ const en = {
   "theme.system": "System",
   "theme.dark": "Dark",
   "theme.light": "Light",
+  "theme.phosphor": "Phosphor",
+  "theme.nord": "Nord",
+  "theme.glass": "Glass",
+  "theme.contrast": "High contrast",
 
   // DNS section
   "dns.title": "DNS & Network Check",
@@ -497,6 +501,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "theme.system": "跟隨系統",
   "theme.dark": "深色",
   "theme.light": "淺色",
+  "theme.phosphor": "螢光終端",
+  "theme.nord": "Nord",
+  "theme.glass": "玻璃",
+  "theme.contrast": "高對比",
 
   // DNS section
   "dns.title": "DNS 與網路檢測",
