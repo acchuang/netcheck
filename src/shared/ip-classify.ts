@@ -154,6 +154,19 @@ export function sameNetwork(a: string, b: string): boolean {
   return maskedEqual(x, y, x.length === 4 ? 16 : 32);
 }
 
+/**
+ * Same NAT egress pool: a /24 (v4) or /48 (v6). Large NATs — corporate,
+ * carrier, cloud, Starlink — hand HTTP and UDP different addresses out of one
+ * pool, so a candidate one address away from the address the site sees is the
+ * same path, not a leak. A real VPN leak exposes a different network entirely.
+ */
+function sameEgressPool(a: string, b: string): boolean {
+  const x = ipBytes(a);
+  const y = ipBytes(b);
+  if (!x || !y || x.length !== y.length) return false;
+  return maskedEqual(x, y, x.length === 4 ? 24 : 48);
+}
+
 // --- WebRTC ---
 
 export interface IceCandidate {
@@ -212,7 +225,7 @@ export function evaluateWebRtc(
     const isV4 = ipBytes(candidate.ip)!.length === 4;
     const mine = isV4 ? reported.ipv4 : reported.ipv6;
     if (!mine || ipScope(mine) !== "public") continue;
-    if (!sameIp(mine, candidate.ip)) leak = candidate.ip;
+    if (!sameEgressPool(mine, candidate.ip)) leak = candidate.ip;
   }
 
   return { leak, lanIps };
