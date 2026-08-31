@@ -89,6 +89,16 @@ test("an unknown reported address never manufactures a leak", () => {
   assert.equal(verdict.leak, null);
 });
 
+test("a neighbouring address in the same NAT pool is not a leak", () => {
+  const verdict = evaluateWebRtc([candidate("103.164.128.72", "srflx")], { ipv4: "103.164.128.70", ipv6: null });
+  assert.equal(verdict.leak, null);
+});
+
+test("a different network is still a leak", () => {
+  const verdict = evaluateWebRtc([candidate("103.164.129.72", "srflx")], { ipv4: "103.164.128.70", ipv6: null });
+  assert.equal(verdict.leak, "103.164.129.72");
+});
+
 test("a loopback reported address is treated as unknown, not as a mismatch", () => {
   const verdict = evaluateWebRtc([candidate("198.51.100.9", "srflx")], { ipv4: "127.0.0.1", ipv6: null });
   assert.equal(verdict.leak, null);
