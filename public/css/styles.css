@@ -1184,6 +1184,11 @@ html::before {
   color: var(--amber);
 }
 
+/* Stated, not graded — see createCheckItem. */
+.check-icon.info {
+  color: var(--text-tertiary);
+}
+
 .check-label {
   font-size: 13px;
   font-weight: 510;
@@ -1229,6 +1234,21 @@ html::before {
 .resolver-badge.leak {
   color: var(--red);
   border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
+}
+
+/* Separates the two halves of the resolver card: the path the visitor actually
+   uses, and the public list we probe for comparison. */
+.card-subhead {
+  font-size: 11px;
+  font-weight: 590;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 6px;
+}
+
+.card-subhead:not(:first-child) {
+  margin-top: 18px;
 }
 
 .card-note {
@@ -1481,6 +1501,17 @@ select option {
 
 .score-breakdown:empty {
   display: none;
+}
+
+/* Reads a network-only filtering result back to the user in words, so the
+   two rows above don't have to be interpreted. */
+.score-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .score-summary {

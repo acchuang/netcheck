@@ -90,6 +90,11 @@ const en = {
   "dns.egressVia": "queries authoritative servers from {0}",
   "dns.actualResolver": "Observed Recursive Resolver",
   "dns.observedByNs": "Seen by authoritative nameserver probe",
+  "dns.observedOperator": "Seen by our nameserver · belongs to {0}",
+  "dns.observedNone": "No recursive resolver observed. The probe needs a plain DNS lookup to reach our nameserver, so this stays empty if the probe is unreachable, or if your resolver reached it over a path we can't attribute.",
+  "dns.observedSubhead": "Your recursive resolver",
+  "dns.publicSubhead": "Public resolvers, for comparison",
+  "dns.publicNote": "These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.",
   "dns.recursionActive": "active",
 
   // EDNS Client Subnet
@@ -118,16 +123,21 @@ const en = {
   "dns.malwareFiltered": "Malware test domain blocked by your resolver: filtering is active",
   "dns.malwareNotFiltered": "Malware test domain resolved via your resolver: consider a filtering DNS",
   "dns.check.dnssec": "DNSSEC Validation",
-  "dns.check.doh": "DNS-over-HTTPS",
+  "dns.check.doh": "Encrypted DNS",
   "dns.check.malware": "Malware Domain Filtering",
   "dns.check.webrtc": "WebRTC IP Leak",
+  "dns.check.lan": "LAN IP Exposed",
   "dns.dnssecRejects": "All {0} tested resolvers rejected a deliberately broken signature",
   "dns.dnssecPartial": "Only {0} tested resolvers rejected a deliberately broken signature",
   "dns.dnssecUnknown": "Could not verify",
-  "dns.dohPass": "Connection is encrypted via DNS-over-HTTPS",
-  "dns.webrtcLeak": "Local IP exposed: {0}",
+  "dns.dohPass": "Your lookups reach the internet through {0}, a service that offers encrypted DNS",
+  "dns.dohIsp": "Your lookups exit via {0}, inside your own network: that is your ISP's or your router's resolver, and it is almost certainly plain port 53",
+  "dns.dohUnrecognized": "Your lookups exit via {0}, which is not a known encrypted DNS service. Encryption could not be confirmed",
+  "dns.dohUnknown": "Your resolver was not observed, so encryption is unverified. This page speaking DNS-over-HTTPS says nothing about your system resolver",
+  "dns.webrtcLeak": "WebRTC exposes {0}, which is not the address this site sees: your real path is leaking past your VPN or proxy",
   "dns.webrtcPass": "No WebRTC IP leak detected",
   "dns.webrtcUnknown": "Could not check WebRTC",
+  "dns.lanExposed": "{0} — a private address every device behind a router has. Visible to scripts, but it identifies nobody on the internet",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1 (Cloudflare DNS)",
@@ -261,6 +271,13 @@ const en = {
   "adblock.title": "Ad Block Tester",
   "adblock.subtitle": "Test the effectiveness of your ad blocker across multiple categories",
   "adblock.running": "Running tests...",
+  "adblock.idle": "Not started",
+  "adblock.idleDetail": "These tests contact real ad and tracking hosts, so they only run once you open this tab.",
+  "adblock.hosts": "Hosts / network",
+  "adblock.hostsTip": "Script, image and pixel requests — blocked by DNS filtering, a hosts file, or a blocker's network rules",
+  "adblock.cosmetics": "Cosmetics",
+  "adblock.cosmeticsTip": "Ad-shaped elements and iframes — hidden by CSS rules, which needs something running inside the page",
+  "adblock.networkOnlyHint": "Requests are being stopped at the network layer while the page itself is untouched — the signature of DNS or hosts-level filtering like Pi-hole, NextDNS or AdGuard DNS. That is real protection; what it can't do is hide the leftover ad boxes. Only a browser extension does that half.",
   "adblock.excellent": "Excellent protection",
   "adblock.good": "Good protection",
   "adblock.basic": "Basic protection",
@@ -300,6 +317,7 @@ const en = {
   "adblock.recommendations": "Recommendations",
   "adblock.suggestPerfect": "Your ad blocker is performing excellently across all categories. No action needed.",
   "adblock.suggestGaps": "Found gaps in {0} of {1} categories. Here's how to fix each one:",
+  "adblock.suggestNetworkOnly": "Your network filtering is blocking the requests. The {0} gaps below are cosmetic — the elements that stay behind — which only an in-page blocker can close:",
   "adblock.blockedOf": "{0}/{1} blocked",
 
   // Ad block categories
@@ -462,7 +480,7 @@ const en = {
   "about.what.title": "What is NetCheck?",
   "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.",
   "about.feat.dns.title": "DNS Check",
-  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each.",
+  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver and judges whether that resolver belongs to a known encrypted DNS service, separately from the 8 public resolvers it probes for comparison. Flags missing DNSSEC, ECS subnet leaks, WebRTC leaks past a VPN, and malware filtering gaps, with fixes for each.",
   "about.feat.speed.title": "Speed Test",
   "about.feat.speed.desc": "Measures download, upload, latency, jitter, and bufferbloat against Cloudflare's edge, Cloudflare Speed Test, Netflix Fast.com, Ookla Speedtest, or a custom server with memory-efficient streaming.",
   "about.feat.adblock.title": "Ad Block Test",
@@ -476,7 +494,8 @@ const en = {
   "verdict.oneIssue": "1 issue found",
   "verdict.issues": "{0} issues found",
   "verdict.dnsPass": "No DNS problems found",
-  "verdict.dnsPassDetail": "Encryption, DNSSEC, filtering, WebRTC leaks and resolver latency all checked out.",
+  "verdict.dnsPassDetail": "Your observed resolver, DNSSEC, filtering, WebRTC and resolver latency all checked out.",
+  "verdict.dnsPassUnverified": "DNSSEC, filtering, WebRTC and resolver latency all checked out. Your own resolver was never observed, so whether it encrypts is still unknown.",
   "verdict.speedPass": "Your connection is performing well",
   "verdict.speedDetail": "{0} down · {1} up · {2} ms latency · {3} ms jitter",
   "verdict.headersPass": "Strong header configuration",
@@ -572,6 +591,11 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.egressVia": "以 {0} 查詢權威伺服器",
   "dns.actualResolver": "實際遞迴解析器",
   "dns.observedByNs": "由權威名稱伺服器探測記錄",
+  "dns.observedOperator": "由我們的名稱伺服器觀察到 · 屬於 {0}",
+  "dns.observedNone": "未觀察到遞迴解析器。此探測需要一次一般 DNS 查詢抵達我們的名稱伺服器，因此若探測伺服器無法連線，或您的解析器走了我們無法歸屬的路徑，這裡就會是空的。",
+  "dns.observedSubhead": "您的遞迴解析器",
+  "dns.publicSubhead": "公共解析器（對照用）",
+  "dns.publicNote": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。除非上方區塊指出，否則它們並不是您系統實際使用的解析器。",
   "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet
@@ -600,16 +624,21 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.malwareFiltered": "惡意測試網域已被您的解析器阻擋：過濾功能已啟用",
   "dns.malwareNotFiltered": "惡意測試網域經您的解析器解析：建議使用具過濾功能的 DNS",
   "dns.check.dnssec": "DNSSEC 驗證",
-  "dns.check.doh": "DNS-over-HTTPS",
+  "dns.check.doh": "加密 DNS",
   "dns.check.malware": "惡意網域過濾",
   "dns.check.webrtc": "WebRTC IP 洩漏",
+  "dns.check.lan": "區域網路 IP 曝光",
   "dns.dnssecRejects": "測試的 {0} 個解析器全數拒絕了刻意損毀的簽章",
   "dns.dnssecPartial": "測試的解析器中只有 {0} 個拒絕了刻意損毀的簽章",
   "dns.dnssecUnknown": "無法驗證",
-  "dns.dohPass": "連線已透過 DNS-over-HTTPS 加密",
-  "dns.webrtcLeak": "本機 IP 已洩漏：{0}",
+  "dns.dohPass": "您的查詢是透過 {0} 送出網際網路，該服務有提供加密 DNS",
+  "dns.dohIsp": "您的查詢由 {0} 送出，位於您自己的網段內：那是 ISP 或路由器的解析器，幾乎可以確定走的是未加密的 53 埠",
+  "dns.dohUnrecognized": "您的查詢由 {0} 送出，並非已知的加密 DNS 服務，無法確認是否加密",
+  "dns.dohUnknown": "未觀察到您的解析器，因此無法驗證是否加密。本頁能使用 DNS-over-HTTPS，並不代表您系統的解析器有加密",
+  "dns.webrtcLeak": "WebRTC 暴露了 {0}，與本站看到的位址不同：您的真實連線路徑正繞過 VPN 或代理洩漏出去",
   "dns.webrtcPass": "未偵測到 WebRTC IP 洩漏",
   "dns.webrtcUnknown": "無法檢查 WebRTC",
+  "dns.lanExposed": "{0} — 路由器後面每台裝置都會有的私有位址。腳本看得到，但在網際網路上無法識別任何人",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1（Cloudflare DNS）",
@@ -743,6 +772,13 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.title": "廣告攔截測試",
   "adblock.subtitle": "測試您的廣告攔截器在多個類別的效果",
   "adblock.running": "測試中...",
+  "adblock.idle": "尚未開始",
+  "adblock.idleDetail": "這些測試會實際連線到廣告與追蹤主機，因此只有在您開啟此分頁後才會執行。",
+  "adblock.hosts": "主機／網路層",
+  "adblock.hostsTip": "script、image 與 pixel 請求 — 由 DNS 過濾、hosts 檔或攔截器的網路規則擋下",
+  "adblock.cosmetics": "外觀層",
+  "adblock.cosmeticsTip": "廣告尺寸的元素與 iframe — 由 CSS 規則隱藏，需要在頁面內執行的元件才辦得到",
+  "adblock.networkOnlyHint": "請求在網路層就被擋掉，但頁面本身沒有被改動 — 這是 Pi-hole、NextDNS 或 AdGuard DNS 這類 DNS／hosts 層過濾的特徵。那是真正有效的防護；它做不到的只是把剩下的廣告空位隱藏起來，那一半得靠瀏覽器擴充套件。",
   "adblock.excellent": "防護優異",
   "adblock.good": "防護良好",
   "adblock.basic": "基本防護",
@@ -782,6 +818,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.recommendations": "建議",
   "adblock.suggestPerfect": "您的廣告攔截器在所有類別中表現優異。無需操作。",
   "adblock.suggestGaps": "在 {1} 個類別中發現 {0} 個缺口。以下是改善方法：",
+  "adblock.suggestNetworkOnly": "您的網路層過濾已經擋下這些請求。下方 {0} 個缺口屬於外觀層（被擋掉後留下的空位），只有頁面內的攔截器才補得起來：",
   "adblock.blockedOf": "{0}/{1} 已攔截",
 
   // Ad block categories
@@ -944,7 +981,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.what.title": "NetCheck 是什麼？",
   "about.what.desc": "NetCheck 直接在您的瀏覽器中執行一系列網路與隱私診斷：您的 DNS 解析器、其安全性與流量的真實遞迴路徑、真實的下載/上傳速度與緩衝膨脹、廣告與追蹤器攔截器的表現，以及任何網站的安全標頭。所有測試都在客戶端透過 Cloudflare 邊緣網路執行，沒有後端伺服器收集您的結果。",
   "about.feat.dns.title": "DNS 檢測",
-  "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測伺服器追蹤您的真實遞迴路徑，以加密 DNS 測試 8 個公共解析器，並標示缺失的 DNSSEC、ECS 子網路洩漏、未加密的 DNS、WebRTC 洩漏與惡意軟體過濾漏洞，且附上對應修正方式。",
+  "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測伺服器追蹤您的真實遞迴路徑，並判斷該解析器是否屬於已知的加密 DNS 服務；另外獨立測試 8 個公共解析器作為對照。標示缺失的 DNSSEC、ECS 子網路洩漏、繞過 VPN 的 WebRTC 洩漏與惡意軟體過濾漏洞，且附上對應修正方式。",
   "about.feat.speed.title": "速度測試",
   "about.feat.speed.desc": "針對 Cloudflare 邊緣節點、Cloudflare 自家測速、Netflix Fast.com、Ookla 測速或自訂伺服器，以高效串流測量下載、上傳、延遲、抖動與緩衝膨脹。",
   "about.feat.adblock.title": "廣告攔截測試",
@@ -959,7 +996,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "verdict.oneIssue": "發現 1 個問題",
   "verdict.issues": "發現 {0} 個問題",
   "verdict.dnsPass": "未發現 DNS 問題",
-  "verdict.dnsPassDetail": "加密、DNSSEC、惡意網域過濾、WebRTC 洩漏與解析器延遲皆正常。",
+  "verdict.dnsPassDetail": "觀察到的解析器、DNSSEC、惡意網域過濾、WebRTC 與解析器延遲皆正常。",
+  "verdict.dnsPassUnverified": "DNSSEC、惡意網域過濾、WebRTC 與解析器延遲皆正常。但未觀察到您自己的解析器，因此是否加密仍屬未知。",
   "verdict.speedPass": "連線表現良好",
   "verdict.speedDetail": "下載 {0} · 上傳 {1} · 延遲 {2} ms · 抖動 {3} ms",
   "verdict.headersPass": "標頭設定完善",
@@ -1055,6 +1093,9 @@ function applyStaticTranslations(): void {
   s("dns-timezone-label", "dns.timezone");
   s("dns-colo-label", "dns.colo");
   s("dns-resolver-title", "dns.resolverTitle");
+  s("dns-observed-subhead", "dns.observedSubhead");
+  s("dns-public-subhead", "dns.publicSubhead");
+  s("dns-public-note", "dns.publicNote");
   s("dns-security-title", "dns.securityTitle");
   s("dns-ecs-title", "dns.ecsTitle");
   s("dns-ecs-note", "dns.ecsNote");

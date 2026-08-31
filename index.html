@@ -173,9 +173,13 @@
             <span class="status-badge" id="dns-resolver-status">detecting...</span>
           </div>
           <div class="card-body">
-            <div id="dns-resolver-results">
+            <p class="card-subhead" id="dns-observed-subhead">Your recursive resolver</p>
+            <div id="dns-observed-results">
               <p class="info-muted">Checking your DNS configuration...</p>
             </div>
+            <p class="card-subhead" id="dns-public-subhead">Public resolvers, for comparison</p>
+            <p class="card-note" id="dns-public-note">These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.</p>
+            <div id="dns-resolver-results"></div>
           </div>
         </div>
 

@@ -30,7 +30,10 @@ export function pulseValue(el: HTMLElement): void {
   setTimeout(() => el.classList.remove("updating"), 150);
 }
 
-export function createCheckItem(status: "pass" | "warn" | "fail", label: string, value: string, sublabel?: string): HTMLDivElement {
+// "info" is deliberately not a grade: it states something observed that is
+// neither good nor bad, and renders in a neutral colour so it doesn't read as
+// a passed or failed check.
+export function createCheckItem(status: "pass" | "warn" | "fail" | "info", label: string, value: string, sublabel?: string): HTMLDivElement {
   const div = document.createElement("div");
   div.className = "dns-check-item fade-in";
 
@@ -38,6 +41,7 @@ export function createCheckItem(status: "pass" | "warn" | "fail", label: string,
     pass: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>',
     warn: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
     fail: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+    info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
   }[status];
 
   const labelHtml = sublabel
