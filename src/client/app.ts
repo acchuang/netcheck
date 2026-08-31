@@ -11,8 +11,10 @@ import { initAdblockHistory, enableAdblockSaveButton } from "./adblock-history";
 import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint";
 import { t, onLocaleChange } from "./i18n";
 
-initTheme();
+// i18n first: initTheme renders the theme menu through t(), and onLocaleChange
+// only fires on a *change*, so a saved zh-TW visitor got an English menu.
 initI18n();
+initTheme();
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
@@ -58,19 +60,22 @@ document.addEventListener("DOMContentLoaded", () => {
   initTooltips();
   renderInitialSkeletons();
   runDnsChecks();
-  runAdBlockTests();
-  runFilterListDetection();
   initSpeedTest();
   initHeadersCheck();
   initSnapshots();
   initAdblockHistory();
   initAdblockToolbar();
 
+  // Landing straight on #adblock is a request to run it; activating the tab
+  // goes through the same click handler that starts the probes.
+  if (location.hash === "#adblock") document.getElementById("tab-adblock")?.click();
+
   // Idle-state texts live in the HTML in English; localize them on first load
   // and re-render all dynamic content when the locale changes.
   refreshSpeedLocaleTexts();
   onLocaleChange(() => {
     if (AdBlockTest.results.length > 0) renderAdBlockResults();
+    else renderAdBlockIdle();
     if (lastCustomTests) renderCustomUrlResults(lastCustomTests);
     renderBlockerFingerprint();
     renderFilterLists();
@@ -79,11 +84,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function renderInitialSkeletons(): void {
+  const observedEl = document.getElementById("dns-observed-results");
+  if (observedEl) renderSkeletonRows(observedEl, 1);
+
   const resolverEl = document.getElementById("dns-resolver-results");
   if (resolverEl) renderSkeletonRows(resolverEl, 3);
 
   const securityEl = document.getElementById("dns-security-results");
   if (securityEl) renderSkeletonRows(securityEl, 4);
+
+  renderAdBlockIdle();
+}
+
+// Ad block sits idle until its tab is opened — see startAdBlock. A skeleton
+// here would promise a run that isn't happening.
+function renderAdBlockIdle(): void {
+  document.getElementById("score-summary")!.textContent = t("adblock.idle");
+  document.getElementById("score-detail")!.textContent = t("adblock.idleDetail");
 }
 
 // Tab navigation
@@ -103,6 +120,8 @@ function initTabs(): void {
 
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       document.getElementById(tab)!.classList.add("active");
+
+      if (tab === "adblock") startAdBlock();
     });
   });
 
@@ -180,6 +199,19 @@ function importanceTip(imp: Importance): string {
   return t("adblock.importanceTip", IMPORTANCE_WEIGHT[imp]);
 }
 
+// Every ad block probe is a real request to Google Ads, GA, Facebook, Hotjar
+// and friends. Firing them on DOMContentLoaded meant a visitor who only wanted
+// the DNS tab still announced themselves to every tracker we test for. They
+// start when the tab that shows their results is opened, and only once.
+let adBlockStarted = false;
+
+function startAdBlock(): void {
+  if (adBlockStarted) return;
+  adBlockStarted = true;
+  runAdBlockTests();
+  runFilterListDetection();
+}
+
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
   renderCategorySkeletons(categoriesEl, 7);
@@ -237,10 +269,26 @@ function renderAdBlockResults(): void {
 
 // Blocked share per risk tier, aggregated from the same category results the
 // rows below expand. Fills the score card's empty right half with the one thing
-// the ring can't say: which kind of tracker is getting through.
+// the ring can't say: which kind of tracker is getting through — and, above it,
+// which half of blocking is doing the work.
 function renderScoreBreakdown(): void {
+  const split = AdBlockTest.getSplitScore();
+  const splitHtml = `
+    <div class="info-row">
+      <span class="info-label" data-tooltip="${escapeHtml(t("adblock.hostsTip"))}">${t("adblock.hosts")}</span>
+      <span class="info-value">${t("adblock.blockedOf", split.hosts.blocked, split.hosts.total)}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label" data-tooltip="${escapeHtml(t("adblock.cosmeticsTip"))}">${t("adblock.cosmetics")}</span>
+      <span class="info-value">${t("adblock.blockedOf", split.cosmetics.blocked, split.cosmetics.total)}</span>
+    </div>`;
+
+  const hint = AdBlockTest.isNetworkOnlyFiltering()
+    ? `<p class="score-hint">${t("adblock.networkOnlyHint")}</p>`
+    : "";
+
   const tiers = ["high", "medium", "low"] as const;
-  document.getElementById("score-breakdown")!.innerHTML = tiers
+  const tierHtml = tiers
     .map((imp) => {
       const tests = AdBlockTest.results.filter((c) => c.importance === imp).flatMap((c) => c.tests);
       if (tests.length === 0) return "";
@@ -251,11 +299,17 @@ function renderScoreBreakdown(): void {
       </div>`;
     })
     .join("");
+
+  document.getElementById("score-breakdown")!.innerHTML = splitHtml + tierHtml + hint;
 }
 
 // Feature 1 + re-test: custom URL test + re-run adblock tests
 function initAdblockToolbar(): void {
-  document.getElementById("adblock-rerun-btn")?.addEventListener("click", runAdBlockTests);
+  // Re-test before the first run has happened is just the first run.
+  document.getElementById("adblock-rerun-btn")?.addEventListener("click", () => {
+    if (adBlockStarted) runAdBlockTests();
+    else startAdBlock();
+  });
   const customBtn = document.getElementById("adblock-custom-btn");
   const customInput = document.getElementById("adblock-custom-url") as HTMLInputElement | null;
   customBtn?.addEventListener("click", runCustomUrlTest);
@@ -878,7 +932,11 @@ function renderSuggestions(results: CategoryResult[]): void {
     return;
   }
 
-  subtitle.textContent = t("adblock.suggestGaps", weakCategories.length, results.length);
+  // Someone filtering at the network layer already blocks the requests; the
+  // gaps below are cosmetic, so don't open with "you need a blocker".
+  subtitle.textContent = AdBlockTest.isNetworkOnlyFiltering()
+    ? t("adblock.suggestNetworkOnly", weakCategories.length)
+    : t("adblock.suggestGaps", weakCategories.length, results.length);
 
   grid.innerHTML = weakCategories
     .map((cat) => {

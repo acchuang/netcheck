@@ -2,6 +2,7 @@ import { t, onLocaleChange } from "./i18n";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire";
+import { dohVerdict, encryptedDnsOperator, evaluateWebRtc, type WebRtcVerdict } from "../shared/ip-classify";
 
 interface DnsResult {
   Answer?: DnsAnswer[];
@@ -45,8 +46,8 @@ function blankResult(resolver: ResolverInfo): ResolverResult {
   };
 }
 
-type SecurityStatus = "pass" | "warn" | "fail";
-type SecurityCheckId = "dnssec" | "doh" | "malware" | "webrtc";
+type SecurityStatus = "pass" | "warn" | "fail" | "info";
+type SecurityCheckId = "dnssec" | "doh" | "malware" | "webrtc" | "lan";
 
 // Stores identifiers + i18n keys (not display strings) so locale switches
 // can re-render the card without re-running the checks.
@@ -73,6 +74,11 @@ interface IpData {
   tlsCipher?: string;
   clientTcpRtt?: number;
   error?: string;
+}
+
+interface ProbeResult {
+  token: string;
+  resolvers: { ip: string; ecs: string | null; count: number }[];
 }
 
 interface DnsContext {
@@ -159,7 +165,7 @@ const DnsCheck = {
     return results;
   },
 
-  async probeRecursionPath(): Promise<{ token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null> {
+  async probeRecursionPath(): Promise<ProbeResult | null> {
     try {
       const bytes = new Uint8Array(8);
       crypto.getRandomValues(bytes);
@@ -175,16 +181,18 @@ const DnsCheck = {
       await new Promise((r) => setTimeout(r, 600));
 
       const res = await fetch(`/api/dns/probe-result?token=${token}`);
-      if (res.ok) {
-        return (await res.json()) as { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] };
-      }
+      if (res.ok) return (await res.json()) as ProbeResult;
     } catch {
       // probe server unavailable or offline
     }
     return null;
   },
 
-  async checkDnsSecurity(resolvers: ResolverResult[]): Promise<SecurityCheck[]> {
+  async checkDnsSecurity(
+    resolvers: ResolverResult[],
+    observedIps: string[],
+    client: { ipv4: string | null; ipv6: string | null }
+  ): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
 
     // DNSSEC validation. The old version asked Cloudflare's DoH for the AD flag
@@ -211,12 +219,25 @@ const DnsCheck = {
       });
     }
 
-    // DoH support
-    checks.push({
-      id: "doh",
-      status: "pass",
-      detailKey: "dns.dohPass",
-    });
+    // Encrypted DNS. This used to be an unconditional pass, which only ever
+    // meant "this page fetched a DoH endpoint" — a property of our own
+    // JavaScript, true for every visitor, including one whose system resolver
+    // is their ISP's plaintext port 53. The honest question is which resolver
+    // our authoritative probe actually saw asking, so that is what we judge.
+    const verdict = dohVerdict(observedIps, client);
+    switch (verdict.kind) {
+      case "encrypted":
+        checks.push({ id: "doh", status: "pass", detailKey: "dns.dohPass", detailArg: `${verdict.operator} (${verdict.ip})` });
+        break;
+      case "isp":
+        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohIsp", detailArg: verdict.ip });
+        break;
+      case "unrecognized":
+        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnrecognized", detailArg: verdict.ip });
+        break;
+      default:
+        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnknown" });
+    }
 
     // Malware domain filtering — test through the USER's resolver (not Cloudflare's DoH).
     // A no-cors fetch resolves the hostname via the user's configured DNS. Filtering
@@ -241,15 +262,20 @@ const DnsCheck = {
       });
     }
 
-    // WebRTC leak
+    // WebRTC. A LAN address is not the leak — everyone behind NAT has one, and
+    // it identifies nobody. The leak is a *public* candidate that disagrees
+    // with the address this site sees, i.e. the path around a VPN or proxy.
     try {
-      const leaked = await DnsCheck.checkWebRtcLeak();
+      const { leak, lanIps } = await DnsCheck.checkWebRtcLeak(client);
       checks.push({
         id: "webrtc",
-        status: leaked ? "fail" : "pass",
-        detailKey: leaked ? "dns.webrtcLeak" : "dns.webrtcPass",
-        detailArg: leaked ?? undefined,
+        status: leak ? "fail" : "pass",
+        detailKey: leak ? "dns.webrtcLeak" : "dns.webrtcPass",
+        detailArg: leak ?? undefined,
       });
+      if (lanIps.length > 0) {
+        checks.push({ id: "lan", status: "info", detailKey: "dns.lanExposed", detailArg: lanIps.join(", ") });
+      }
     } catch {
       checks.push({ id: "webrtc", status: "warn", detailKey: "dns.webrtcUnknown" });
     }
@@ -257,49 +283,38 @@ const DnsCheck = {
     return checks;
   },
 
-  checkWebRtcLeak(): Promise<string | null> {
+  async checkWebRtcLeak(client: { ipv4: string | null; ipv6: string | null }): Promise<WebRtcVerdict> {
+    return evaluateWebRtc(await DnsCheck.gatherIceCandidates(), client);
+  },
+
+  // Collects every candidate ICE offers — host, srflx and relay, v4 and v6 —
+  // instead of stopping at the first one, so the comparison sees the whole set.
+  gatherIceCandidates(timeoutMs = 3000): Promise<string[]> {
     return new Promise((resolve) => {
+      const lines: string[] = [];
+      let pc: RTCPeerConnection;
       try {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-        const ips = new Set<string>();
-        let resolved = false;
-
-        pc.createDataChannel("");
-        pc.createOffer().then((offer) => pc.setLocalDescription(offer));
-
-        pc.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
-          if (resolved) return;
-          if (!e.candidate) {
-            pc.close();
-            resolved = true;
-            resolve(null);
-            return;
-          }
-          const match = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
-          if (match) {
-            const ip = match[1];
-            if (!ip.startsWith("0.") && !ips.has(ip)) {
-              ips.add(ip);
-              // Found a private/routable IP
-              if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip)) {
-                pc.close();
-                resolved = true;
-                resolve(ip);
-              }
-            }
-          }
-        };
-
-        setTimeout(() => {
-          if (!resolved) {
-            pc.close();
-            resolved = true;
-            resolve(null);
-          }
-        }, 3000);
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
       } catch {
-        resolve(null);
+        resolve([]);
+        return;
       }
+
+      let done = false;
+      const finish = (): void => {
+        if (done) return;
+        done = true;
+        pc.close();
+        resolve(lines);
+      };
+
+      pc.createDataChannel("");
+      pc.createOffer().then((offer) => pc.setLocalDescription(offer)).catch(finish);
+      pc.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+        if (!e.candidate) finish(); // null candidate = gathering complete
+        else lines.push(e.candidate.candidate);
+      };
+      setTimeout(finish, timeoutMs);
     });
   },
 };
@@ -336,7 +351,7 @@ const dnsSuggestions: Suggestion[] = [
 let lastIp: IpData | null = null;
 let lastIpv6: string | null | undefined; // undefined = not yet probed
 let lastResolvers: ResolverResult[] | null = null;
-let lastProbeResult: { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null = null;
+let lastProbeResult: ProbeResult | null = null;
 let lastSecurity: SecurityCheck[] | null = null;
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 let lastCompare: CompareResult[] | null = null;
@@ -362,9 +377,19 @@ onLocaleChange(() => {
 export async function runDnsChecks(): Promise<void> {
   hideVerdict("dns-verdict");
 
-  DnsCheck.detectIpv6().then((v6) => {
+  const ipv6Promise = DnsCheck.detectIpv6();
+  ipv6Promise.then((v6) => {
     lastIpv6 = v6;
     renderIpv6(v6);
+  });
+
+  // Run recursion probe in background to catch the visitor's real recursion path
+  const probePromise = DnsCheck.probeRecursionPath();
+  probePromise.then((probe) => {
+    if (probe && probe.resolvers.length > 0) {
+      lastProbeResult = probe;
+      if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
+    }
   });
 
   const ipData: IpData = await DnsCheck.detectIp();
@@ -375,20 +400,20 @@ export async function runDnsChecks(): Promise<void> {
     setBadge("ip-status", "error", t("dns.failed"));
   }
 
-  // Run recursion probe in background to catch the visitor's real recursion path
-  DnsCheck.probeRecursionPath().then((probe) => {
-    if (probe && probe.resolvers.length > 0) {
-      lastProbeResult = probe;
-      if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
-    }
-  });
-
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
   lastResolvers = resolvers;
   renderResolvers(resolvers, lastProbeResult);
   renderEcs(resolvers);
 
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers);
+  // Both the encrypted-DNS verdict and the WebRTC comparison are about the
+  // visitor's own path, so they wait for the probe and the v6 address rather
+  // than guessing without them.
+  const [probe, ipv6] = await Promise.all([probePromise, ipv6Promise]);
+  const observedIps = probe?.resolvers.map((r) => r.ip) ?? [];
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observedIps, {
+    ipv4: ipData.ip ?? null,
+    ipv6,
+  });
   lastSecurity = securityChecks;
   renderSecurity(securityChecks);
 
@@ -430,29 +455,43 @@ function renderIpInfo(ipData: IpData): void {
   setBadge("ip-status", "done", t("dns.detected"));
 }
 
-function renderResolvers(
-  resolvers: ResolverResult[],
-  probeResult?: { token: string; resolvers: { ip: string; ecs: string | null; count: number }[] } | null
-): void {
+// The visitor's own recursion path, kept in its own block. Mixing it into the
+// public resolver table below made eight resolvers we picked look like the
+// eight the visitor uses.
+function renderObservedPath(probeResult?: ProbeResult | null): void {
+  const container = document.getElementById("dns-observed-results")!;
+  container.innerHTML = "";
+
+  if (!probeResult || probeResult.resolvers.length === 0) {
+    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedNone"))}</p>`;
+    return;
+  }
+
+  probeResult.resolvers.forEach((obs) => {
+    const div = document.createElement("div");
+    div.className = "dns-check-item fade-in";
+    const ecsHtml = obs.ecs ? ` · ECS: ${escapeHtml(obs.ecs)}` : "";
+    const operator = encryptedDnsOperator(obs.ip);
+    const sublabel = operator
+      ? `${escapeHtml(t("dns.observedOperator", operator))}${ecsHtml}`
+      : `${escapeHtml(t("dns.observedByNs"))}${ecsHtml}`;
+    div.innerHTML = `
+      <svg class="check-icon pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+      <div class="check-label-block">
+        <span class="check-label">${escapeHtml(t("dns.actualResolver"))} <span class="resolver-ip">${escapeHtml(obs.ip)}</span></span>
+        <span class="check-sublabel">${sublabel}</span>
+      </div>
+      <span class="check-value pass">${escapeHtml(t("dns.recursionActive"))}</span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult | null): void {
+  renderObservedPath(probeResult);
+
   const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
-
-  if (probeResult && probeResult.resolvers.length > 0) {
-    probeResult.resolvers.forEach((obs) => {
-      const div = document.createElement("div");
-      div.className = "dns-check-item fade-in";
-      const ecsHtml = obs.ecs ? ` · ECS: ${escapeHtml(obs.ecs)}` : "";
-      div.innerHTML = `
-        <svg class="check-icon pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
-        <div class="check-label-block">
-          <span class="check-label">${escapeHtml(t("dns.actualResolver"))} <span class="resolver-ip">${escapeHtml(obs.ip)}</span></span>
-          <span class="check-sublabel">${escapeHtml(t("dns.observedByNs"))}${ecsHtml}</span>
-        </div>
-        <span class="check-value pass">${escapeHtml(t("dns.recursionActive"))}</span>
-      `;
-      resolverContainer.appendChild(div);
-    });
-  }
 
   const reachable = resolvers.filter((r) => r.reachable);
   if (reachable.length > 0) {
@@ -543,8 +582,11 @@ function renderSecurity(securityChecks: SecurityCheck[]): void {
   const securityContainer = document.getElementById("dns-security-results")!;
   securityContainer.innerHTML = "";
 
-  const allPass = securityChecks.every((c) => c.status === "pass");
-  const anyFail = securityChecks.some((c) => c.status === "fail");
+  // "info" rows state a fact (a LAN address exists) rather than a verdict, so
+  // they must not drag the card's badge down for everyone behind a router.
+  const graded = securityChecks.filter((c) => c.status !== "info");
+  const allPass = graded.every((c) => c.status === "pass");
+  const anyFail = graded.some((c) => c.status === "fail");
 
   securityChecks.forEach((check) => {
     const detail = check.detailArg !== undefined ? t(check.detailKey, check.detailArg) : t(check.detailKey);
@@ -575,9 +617,14 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
     reachableCount: reachable.length,
   };
 
+  // "DNS not encrypted" is only defensible when the probe actually saw the
+  // resolver. If it never reached our nameserver the answer is "unknown", and
+  // asserting an issue there is the unconditional-pass bug wearing the other hat.
+  const dohUnverified = securityChecks.some((c) => c.id === "doh" && c.detailKey === "dns.dohUnknown");
+
   const issues: string[] = [];
   if (!ctx.hasSecurity("dnssec")) issues.push(t("dns.issueDnssec"));
-  if (!ctx.hasSecurity("doh")) issues.push(t("dns.issueDoh"));
+  if (!ctx.hasSecurity("doh") && !dohUnverified) issues.push(t("dns.issueDoh"));
   if (!ctx.hasSecurity("malware")) issues.push(t("dns.issueMalware"));
   if (ctx.hasWebRtcLeak) issues.push(t("dns.issueWebrtc"));
   if (ctx.fastestResolver() > 80) issues.push(t("dns.issueSlow"));
@@ -585,7 +632,12 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
 
   if (issues.length === 0) {
     subtitle.textContent = t("dns.suggestGood");
-    renderVerdict("dns-verdict", "pass", t("verdict.dnsPass"), t("verdict.dnsPassDetail"));
+    renderVerdict(
+      "dns-verdict",
+      "pass",
+      t("verdict.dnsPass"),
+      dohUnverified ? t("verdict.dnsPassUnverified") : t("verdict.dnsPassDetail")
+    );
   } else {
     subtitle.textContent = t("dns.suggestIssues", issues.join(", "));
     renderVerdict("dns-verdict", verdictLevel(issues.length), issueHeadline(issues), issues.join(" · "));

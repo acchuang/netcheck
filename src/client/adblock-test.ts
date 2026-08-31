@@ -1,4 +1,5 @@
 import { isHidden } from "./ui-utils";
+import { getSplitScore, isNetworkOnlyFiltering, type SplitScore } from "../shared/adblock-score";
 
 interface ScriptTest {
   name: string;
@@ -286,5 +287,16 @@ export const AdBlockTest = {
       blocked,
       passed: total - blocked,
     };
+  },
+
+  // The headline ring stays weighted-by-importance; this says which *kind* of
+  // blocking is doing the work, which is the difference between a Pi-hole and
+  // an extension.
+  getSplitScore(): SplitScore {
+    return getSplitScore(this.results);
+  },
+
+  isNetworkOnlyFiltering(): boolean {
+    return isNetworkOnlyFiltering(this.getSplitScore());
   },
 };
