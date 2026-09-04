@@ -5,7 +5,7 @@
 
 import { ENCRYPTED_DNS_NETWORKS } from "./resolvers.ts";
 
-export type IpScope = "public" | "private" | "linkLocal" | "loopback" | "unspecified";
+export type IpScope = "public" | "private" | "linkLocal" | "loopback" | "unspecified" | "reserved";
 
 function parseV4(text: string): number[] | null {
   const parts = text.split(".");
@@ -124,6 +124,12 @@ export function ipScope(ip: string): IpScope {
     // CGNAT: not the visitor's own address and not routable, so treating it as
     // public would report every carrier-NAT user as leaking.
     if (a === 100 && b >= 64 && b <= 127) return "private";
+    // Not assigned to any single organization, so not a meaningful "leak"
+    // target: 192.0.0.0/24 IETF protocol assignments, 198.18.0.0/15 benchmarking,
+    // 224.0.0.0/4 multicast, 240.0.0.0/4 reserved (incl. 255.255.255.255).
+    if (a === 192 && b === 0 && bytes[2] === 0) return "reserved";
+    if (a === 198 && (b === 18 || b === 19)) return "reserved";
+    if (a >= 224) return "reserved";
     return "public";
   }
 
@@ -131,6 +137,7 @@ export function ipScope(ip: string): IpScope {
   if (bytes.slice(0, 15).every((byte) => byte === 0) && bytes[15] === 1) return "loopback";
   if ((bytes[0] & 0xfe) === 0xfc) return "private"; // fc00::/7 ULA
   if (bytes[0] === 0xfe && (bytes[1] & 0xc0) === 0x80) return "linkLocal"; // fe80::/10
+  if (bytes[0] === 0xff) return "reserved"; // ff00::/8 multicast
   return "public";
 }
 

@@ -128,6 +128,7 @@ test("headers/check blocks private, loopback, link-local, and multicast IP liter
     "http://127.0.0.1/", "http://10.1.2.3/", "http://172.16.0.1/", "http://192.168.1.1/",
     "http://169.254.169.254/", // cloud metadata
     "http://224.0.0.1/", // multicast
+    "http://100.64.0.1/", // CGNAT — missed by the worker's pre-consolidation range table
     "http://[::1]/", "http://[fc00::1]/", "http://[fe80::1]/", "http://[ff02::1]/",
     "http://[::ffff:127.0.0.1]/", // IPv4-mapped loopback
   ];

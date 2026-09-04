@@ -2,6 +2,7 @@ import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 import {
   dohQuery, parseWhoami, DNSSEC_BOGUS_DOMAIN, ECS_PROBE_DOMAIN, AD_PROBE_DOMAIN, type DnsMessage,
 } from "../shared/dns-wire.ts";
+import { ipScope } from "../shared/ip-classify.ts";
 
 export default {
   async fetch(request: Request, env?: Record<string, string>): Promise<Response> {
@@ -429,72 +430,13 @@ const SECURITY_HEADERS = [
 // service or internal network behind it, so the worst a rebind reaches is
 // the sandboxed runtime's own loopback. Revisit if this Worker ever gets a
 // service binding, Tunnel, or VPC route into something private.
-const PRIVATE_V4_RANGES: [number, number, number][] = [
-  // [network, prefixLen] as (base, mask)
-  [0x7f000000, 8, 0xff000000], // 127.0.0.0/8
-  [0x0a000000, 8, 0xff000000], // 10.0.0.0/8
-  [0xac100000, 12, 0xfff00000], // 172.16.0.0/12
-  [0xc0a80000, 16, 0xffff0000], // 192.168.0.0/16
-  [0xa9fe0000, 16, 0xffff0000], // 169.254.0.0/16 (incl. 169.254.169.254 metadata)
-  [0xe0000000, 4, 0xf0000000], // 224.0.0.0/4 multicast
-];
-
-function ipv4ToInt(ip: string): number | null {
-  const parts = ip.split(".");
-  if (parts.length !== 4) return null;
-  let n = 0;
-  for (const p of parts) {
-    if (!/^\d{1,3}$/.test(p)) return null;
-    const v = Number(p);
-    if (v > 255) return null;
-    n = (n << 8) | v;
-  }
-  return n >>> 0;
-}
-
-function isPrivateIpv4(ip: string): boolean {
-  const n = ipv4ToInt(ip);
-  if (n === null) return false;
-  // `&` runs on signed 32-bit ints in JS: any range whose base has the top
-  // bit set (172.16/12, 192.168/16, 169.254/16, 224/4) comes back negative
-  // and would never equal the positive `base` literal without `>>> 0`.
-  return PRIVATE_V4_RANGES.some(([base, , mask]) => ((n & mask) >>> 0) === base);
-}
-
-function isPrivateIpv6(ip: string): boolean {
-  const norm = ip.toLowerCase();
-  if (norm === "::1") return true; // loopback
-  if (norm.startsWith("::ffff:")) {
-    // IPv4-mapped. WHATWG URL normalizes the embedded address to two hex
-    // groups ("::ffff:7f00:1"), not the dotted form we'd get typing it by
-    // hand ("::ffff:127.0.0.1") — by the time `hostname` reaches us it's
-    // always hex, so dotted-only matching here never fires on real input.
-    const rest = norm.slice(7);
-    const dotted = /^\d+\.\d+\.\d+\.\d+$/.test(rest) ? rest : null;
-    const hexMatch = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(rest);
-    const fromHex = hexMatch
-      ? [parseInt(hexMatch[1], 16) >> 8, parseInt(hexMatch[1], 16) & 0xff,
-         parseInt(hexMatch[2], 16) >> 8, parseInt(hexMatch[2], 16) & 0xff].join(".")
-      : null;
-    const v4 = dotted ?? fromHex;
-    return v4 ? isPrivateIpv4(v4) : false;
-  }
-  const firstGroup = norm.split(":")[0];
-  const firstByte = parseInt(firstGroup.padStart(4, "0").slice(0, 2), 16);
-  if ((firstByte & 0xfe) === 0xfc) return true; // fc00::/7 unique local
-  if (firstByte === 0xfe) {
-    const secondByte = parseInt(firstGroup.padStart(4, "0").slice(2, 4), 16);
-    if ((secondByte & 0xc0) === 0x80) return true; // fe80::/10 link-local
-  }
-  if (firstByte === 0xff) return true; // ff00::/8 multicast
-  return false;
-}
-
+// ipBytes() (used by ipScope) already strips brackets from IPv6 literals and
+// handles IPv4-mapped v6 addresses, so this is a thin wrapper — the range
+// math itself lives once in ip-classify.ts, shared with the WebRTC leak
+// check, instead of duplicated here (a prior duplicate copy missed the CGNAT
+// range that ip-classify.ts carries after an earlier false-positive fix).
 function isPrivateOrReservedIp(ip: string): boolean {
-  // URL.hostname keeps the brackets on an IPv6 literal ("[::1]") — strip them
-  // before matching, or every bracketed literal silently skips the blocklist.
-  const bare = ip.startsWith("[") && ip.endsWith("]") ? ip.slice(1, -1) : ip;
-  return bare.includes(":") ? isPrivateIpv6(bare) : isPrivateIpv4(bare);
+  return ipScope(ip) !== "public";
 }
 
 async function resolvesToPrivateIp(hostname: string): Promise<boolean> {

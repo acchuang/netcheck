@@ -17,6 +17,11 @@ test("IPv4 scope separates RFC1918 and CGNAT from routable addresses", () => {
   assert.equal(ipScope("169.254.1.1"), "linkLocal");
   assert.equal(ipScope("127.0.0.1"), "loopback");
   assert.equal(ipScope("203.0.113.5"), "public");
+  assert.equal(ipScope("224.0.0.1"), "reserved"); // multicast
+  assert.equal(ipScope("240.0.0.1"), "reserved"); // 240/4 reserved
+  assert.equal(ipScope("192.0.0.1"), "reserved"); // IETF protocol assignments
+  assert.equal(ipScope("198.18.0.1"), "reserved"); // benchmarking
+  assert.equal(ipScope("192.0.2.1"), "public"); // documentation range is publicly routable-shaped
 });
 
 test("IPv6 scope separates global from ULA and link-local", () => {
@@ -25,6 +30,7 @@ test("IPv6 scope separates global from ULA and link-local", () => {
   assert.equal(ipScope("fe80::1c2b:aaff:fe00:1"), "linkLocal");
   assert.equal(ipScope("::1"), "loopback");
   assert.equal(ipScope("::"), "unspecified");
+  assert.equal(ipScope("ff02::1"), "reserved"); // multicast
 });
 
 test("an IPv4-mapped IPv6 address is treated as the IPv4 address it is", () => {
