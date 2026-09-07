@@ -4,7 +4,7 @@ Project: netcheck-site
 
 Notebook: .agentflow/devlog.md — root.
 
-Current commit: c2302fb — "Test the client logic that produces user-facing verdicts"; pushed to origin/main. Init output is uncommitted.
+Current commit: d073a78 — "Initialize Agentflow"; pushed to origin/main.
 
 Tests/scenarios: `npm test` (node --test) — 58/58 passing at c2302fb. `npm run typecheck` clean.
 
@@ -12,7 +12,7 @@ Configuration: ag.json — schema v7; validated for claude this round.
 
 Proven: Agentflow initialized and intake returns valid. The site is deployed as Cloudflare Worker version 6a41974d-fb0c-4818-a571-caf71b661732; `/` returns 200 and `/api/dns/probe-result` returns `{"enabled":false}`.
 
-Open: init files uncommitted; `agf` shell shortcut not installed; no first task chosen.
+Open: `agf` shell shortcut not installed; no first task chosen.
 
 Next: await the first request in A-002.
 
