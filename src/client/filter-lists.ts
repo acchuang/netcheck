@@ -1,4 +1,4 @@
-import { hiddenTestContainer, probeTest } from "./adblock-test";
+import { hiddenTestContainer, probeTest } from "./adblock-test.ts";
 
 interface ElementTest {
   type: "element";

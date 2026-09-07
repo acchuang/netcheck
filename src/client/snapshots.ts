@@ -1,5 +1,5 @@
-import { SpeedTest } from "./speed-test";
-import { loadHistory, persistHistory } from "./ui-utils";
+import { SpeedTest } from "./speed-test.ts";
+import { loadHistory, persistHistory } from "./ui-utils.ts";
 
 interface Snapshot {
   ts: number;

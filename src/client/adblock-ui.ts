@@ -1,8 +1,8 @@
-import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test";
-import { t } from "./i18n";
-import { escapeHtml, ARROW_SVG } from "./ui-utils";
-import { enableAdblockSaveButton } from "./adblock-history";
-import { runFilterListDetection } from "./filter-detect-ui";
+import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test.ts";
+import { t } from "./i18n.ts";
+import { escapeHtml, ARROW_SVG } from "./ui-utils.ts";
+import { enableAdblockSaveButton } from "./adblock-history.ts";
+import { runFilterListDetection } from "./filter-detect-ui.ts";
 
 // Ad block sits idle until its tab is opened — see startAdBlock. A skeleton
 // here would promise a run that isn't happening.

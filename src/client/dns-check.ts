@@ -1,8 +1,8 @@
-import { t, onLocaleChange } from "./i18n";
-import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils";
-import { RESOLVERS, type ResolverInfo } from "../shared/resolvers";
-import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire";
-import { dohVerdict, encryptedDnsOperator, evaluateWebRtc, type WebRtcVerdict } from "../shared/ip-classify";
+import { t, onLocaleChange } from "./i18n.ts";
+import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
+import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire.ts";
+import { dohVerdict, encryptedDnsOperator, evaluateWebRtc, type WebRtcVerdict } from "../shared/ip-classify.ts";
 
 interface DnsResult {
   Answer?: DnsAnswer[];

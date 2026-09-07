@@ -1,4 +1,4 @@
-import { t, tTag } from "./i18n";
+import { t, tTag } from "./i18n.ts";
 
 const ESCAPE_MAP: Record<string, string> = {
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",

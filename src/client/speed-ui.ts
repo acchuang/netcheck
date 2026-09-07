@@ -1,7 +1,7 @@
-import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test";
-import { t, onLocaleChange } from "./i18n";
-import { escapeHtml, animateNumber, pulseValue, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils";
-import { enableSaveButton } from "./snapshots";
+import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test.ts";
+import { t, onLocaleChange } from "./i18n.ts";
+import { escapeHtml, animateNumber, pulseValue, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { enableSaveButton } from "./snapshots.ts";
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll(".speed-gauge").forEach((g, i) => {

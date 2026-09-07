@@ -1,5 +1,5 @@
-import { t, onLocaleChange } from "./i18n";
-import { setBadge, renderSkeletonRows, escapeHtml, renderVerdict, hideVerdict } from "./ui-utils";
+import { t, onLocaleChange } from "./i18n.ts";
+import { setBadge, renderSkeletonRows, escapeHtml, renderVerdict, hideVerdict } from "./ui-utils.ts";
 
 interface HeaderCheckResult {
   name: string;

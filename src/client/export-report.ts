@@ -1,7 +1,7 @@
-import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test";
-import { t } from "./i18n";
-import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test";
-import { FilterListDetector, type FilterListResult } from "./filter-lists";
+import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test.ts";
+import { t } from "./i18n.ts";
+import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
+import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
 
 type CheckStatus = "pass" | "fail" | "warn";
 

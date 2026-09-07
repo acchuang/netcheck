@@ -1,4 +1,4 @@
-import { t, onLocaleChange } from "./i18n";
+import { t, onLocaleChange } from "./i18n.ts";
 
 export type ThemeId = "system" | "dark" | "light" | "phosphor" | "nord" | "glass" | "contrast";
 

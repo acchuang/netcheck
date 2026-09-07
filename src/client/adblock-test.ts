@@ -1,5 +1,5 @@
-import { isHidden } from "./ui-utils";
-import { getSplitScore, isNetworkOnlyFiltering, type SplitScore } from "../shared/adblock-score";
+import { isHidden } from "./ui-utils.ts";
+import { getSplitScore, isNetworkOnlyFiltering, type SplitScore } from "../shared/adblock-score.ts";
 
 interface ScriptTest {
   name: string;

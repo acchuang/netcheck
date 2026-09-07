@@ -1,14 +1,14 @@
-import { initTheme } from "./theme";
-import { initI18n, onLocaleChange } from "./i18n";
-import { runDnsChecks, runDnsLookup, runDnsCompare, runDomainHealthCheck } from "./dns-check";
-import { ReportExporter } from "./export-report";
-import { initHeadersCheck } from "./headers-check";
-import { initSnapshots } from "./snapshots";
-import { initAdblockHistory } from "./adblock-history";
-import { renderSkeletonRows } from "./ui-utils";
-import { startAdBlock, initAdblockUI, renderAdBlockIdle, refreshAdblockLocaleTexts } from "./adblock-ui";
-import { refreshFilterDetectLocaleTexts } from "./filter-detect-ui";
-import { initSpeedTest, refreshSpeedLocaleTexts } from "./speed-ui";
+import { initTheme } from "./theme.ts";
+import { initI18n, onLocaleChange } from "./i18n.ts";
+import { runDnsChecks, runDnsLookup, runDnsCompare, runDomainHealthCheck } from "./dns-check.ts";
+import { ReportExporter } from "./export-report.ts";
+import { initHeadersCheck } from "./headers-check.ts";
+import { initSnapshots } from "./snapshots.ts";
+import { initAdblockHistory } from "./adblock-history.ts";
+import { renderSkeletonRows } from "./ui-utils.ts";
+import { startAdBlock, initAdblockUI, renderAdBlockIdle, refreshAdblockLocaleTexts } from "./adblock-ui.ts";
+import { refreshFilterDetectLocaleTexts } from "./filter-detect-ui.ts";
+import { initSpeedTest, refreshSpeedLocaleTexts } from "./speed-ui.ts";
 
 // i18n first: initTheme renders the theme menu through t(), and onLocaleChange
 // only fires on a *change*, so a saved zh-TW visitor got an English menu.

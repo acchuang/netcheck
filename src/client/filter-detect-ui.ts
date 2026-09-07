@@ -1,6 +1,6 @@
-import { FilterListDetector } from "./filter-lists";
-import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint";
-import { t } from "./i18n";
+import { FilterListDetector } from "./filter-lists.ts";
+import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint.ts";
+import { t } from "./i18n.ts";
 
 function renderFilterListSkeletons(container: HTMLElement, count: number): void {
   container.innerHTML = Array.from({ length: count }, () =>

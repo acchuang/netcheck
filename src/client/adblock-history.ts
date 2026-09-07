@@ -1,6 +1,6 @@
 // ponytail: mirrors snapshots.ts — adblock scores over time, color-coded deltas
-import { AdBlockTest } from "./adblock-test";
-import { loadHistory, persistHistory } from "./ui-utils";
+import { AdBlockTest } from "./adblock-test.ts";
+import { loadHistory, persistHistory } from "./ui-utils.ts";
 
 interface AdblockSnapshot {
   ts: number;
