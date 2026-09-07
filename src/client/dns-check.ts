@@ -236,7 +236,12 @@ const DnsCheck = {
         checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnrecognized", detailArg: verdict.ip });
         break;
       default:
-        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnknown" });
+        // "info", not "warn": warn here means we looked and disliked the answer,
+        // but an unobserved resolver means we could not look at all. As a warn it
+        // also kept `allPass` false for every visitor, so the card badge could
+        // never read "secure" — the same not-our-fault row the `lan` check is
+        // already "info" for.
+        checks.push({ id: "doh", status: "info", detailKey: "dns.dohUnknown" });
     }
 
     // Malware domain filtering — test through the USER's resolver (not Cloudflare's DoH).
