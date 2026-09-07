@@ -31,11 +31,6 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - Multi-hop SSRF guard with private/loopback/link-local/multicast IP filtering (IPv4, IPv6, and IPv4-mapped IPv6) and redirect destination re-validation, rate-limited per IP
 - Explains what each header protects against and flags what's missing
 
-### Recursion-Path Probing
-- `probe-server/` is an authoritative nameserver for `p.oilygold.xyz` — the browser resolves `<token>.p.oilygold.xyz`, forcing every recursive resolver in the visitor's real path to query it directly
-- Records the visitor's actual resolver IPs (the one view a DoH-only client can never see), along with any EDNS Client Subnet forwarded
-- The Worker reads probe results back over HTTP and renders live recursive resolver observations in the DNS report
-
 ### Also
 - Speed and ad-block results snapshot to local storage, with color-coded deltas between runs
 - Memory-efficient streaming speed downloads via `ReadableStream`
@@ -43,6 +38,24 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - Export a full diagnostic report as Markdown or printable PDF — nothing leaves your device
 - Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
 - Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited to resist abuse
+
+## Optional: recursion-path probing (self-hosted)
+
+**Off by default, and off on [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz).** This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
+
+`probe-server/` is an authoritative nameserver for a zone you delegate to it. The browser resolves `<token>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs, and any EDNS Client Subnet forwarded. A DoH-only page can never learn this about its visitor, because it only ever talks to the one resolver it picked.
+
+Enable it by setting all three on the Worker:
+
+| Variable | Where | Example |
+| --- | --- | --- |
+| `PROBE_SERVER_URL` | `wrangler.toml` `[vars]` | `http://198.51.100.10:8080` |
+| `PROBE_ZONE` | `wrangler.toml` `[vars]` | `p.example.com` |
+| `PROBE_SECRET` | `wrangler secret put` | — |
+
+With any of them missing, the client is told the probe does not exist here: it skips the lookup entirely, and the DNS card drops both the encrypted-DNS row and the "your recursive resolver" block rather than showing a check it cannot answer.
+
+Running the nameserver — GCP always-free VM, zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
 
 ## Tech Stack
 
@@ -83,6 +96,11 @@ npm install
 npm run dev        # Vite dev server with the Cloudflare Workers runtime
 npm run typecheck  # tsc --noEmit
 ```
+
+To exercise the recursion probe locally, put the three variables in a gitignored
+`.dev.vars` and run the nameserver alongside the dev server — see
+[`probe-server/README.md`](probe-server/README.md) for the local port to use
+(5354; mDNS holds 5353 on macOS).
 
 ## Deployment
 
