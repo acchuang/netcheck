@@ -165,12 +165,23 @@ const DnsCheck = {
     return results;
   },
 
+  /**
+   * The recursion probe only exists where a deployment runs its own authoritative
+   * nameserver, so ask the Worker before spending a DNS lookup and a 600ms wait
+   * on one that isn't there. The zone comes back with the answer — the nameserver
+   * a self-hoster delegates is theirs, not ours.
+   */
   async probeRecursionPath(): Promise<ProbeResult | null> {
     try {
+      const configRes = await fetch("/api/dns/probe-result");
+      if (!configRes.ok) return null;
+      const config = (await configRes.json()) as { enabled: boolean; zone?: string };
+      if (!config.enabled || !config.zone) return null;
+
       const bytes = new Uint8Array(8);
       crypto.getRandomValues(bytes);
       const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-      const domain = `${token}.p.oilygold.xyz`;
+      const domain = `${token}.${config.zone}`;
 
       // Trigger system recursive resolver by fetching canary image
       await fetch(`https://${domain}/pixel.png?_=${Date.now()}`, {
@@ -188,9 +199,10 @@ const DnsCheck = {
     return null;
   },
 
+  /** `observedIps` is null when this deployment has no probe nameserver at all. */
   async checkDnsSecurity(
     resolvers: ResolverResult[],
-    observedIps: string[],
+    observedIps: string[] | null,
     client: { ipv4: string | null; ipv6: string | null }
   ): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
@@ -224,24 +236,29 @@ const DnsCheck = {
     // JavaScript, true for every visitor, including one whose system resolver
     // is their ISP's plaintext port 53. The honest question is which resolver
     // our authoritative probe actually saw asking, so that is what we judge.
-    const verdict = dohVerdict(observedIps, client);
-    switch (verdict.kind) {
-      case "encrypted":
-        checks.push({ id: "doh", status: "pass", detailKey: "dns.dohPass", detailArg: `${verdict.operator} (${verdict.ip})` });
-        break;
-      case "isp":
-        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohIsp", detailArg: verdict.ip });
-        break;
-      case "unrecognized":
-        checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnrecognized", detailArg: verdict.ip });
-        break;
-      default:
-        // "info", not "warn": warn here means we looked and disliked the answer,
-        // but an unobserved resolver means we could not look at all. As a warn it
-        // also kept `allPass` false for every visitor, so the card badge could
-        // never read "secure" — the same not-our-fault row the `lan` check is
-        // already "info" for.
-        checks.push({ id: "doh", status: "info", detailKey: "dns.dohUnknown" });
+    // With no probe nameserver there is no honest answer to give, and a row that
+    // permanently reads "unverified" is noise that teaches people to skim past
+    // the rows that do mean something. Say nothing rather than say nothing loudly.
+    if (observedIps !== null) {
+      const verdict = dohVerdict(observedIps, client);
+      switch (verdict.kind) {
+        case "encrypted":
+          checks.push({ id: "doh", status: "pass", detailKey: "dns.dohPass", detailArg: `${verdict.operator} (${verdict.ip})` });
+          break;
+        case "isp":
+          checks.push({ id: "doh", status: "warn", detailKey: "dns.dohIsp", detailArg: verdict.ip });
+          break;
+        case "unrecognized":
+          checks.push({ id: "doh", status: "warn", detailKey: "dns.dohUnrecognized", detailArg: verdict.ip });
+          break;
+        default:
+          // "info", not "warn": warn here means we looked and disliked the answer,
+          // but an unobserved resolver means we could not look at all. As a warn it
+          // also kept `allPass` false for every visitor, so the card badge could
+          // never read "secure" — the same not-our-fault row the `lan` check is
+          // already "info" for.
+          checks.push({ id: "doh", status: "info", detailKey: "dns.dohUnknown" });
+      }
     }
 
     // Malware domain filtering — test through the USER's resolver (not Cloudflare's DoH).
@@ -356,7 +373,7 @@ const dnsSuggestions: Suggestion[] = [
 let lastIp: IpData | null = null;
 let lastIpv6: string | null | undefined; // undefined = not yet probed
 let lastResolvers: ResolverResult[] | null = null;
-let lastProbeResult: ProbeResult | null = null;
+let lastProbeResult: ProbeResult | null | undefined; // undefined = probe still running
 let lastSecurity: SecurityCheck[] | null = null;
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 let lastCompare: CompareResult[] | null = null;
@@ -391,10 +408,10 @@ export async function runDnsChecks(): Promise<void> {
   // Run recursion probe in background to catch the visitor's real recursion path
   const probePromise = DnsCheck.probeRecursionPath();
   probePromise.then((probe) => {
-    if (probe && probe.resolvers.length > 0) {
-      lastProbeResult = probe;
-      if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
-    }
+    // Record null too — "this deployment has no probe" is the state that hides
+    // the block, so leaving it as undefined would spin forever.
+    lastProbeResult = probe;
+    if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
   });
 
   const ipData: IpData = await DnsCheck.detectIp();
@@ -414,7 +431,7 @@ export async function runDnsChecks(): Promise<void> {
   // visitor's own path, so they wait for the probe and the v6 address rather
   // than guessing without them.
   const [probe, ipv6] = await Promise.all([probePromise, ipv6Promise]);
-  const observedIps = probe?.resolvers.map((r) => r.ip) ?? [];
+  const observedIps = probe ? probe.resolvers.map((r) => r.ip) : null;
   const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observedIps, {
     ipv4: ipData.ip ?? null,
     ipv6,
@@ -463,11 +480,29 @@ function renderIpInfo(ipData: IpData): void {
 // The visitor's own recursion path, kept in its own block. Mixing it into the
 // public resolver table below made eight resolvers we picked look like the
 // eight the visitor uses.
+// Three states, and they mean different things: `undefined` is still running,
+// `null` is a deployment with no probe nameserver at all — the section promises
+// "your recursive resolver" and could never deliver one — and an empty resolver
+// list means the probe ran and saw nothing, which is itself a result.
 function renderObservedPath(probeResult?: ProbeResult | null): void {
+  const section = document.getElementById("dns-observed-section")!;
   const container = document.getElementById("dns-observed-results")!;
-  container.innerHTML = "";
 
-  if (!probeResult || probeResult.resolvers.length === 0) {
+  section.hidden = probeResult === null;
+  if (probeResult === null) {
+    // The public-resolver note points at "the block above" for which resolver is
+    // really yours. With no block there, it has to say the honest thing instead.
+    document.getElementById("dns-public-note")!.textContent = t("dns.publicNoteOnly");
+    return;
+  }
+
+  if (probeResult === undefined) {
+    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.checking"))}</p>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  if (probeResult.resolvers.length === 0) {
     container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedNone"))}</p>`;
     return;
   }

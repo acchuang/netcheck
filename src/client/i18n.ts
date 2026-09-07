@@ -93,8 +93,10 @@ const en = {
   "dns.observedOperator": "Seen by our nameserver · belongs to {0}",
   "dns.observedNone": "No recursive resolver observed. The probe needs a plain DNS lookup to reach our nameserver, so this stays empty if the probe is unreachable, or if your resolver reached it over a path we can't attribute.",
   "dns.observedSubhead": "Your recursive resolver",
+  "dns.checking": "Checking your DNS configuration...",
   "dns.publicSubhead": "Public resolvers, for comparison",
   "dns.publicNote": "These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.",
+  "dns.publicNoteOnly": "These are probed from your browser to compare speed and features. They are not your system resolver — this site cannot see which resolver you actually use.",
   "dns.recursionActive": "active",
 
   // EDNS Client Subnet
@@ -594,8 +596,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.observedOperator": "由我們的名稱伺服器觀察到 · 屬於 {0}",
   "dns.observedNone": "未觀察到遞迴解析器。此探測需要一次一般 DNS 查詢抵達我們的名稱伺服器，因此若探測伺服器無法連線，或您的解析器走了我們無法歸屬的路徑，這裡就會是空的。",
   "dns.observedSubhead": "您的遞迴解析器",
+  "dns.checking": "正在檢查您的 DNS 設定…",
   "dns.publicSubhead": "公共解析器（對照用）",
   "dns.publicNote": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。除非上方區塊指出，否則它們並不是您系統實際使用的解析器。",
+  "dns.publicNoteOnly": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。它們並不是您系統實際使用的解析器——本站無法得知您實際使用哪一個解析器。",
   "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet

@@ -1,3 +1,10 @@
 name = "netcheck-site"
 compatibility_date = "2025-04-01"
 main = "src/worker/index.ts"
+
+# The recursion-path probe is off unless all three are set. It needs an
+# authoritative nameserver you run yourself — see probe-server/README.md.
+# PROBE_SECRET is a secret: `wrangler secret put PROBE_SECRET`, never here.
+# [vars]
+# PROBE_SERVER_URL = "http://<nameserver-ip>:8080"
+# PROBE_ZONE = "p.example.com"

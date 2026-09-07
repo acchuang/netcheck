@@ -26,6 +26,7 @@ export default {
     }
 
     if (url.pathname === "/api/dns/probe-result") {
+      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
       return handleProbeResult(request, env);
     }
 
@@ -462,8 +463,9 @@ async function resolvesToPrivateIp(hostname: string): Promise<boolean> {
 // --- per-IP rate limit (mirrors probe-server/server.ts's crude in-memory counter) ---
 // ponytail: per-isolate, not durable/global — fine for "resist casual abuse",
 // swap for a Workers Rate Limiting binding if this needs to hold across isolates.
-// "dns" also covers /api/dns/check-resolvers and /api/dns/compare, which each
-// fan out to all 8 resolvers per request — same abuse shape as headers-check.
+// "dns" also covers /api/dns/check-resolvers, /api/dns/compare and
+// /api/dns/probe-result, which each fan out per request — same abuse shape as
+// headers-check.
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMITS: Record<string, number> = { "headers-check": 20, dns: 20 };
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
@@ -489,19 +491,45 @@ function rateLimitedResponse(): Response {
 
 const TOKEN_RE = /^[a-f0-9]{16,64}$/;
 
+/**
+ * The recursion probe needs an authoritative nameserver we run ourselves, so it
+ * is off unless a deployment supplies all three pieces. There are deliberately
+ * no defaults: a localhost fallback made "unconfigured" indistinguishable from
+ * "configured and broken", which is how this shipped dead to production and
+ * stayed there. Absent config is now a fact the client can read and act on.
+ */
+function probeConfig(env?: Record<string, string>): { url: string; secret: string; zone: string } | null {
+  const url = env?.PROBE_SERVER_URL;
+  const secret = env?.PROBE_SECRET;
+  const zone = env?.PROBE_ZONE;
+  return url && secret && zone ? { url, secret, zone } : null;
+}
+
 async function handleProbeResult(request: Request, env?: Record<string, string>): Promise<Response> {
+  const config = probeConfig(env);
   const url = new URL(request.url);
-  const token = url.searchParams.get("token") || "";
+  const token = url.searchParams.get("token");
+
+  // No token is the client asking whether the probe exists here at all, which it
+  // has to know before spending a DNS lookup and a wait on it.
+  if (token === null) {
+    return Response.json(
+      config ? { enabled: true, zone: config.zone } : { enabled: false },
+      { headers: corsHeaders() }
+    );
+  }
+
   if (!TOKEN_RE.test(token)) {
     return Response.json({ error: "Invalid or missing token" }, { status: 400, headers: corsHeaders() });
   }
 
-  const probeUrl = env?.PROBE_SERVER_URL || "http://127.0.0.1:8099";
-  const probeSecret = env?.PROBE_SECRET || "dev";
+  if (!config) {
+    return Response.json({ token, resolvers: [], enabled: false }, { headers: corsHeaders() });
+  }
 
   try {
-    const res = await fetch(`${probeUrl}/lookup?token=${encodeURIComponent(token)}`, {
-      headers: { "x-probe-secret": probeSecret },
+    const res = await fetch(`${config.url}/lookup?token=${encodeURIComponent(token)}`, {
+      headers: { "x-probe-secret": config.secret },
       signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
@@ -509,7 +537,7 @@ async function handleProbeResult(request: Request, env?: Record<string, string>)
       return Response.json(data, { headers: corsHeaders() });
     }
   } catch {
-    // Probe server may be offline or unconfigured in dev/preview
+    // Probe server unreachable — the check degrades to "unobserved", not an error.
   }
   return Response.json({ token, resolvers: [] }, { headers: corsHeaders() });
 }

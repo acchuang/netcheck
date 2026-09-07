@@ -166,14 +166,67 @@ test("dns endpoints are rate-limited per IP, headers-check has its own bucket", 
 });
 
 test("probe-result endpoint validates token format", async () => {
-  const badReq = new Request("https://netcheck.internal/api/dns/probe-result?token=bad-token");
+  const badReq = new Request("https://netcheck.internal/api/dns/probe-result?token=bad-token", {
+    headers: { "cf-connecting-ip": "203.0.113.10" },
+  });
   const badRes = await worker.fetch(badReq);
   assert.equal(badRes.status, 400);
 
-  const goodReq = new Request("https://netcheck.internal/api/dns/probe-result?token=a1b2c3d4e5f60718");
+  const goodReq = new Request("https://netcheck.internal/api/dns/probe-result?token=a1b2c3d4e5f60718", {
+    headers: { "cf-connecting-ip": "203.0.113.10" },
+  });
   const goodRes = await worker.fetch(goodReq);
   assert.equal(goodRes.status, 200);
   const data = (await goodRes.json()) as { token: string; resolvers: unknown[] };
   assert.equal(data.token, "a1b2c3d4e5f60718");
   assert.ok(Array.isArray(data.resolvers));
+});
+
+// The probe shipped dead to production for a month because an unset config
+// looked exactly like a configured one: the Worker fell back to localhost and
+// swallowed the failure. These pin the config down as something the client can
+// read, so a deploy with the vars missing is visible instead of silent.
+test("probe-result reports disabled when the nameserver config is incomplete", async () => {
+  const ask = (env?: Record<string, string>) => worker.fetch(
+    new Request("https://netcheck.internal/api/dns/probe-result", {
+      headers: { "cf-connecting-ip": "203.0.113.11" },
+    }),
+    env as never
+  );
+
+  const partial: (Record<string, string> | undefined)[] = [
+    undefined,
+    {},
+    { PROBE_SERVER_URL: "http://probe.internal:8080" },
+    { PROBE_SERVER_URL: "http://probe.internal:8080", PROBE_SECRET: "s" }, // no zone
+    { PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" }, // no url
+  ];
+
+  for (const env of partial) {
+    const res = await ask(env);
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { enabled: false });
+  }
+});
+
+test("probe-result hands the client the zone once fully configured", async () => {
+  const res = await worker.fetch(
+    new Request("https://netcheck.internal/api/dns/probe-result", {
+      headers: { "cf-connecting-ip": "203.0.113.12" },
+    }),
+    { PROBE_SERVER_URL: "http://probe.internal:8080", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
+  );
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { enabled: true, zone: "p.example.com" });
+});
+
+test("probe-result is rate-limited alongside the other dns endpoints", async () => {
+  const ip = "203.0.113.13";
+  let last!: Response;
+  for (let i = 0; i < 21; i++) {
+    last = await worker.fetch(new Request("https://netcheck.internal/api/dns/probe-result", {
+      headers: { "cf-connecting-ip": ip },
+    }));
+  }
+  assert.equal(last.status, 429);
 });
