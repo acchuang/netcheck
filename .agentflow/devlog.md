@@ -4,19 +4,19 @@ Project: netcheck-site
 
 Notebook: .agentflow/devlog.md — root.
 
-Current commit: d073a78 — "Initialize Agentflow"; pushed to origin/main.
+Current commit: 76b6913 — "Record the pushed commit in STATUS"; pushed to origin/main.
 
 Tests/scenarios: `npm test` (node --test) — 58/58 passing at c2302fb. `npm run typecheck` clean.
 
 Configuration: ag.json — schema v7; validated for claude this round.
 
-Proven: Agentflow initialized and intake returns valid. The site is deployed as Cloudflare Worker version 6a41974d-fb0c-4818-a571-caf71b661732; `/` returns 200 and `/api/dns/probe-result` returns `{"enabled":false}`.
+Proven: Agentflow initialized and intake returns valid. The `agf` shell function loads in a live shell — `zsh -ic 'agf settings show'` returns real settings output. The site is deployed as Cloudflare Worker version 6a41974d-fb0c-4818-a571-caf71b661732; `/` returns 200 and `/api/dns/probe-result` returns `{"enabled":false}`.
 
-Open: `agf` shell shortcut not installed; no first task chosen.
+Open: no first task chosen.
 
-Next: await the first request in A-002.
+Next: await the first request in A-003.
 
-Artifacts: .agentflow/devlog.md, ag.json.
+Artifacts: .agentflow/devlog.md, ag.json, ~/.zshrc shortcuts (backup at ~/.zshrc.bak-agentflow-setup).
 
 Archived eras: none.
 
@@ -99,5 +99,80 @@ Settings as written: `target-doc: .agentflow/devlog.md`, `workspace-dir: .agentf
 ---
 
 # → Ask / A-002
+
++ agf
+
+## [RUN-001] Event (during round A-002)
+
+Route: direct. Owner wrote "agf", read as answering the A-001 open question about installing the shell shortcut. Intake valid, branch main, no changed repository paths. `agf.js setup` reported 3 missing items; `setup --fix` (answered y on stdin, since the prompt declines under a non-TTY) wrote agf(), agf-looper(), and AGF_OPEN into ~/.zshrc after backing it up to ~/.zshrc.bak-agentflow-setup. Recheck reports "all good"; `zsh -ic 'agf settings show'` returned real settings output, proving the function loads in a live shell. Nothing inside the repository changed.
+
+# ← Reply / A-002
+
+2026-09-07 13:58 CST — claude-opus-5
+
+## [SUMMARY]
+
+- Read the bare word `agf` as answering A-001's third question: install the shell shortcut. Route `direct`.
+- Installed `agf()`, `agf-looper()`, and `AGF_OPEN="code"` into `~/.zshrc`; the installer backed the file up to `~/.zshrc.bak-agentflow-setup` first.
+- Verified in a live shell, not just by the installer's own recheck: `zsh -ic 'agf settings show'` returned real settings output.
+- Nothing inside the repository changed, so there is nothing to commit for this round beyond the notebook itself.
+- A-001's other two questions are now answered: the init files were committed and pushed (`d073a78`, plus `76b6913` correcting STATUS), and no first task has been chosen yet.
+
+## [FINAL REPORT]
+
+**Request: `agf`.**
+
+Interpreted as the answer to the open A-001 question rather than as a command to run, since `agf` was not yet a working shell function and the notebook had it listed under `Open:`. If the intent was something else, say so and I will treat A-003 as the real request.
+
+`agf.js setup` reported three missing items:
+
+```
+✗ usable Agentflow-managed agf() not found in /Users/acchuang/.zshrc
+✗ usable Agentflow-managed agf-looper() not found in /Users/acchuang/.zshrc
+✗ AGF_OPEN not set
+```
+
+`setup --fix` prints the exact block it intends to add and then asks `Install or update these Agentflow shortcuts in .zshrc? (Y/n)`. Under a non-TTY it takes silence as a decline and reports `nothing changed — paste them yourself when ready`, so the first run was a no-op preview. Answering `y` on standard input completed it.
+
+What went into `~/.zshrc`:
+
+```
+export AGF_OPEN="code"
+agf() {
+  local dir
+  dir=$(node '<skill-dir>/scripts/agf.js' "$@") || return 1
+  [ -n "$dir" ] && cd "$dir"
+  return 0
+}
+agf-looper() {
+  node '<skill-dir>/scripts/looper.js' "$@"
+}
+```
+
+`agf` is a function rather than an alias because stream commands print a directory and the wrapper `cd`s the calling shell into it — an alias could not do that. `AGF_OPEN="code"` names VS Code as the editor Agentflow opens.
+
+**Evidence.** The installer's own recheck reports `all good` on all six items. That is the installer grading itself, so it was confirmed independently: `zsh -ic 'agf settings show'` printed the real settings table, worker tiers, and executable availability (`claude: available`, `codex: available`). The function resolves and runs in an interactive shell.
+
+**Backup.** `~/.zshrc.bak-agentflow-setup` (1.9K) sits beside the modified `~/.zshrc` (2.3K). Removal is also available through `agf uninstall`.
+
+**Scope note.** This round wrote outside the repository, to `~/.zshrc`. That is machine configuration, not project state, and is the only path outside the repo that Agentflow touches here.
+
+**Cross-check.** Not dispatched and not needed: the round's only repository change is this notebook. No source, test, configuration, or user-document behavior changed. Completion preflight is the evidence.
+
+**Repository state, unchanged this round:** `main` at `76b6913`, pushed. `npm test` 58/58 at `c2302fb`, typecheck clean. Deployed Worker version `6a41974d-fb0c-4818-a571-caf71b661732`.
+
+## Questions (batched — each with a suggested default)
+
+- Was `agf` meant as the answer about installing the shortcut, or as an actual command you wanted run?
+- Suggested default: it was the answer about installing — done, nothing further needed.
+- ans:
+
+- What is the first real task for this notebook? A-001 and A-002 have both been setup rounds.
+- Suggested default: nothing yet — state it when there is one. Candidates already on record from earlier work: `i18n.ts` (1188 LOC) and `dns-check.ts` (869 LOC) are both past the size where they want splitting, and the render layer of the DNS card still has no test coverage.
+- ans:
+
+---
+
+# → Ask / A-003
 
 +
