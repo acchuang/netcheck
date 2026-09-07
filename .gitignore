@@ -2,10 +2,11 @@ node_modules/
 .wrangler/
 .dev.vars
 dist/
-
 # Tool-generated
 .claude/
 .codegraph/
 .opencode/
 .playwright-mcp/
 .superpowers/
+.codex/
+.worktrees/
