@@ -100,7 +100,9 @@ interface Suggestion {
 
 // --- Core API object ---
 
-const DnsCheck = {
+// Exported for tests: checkDnsSecurity decides which security rows the DNS card
+// shows, and it shipped a wrong status once already.
+export const DnsCheck = {
   async detectIp(): Promise<IpData> {
     try {
       const res = await fetch("/api/ip");
