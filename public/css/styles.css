@@ -876,6 +876,20 @@ html::before {
 
 .section-header {
   margin-bottom: 40px;
+  position: relative;
+}
+
+#about .section-header {
+  padding: 32px 0;
+  margin-left: -24px;
+  margin-right: -24px;
+  padding-left: 24px;
+  padding-right: 24px;
+  background:
+    radial-gradient(35% 50% at 8% 12%, rgba(94, 106, 210, 0.08), transparent 55%),
+    radial-gradient(42% 45% at 92% 20%, rgba(45, 212, 191, 0.06), transparent 60%),
+    radial-gradient(38% 52% at 50% 90%, rgba(168, 85, 247, 0.05), transparent 65%);
+  border-radius: var(--radius-lg);
 }
 
 /* Heading 1 scale: these head task surfaces, not marketing sections. */
@@ -1004,6 +1018,15 @@ html::before {
   margin-bottom: 16px;
 }
 
+.cards-grid > .card {
+  animation: slide-up 0.35s ease-out both;
+}
+
+.cards-grid > .card:nth-child(1) { animation-delay: 0ms; }
+.cards-grid > .card:nth-child(2) { animation-delay: 40ms; }
+.cards-grid > .card:nth-child(3) { animation-delay: 80ms; }
+.cards-grid > .card:nth-child(4) { animation-delay: 120ms; }
+
 /* 4-card grids: 2x2. auto-fit would give a 3-up row plus a lone orphan. */
 .cards-grid-2up {
   grid-template-columns: repeat(2, 1fr);
@@ -1016,12 +1039,13 @@ html::before {
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--card-inset);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .card:hover {
   border-color: var(--hover-border);
   box-shadow: var(--card-inset), var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .card-wide {
@@ -1064,7 +1088,7 @@ html::before {
   border: 1px solid var(--border-solid);
   color: var(--text-quaternary);
   white-space: nowrap;
-  transition: color 0.3s, border-color 0.3s, background-color 0.3s;
+  transition: color 0.2s ease-out, border-color 0.2s ease-out, background-color 0.2s ease-out;
 }
 
 .status-badge.done {
@@ -1450,6 +1474,11 @@ select option {
   stroke-width: 6;
 }
 
+@keyframes ring-mount {
+  from { stroke-dashoffset: 339.292; opacity: 0.3; }
+  to { stroke-dashoffset: 339.292; opacity: 1; }
+}
+
 .score-ring-fill {
   fill: none;
   stroke: var(--accent);
@@ -1458,6 +1487,7 @@ select option {
   stroke-dasharray: 339.292;
   stroke-dashoffset: 339.292;
   transition: stroke-dashoffset 1.1s var(--ease-spring), stroke 0.3s;
+  animation: ring-mount 0.6s ease-out;
 }
 
 .score-value {
@@ -1710,8 +1740,14 @@ select option {
 
 .suggestions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .suggestion-card {
@@ -1723,13 +1759,26 @@ select option {
   flex-direction: column;
   gap: 12px;
   transition: background 0.15s, border-color 0.15s, transform 0.25s var(--ease-spring), box-shadow 0.2s;
+  animation: slide-up 0.35s ease-out both;
 }
+
+.suggestion-card:nth-child(1) { animation-delay: 0ms; }
+.suggestion-card:nth-child(2) { animation-delay: 40ms; }
+.suggestion-card:nth-child(3) { animation-delay: 80ms; }
+.suggestion-card:nth-child(4) { animation-delay: 120ms; }
+.suggestion-card:nth-child(5) { animation-delay: 160ms; }
+.suggestion-card:nth-child(6) { animation-delay: 200ms; }
 
 .suggestion-card:hover {
   background: var(--hover-bg);
   border-color: var(--hover-border);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.suggestion-card:hover .suggestion-link::after {
+  content: " →";
+  animation: slide-up 0.25s ease-out;
 }
 
 .suggestion-card.recommended {
@@ -2061,7 +2110,14 @@ select option {
   border-radius: var(--radius-lg);
   padding: 24px;
   text-align: center;
+  animation: slide-up 0.4s ease-out both;
 }
+
+.speed-gauge:nth-child(1) { animation-delay: 0ms; }
+.speed-gauge:nth-child(2) { animation-delay: 50ms; }
+.speed-gauge:nth-child(3) { animation-delay: 100ms; }
+.speed-gauge:nth-child(4) { animation-delay: 150ms; }
+.speed-gauge:nth-child(5) { animation-delay: 200ms; }
 
 .speed-gauge.active {
   border-color: var(--accent);
@@ -2102,6 +2158,16 @@ select option {
 
 .speed-gauge-value.placeholder {
   color: var(--text-quaternary);
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+  width: 60px;
+  height: 40px;
+  margin: 0 auto 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .speed-gauge-unit {
@@ -2177,11 +2243,17 @@ select option {
   margin-top: 32px;
 }
 
-/* 3-up. At 260px these went 4-up and every description died mid-word. */
+/* 2-up on desktop, 1-up on tablet. Descriptions need room. */
 .filter-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .filter-list-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .filter-list-item {
