@@ -226,10 +226,10 @@ export const SERVERS: SpeedServer[] = [
   },
 ];
 
-async function pingOnce(server: SpeedServer): Promise<number | null> {
+async function pingOnce(server: SpeedServer, signal?: AbortSignal): Promise<number | null> {
   try {
     const start = performance.now();
-    await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    await fetch(server.pingUrl(), { cache: "no-store", signal: signal ?? AbortSignal.timeout(3000) });
     return performance.now() - start;
   } catch {
     return null;
@@ -238,11 +238,11 @@ async function pingOnce(server: SpeedServer): Promise<number | null> {
 
 // Bufferbloat: ping in the background while download/upload saturate the link,
 // so latency-under-load can be compared against the idle baseline.
-function startLoadedPinger(server: SpeedServer, sink: number[]): () => void {
+function startLoadedPinger(server: SpeedServer, sink: number[], signal?: AbortSignal): () => void {
   let stopped = false;
   (async () => {
-    while (!stopped) {
-      const ms = await pingOnce(server);
+    while (!stopped && !signal?.aborted) {
+      const ms = await pingOnce(server, signal);
       if (ms !== null) sink.push(ms);
       await new Promise((r) => setTimeout(r, 500));
     }
@@ -293,18 +293,49 @@ export async function probeServers(ids?: string[]): Promise<ServerProbeResult[]>
   return Promise.all(targets.map((id) => probeServer(id)));
 }
 
+export function combineSignal(timeoutMs: number, abortSignal?: AbortSignal): AbortSignal {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+  if (abortSignal) {
+    if (abortSignal.aborted) {
+      clearTimeout(timer);
+      ctrl.abort(abortSignal.reason);
+    } else {
+      abortSignal.addEventListener("abort", () => {
+        clearTimeout(timer);
+        ctrl.abort(abortSignal.reason);
+      }, { once: true });
+    }
+  }
+  return ctrl.signal;
+}
+
 export const SpeedTest = {
   results: {
     download: null,
     upload: null,
     latency: null,
     jitter: null,
+    packetLoss: null,
+    loadedLatency: null,
+    bufferbloatIncrease: null,
     colo: null,
     userLat: null,
     userLon: null,
   } as SpeedTestResults,
 
+  abortController: null as AbortController | null,
+
+  abort(): void {
+    if (this.abortController) {
+      this.abortController.abort(new DOMException("User aborted test", "AbortError"));
+      this.abortController = null;
+    }
+  },
+
   async run(onProgress?: ProgressCallback, serverId = "cf-speed"): Promise<SpeedTestResults> {
+    this.abortController = new AbortController();
+    const signal = this.abortController.signal;
     this.results = {
       download: null, upload: null, latency: null, jitter: null, packetLoss: null, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
@@ -325,11 +356,12 @@ export const SpeedTest = {
     const PING_COUNT = 10;
     let lostPings = 0;
     for (let i = 0; i < PING_COUNT; i++) {
+      if (signal.aborted) throw new DOMException("Aborted", "AbortError");
       try {
         const start = performance.now();
         const res = await fetch(server.pingUrl(), {
           cache: "no-store",
-          signal: AbortSignal.timeout(4000),
+          signal: combineSignal(4000, signal),
         });
         pings.push(performance.now() - start);
         if (i === 0) {
@@ -338,7 +370,8 @@ export const SpeedTest = {
           this.results.userLat = meta.lat;
           this.results.userLon = meta.lon;
         }
-      } catch {
+      } catch (err) {
+        if (signal.aborted) throw new DOMException("Aborted", "AbortError");
         lostPings++;
       }
       cb("latency", Math.round(((i + 1) / PING_COUNT) * 100), this.results);
@@ -364,19 +397,28 @@ export const SpeedTest = {
     const dlSizes = [100000, 500000, 1000000, 5000000, 10000000, 25000000];
     const dlStart = performance.now();
     let dlTotalBytes = 0;
-    const stopDownloadPing = startLoadedPinger(server, loadedPings);
+    const stopDownloadPing = startLoadedPinger(server, loadedPings, signal);
 
     for (let i = 0; i < dlSizes.length; i++) {
+      if (signal.aborted) {
+        stopDownloadPing();
+        throw new DOMException("Aborted", "AbortError");
+      }
       try {
         const url = server.downUrl(dlSizes[i]);
         const res = await fetch(url, {
           cache: "no-store",
-          signal: AbortSignal.timeout(12000),
+          signal: combineSignal(12000, signal),
         });
 
         if (res.body) {
           const reader = res.body.getReader();
           while (true) {
+            if (signal.aborted) {
+              await reader.cancel();
+              stopDownloadPing();
+              throw new DOMException("Aborted", "AbortError");
+            }
             const { done, value } = await reader.read();
             if (done) break;
             dlTotalBytes += value.byteLength;
@@ -403,7 +445,11 @@ export const SpeedTest = {
           this.results
         );
         if (elapsed > 8) break;
-      } catch {
+      } catch (err) {
+        if (signal.aborted) {
+          stopDownloadPing();
+          throw new DOMException("Aborted", "AbortError");
+        }
         break;
       }
     }
@@ -418,9 +464,13 @@ export const SpeedTest = {
     const ulSizes = [100000, 500000, 1000000, 2000000, 5000000];
     const ulStart = performance.now();
     let ulTotalBytes = 0;
-    const stopUploadPing = startLoadedPinger(server, loadedPings);
+    const stopUploadPing = startLoadedPinger(server, loadedPings, signal);
 
     for (let i = 0; i < ulSizes.length; i++) {
+      if (signal.aborted) {
+        stopUploadPing();
+        throw new DOMException("Aborted", "AbortError");
+      }
       const data = server.makeUploadBody(ulSizes[i]);
 
       try {
@@ -428,7 +478,7 @@ export const SpeedTest = {
           method: "POST",
           body: data,
           cache: "no-store",
-          signal: AbortSignal.timeout(12000),
+          signal: combineSignal(12000, signal),
         });
         ulTotalBytes += ulSizes[i];
         const elapsed = (performance.now() - ulStart) / 1000;
@@ -440,7 +490,11 @@ export const SpeedTest = {
           this.results
         );
         if (elapsed > 8) break;
-      } catch {
+      } catch (err) {
+        if (signal.aborted) {
+          stopUploadPing();
+          throw new DOMException("Aborted", "AbortError");
+        }
         break;
       }
     }
@@ -455,6 +509,7 @@ export const SpeedTest = {
       this.results.bufferbloatIncrease = Math.max(0, Math.round(this.results.loadedLatency - this.results.latency));
     }
 
+    this.abortController = null;
     return this.results;
   },
 

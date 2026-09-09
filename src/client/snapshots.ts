@@ -1,5 +1,8 @@
 import { SpeedTest } from "./speed-test.ts";
 import { loadHistory, persistHistory } from "./ui-utils.ts";
+import { t } from "./i18n.ts";
+
+let clearTimer: number | null = null;
 
 interface Snapshot {
   ts: number;
@@ -45,8 +48,37 @@ function saveSnapshot(): void {
 }
 
 function clearSnapshots(): void {
-  localStorage.removeItem(KEY);
-  renderSnapshotHistory();
+  const btn = document.getElementById("snapshot-clear-btn") as HTMLButtonElement | null;
+  if (!btn) {
+    localStorage.removeItem(KEY);
+    renderSnapshotHistory();
+    return;
+  }
+
+  const originalText = btn.dataset.defaultText || btn.textContent || "Clear";
+  btn.dataset.defaultText = originalText;
+
+  if (btn.dataset.confirming === "true") {
+    if (clearTimer) {
+      clearTimeout(clearTimer);
+      clearTimer = null;
+    }
+    btn.dataset.confirming = "false";
+    btn.textContent = originalText;
+    btn.classList.remove("btn-warn");
+    localStorage.removeItem(KEY);
+    renderSnapshotHistory();
+  } else {
+    btn.dataset.confirming = "true";
+    btn.textContent = t("history.confirmClear");
+    btn.classList.add("btn-warn");
+    clearTimer = window.setTimeout(() => {
+      btn.dataset.confirming = "false";
+      btn.textContent = originalText;
+      btn.classList.remove("btn-warn");
+      clearTimer = null;
+    }, 4000);
+  }
 }
 
 function fmtDelta(cur: number | null, prev: number | null, unit: string, lowerBetter = false): string {

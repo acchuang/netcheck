@@ -125,10 +125,29 @@ export const DnsCheck = {
 
   async lookupDns(domain: string, type: string): Promise<DnsResult> {
     try {
-      const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`);
-      return await res.json();
-    } catch {
-      return { error: "DNS lookup failed" };
+      const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) {
+        if (res.status === 429) return { error: "Rate limit reached. Please wait a moment." };
+        if (res.status === 400) return { error: "Invalid domain name or record type format." };
+        if (res.status >= 500) return { error: `Upstream DNS resolver server error (HTTP ${res.status}).` };
+        return { error: `DNS lookup failed (HTTP ${res.status}).` };
+      }
+      const data = (await res.json()) as DnsResult;
+      if (data.Status === 3) {
+        return { ...data, error: `Domain not found (NXDOMAIN: ${domain}).` };
+      } else if (data.Status === 2) {
+        return { ...data, error: `DNS server failure (SERVFAIL) querying ${domain}.` };
+      } else if (data.Status !== 0 && (!data.Answer || data.Answer.length === 0)) {
+        return { ...data, error: `DNS query returned status code ${data.Status}.` };
+      }
+      return data;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "TimeoutError") {
+        return { error: "DNS lookup timed out after 8s." };
+      }
+      return { error: "DNS lookup network request failed. Check your internet connection." };
     }
   },
 
@@ -859,6 +878,10 @@ function renderLookupResults(domain: string, allData: Record<string, any>): void
       hasRecords = true;
       const typeName = RR_NAMES[rec.type] ?? recType;
       html += `<tr><td><span class="dns-type-badge">${escapeHtml(typeName)}</span></td><td class="mono">${escapeHtml(rec.name || domain)}</td><td class="mono">${escapeHtml(rec.data)}</td><td>${escapeHtml(rec.TTL)}s</td></tr>`;
+    }
+    if (data?.error && answers.length === 0) {
+      hasRecords = true;
+      html += `<tr><td><span class="dns-type-badge">${escapeHtml(recType)}</span></td><td class="mono">${escapeHtml(domain)}</td><td colspan="2" style="color: var(--red); font-size: 13px;">${escapeHtml(data.error)}</td></tr>`;
     }
   }
 

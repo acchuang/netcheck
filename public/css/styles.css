@@ -1052,6 +1052,146 @@ html::before {
   grid-column: 1 / -1;
 }
 
+/* Quick Health Check Banner */
+.quick-check-banner {
+  background: var(--card-bg);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--card-inset);
+  animation: slide-up 0.3s ease-out both;
+}
+
+.quick-check-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.quick-check-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.quick-check-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+.quick-check-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.quick-metric-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.quick-metric-card:hover {
+  border-color: var(--hover-border);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.qm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.qm-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.qm-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 6px;
+}
+
+/* DNS Diagnostic Workstation */
+.dns-workstation-card {
+  margin-top: 24px;
+}
+
+.workstation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.workstation-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.workstation-tabs {
+  display: inline-flex;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.workstation-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.workstation-tab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.workstation-tab.active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.workstation-panel {
+  display: none;
+}
+
+.workstation-panel.active {
+  display: block;
+}
+
+.raw-toggle-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -1378,6 +1518,48 @@ select option {
   background: var(--brand-hover);
   border-color: transparent;
   color: var(--on-brand);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #f87171;
+}
+
+.btn-warn {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: #f59e0b !important;
+}
+
+.btn-warn:hover {
+  background: rgba(245, 158, 11, 0.28) !important;
+  border-color: rgba(245, 158, 11, 0.65) !important;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.btn-copied {
+  color: var(--emerald) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
 .lookup-results {
@@ -2190,6 +2372,8 @@ select option {
   border-radius: 2px;
   width: 0%;
   transition: width 0.3s ease-out;
+  contain: layout;
+  will-change: width;
 }
 
 .speed-progress-fill.download { background: var(--accent); }
@@ -2516,7 +2700,20 @@ select option {
   }
 
   .speed-gauge-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .quick-check-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .workstation-tabs {
+    width: 100%;
+  }
+
+  .workstation-tab {
+    flex: 1;
+    text-align: center;
   }
 
   .speed-status-row {
@@ -2648,6 +2845,10 @@ select option {
     gap: 8px;
   }
 
+  .speed-gauge:last-child {
+    grid-column: 1 / -1;
+  }
+
   .speed-gauge-value {
     font-size: 24px;
   }
@@ -2679,7 +2880,7 @@ select option {
 
 /* Print styles */
 @media print {
-  .nav, .footer, .btn, .export-dropdown, .theme-dropdown, .suggestions-section, .speed-server-badge {
+  .nav, .footer, .btn, .export-dropdown, .theme-dropdown, .suggestions-section, .speed-server-badge, .workstation-tabs, .quick-check-banner {
     display: none !important;
   }
 
@@ -2691,11 +2892,16 @@ select option {
   .card {
     border: 1px solid #ddd;
     box-shadow: none;
+    page-break-inside: avoid;
   }
 
   .section {
     display: block !important;
     page-break-after: always;
+  }
+
+  .workstation-panel {
+    display: block !important;
   }
 }
 

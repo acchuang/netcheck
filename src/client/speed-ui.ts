@@ -74,6 +74,9 @@ function renderServerOptionLabels(): void {
 
 export async function initSpeedTest(): Promise<void> {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
+  document.getElementById("speed-cancel-btn")?.addEventListener("click", () => {
+    SpeedTest.abort();
+  });
   const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
   const customRow = document.getElementById("speed-custom-url-row");
   const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;
@@ -233,8 +236,10 @@ async function runSpeedTest(): Promise<void> {
   }
 
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
+  const cancelBtn = document.getElementById("speed-cancel-btn") as HTMLButtonElement | null;
   btn.disabled = true;
   btn.textContent = t("speed.running");
+  if (cancelBtn) cancelBtn.classList.remove("hidden");
   hideVerdict("speed-verdict");
 
   speedGraphData.download = [];
@@ -295,18 +300,32 @@ async function runSpeedTest(): Promise<void> {
           speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
           drawSpeedGraph();
         }
+
+        const canvas = document.getElementById("speed-graph");
+        if (canvas) {
+          const dlStr = data.download !== null ? `${data.download.toFixed(1)} Mbps down` : "";
+          const ulStr = data.upload !== null ? `${data.upload.toFixed(1)} Mbps up` : "";
+          const latStr = data.latency !== null ? `${data.latency} ms ping` : "";
+          canvas.setAttribute("aria-label", `Real-time speed graph: ${[dlStr, ulStr, latStr].filter(Boolean).join(", ")}`);
+        }
       }
     }, serverId);
-  } catch {
-    // server refused init (e.g. fast.com discovery failed, expired target)
+  } catch (err) {
+    if (cancelBtn) cancelBtn.classList.add("hidden");
     setActiveGauge("");
-    document.getElementById("speed-phase")!.textContent = t("speed.serverUnreachable");
-    document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
     btn.disabled = false;
     btn.textContent = t("speed.runBtn");
+    if (err instanceof DOMException && err.name === "AbortError") {
+      document.getElementById("speed-phase")!.textContent = t("speed.cancelled");
+      return;
+    }
+    // server refused init (e.g. fast.com discovery failed, expired target)
+    document.getElementById("speed-phase")!.textContent = t("speed.serverUnreachable");
+    document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
     return;
   }
 
+  if (cancelBtn) cancelBtn.classList.add("hidden");
   setActiveGauge(""); // clear active state
   renderSpeedResults(results);
   // colo lookup failed this run (transient, or a non-locatable server like fast.com) — don't leave the label on "detecting..."

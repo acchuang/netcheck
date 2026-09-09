@@ -116,6 +116,43 @@
 
       <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
 
+      <!-- Quick Health Check Banner -->
+      <div class="quick-check-banner" id="quick-check-banner">
+        <div class="quick-check-header">
+          <div class="quick-check-info">
+            <h2 class="quick-check-title" id="quick-check-title">Quick Health Check</h2>
+            <p class="quick-check-subtitle" id="quick-check-subtitle">10-second automated diagnostic across DNS security, connection speed, and adblock protection</p>
+          </div>
+          <button id="quick-check-btn" class="btn btn-primary">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="quick-check-btn-text">Run 10-Second Complete Audit</span>
+          </button>
+        </div>
+        <div class="quick-check-metrics" id="quick-check-metrics">
+          <div class="quick-metric-card" id="qm-dns" role="button" tabindex="0" title="Click to view DNS Security details">
+            <div class="qm-header">
+              <span class="qm-label" id="qm-dns-label">DNS Privacy</span>
+              <span class="status-badge" id="qm-dns-status">pending</span>
+            </div>
+            <div class="qm-value" id="qm-dns-val">DNSSEC · Leak Guard</div>
+          </div>
+          <div class="quick-metric-card" id="qm-speed" role="button" tabindex="0" title="Click to view Speed Test">
+            <div class="qm-header">
+              <span class="qm-label" id="qm-speed-label">Speed & Ping</span>
+              <span class="status-badge" id="qm-speed-status">ready</span>
+            </div>
+            <div class="qm-value" id="qm-speed-val">Latency & Bandwidth</div>
+          </div>
+          <div class="quick-metric-card" id="qm-adblock" role="button" tabindex="0" title="Click to view Ad Block Test">
+            <div class="qm-header">
+              <span class="qm-label" id="qm-adblock-label">Ad & Tracker Block</span>
+              <span class="status-badge" id="qm-adblock-status">ready</span>
+            </div>
+            <div class="qm-value" id="qm-adblock-val">Tracker Defense</div>
+          </div>
+        </div>
+      </div>
+
       <div class="cards-grid">
         <!-- IP Info Card -->
         <div class="card">
@@ -222,46 +259,71 @@
         </div>
       </div>
 
-      <!-- DNS Lookup Tool -->
-      <div class="card card-wide">
-        <div class="card-header">
-          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <h2 class="card-title" id="dns-lookup-title">DNS Lookup</h2>
+      <!-- DNS Diagnostic Workstation -->
+      <div class="card card-wide dns-workstation-card">
+        <div class="card-header workstation-header">
+          <div class="workstation-title-group">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <h2 class="card-title" id="dns-workstation-title">DNS Diagnostic Workstation</h2>
+          </div>
+          <div class="workstation-tabs" role="tablist" aria-label="DNS Diagnostic Tools">
+            <button type="button" class="workstation-tab active" role="tab" aria-selected="true" aria-controls="dns-panel-lookup" id="tab-tool-lookup" data-tool="lookup">Record Lookup</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-compare" id="tab-tool-compare" data-tool="compare">Compare Resolvers</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-health" id="tab-tool-health" data-tool="health">Domain Email Health</button>
+          </div>
         </div>
         <div class="card-body">
-          <div class="lookup-form">
-            <input type="text" id="dns-lookup-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to lookup">
-            <select id="dns-lookup-type" class="input select" aria-label="DNS record type">
-              <option value="A">A</option>
-              <option value="AAAA">AAAA</option>
-              <option value="MX">MX</option>
-              <option value="NS">NS</option>
-              <option value="TXT">TXT</option>
-              <option value="CNAME">CNAME</option>
-              <option value="SOA">SOA</option>
-              <option value="SRV">SRV</option>
-              <option value="PTR" id="dns-ptr-option">PTR (Reverse)</option>
-              <option value="ALL" id="dns-all-option">All Records</option>
-            </select>
-            <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
-            <button id="dns-compare-btn" class="btn">Compare Resolvers</button>
+          <!-- Tool 1: Record Lookup -->
+          <div class="workstation-panel active" id="dns-panel-lookup" role="tabpanel" aria-labelledby="tab-tool-lookup">
+            <div class="lookup-form">
+              <input type="text" id="dns-lookup-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to lookup">
+              <select id="dns-lookup-type" class="input select" aria-label="DNS record type">
+                <option value="A">A</option>
+                <option value="AAAA">AAAA</option>
+                <option value="MX">MX</option>
+                <option value="NS">NS</option>
+                <option value="TXT">TXT</option>
+                <option value="CNAME">CNAME</option>
+                <option value="SOA">SOA</option>
+                <option value="SRV">SRV</option>
+                <option value="PTR" id="dns-ptr-option">PTR (Reverse)</option>
+                <option value="ALL" id="dns-all-option">All Records</option>
+              </select>
+              <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
+            </div>
+            <div id="dns-lookup-results" class="lookup-results hidden">
+              <div id="dns-lookup-table"></div>
+              <details class="raw-toggle">
+                <summary class="raw-toggle-summary" id="dns-raw-json-summary">
+                  <span>Raw JSON</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" title="Copy raw JSON output">Copy JSON</button>
+                </summary>
+                <pre class="code-block"><code id="dns-lookup-output"></code></pre>
+              </details>
+            </div>
           </div>
-          <div id="dns-compare-results" class="lookup-results hidden"></div>
-          <div id="dns-lookup-results" class="lookup-results hidden">
-            <div id="dns-lookup-table"></div>
-            <details class="raw-toggle">
-              <summary class="raw-toggle-summary" id="dns-raw-json-summary">Raw JSON</summary>
-              <pre class="code-block"><code id="dns-lookup-output"></code></pre>
-            </details>
+
+          <!-- Tool 2: Resolver Comparison -->
+          <div class="workstation-panel" id="dns-panel-compare" role="tabpanel" aria-labelledby="tab-tool-compare" hidden>
+            <div class="lookup-form">
+              <input type="text" id="dns-compare-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to compare across resolvers">
+              <button id="dns-compare-btn" class="btn btn-primary">Compare Resolvers</button>
+            </div>
+            <div id="dns-compare-results" class="lookup-results hidden"></div>
           </div>
-          <div class="lookup-form">
-            <input type="text" id="dns-health-selector" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
-            <button id="dns-health-btn" class="btn">Check Domain Health</button>
+
+          <!-- Tool 3: Domain Email Health (SPF/DMARC/DKIM) -->
+          <div class="workstation-panel" id="dns-panel-health" role="tabpanel" aria-labelledby="tab-tool-health" hidden>
+            <div class="lookup-form">
+              <input type="text" id="dns-health-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name for email health check">
+              <input type="text" id="dns-health-selector" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
+              <button id="dns-health-btn" class="btn btn-primary">Check Domain Health</button>
+            </div>
+            <div id="dns-health-results" class="lookup-results hidden"></div>
           </div>
-          <div id="dns-health-results" class="lookup-results hidden"></div>
         </div>
       </div>
 
@@ -316,7 +378,7 @@
       <div class="speed-dashboard">
         <div class="speed-gauge-row">
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-download-label" data-tooltip="Maximum download speed measured via progressive file transfers">Download</div>
+            <div class="speed-gauge-label" id="speed-download-label" tabindex="0" role="note" data-tooltip="Maximum download speed measured via progressive file transfers">Download</div>
             <div class="speed-gauge-value placeholder" id="speed-download">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
@@ -324,7 +386,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-upload-label" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</div>
+            <div class="speed-gauge-label" id="speed-upload-label" tabindex="0" role="note" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</div>
             <div class="speed-gauge-value placeholder" id="speed-upload">—</div>
             <div class="speed-gauge-unit">Mbps</div>
             <div class="speed-progress-bar">
@@ -332,7 +394,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-latency-label" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</div>
+            <div class="speed-gauge-label" id="speed-latency-label" tabindex="0" role="note" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</div>
             <div class="speed-gauge-value placeholder" id="speed-latency">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
@@ -340,7 +402,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-jitter-label" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</div>
+            <div class="speed-gauge-label" id="speed-jitter-label" tabindex="0" role="note" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</div>
             <div class="speed-gauge-value placeholder" id="speed-jitter">—</div>
             <div class="speed-gauge-unit">ms</div>
             <div class="speed-progress-bar">
@@ -348,7 +410,7 @@
             </div>
           </div>
           <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-bufferbloat-label" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</div>
+            <div class="speed-gauge-label" id="speed-bufferbloat-label" tabindex="0" role="note" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</div>
             <div class="speed-gauge-value placeholder" id="speed-bufferbloat">—</div>
             <div class="speed-gauge-unit" id="speed-bufferbloat-unit">grade</div>
             <div class="speed-progress-bar">
@@ -364,6 +426,7 @@
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>
           <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
+          <button class="btn btn-danger btn-large hidden" id="speed-cancel-btn">Cancel Test</button>
           <button class="btn btn-small" id="snapshot-save-btn" title="Save current results to compare later" disabled>Save Snapshot</button>
         </div>
         <!-- Speed Graph -->
@@ -375,7 +438,7 @@
               <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend">Upload</span></span>
             </div>
           </div>
-          <canvas id="speed-graph" width="1100" height="200"></canvas>
+          <canvas id="speed-graph" width="1100" height="200" role="img" aria-label="Real-time speed test performance curve"></canvas>
         </div>
 
         <!-- Speed Snapshot History -->

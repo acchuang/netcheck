@@ -323,14 +323,16 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
     })
     .join("");
 
+  const bodyId = "adblock-cat-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
   div.innerHTML = `
-    <div class="test-category-header" role="button" tabindex="0" aria-expanded="false" onclick="const p=this.parentElement;p.classList.toggle('open');this.setAttribute('aria-expanded',p.classList.contains('open')?'true':'false');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();const p=this.parentElement;p.classList.toggle('open');this.setAttribute('aria-expanded',p.classList.contains('open')?'true':'false');}">
+    <div class="test-category-header" role="button" tabindex="0" aria-expanded="false" aria-controls="${bodyId}" onclick="const p=this.parentElement;const open=p.classList.toggle('open');this.setAttribute('aria-expanded',open?'true':'false');const b=document.getElementById('${bodyId}');if(b)b.setAttribute('aria-hidden',open?'false':'true');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();const p=this.parentElement;const open=p.classList.toggle('open');this.setAttribute('aria-expanded',open?'true':'false');const b=document.getElementById('${bodyId}');if(b)b.setAttribute('aria-hidden',open?'false':'true');}">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
       <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>
       <span class="test-category-score">${t("adblock.blockedOf", blocked, tests.length)}</span>
     </div>
-    <div class="test-category-body">${testsHtml}</div>
+    <div class="test-category-body" id="${bodyId}" aria-hidden="true">${testsHtml}</div>
   `;
   return div;
 }
