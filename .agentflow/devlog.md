@@ -102,6 +102,8 @@ Settings as written: `target-doc: .agentflow/devlog.md`, `workspace-dir: .agentf
 
 + agf
 
+skip-review: notebook-only, no source or behavior changes; shell config outside repo
+
 ## [RUN-001] Event (during round A-002)
 
 Route: direct. Owner wrote "agf", read as answering the A-001 open question about installing the shell shortcut. Intake valid, branch main, no changed repository paths. `agf.js setup` reported 3 missing items; `setup --fix` (answered y on stdin, since the prompt declines under a non-TTY) wrote agf(), agf-looper(), and AGF_OPEN into ~/.zshrc after backing it up to ~/.zshrc.bak-agentflow-setup. Recheck reports "all good"; `zsh -ic 'agf settings show'` returned real settings output, proving the function loads in a live shell. Nothing inside the repository changed.

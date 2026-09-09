@@ -272,7 +272,7 @@ async function handleOoklaTargets(request: Request): Promise<Response> {
       https_functional?: number;
     }[];
     const targets = servers
-      .filter((s) => s.https_functional === 1 && s.url?.startsWith("http://"))
+      .filter((s) => s.https_functional === 1 && s.url?.startsWith("http"))
       .map((s) => ({
         url: s.url!.replace("http://", "https://"),
         name: s.name ?? "",
