@@ -483,6 +483,17 @@
         </div>
       </div>
 
+      <div class="card card-wide" id="fingerprint-card">
+        <div class="card-header">
+          <h2 class="card-title" id="fingerprint-title">Fingerprint Surface</h2>
+          <span class="status-badge" id="fingerprint-level" aria-live="polite">—</span>
+        </div>
+        <div class="card-body">
+          <p class="info-muted" id="fingerprint-note">Read straight from the browser APIs a fingerprinter would call — no filter list involved, and no effect on the block score above.</p>
+          <div id="fingerprint-signals"></div>
+        </div>
+      </div>
+
       <div class="card card-wide" id="adblock-custom-card" hidden>
         <div class="card-header">
           <h2 class="card-title" id="adblock-custom-title">Custom URL Test</h2>
@@ -656,7 +667,7 @@
             <h2 class="card-title" id="about-feat-adblock-title">Ad Block Test</h2>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-feat-adblock-desc">Runs 30+ tests across 7 categories with weighted scoring, detects filter lists, identifies which blocker you're running, and tests any custom URL.</p>
+            <p class="info-muted" id="about-feat-adblock-desc">Runs 25+ tests across 6 categories with weighted scoring, detects filter lists, identifies which blocker you're running, and tests any custom URL. Fingerprint resistance is measured separately, from the browser APIs themselves.</p>
           </div>
         </div>
         <div class="card">

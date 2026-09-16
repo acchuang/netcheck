@@ -15,12 +15,13 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### Speed Test
 - Download/upload bandwidth, latency, and jitter against Cloudflare's edge, `speed.cloudflare.com`, Netflix's fast.com, or Ookla Speedtest servers (nearest found via your city — proxies only the tiny discovery call; speed traffic goes browser → server direct)
-- Bufferbloat / loaded-latency grading — measures latency increase under a saturated link
-- Progressive chunk sizing that adapts to connection speed
+- Bufferbloat / loaded-latency grading — latency increase under a saturated link, taken from whichever direction queued worse, with loaded pings capped at 3s so a stalled probe counts instead of vanishing
+- Progressive chunk sizing that adapts to connection speed: steps under 5 MB are warm-up only (TCP slow start is excluded from the clock), and the measured steps run 4 connections wide so a fast link isn't bounded by a single stream's window
 - Letter grades (A+ to F) for both raw speed and bufferbloat
 
 ### Ad Block Test
-- 30+ tests across 7 categories: contextual ads, analytics & tracking, banner/display ads, error monitoring, social trackers, fingerprint protection, cookie/consent annoyances
+- 25+ tests across 6 categories: contextual ads, analytics & tracking, banner/display ads, error monitoring, social trackers, cookie/consent annoyances
+- Fingerprint surface reported in its own panel, outside the score: clock precision, canvas readback stability, unmasked GPU model, core count, device memory and time zone, read from the APIs a fingerprinter would call
 - Scores your blocker 0–100 with per-category breakdowns and per-test "why blocked" detail; categories are weighted by importance (high/medium/low) so blocking serious trackers counts more than cosmetic ads
 - Detects 10 filter lists (EasyList, EasyPrivacy, Fanboy's Annoyances/Social, Peter Lowe's, Malware Domains, uBlock Filters, AdGuard Base/Tracking) plus Acceptable Ads whitelist status
 - Identifies which blocker you're likely running (Brave Shields, uBlock Origin, AdGuard, browser-native, etc.)
@@ -37,7 +38,8 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - PWA with offline precaching and responsive Linear-inspired dark/light theme
 - Export a full diagnostic report as Markdown or printable PDF — nothing leaves your device
 - Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
-- Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited to resist abuse
+- Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited via Cloudflare's Rate Limiting binding, which counts across isolates; an in-worker counter is the fallback for `wrangler dev`
+- Speed-test endpoints are limited by bytes moved per IP per minute, not by request count — egress is the cost there
 
 ## Optional: recursion-path probing (self-hosted)
 
@@ -49,9 +51,11 @@ Enable it by setting all three on the Worker:
 
 | Variable | Where | Example |
 | --- | --- | --- |
-| `PROBE_SERVER_URL` | `wrangler.toml` `[vars]` | `http://198.51.100.10:8080` |
+| `PROBE_SERVER_URL` | `wrangler.toml` `[vars]` | `https://ns-probe.example.com:8443` |
 | `PROBE_ZONE` | `wrangler.toml` `[vars]` | `p.example.com` |
 | `PROBE_SECRET` | `wrangler secret put` | — |
+
+The URL must be `https://` (localhost excepted): `PROBE_SECRET` travels in a request header, so a plaintext URL is refused and reported as unconfigured rather than sent in the clear.
 
 With any of them missing, the client is told the probe does not exist here: it skips the lookup entirely, and the DNS card drops both the encrypted-DNS row and the "your recursive resolver" block rather than showing a check it cannot answer.
 
