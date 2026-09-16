@@ -10,7 +10,8 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 - Public IP detection with geolocation, ISP/ASN, and Cloudflare PoP
 - Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers
 - Security assessment: DNSSEC validation, DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection
-- ECS leak detection — checks whether resolvers forward your client subnet to upstreams and flags leaks
+- Encrypted-DNS verdict takes the worst hop, not the best one: a router that forwards to your ISP's resolver, which forwards to Cloudflare, is reported as plaintext on the first hop rather than as encrypted because a recognised operator appeared somewhere in the chain
+- ECS leak detection — flags resolvers that forward your client subnet upstream, and (with the probe below enabled) reports the subnet a hop actually forwarded about *you*, encrypted path or not
 - Interactive lookup tool for A, AAAA, MX, NS, TXT, CNAME, SOA, SRV records
 
 ### Speed Test
@@ -45,7 +46,9 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 **Off by default, and off on [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz).** This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
 
-`probe-server/` is an authoritative nameserver for a zone you delegate to it. The browser resolves `<token>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs, and any EDNS Client Subnet forwarded. A DoH-only page can never learn this about its visitor, because it only ever talks to the one resolver it picked.
+`probe-server/` is an authoritative nameserver for a zone you delegate to it. The browser resolves `<label>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs, and any EDNS Client Subnet forwarded. A DoH-only page can never learn this about its visitor, because it only ever talks to the one resolver it picked.
+
+The label is the SHA-256 of a read key the visitor's tab keeps to itself. Every resolver in the path sees the label, and so do the nameserver's own logs, so observing a query must not be enough to read the result back: only the key names the session, and it never travels in a DNS query. The Worker presents the key over TLS to fetch the result.
 
 Enable it by setting all three on the Worker:
 
@@ -99,6 +102,7 @@ netcheck-site/
 npm install
 npm run dev        # Vite dev server with the Cloudflare Workers runtime
 npm run typecheck  # tsc --noEmit
+npm test           # node --test — no framework, no browser, no network
 ```
 
 To exercise the recursion probe locally, put the three variables in a gitignored
