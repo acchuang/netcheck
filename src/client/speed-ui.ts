@@ -368,7 +368,7 @@ function renderSpeedResults(results: SpeedTestResults): void {
   document.getElementById("speed-grade")!.hidden = true;
   document.getElementById("speed-grade-label")!.textContent = t("speed.complete");
   document.getElementById("speed-phase")!.textContent =
-    results.packetLoss !== null ? `${results.packetLoss}% ${t("speed.loss")}` : t("speed.compareHint");
+    results.failedProbes !== null ? `${results.failedProbes}% ${t("speed.loss")}` : t("speed.compareHint");
 
   renderSpeedSuggestions(results);
 }

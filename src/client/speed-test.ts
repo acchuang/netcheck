@@ -3,7 +3,14 @@ export interface SpeedTestResults {
   upload: number | null;
   latency: number | null;
   jitter: number | null;
-  packetLoss: number | null; // % of idle pings that failed
+  /**
+   * % of idle latency probes that got no answer. Deliberately NOT called packet
+   * loss: TCP retransmits lost packets, so real loss shows up as latency and a
+   * probe still succeeds. 10 samples also means the only expressible values are
+   * 0, 10, 20… A non-zero value here means requests failed outright — timeout,
+   * reset, or the target refusing us.
+   */
+  failedProbes: number | null;
 
   colo: string | null;
   userLat: number | null;
@@ -236,18 +243,102 @@ async function pingOnce(server: SpeedServer, signal?: AbortSignal): Promise<numb
   }
 }
 
+// A loaded ping that never returns is the strongest bufferbloat signal there
+// is, so it must not be the one sample we throw away. Without a deadline the
+// pinger inherits only the run's abort signal, waits out the browser's own
+// multi-second timeout, and records nothing — leaving the median built from
+// exactly the pings that were fast enough to come back. That reports a
+// congested link as a clean one.
+const LOADED_PING_TIMEOUT_MS = 3000;
+
 // Bufferbloat: ping in the background while download/upload saturate the link,
 // so latency-under-load can be compared against the idle baseline.
 function startLoadedPinger(server: SpeedServer, sink: number[], signal?: AbortSignal): () => void {
   let stopped = false;
   (async () => {
     while (!stopped && !signal?.aborted) {
-      const ms = await pingOnce(server, signal);
+      const started = performance.now();
+      const ms = await pingOnce(server, combineSignal(LOADED_PING_TIMEOUT_MS, signal));
+      const waited = performance.now() - started;
       if (ms !== null) sink.push(ms);
+      // Failed at the deadline: a floor, not a measurement — the real latency
+      // is at least this. A fast failure is a reset or a CORS refusal, which
+      // says nothing about queueing, so that one is still dropped.
+      else if (!signal?.aborted && waited >= LOADED_PING_TIMEOUT_MS - 50) sink.push(LOADED_PING_TIMEOUT_MS);
       await new Promise((r) => setTimeout(r, 500));
     }
   })();
   return () => { stopped = true; };
+}
+
+/**
+ * Bufferbloat is directional — a link can queue badly upstream and be clean
+ * downstream — and the two phases run at different times, so pooling their
+ * pings into one median lets the calmer phase dilute the worse one. Report the
+ * worse direction, which is the one the user actually feels on a video call.
+ */
+export function worseLoadedLatency(download: number | null, upload: number | null): number | null {
+  if (download === null) return upload;
+  if (upload === null) return download;
+  return Math.max(download, upload);
+}
+
+/**
+ * The first step big enough to measure. Everything below this is warm-up: TCP
+ * slow start, TLS, and the connection pool ramping mean a 100 KB request is
+ * mostly overhead, and averaging it in drags a fast link's number down by more
+ * than the small steps contribute in confidence.
+ */
+export const MEASURE_FROM_BYTES = 5_000_000;
+
+/**
+ * One connection cannot fill a fast link: a single TCP stream is bounded by
+ * window size over RTT, so a 500 Mbps line across an ocean measures like a
+ * 50 Mbps one. Real clients open several. Only the measured steps get the
+ * parallelism — running the warm-up steps four-wide would just multiply the
+ * slow-start overhead we are already excluding.
+ */
+export const MEASURED_STREAMS = 4;
+
+export function streamsFor(bytes: number): number {
+  return bytes >= MEASURE_FROM_BYTES ? MEASURED_STREAMS : 1;
+}
+
+export function mbps(bytes: number, seconds: number): number | null {
+  if (bytes <= 0 || seconds <= 0) return null;
+  return Math.round(((bytes * 8) / (seconds * 1e6)) * 100) / 100;
+}
+
+/** Streams one download to completion, reporting bytes as they arrive. */
+async function downloadOnce(
+  server: SpeedServer, bytes: number, signal: AbortSignal, onBytes: (n: number) => void
+): Promise<void> {
+  const res = await fetch(server.downUrl(bytes), { cache: "no-store", signal });
+  if (!res.body) {
+    onBytes((await res.blob()).size);
+    return;
+  }
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    onBytes(value.byteLength);
+  }
+}
+
+/**
+ * Mean absolute difference between consecutive samples, in the order they
+ * arrived. Order is the whole point: summing |Δ| over a *sorted* array
+ * telescopes to max − min, so a steady link with one spike and a link that
+ * oscillates every ping would report identical jitter.
+ */
+export function jitterOf(samplesInArrivalOrder: number[]): number {
+  if (samplesInArrivalOrder.length < 2) return 0;
+  let sum = 0;
+  for (let i = 1; i < samplesInArrivalOrder.length; i++) {
+    sum += Math.abs(samplesInArrivalOrder[i] - samplesInArrivalOrder[i - 1]);
+  }
+  return Math.round((sum / (samplesInArrivalOrder.length - 1)) * 10) / 10;
 }
 
 function median(values: number[]): number | null {
@@ -316,7 +407,7 @@ export const SpeedTest = {
     upload: null,
     latency: null,
     jitter: null,
-    packetLoss: null,
+    failedProbes: null,
     loadedLatency: null,
     bufferbloatIncrease: null,
     colo: null,
@@ -337,7 +428,7 @@ export const SpeedTest = {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
     this.results = {
-      download: null, upload: null, latency: null, jitter: null, packetLoss: null, colo: null, userLat: null, userLon: null,
+      download: null, upload: null, latency: null, jitter: null, failedProbes: null, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
     };
     if (serverId === "custom" && !hasCustomServerUrl()) {
@@ -348,7 +439,8 @@ export const SpeedTest = {
       throw new Error("Server unavailable");
     }
     const cb: ProgressCallback = onProgress || (() => {});
-    const loadedPings: number[] = [];
+    const downloadPings: number[] = [];
+    const uploadPings: number[] = [];
 
     // Latency
     cb("latency", 0, this.results);
@@ -376,19 +468,14 @@ export const SpeedTest = {
       }
       cb("latency", Math.round(((i + 1) / PING_COUNT) * 100), this.results);
     }
-    this.results.packetLoss = Math.round((lostPings / PING_COUNT) * 100);
+    this.results.failedProbes = Math.round((lostPings / PING_COUNT) * 100);
 
     if (pings.length > 0) {
-      pings.sort((a, b) => a - b);
-      this.results.latency =
-        Math.round(pings[Math.floor(pings.length / 2)] * 10) / 10;
-      let jitterSum = 0;
-      for (let i = 1; i < pings.length; i++)
-        jitterSum += Math.abs(pings[i] - pings[i - 1]);
-      this.results.jitter =
-        pings.length > 1
-          ? Math.round((jitterSum / (pings.length - 1)) * 10) / 10
-          : 0;
+      // Jitter first, while `pings` is still in arrival order — median() sorts a
+      // copy, but this used to sort `pings` in place and then walk the sorted
+      // array for jitter, which silently reported range / (n − 1) instead.
+      this.results.jitter = jitterOf(pings);
+      this.results.latency = Math.round(median(pings)! * 10) / 10;
     }
     cb("latency", 100, this.results);
 
@@ -396,67 +483,60 @@ export const SpeedTest = {
     cb("download", 0, this.results);
     const dlSizes = [100000, 500000, 1000000, 5000000, 10000000, 25000000];
     const dlStart = performance.now();
-    let dlTotalBytes = 0;
-    const stopDownloadPing = startLoadedPinger(server, loadedPings, signal);
+    // Two clocks. `measureStart` opens at the first step big enough to trust
+    // and is what the reported number comes from; the warm-up totals are kept
+    // only so a link too slow to finish a single measured step still reports
+    // something instead of a dash.
+    let measureStart: number | null = null;
+    let measuredBytes = 0;
+    let warmupBytes = 0;
+    let step = 0;
+    const stopDownloadPing = startLoadedPinger(server, downloadPings, signal);
 
-    for (let i = 0; i < dlSizes.length; i++) {
+    const addDownloadBytes = (n: number): void => {
+      if (measureStart === null) warmupBytes += n;
+      else measuredBytes += n;
+      const elapsed = ((performance.now() - (measureStart ?? dlStart))) / 1000;
+      const speed = mbps(measureStart === null ? warmupBytes : measuredBytes, elapsed);
+      if (speed !== null) this.results.download = speed;
+      cb("download", Math.round(((step + 0.5) / dlSizes.length) * 100), this.results);
+    };
+
+    for (step = 0; step < dlSizes.length; step++) {
       if (signal.aborted) {
         stopDownloadPing();
         throw new DOMException("Aborted", "AbortError");
       }
+      const size = dlSizes[step];
+      const streams = streamsFor(size);
+      if (streams > 1 && measureStart === null) measureStart = performance.now();
+
       try {
-        const url = server.downUrl(dlSizes[i]);
-        const res = await fetch(url, {
-          cache: "no-store",
-          signal: combineSignal(12000, signal),
-        });
-
-        if (res.body) {
-          const reader = res.body.getReader();
-          while (true) {
-            if (signal.aborted) {
-              await reader.cancel();
-              stopDownloadPing();
-              throw new DOMException("Aborted", "AbortError");
-            }
-            const { done, value } = await reader.read();
-            if (done) break;
-            dlTotalBytes += value.byteLength;
-            const elapsed = (performance.now() - dlStart) / 1000;
-            this.results.download =
-              Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-            cb(
-              "download",
-              Math.round(((i + 0.5) / dlSizes.length) * 100),
-              this.results
-            );
-          }
-        } else {
-          const blob = await res.blob();
-          dlTotalBytes += blob.size;
-        }
-
-        const elapsed = (performance.now() - dlStart) / 1000;
-        this.results.download =
-          Math.round(((dlTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-        cb(
-          "download",
-          Math.round(((i + 1) / dlSizes.length) * 100),
-          this.results
+        // One deadline shared by the whole step: a straggler stream must not
+        // get its own fresh 12s after the others have finished.
+        const stepSignal = combineSignal(12000, signal);
+        await Promise.all(
+          Array.from({ length: streams }, () => downloadOnce(server, size, stepSignal, addDownloadBytes))
         );
-        if (elapsed > 8) break;
+        cb("download", Math.round(((step + 1) / dlSizes.length) * 100), this.results);
+        if ((performance.now() - dlStart) / 1000 > 8) break;
       } catch (err) {
         if (signal.aborted) {
           stopDownloadPing();
           throw new DOMException("Aborted", "AbortError");
         }
+        // A step that times out still delivered bytes on the way, and those
+        // are already counted — stop climbing the sizes, keep the measurement.
         break;
       }
     }
 
     stopDownloadPing();
-    const dlElapsed = (performance.now() - dlStart) / 1000;
-    if (dlElapsed === 0 || dlTotalBytes === 0) this.results.download = null;
+    if (measureStart !== null && measuredBytes > 0) {
+      this.results.download = mbps(measuredBytes, (performance.now() - measureStart) / 1000);
+    } else if (warmupBytes === 0) {
+      this.results.download = null;
+    }
     cb("download", 100, this.results);
 
     // Upload
@@ -464,47 +544,58 @@ export const SpeedTest = {
     const ulSizes = [100000, 500000, 1000000, 2000000, 5000000];
     const ulStart = performance.now();
     let ulTotalBytes = 0;
-    const stopUploadPing = startLoadedPinger(server, loadedPings, signal);
+    const stopUploadPing = startLoadedPinger(server, uploadPings, signal);
+
+    // Same two-clock, multi-stream shape as the download, for the same reasons.
+    let ulMeasureStart: number | null = null;
+    let ulMeasuredBytes = 0;
 
     for (let i = 0; i < ulSizes.length; i++) {
       if (signal.aborted) {
         stopUploadPing();
         throw new DOMException("Aborted", "AbortError");
       }
-      const data = server.makeUploadBody(ulSizes[i]);
+      const size = ulSizes[i];
+      const streams = streamsFor(size);
+      if (streams > 1 && ulMeasureStart === null) ulMeasureStart = performance.now();
 
       try {
-        await fetch(server.upUrl(), {
-          method: "POST",
-          body: data,
-          cache: "no-store",
-          signal: combineSignal(12000, signal),
-        });
-        ulTotalBytes += ulSizes[i];
-        const elapsed = (performance.now() - ulStart) / 1000;
-        this.results.upload =
-          Math.round(((ulTotalBytes * 8) / (elapsed * 1e6)) * 100) / 100;
-        cb(
-          "upload",
-          Math.round(((i + 1) / ulSizes.length) * 100),
-          this.results
+        const stepSignal = combineSignal(12000, signal);
+        await Promise.all(Array.from({ length: streams }, () =>
+          fetch(server.upUrl(), {
+            method: "POST",
+            // A fresh body per stream: one BodyInit cannot be sent twice.
+            body: server.makeUploadBody(size),
+            cache: "no-store",
+            signal: stepSignal,
+          })
+        ));
+        ulTotalBytes += size * streams;
+        if (ulMeasureStart !== null) ulMeasuredBytes += size * streams;
+        const measuring = ulMeasureStart !== null;
+        const speed = mbps(
+          measuring ? ulMeasuredBytes : ulTotalBytes,
+          (performance.now() - (ulMeasureStart ?? ulStart)) / 1000
         );
-        if (elapsed > 8) break;
+        if (speed !== null) this.results.upload = speed;
+        cb("upload", Math.round(((i + 1) / ulSizes.length) * 100), this.results);
+        if ((performance.now() - ulStart) / 1000 > 8) break;
       } catch (err) {
         if (signal.aborted) {
           stopUploadPing();
           throw new DOMException("Aborted", "AbortError");
         }
+        // Unlike the download, a failed upload step contributes nothing: the
+        // bytes may never have left, so they are not counted at all.
         break;
       }
     }
 
     stopUploadPing();
-    const ulElapsed = (performance.now() - ulStart) / 1000;
-    if (ulElapsed === 0 || ulTotalBytes === 0) this.results.upload = null;
+    if (ulTotalBytes === 0) this.results.upload = null;
     cb("upload", 100, this.results);
 
-    this.results.loadedLatency = median(loadedPings);
+    this.results.loadedLatency = worseLoadedLatency(median(downloadPings), median(uploadPings));
     if (this.results.loadedLatency !== null && this.results.latency !== null) {
       this.results.bufferbloatIncrease = Math.max(0, Math.round(this.results.loadedLatency - this.results.latency));
     }
