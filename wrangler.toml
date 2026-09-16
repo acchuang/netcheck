@@ -2,9 +2,21 @@ name = "netcheck-site"
 compatibility_date = "2025-04-01"
 main = "src/worker/index.ts"
 
+# Counts across isolates and colos, which the in-worker Map cannot. 20 requests
+# per 60s per IP per bucket, matching RATE_LIMITS in src/worker/index.ts — the
+# fallback counter uses those numbers when this binding is missing (wrangler
+# dev, tests), so the two should stay in step.
+# namespace_id is a local identifier, not an account resource: any stable
+# integer works, and changing it resets the counters.
+[[unsafe.bindings]]
+name = "API_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
 # The recursion-path probe is off unless all three are set. It needs an
 # authoritative nameserver you run yourself — see probe-server/README.md.
 # PROBE_SECRET is a secret: `wrangler secret put PROBE_SECRET`, never here.
 # [vars]
-# PROBE_SERVER_URL = "http://<nameserver-ip>:8080"
+# PROBE_SERVER_URL = "https://<nameserver-hostname>:8443"   # must be https: the secret rides in a header
 # PROBE_ZONE = "p.example.com"

@@ -2,10 +2,28 @@ import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 import {
   dohQuery, parseWhoami, DNSSEC_BOGUS_DOMAIN, ECS_PROBE_DOMAIN, AD_PROBE_DOMAIN, type DnsMessage,
 } from "../shared/dns-wire.ts";
-import { ipScope } from "../shared/ip-classify.ts";
+import { ipScope, isIp } from "../shared/ip-classify.ts";
+import { withHttpsScheme } from "../shared/url.ts";
+
+/**
+ * Cloudflare's Rate Limiting binding. Counts across every isolate in every
+ * colo, which is the part an in-process Map can't do. `limit()` is the whole
+ * surface: the budget itself lives in wrangler.toml.
+ */
+interface RateLimiterBinding {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
+export interface Env {
+  PROBE_SERVER_URL?: string;
+  PROBE_SECRET?: string;
+  PROBE_ZONE?: string;
+  API_RATE_LIMITER?: RateLimiterBinding;
+  [key: string]: unknown;
+}
 
 export default {
-  async fetch(request: Request, env?: Record<string, string>): Promise<Response> {
+  async fetch(request: Request, env?: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -21,12 +39,12 @@ export default {
     }
 
     if (url.pathname === "/api/dns") {
-      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
       return handleDnsCheck(request);
     }
 
     if (url.pathname === "/api/dns/probe-result") {
-      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
       return handleProbeResult(request, env);
     }
 
@@ -35,17 +53,17 @@ export default {
     }
 
     if (url.pathname === "/api/headers/check") {
-      if (isRateLimited(clientIp, "headers-check")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "headers-check")) return rateLimitedResponse();
       return handleHeadersCheck(request);
     }
 
     if (url.pathname === "/api/dns/check-resolvers") {
-      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
       return handleResolverCheck();
     }
 
     if (url.pathname === "/api/dns/compare") {
-      if (isRateLimited(clientIp, "dns")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
       return handleDnsCompare(url);
     }
 
@@ -72,10 +90,15 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/down") {
+      const asked = Math.min(Math.max(parseInt(url.searchParams.get("bytes") || "0", 10) || 0, 0), MAX_DOWNLOAD_BYTES);
+      if (!chargeSpeedBudget(clientIp, asked)) return budgetExceededResponse();
       return handleSpeedDown(url);
     }
 
     if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
+      // Charged at the cap rather than at the body's real size: the size is
+      // only known once we have read it, and by then the bytes are spent.
+      if (!chargeSpeedBudget(clientIp, MAX_UPLOAD_BYTES)) return budgetExceededResponse();
       return handleSpeedUp(request);
     }
 
@@ -160,8 +183,10 @@ function handleHeaders(request: Request): Response {
   return Response.json({ headers }, { headers: corsHeaders() });
 }
 
+const MAX_DOWNLOAD_BYTES = 100_000_000;
+
 export function handleSpeedDown(url: URL): Response {
-  const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), 100_000_000);
+  const bytes = Math.min(parseInt(url.searchParams.get("bytes") || "0", 10), MAX_DOWNLOAD_BYTES);
   if (bytes <= 0) {
     return new Response("", { headers: corsHeaders() });
   }
@@ -292,9 +317,44 @@ async function handleOoklaTargets(request: Request): Promise<Response> {
   }
 }
 
+// The largest body the client ever sends is 5 MB (speed-test.ts ulSizes), so
+// 10 MB is 2x headroom. Buffering instead of streaming let any caller push an
+// isolate past its 128 MB ceiling, which takes unrelated in-flight requests on
+// that isolate down with it — and the handler only ever needed the length.
+const MAX_UPLOAD_BYTES = 10_000_000;
+
 async function handleSpeedUp(request: Request): Promise<Response> {
-  const body = await request.arrayBuffer();
-  return Response.json({ bytes: body.byteLength }, { headers: corsHeaders() });
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES) {
+    return uploadTooLarge();
+  }
+
+  if (!request.body) {
+    return Response.json({ bytes: 0 }, { headers: corsHeaders() });
+  }
+
+  // Content-Length is caller-controlled and absent under chunked encoding, so
+  // the streaming count below is the actual enforcement.
+  const reader = request.body.getReader();
+  let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > MAX_UPLOAD_BYTES) {
+      await reader.cancel();
+      return uploadTooLarge();
+    }
+  }
+
+  return Response.json({ bytes }, { headers: corsHeaders() });
+}
+
+function uploadTooLarge(): Response {
+  return Response.json(
+    { error: `Upload exceeds ${MAX_UPLOAD_BYTES} bytes` },
+    { status: 413, headers: corsHeaders() }
+  );
 }
 
 interface ResolverProbe extends ResolverInfo {
@@ -440,29 +500,57 @@ function isPrivateOrReservedIp(ip: string): boolean {
   return ipScope(ip) !== "public";
 }
 
-async function resolvesToPrivateIp(hostname: string): Promise<boolean> {
-  // A bare IP literal as the hostname — no DNS involved.
-  if (isPrivateOrReservedIp(hostname)) return true;
+// Two independent resolvers, because the attacker owns the authoritative
+// nameserver for the target and therefore chooses what any single resolver is
+// told. 4 lookups per redirect hop x 6 hops + 6 real fetches = 30 subrequests,
+// under the 50/request cap — MAX_REDIRECTS cannot grow without redoing this sum.
+const SSRF_CHECK_RESOLVERS = ["cloudflare-dns.com", "dns.google"];
 
-  const results = await Promise.allSettled([
-    dohQuery("cloudflare-dns.com", hostname, "A", { timeoutMs: 4000 }),
-    dohQuery("cloudflare-dns.com", hostname, "AAAA", { timeoutMs: 4000 }),
-  ]);
+/**
+ * True only when every lookup completed and the hostname resolves to at least
+ * one public address with no private/loopback/link-local/multicast/reserved
+ * address anywhere in the results.
+ *
+ * Anything else is a refusal, including "could not resolve". The previous
+ * version skipped rejected lookups and fell through to "not private", so
+ * stalling one resolver — trivial for whoever runs the target's nameserver —
+ * was a complete bypass with no timing window needed.
+ */
+async function targetAllowed(hostname: string): Promise<boolean> {
+  // A bare IP literal as the hostname — no DNS involved. Test `isIp` first:
+  // ipScope() reports "unspecified" for anything it cannot parse (fail-closed
+  // for its own purpose), so asking isPrivateOrReservedIp() about a *hostname*
+  // answers "yes" and rejects every domain name on earth.
+  if (isIp(hostname)) return ipScope(hostname) === "public";
 
-  for (const r of results) {
-    if (r.status !== "fulfilled") continue;
-    for (const answer of r.value.Answer) {
-      if ((answer.type === 1 || answer.type === 28) && isPrivateOrReservedIp(answer.data)) {
-        return true;
-      }
+  const lookups = await Promise.allSettled(
+    SSRF_CHECK_RESOLVERS.flatMap((resolver) => [
+      dohQuery(resolver, hostname, "A", { timeoutMs: 4000 }),
+      dohQuery(resolver, hostname, "AAAA", { timeoutMs: 4000 }),
+    ])
+  );
+
+  let sawPublicAddress = false;
+  for (const lookup of lookups) {
+    if (lookup.status !== "fulfilled") return false;
+    for (const answer of lookup.value.Answer) {
+      if (answer.type !== 1 && answer.type !== 28) continue;
+      if (isPrivateOrReservedIp(answer.data)) return false;
+      sawPublicAddress = true;
     }
   }
-  return false;
+  return sawPublicAddress;
 }
 
-// --- per-IP rate limit (mirrors probe-server/server.ts's crude in-memory counter) ---
-// ponytail: per-isolate, not durable/global — fine for "resist casual abuse",
-// swap for a Workers Rate Limiting binding if this needs to hold across isolates.
+// --- per-IP rate limit ---
+//
+// The Rate Limiting binding when the deployment has one, an in-isolate counter
+// when it doesn't. The counter alone was never a real limit: each isolate has
+// its own Map, Cloudflare runs many per colo and many colos, so an attacker got
+// the configured budget multiplied by however many isolates they happened to
+// land on. The binding counts across all of them. The counter stays as the
+// fallback because `wrangler dev` and the tests have no binding, and having no
+// limit there is worse than having a weak one.
 // "dns" also covers /api/dns/check-resolvers, /api/dns/compare and
 // /api/dns/probe-result, which each fan out per request — same abuse shape as
 // headers-check.
@@ -470,8 +558,19 @@ const RATE_WINDOW_MS = 60_000;
 const RATE_LIMITS: Record<string, number> = { "headers-check": 20, dns: 20 };
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
-function isRateLimited(ip: string, bucket: keyof typeof RATE_LIMITS): boolean {
+async function isRateLimited(env: Env | undefined, ip: string, bucket: keyof typeof RATE_LIMITS): Promise<boolean> {
   const key = `${bucket}:${ip}`;
+  const limiter = env?.API_RATE_LIMITER;
+  if (limiter) {
+    try {
+      const { success } = await limiter.limit({ key });
+      return !success;
+    } catch {
+      // Binding failure falls through to the local counter rather than opening
+      // the endpoint up: a limiter that errors must not read as "allowed".
+    }
+  }
+
   const now = Date.now();
   const entry = rateBuckets.get(key);
   if (!entry || now > entry.resetAt) {
@@ -483,6 +582,51 @@ function isRateLimited(ip: string, bucket: keyof typeof RATE_LIMITS): boolean {
     for (const [k, e] of rateBuckets) if (now > e.resetAt) rateBuckets.delete(k);
   }
   return entry.count > RATE_LIMITS[bucket];
+}
+
+// --- speed-test byte budget ---
+//
+// The speed endpoints are not abusive by request count — one run is a handful
+// of requests — they are abusive by volume: a single GET can ask for 100 MB,
+// and nothing stopped a script from asking forever. Egress is the cost, so the
+// budget is in bytes. A full run moves ~160 MB at the client's largest sizes,
+// so 500 MB/minute leaves room for a retry and a re-run without ever being the
+// thing a real visitor notices.
+//
+// ponytail: per-isolate like the counter above, for the same reason — the Rate
+// Limiting binding counts requests, not bytes, so there is nothing to delegate
+// this to. It bounds one client on one isolate, which is the casual case.
+const SPEED_BUDGET_BYTES = 500_000_000;
+const SPEED_BUDGET_WINDOW_MS = 60_000;
+const MAX_SPEED_TRACKED_IPS = 10_000;
+const speedBudgets = new Map<string, { bytes: number; resetAt: number }>();
+
+/** Charges `bytes` against the IP's budget. Returns false once it is spent. */
+function chargeSpeedBudget(ip: string, bytes: number): boolean {
+  const now = Date.now();
+  const entry = speedBudgets.get(ip);
+  if (!entry || now > entry.resetAt) {
+    if (speedBudgets.size >= MAX_SPEED_TRACKED_IPS) {
+      for (const [k, e] of speedBudgets) if (now > e.resetAt) speedBudgets.delete(k);
+      // Still full means every entry is live: drop the oldest-inserted rather
+      // than let the map grow without bound on a spread-out flood.
+      if (speedBudgets.size >= MAX_SPEED_TRACKED_IPS) {
+        const oldest = speedBudgets.keys().next().value;
+        if (oldest !== undefined) speedBudgets.delete(oldest);
+      }
+    }
+    speedBudgets.set(ip, { bytes, resetAt: now + SPEED_BUDGET_WINDOW_MS });
+    return bytes <= SPEED_BUDGET_BYTES;
+  }
+  entry.bytes += bytes;
+  return entry.bytes <= SPEED_BUDGET_BYTES;
+}
+
+function budgetExceededResponse(): Response {
+  return Response.json(
+    { error: "Speed-test transfer budget exceeded, try again shortly" },
+    { status: 429, headers: corsHeaders() }
+  );
 }
 
 function rateLimitedResponse(): Response {
@@ -498,37 +642,52 @@ const TOKEN_RE = /^[a-f0-9]{16,64}$/;
  * "configured and broken", which is how this shipped dead to production and
  * stayed there. Absent config is now a fact the client can read and act on.
  */
-function probeConfig(env?: Record<string, string>): { url: string; secret: string; zone: string } | null {
+function probeConfig(env?: Env): { url: string; secret: string; zone: string } | null {
   const url = env?.PROBE_SERVER_URL;
   const secret = env?.PROBE_SECRET;
   const zone = env?.PROBE_ZONE;
-  return url && secret && zone ? { url, secret, zone } : null;
+  if (!url || !secret || !zone) return null;
+  // The request carries PROBE_SECRET in a header. Over http:// that is a
+  // replayable credential in the clear across the open internet, and the reply
+  // is a visitor's resolver IPs — so a plaintext URL reads as "not configured"
+  // rather than as something to use. Localhost is exempt: it never leaves the
+  // machine, and `wrangler dev` has no certificate to offer.
+  const isLocal = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])([:/]|$)/.test(url);
+  if (!url.startsWith("https://") && !isLocal) {
+    console.error("PROBE_SERVER_URL must be https — refusing to send PROBE_SECRET over plaintext");
+    return null;
+  }
+  return { url, secret, zone };
 }
 
-async function handleProbeResult(request: Request, env?: Record<string, string>): Promise<Response> {
+async function handleProbeResult(request: Request, env?: Env): Promise<Response> {
   const config = probeConfig(env);
   const url = new URL(request.url);
-  const token = url.searchParams.get("token");
+  // `key` is the read credential, not the queried name. The name is the key's
+  // SHA-256, so every resolver in the path and every log on the nameserver sees
+  // the name while only this visitor's tab holds the key. We forward it and let
+  // the nameserver do the hashing — the Worker never needs to know either.
+  const key = url.searchParams.get("key");
 
-  // No token is the client asking whether the probe exists here at all, which it
+  // No key is the client asking whether the probe exists here at all, which it
   // has to know before spending a DNS lookup and a wait on it.
-  if (token === null) {
+  if (key === null) {
     return Response.json(
       config ? { enabled: true, zone: config.zone } : { enabled: false },
       { headers: corsHeaders() }
     );
   }
 
-  if (!TOKEN_RE.test(token)) {
-    return Response.json({ error: "Invalid or missing token" }, { status: 400, headers: corsHeaders() });
+  if (!TOKEN_RE.test(key)) {
+    return Response.json({ error: "Invalid or missing key" }, { status: 400, headers: corsHeaders() });
   }
 
   if (!config) {
-    return Response.json({ token, resolvers: [], enabled: false }, { headers: corsHeaders() });
+    return Response.json({ resolvers: [], enabled: false }, { headers: corsHeaders() });
   }
 
   try {
-    const res = await fetch(`${config.url}/lookup?token=${encodeURIComponent(token)}`, {
+    const res = await fetch(`${config.url}/lookup?key=${encodeURIComponent(key)}`, {
       headers: { "x-probe-secret": config.secret },
       signal: AbortSignal.timeout(3000),
     });
@@ -539,7 +698,7 @@ async function handleProbeResult(request: Request, env?: Record<string, string>)
   } catch {
     // Probe server unreachable — the check degrades to "unobserved", not an error.
   }
-  return Response.json({ token, resolvers: [] }, { headers: corsHeaders() });
+  return Response.json({ resolvers: [] }, { headers: corsHeaders() });
 }
 
 async function handleHeadersCheck(request: Request): Promise<Response> {
@@ -556,8 +715,7 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     // `target.startsWith("http")` alone let "ftp://…" through un-prefixed,
     // which `new URL` then parsed as host "ftp" under an https:// scheme
     // instead of the ftp: scheme it should have been rejected for.
-    const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(target);
-    const parsed = new URL(hasScheme ? target : `https://${target}`);
+    const parsed = new URL(withHttpsScheme(target));
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return Response.json({ error: "Only http(s) URLs are allowed" }, { status: 400, headers: corsHeaders() });
     }
@@ -573,9 +731,9 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
 
     for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
       const parsedUrl = new URL(currentUrl);
-      if (await resolvesToPrivateIp(parsedUrl.hostname)) {
+      if (!(await targetAllowed(parsedUrl.hostname))) {
         return Response.json(
-          { error: "Target resolves to a private, loopback, link-local, or multicast address" },
+          { error: "Target did not resolve to a verified public address" },
           { status: 400, headers: corsHeaders() }
         );
       }

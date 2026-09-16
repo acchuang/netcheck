@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker, { handleSpeedDown } from "../src/worker/index.ts";
 import { encodeQuery, encodeName, toBase64Url, decodeMessage } from "../src/shared/dns-wire.ts";
+import { labelForKey } from "../probe-server/handler.ts";
 
 test("speed download endpoint caps bytes, streams data, and handles missing param", async () => {
   const capped = handleSpeedDown(new URL("https://x/api/speedtest/down?bytes=999999999"));
@@ -137,8 +138,70 @@ test("headers/check blocks private, loopback, link-local, and multicast IP liter
     const res = await worker.fetch(req);
     assert.equal(res.status, 400, url);
     const data = (await res.json()) as { error: string };
-    assert.match(data.error, /private|loopback|link-local|multicast/);
+    assert.match(data.error, /did not resolve to a verified public address/);
   }
+});
+
+// The guard's previous version skipped rejected DoH lookups and fell through to
+// "not private", so killing one resolver was a bypass. Both resolvers now have
+// to answer, and the hostname has to produce a public address, or it is refused.
+test("headers/check refuses a target whose DNS lookups do not complete", async () => {
+  const realFetch = globalThis.fetch;
+  let dohCalls = 0;
+  let scanned = false;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/dns-query")) {
+      dohCalls++;
+      throw new Error("resolver unreachable");
+    }
+    scanned = true;
+    return realFetch(input as RequestInfo, init);
+  }) as typeof fetch;
+
+  try {
+    const req = new Request(
+      "https://netcheck.internal/api/headers/check?url=" + encodeURIComponent("https://attacker.example/"),
+      { headers: { "cf-connecting-ip": "203.0.113.77" } }
+    );
+    const res = await worker.fetch(req);
+    assert.equal(res.status, 400);
+    assert.equal(scanned, false, "must not fetch the target when resolution failed");
+    assert.ok(dohCalls > 0, "guard should have attempted resolution");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("speedtest/up rejects an oversized declared Content-Length without reading a body", async () => {
+  const req = new Request("https://netcheck.internal/api/speedtest/up", {
+    method: "POST",
+    body: "x",
+    headers: { "content-length": String(50_000_000) },
+  });
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 413);
+});
+
+test("speedtest/up counts a streamed body without buffering it", async () => {
+  const chunk = new Uint8Array(64 * 1024);
+  const chunks = 4;
+  const body = new ReadableStream({
+    start(controller) {
+      for (let i = 0; i < chunks; i++) controller.enqueue(chunk);
+      controller.close();
+    },
+  });
+  const req = new Request("https://netcheck.internal/api/speedtest/up", {
+    method: "POST",
+    body,
+    // @ts-expect-error duplex is required for a streaming request body in undici
+    duplex: "half",
+  });
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 200);
+  const data = (await res.json()) as { bytes: number };
+  assert.equal(data.bytes, chunk.byteLength * chunks);
 });
 
 test("headers/check rejects non-http(s) schemes before any fetch", async () => {
@@ -165,21 +228,41 @@ test("dns endpoints are rate-limited per IP, headers-check has its own bucket", 
   assert.equal(spared.status, 400); // blocked by SSRF guard, not rate limit
 });
 
-test("probe-result endpoint validates token format", async () => {
-  const badReq = new Request("https://netcheck.internal/api/dns/probe-result?token=bad-token", {
+test("probe-result endpoint validates read-key format", async () => {
+  const badReq = new Request("https://netcheck.internal/api/dns/probe-result?key=bad-key", {
     headers: { "cf-connecting-ip": "203.0.113.10" },
   });
   const badRes = await worker.fetch(badReq);
   assert.equal(badRes.status, 400);
 
-  const goodReq = new Request("https://netcheck.internal/api/dns/probe-result?token=a1b2c3d4e5f60718", {
+  const goodReq = new Request("https://netcheck.internal/api/dns/probe-result?key=a1b2c3d4e5f60718", {
     headers: { "cf-connecting-ip": "203.0.113.10" },
   });
   const goodRes = await worker.fetch(goodReq);
   assert.equal(goodRes.status, 200);
-  const data = (await goodRes.json()) as { token: string; resolvers: unknown[] };
-  assert.equal(data.token, "a1b2c3d4e5f60718");
+  const data = (await goodRes.json()) as { token?: string; resolvers: unknown[] };
   assert.ok(Array.isArray(data.resolvers));
+  // The queried label must never come back out of here: echoing it would put
+  // the public half and the secret half of the pair in the same response, and
+  // the whole point of the split is that they travel separately.
+  assert.equal(data.token, undefined);
+});
+
+test("a queried label is not accepted as a read key", async () => {
+  // The label is public — it crosses every resolver in the path. Reading results
+  // back has to require the key whose hash that label is.
+  const key = "00112233445566778899aabbccddeeff";
+  const label = labelForKey(key);
+  assert.notEqual(label, key);
+  assert.equal(labelForKey(key), label, "derivation is deterministic");
+
+  // Same derivation the browser runs, so a label minted client-side resolves to
+  // the same session the nameserver recorded under.
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+  const fromWebCrypto = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 16);
+  assert.equal(label, fromWebCrypto);
 });
 
 // The probe shipped dead to production for a month because an unset config
@@ -214,7 +297,7 @@ test("probe-result hands the client the zone once fully configured", async () =>
     new Request("https://netcheck.internal/api/dns/probe-result", {
       headers: { "cf-connecting-ip": "203.0.113.12" },
     }),
-    { PROBE_SERVER_URL: "http://probe.internal:8080", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
+    { PROBE_SERVER_URL: "https://probe.internal:8443", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
   );
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { enabled: true, zone: "p.example.com" });
@@ -229,4 +312,91 @@ test("probe-result is rate-limited alongside the other dns endpoints", async () 
     }));
   }
   assert.equal(last.status, 429);
+});
+
+test("a plaintext probe URL is treated as unconfigured, not used", async () => {
+  // PROBE_SECRET rides in a request header. Sending it over http:// puts a
+  // replayable credential on the wire between Cloudflare and the probe box, so
+  // a misconfigured deployment has to fail visibly rather than leak quietly.
+  const res = await worker.fetch(
+    new Request("https://netcheck.internal/api/dns/probe-result", {
+      headers: { "cf-connecting-ip": "203.0.113.44" },
+    }),
+    { PROBE_SERVER_URL: "http://probe.internal:8080", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
+  );
+  assert.deepEqual(await res.json(), { enabled: false });
+
+  // Loopback stays usable, or `wrangler dev` could never exercise the path.
+  const local = await worker.fetch(
+    new Request("https://netcheck.internal/api/dns/probe-result", {
+      headers: { "cf-connecting-ip": "203.0.113.45" },
+    }),
+    { PROBE_SERVER_URL: "http://127.0.0.1:8099", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
+  );
+  assert.deepEqual(await local.json(), { enabled: true, zone: "p.example.com" });
+});
+
+test("the rate limiting binding decides when one is bound", async () => {
+  // The in-isolate counter allows 20/min; this binding refuses everything. If
+  // the counter were still in charge the first request would pass, so a 429 on
+  // request one is the proof that the binding is what's being consulted.
+  const calls: string[] = [];
+  const env = {
+    API_RATE_LIMITER: {
+      limit: async ({ key }: { key: string }) => {
+        calls.push(key);
+        return { success: false };
+      },
+    },
+  };
+  const res = await worker.fetch(
+    new Request("https://netcheck.internal/api/dns?domain=example.com", {
+      headers: { "cf-connecting-ip": "203.0.113.60" },
+    }),
+    env as never
+  );
+  assert.equal(res.status, 429);
+  assert.deepEqual(calls, ["dns:203.0.113.60"]);
+});
+
+test("a binding that throws falls back to the local counter instead of opening the gate", async () => {
+  const env = {
+    API_RATE_LIMITER: { limit: async () => { throw new Error("binding unavailable"); } },
+  };
+  const ip = "203.0.113.61";
+  let last!: Response;
+  for (let i = 0; i < 21; i++) {
+    last = await worker.fetch(
+      new Request("https://netcheck.internal/api/dns?domain=..bad..", { headers: { "cf-connecting-ip": ip } }),
+      env as never
+    );
+  }
+  assert.equal(last.status, 429);
+});
+
+test("speed-test downloads are capped by bytes moved, not by request count", async () => {
+  const ip = "203.0.113.62";
+  const ask = (bytes: number) => worker.fetch(new Request(
+    `https://netcheck.internal/api/speedtest/down?bytes=${bytes}`,
+    { headers: { "cf-connecting-ip": ip } }
+  ));
+
+  // Five 100 MB requests sit right at the 500 MB/min budget; the sixth is over.
+  for (let i = 0; i < 5; i++) assert.equal((await ask(100_000_000)).status, 200);
+  const over = await ask(1);
+  assert.equal(over.status, 429);
+
+  // Uploads draw on the same budget, so the spent IP can't switch direction.
+  const up = await worker.fetch(new Request("https://netcheck.internal/api/speedtest/up", {
+    method: "POST",
+    body: "x",
+    headers: { "cf-connecting-ip": ip },
+  }));
+  assert.equal(up.status, 429);
+
+  // ...and a different visitor is untouched by it.
+  const other = await worker.fetch(new Request("https://netcheck.internal/api/speedtest/down?bytes=1000", {
+    headers: { "cf-connecting-ip": "203.0.113.63" },
+  }));
+  assert.equal(other.status, 200);
 });
