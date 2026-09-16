@@ -50,7 +50,7 @@ test("a probe that observed nothing reports info, not warn", async () => {
 });
 
 test("an observed public resolver is a pass with the operator named", async () => {
-  const checks = await DnsCheck.checkDnsSecurity([resolver(true)], ["1.1.1.1"], CLIENT);
+  const checks = await DnsCheck.checkDnsSecurity([resolver(true)], [{ ip: "1.1.1.1" }], CLIENT);
   assert.equal(statusOf(checks, "doh"), "pass");
   assert.match(checks.find((c) => c.id === "doh")!.detailArg!, /1\.1\.1\.1/);
 });

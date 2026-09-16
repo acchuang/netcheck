@@ -37,6 +37,8 @@ export interface DnsMessage {
   AD: boolean;
   CD: boolean;
   Answer: DnsAnswer[];
+  /** Authority section — the SOA on a negative answer, or a referral's NS set. */
+  Authority: DnsAnswer[];
   /** Extended DNS Error (RFC 8914) — resolvers use it to explain SERVFAIL. */
   ede: { code: number; text: string } | null;
 }
@@ -207,16 +209,22 @@ function formatRdata(buf: Uint8Array, type: number, start: number, len: number):
   }
 }
 
-/** Walk a record section, returning the position just past it. */
-function skipSection(buf: Uint8Array, pos: number, count: number): number {
+/** Read a record section, returning its records and the position just past it. */
+function readSection(buf: Uint8Array, pos: number, count: number): { records: DnsAnswer[]; pos: number } {
+  const records: DnsAnswer[] = [];
   for (let i = 0; i < count && pos < buf.length; i++) {
     const cur: Cursor = { pos };
-    readName(buf, cur);
-    pos = cur.pos + 8; // type(2) class(2) ttl(4)
-    if (pos + 2 > buf.length) return buf.length;
-    pos += 2 + u16(buf, pos);
+    const name = readName(buf, cur);
+    pos = cur.pos;
+    if (pos + 10 > buf.length) break;
+    const type = u16(buf, pos);
+    const ttl = u32(buf, pos + 4);
+    const rdlength = u16(buf, pos + 8);
+    pos += 10;
+    records.push({ name, type, TTL: ttl, data: formatRdata(buf, type, pos, rdlength) });
+    pos += rdlength;
   }
-  return pos;
+  return { records, pos };
 }
 
 export function decodeMessage(buf: Uint8Array): DnsMessage {
@@ -235,22 +243,13 @@ export function decodeMessage(buf: Uint8Array): DnsMessage {
     pos = cur.pos + 4;
   }
 
-  const Answer: DnsAnswer[] = [];
-  for (let i = 0; i < ancount && pos < buf.length; i++) {
-    const cur: Cursor = { pos };
-    const name = readName(buf, cur);
-    pos = cur.pos;
-    if (pos + 10 > buf.length) break;
-    const type = u16(buf, pos);
-    const ttl = u32(buf, pos + 4);
-    const rdlength = u16(buf, pos + 8);
-    pos += 10;
-    Answer.push({ name, type, TTL: ttl, data: formatRdata(buf, type, pos, rdlength) });
-    pos += rdlength;
-  }
+  const answers = readSection(buf, pos, ancount);
+  const Answer = answers.records;
 
   // EDE lives on the OPT record in the additional section, past authority.
-  pos = skipSection(buf, pos, nscount);
+  const authority = readSection(buf, answers.pos, nscount);
+  const Authority = authority.records;
+  pos = authority.pos;
   let ede: DnsMessage["ede"] = null;
   let extendedRcode = 0;
 
@@ -289,6 +288,7 @@ export function decodeMessage(buf: Uint8Array): DnsMessage {
     AD: ((flags >> 5) & 1) === 1,
     CD: ((flags >> 4) & 1) === 1,
     Answer,
+    Authority,
     ede,
   };
 }

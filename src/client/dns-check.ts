@@ -2,7 +2,10 @@ import { t, onLocaleChange } from "./i18n.ts";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire.ts";
-import { dohVerdict, encryptedDnsOperator, evaluateWebRtc, type WebRtcVerdict } from "../shared/ip-classify.ts";
+import {
+  dohVerdict, forwardedClientSubnet, encryptedDnsOperator, evaluateWebRtc,
+  type WebRtcVerdict, type ObservedResolver,
+} from "../shared/ip-classify.ts";
 
 interface DnsResult {
   Answer?: DnsAnswer[];
@@ -47,7 +50,7 @@ function blankResult(resolver: ResolverInfo): ResolverResult {
 }
 
 type SecurityStatus = "pass" | "warn" | "fail" | "info";
-type SecurityCheckId = "dnssec" | "doh" | "malware" | "webrtc" | "lan";
+type SecurityCheckId = "dnssec" | "doh" | "ecs" | "malware" | "webrtc" | "lan";
 
 // Stores identifiers + i18n keys (not display strings) so locale switches
 // can re-render the card without re-running the checks.
@@ -77,8 +80,38 @@ interface IpData {
 }
 
 interface ProbeResult {
-  token: string;
   resolvers: { ip: string; ecs: string | null; count: number }[];
+}
+
+function hex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const PROBE_POLL_MS = 400;
+const PROBE_MAX_WAIT_MS = 4000;
+
+/**
+ * Read back the observed resolvers until the set stops changing. Two identical
+ * non-empty reads in a row means the fan-out has settled; anything still
+ * arriving would have changed the count. Returns whatever was seen when the
+ * budget runs out — a partial answer beats none, and an empty one is itself a
+ * result (nothing reached the nameserver).
+ */
+async function pollProbe(readKey: string): Promise<ProbeResult | null> {
+  const deadline = Date.now() + PROBE_MAX_WAIT_MS;
+  let last: ProbeResult | null = null;
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, PROBE_POLL_MS));
+    const res = await fetch(`/api/dns/probe-result?key=${readKey}`);
+    if (!res.ok) return last;
+    const current = (await res.json()) as ProbeResult;
+    if (last && current.resolvers.length > 0 && current.resolvers.length === last.resolvers.length) {
+      return current;
+    }
+    last = current;
+  }
+  return last;
 }
 
 interface DnsContext {
@@ -188,9 +221,9 @@ export const DnsCheck = {
 
   /**
    * The recursion probe only exists where a deployment runs its own authoritative
-   * nameserver, so ask the Worker before spending a DNS lookup and a 600ms wait
-   * on one that isn't there. The zone comes back with the answer — the nameserver
-   * a self-hoster delegates is theirs, not ours.
+   * nameserver, so ask the Worker before spending a DNS lookup and a wait on one
+   * that isn't there. The zone comes back with the answer — the nameserver a
+   * self-hoster delegates is theirs, not ours.
    */
   async probeRecursionPath(): Promise<ProbeResult | null> {
     try {
@@ -199,31 +232,41 @@ export const DnsCheck = {
       const config = (await configRes.json()) as { enabled: boolean; zone?: string };
       if (!config.enabled || !config.zone) return null;
 
-      const bytes = new Uint8Array(8);
-      crypto.getRandomValues(bytes);
-      const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-      const domain = `${token}.${config.zone}`;
+      // The label we look up is public by construction: every resolver in the
+      // path sees it, and so does anyone reading the nameserver's logs. If it
+      // were also the read-back credential, seeing a QNAME would be enough to
+      // pull that visitor's resolver IPs. So the read key stays in this tab and
+      // only its hash is ever queried — observing the name reveals nothing that
+      // can be exchanged for the result.
+      const keyBytes = new Uint8Array(16);
+      crypto.getRandomValues(keyBytes);
+      const readKey = hex(keyBytes);
+      // Hash the hex text, not the raw bytes — the nameserver only ever sees the
+      // key as the string it arrives as, and both sides must hash the same thing.
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(readKey));
+      const label = hex(new Uint8Array(digest)).slice(0, 16);
 
       // Trigger system recursive resolver by fetching canary image
-      await fetch(`https://${domain}/pixel.png?_=${Date.now()}`, {
+      await fetch(`https://${label}.${config.zone}/pixel.png?_=${Date.now()}`, {
         mode: "no-cors",
         signal: AbortSignal.timeout(2500),
       }).catch(() => null);
 
-      await new Promise((r) => setTimeout(r, 600));
-
-      const res = await fetch(`/api/dns/probe-result?token=${token}`);
-      if (res.ok) return (await res.json()) as ProbeResult;
+      // Poll until the observed set stops growing rather than reading once at a
+      // fixed delay. A resolver chain with a slow upstream, or one that retries
+      // through a second egress IP, lands after 600ms — and a truncated set is
+      // not reported as "still arriving", it is reported as the answer.
+      return await pollProbe(readKey);
     } catch {
       // probe server unavailable or offline
     }
     return null;
   },
 
-  /** `observedIps` is null when this deployment has no probe nameserver at all. */
+  /** `observed` is null when this deployment has no probe nameserver at all. */
   async checkDnsSecurity(
     resolvers: ResolverResult[],
-    observedIps: string[] | null,
+    observed: ObservedResolver[] | null,
     client: { ipv4: string | null; ipv6: string | null }
   ): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
@@ -260,8 +303,8 @@ export const DnsCheck = {
     // With no probe nameserver there is no honest answer to give, and a row that
     // permanently reads "unverified" is noise that teaches people to skim past
     // the rows that do mean something. Say nothing rather than say nothing loudly.
-    if (observedIps !== null) {
-      const verdict = dohVerdict(observedIps, client);
+    if (observed !== null) {
+      const verdict = dohVerdict(observed, client);
       switch (verdict.kind) {
         case "encrypted":
           checks.push({ id: "doh", status: "pass", detailKey: "dns.dohPass", detailArg: `${verdict.operator} (${verdict.ip})` });
@@ -279,6 +322,15 @@ export const DnsCheck = {
           // never read "secure" — the same not-our-fault row the `lan` check is
           // already "info" for.
           checks.push({ id: "doh", status: "info", detailKey: "dns.dohUnknown" });
+      }
+
+      // Independent of encryption: a hop that forwards ECS hands part of the
+      // visitor's address to every zone they look up, which is how we can read
+      // it here at all. Only reported when we actually saw one — absence of ECS
+      // in our observations is not proof the resolver never sends it.
+      const subnet = forwardedClientSubnet(observed);
+      if (subnet) {
+        checks.push({ id: "ecs", status: "warn", detailKey: "dns.ecsForwarded", detailArg: subnet });
       }
     }
 
@@ -452,8 +504,8 @@ export async function runDnsChecks(): Promise<void> {
   // visitor's own path, so they wait for the probe and the v6 address rather
   // than guessing without them.
   const [probe, ipv6] = await Promise.all([probePromise, ipv6Promise]);
-  const observedIps = probe ? probe.resolvers.map((r) => r.ip) : null;
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observedIps, {
+  const observed = probe ? probe.resolvers : null;
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observed, {
     ipv4: ipData.ip ?? null,
     ipv6,
   });

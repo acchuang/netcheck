@@ -246,28 +246,52 @@ export type DohVerdict =
   | { kind: "unrecognized"; ip: string }
   | { kind: "unknown" };
 
+export interface ObservedResolver {
+  ip: string;
+  /** Client subnet this hop forwarded to us, e.g. "203.0.113.0/24". */
+  ecs?: string | null;
+}
+
 /**
  * Judges the visitor's *own* recursion path from the resolver IPs our
  * authoritative probe actually saw. No observation means no verdict — never a
  * pass, because "this page can speak DoH" says nothing about the system
  * resolver.
+ *
+ * Worst case wins. Every IP here is a hop that carried the query, so a single
+ * recognised operator in the set does not make the path encrypted: a visitor
+ * whose router forwards to their ISP's resolver, which then forwards to
+ * Cloudflare, has their queries in plaintext on the first hop and would have
+ * scored a pass on "Cloudflare appears somewhere in the list".
  */
 export function dohVerdict(
-  observedIps: string[],
+  observed: ObservedResolver[],
   client: { ipv4?: string | null; ipv6?: string | null } = {}
 ): DohVerdict {
-  const seen = observedIps.filter(isIp);
+  const seen = observed.map((o) => o.ip).filter(isIp);
   if (seen.length === 0) return { kind: "unknown" };
-
-  for (const ip of seen) {
-    const operator = encryptedDnsOperator(ip);
-    if (operator) return { kind: "encrypted", operator, ip };
-  }
 
   const ispLike = seen.find(
     (ip) =>
       (client.ipv4 && sameNetwork(ip, client.ipv4)) ||
       (client.ipv6 && sameNetwork(ip, client.ipv6))
   );
-  return ispLike ? { kind: "isp", ip: ispLike } : { kind: "unrecognized", ip: seen[0] };
+  if (ispLike) return { kind: "isp", ip: ispLike };
+
+  const unknownHop = seen.find((ip) => !encryptedDnsOperator(ip));
+  if (unknownHop) return { kind: "unrecognized", ip: unknownHop };
+
+  const operator = encryptedDnsOperator(seen[0])!;
+  return { kind: "encrypted", operator, ip: seen[0] };
+}
+
+/**
+ * The subnet a hop forwarded about the visitor (RFC 7871), if any did. ECS
+ * hands a slice of the visitor's address to every authoritative server their
+ * resolver talks to — ours included, which is how we can see it at all. It is
+ * independent of whether the path is encrypted: an encrypted resolver that
+ * forwards ECS still tells every zone operator roughly where the visitor is.
+ */
+export function forwardedClientSubnet(observed: ObservedResolver[]): string | null {
+  return observed.find((o) => o.ecs)?.ecs ?? null;
 }

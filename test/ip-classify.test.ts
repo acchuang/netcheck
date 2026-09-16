@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ipScope, inCidr, sameIp, sameNetwork, encryptedDnsOperator,
-  parseIceCandidate, evaluateWebRtc, dohVerdict,
+  parseIceCandidate, evaluateWebRtc, dohVerdict, forwardedClientSubnet,
 } from "../src/shared/ip-classify.ts";
 
 const candidate = (ip: string, kind = "srflx") =>
@@ -121,19 +121,36 @@ test("ULA and link-local candidates are LAN rows, not failures", () => {
 
 test("the encrypted-DNS verdict never passes without an observation", () => {
   assert.deepEqual(dohVerdict([], { ipv4: "203.0.113.5" }), { kind: "unknown" });
-  assert.deepEqual(dohVerdict(["not-an-ip"], {}), { kind: "unknown" });
+  assert.deepEqual(dohVerdict([{ ip: "not-an-ip" }], {}), { kind: "unknown" });
 });
 
 test("the encrypted-DNS verdict passes only on a known operator", () => {
-  assert.deepEqual(dohVerdict(["172.68.24.7"], { ipv4: "203.0.113.5" }),
+  assert.deepEqual(dohVerdict([{ ip: "172.68.24.7" }], { ipv4: "203.0.113.5" }),
     { kind: "encrypted", operator: "Cloudflare", ip: "172.68.24.7" });
-  assert.deepEqual(dohVerdict(["198.51.100.9", "8.8.4.4"], {}),
+});
+
+test("the worst hop decides, not the best one", () => {
+  // Every IP in the set carried the query. A router forwarding to the ISP's
+  // resolver, which forwards to Google, puts the query in plaintext on the
+  // first hop — and used to score a pass because Google appeared in the list.
+  assert.deepEqual(dohVerdict([{ ip: "198.51.100.9" }, { ip: "8.8.4.4" }], {}),
+    { kind: "unrecognized", ip: "198.51.100.9" });
+  assert.deepEqual(dohVerdict([{ ip: "8.8.4.4" }, { ip: "203.0.113.9" }], { ipv4: "203.0.113.5" }),
+    { kind: "isp", ip: "203.0.113.9" });
+  // All hops recognised is still a pass.
+  assert.deepEqual(dohVerdict([{ ip: "8.8.4.4" }, { ip: "8.8.8.8" }], {}),
     { kind: "encrypted", operator: "Google", ip: "8.8.4.4" });
 });
 
+test("a forwarded client subnet is read off the observation that carried it", () => {
+  assert.equal(forwardedClientSubnet([{ ip: "8.8.4.4" }, { ip: "8.8.8.8", ecs: "203.0.113.0/24" }]), "203.0.113.0/24");
+  assert.equal(forwardedClientSubnet([{ ip: "8.8.4.4" }]), null);
+  assert.equal(forwardedClientSubnet([{ ip: "8.8.4.4", ecs: null }]), null);
+});
+
 test("a resolver inside the visitor's own network is reported as the ISP's", () => {
-  assert.deepEqual(dohVerdict(["203.0.113.9"], { ipv4: "203.0.113.5" }), { kind: "isp", ip: "203.0.113.9" });
-  assert.deepEqual(dohVerdict(["198.51.100.9"], { ipv4: "203.0.113.5" }),
+  assert.deepEqual(dohVerdict([{ ip: "203.0.113.9" }], { ipv4: "203.0.113.5" }), { kind: "isp", ip: "203.0.113.9" });
+  assert.deepEqual(dohVerdict([{ ip: "198.51.100.9" }], { ipv4: "203.0.113.5" }),
     { kind: "unrecognized", ip: "198.51.100.9" });
   assert.ok(sameNetwork("203.0.113.9", "203.0.113.5"));
   assert.ok(!sameNetwork("198.51.100.9", "203.0.113.5"));
