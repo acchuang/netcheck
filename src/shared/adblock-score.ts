@@ -13,6 +13,8 @@ export const COSMETIC_TEST_TYPES = ["element", "iframe"];
 export interface ScoredTest {
   type: string;
   blocked: boolean;
+  /** Probe never resolved (timeout). Counts toward neither side. */
+  uncertain?: boolean;
 }
 
 export interface ScoredCategory {
@@ -40,7 +42,9 @@ function bucket(tests: ScoredTest[]): SplitBucket {
 }
 
 export function getSplitScore(results: ScoredCategory[]): SplitScore {
-  const tests = results.flatMap((cat) => cat.tests);
+  // Unresolved probes leave both buckets: a timeout is not evidence that the
+  // network blocked the request, nor that the page rendered the element.
+  const tests = results.flatMap((cat) => cat.tests).filter((test) => !test.uncertain);
   return {
     hosts: bucket(tests.filter((test) => NETWORK_TEST_TYPES.includes(test.type))),
     cosmetics: bucket(tests.filter((test) => COSMETIC_TEST_TYPES.includes(test.type))),

@@ -1,5 +1,6 @@
 import { isHidden } from "./ui-utils.ts";
 import { getSplitScore, isNetworkOnlyFiltering, type SplitScore } from "../shared/adblock-score.ts";
+import { withHttpsScheme } from "../shared/url.ts";
 
 interface ScriptTest {
   name: string;
@@ -40,7 +41,13 @@ type Test = ScriptTest | ImageTest | PixelTest | IframeTest | ElementTest;
 //   loaded   = request succeeded (onload) — not blocked
 //   cosmetic = element hidden via CSS (display/visibility/zero-size)
 //   visible  = element rendered normally — not blocked
-//   timeout  = no resolution in 3s — treated as blocked
+//   timeout  = no resolution in 3s — UNCERTAIN, scored as neither
+//
+// A timeout used to count as blocked, which meant an offline visitor scored
+// 100: every probe timed out, every timeout read as a blocker doing its job.
+// Slow links, backgrounded tabs (throttled timers) and captive portals all
+// produced the same flattering lie. Uncertain results leave the score entirely
+// rather than inflating either side of it.
 interface TestResult {
   blocked: boolean;
   uncertain?: boolean;
@@ -69,11 +76,19 @@ export interface CategoryResult {
 }
 
 export interface Score {
-  score: number;
+  /** null when too much of the run was uncertain to report a number honestly. */
+  score: number | null;
+  /** Counts below cover resolved tests only; uncertain ones are tracked apart. */
   total: number;
   blocked: number;
   passed: number;
+  uncertain: number;
+  tooUncertain: boolean;
 }
+
+// Past this share of unresolved probes the run describes the network, not the
+// blocker, and no headline number is better than a confident wrong one.
+export const UNCERTAIN_LIMIT = 0.25;
 
 // Minimal shape shared with filter-lists.ts probes.
 interface ProbeTarget {
@@ -94,10 +109,28 @@ export function hiddenTestContainer(): HTMLDivElement {
 
 export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<TestResult> {
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => resolve({ blocked: true, method: "timeout" }), 3000);
+    const timeout = setTimeout(
+      () => resolve({ blocked: false, uncertain: true, method: "timeout" }),
+      3000
+    );
     const settle = (r: TestResult) => { clearTimeout(timeout); resolve(r); };
 
     switch (test.type) {
+      // Same script-typed request as a <script> tag — Sec-Fetch-Dest: script, so
+      // $script filter rules still apply — but the response is never executed.
+      // Used for the user-supplied URL, where running arbitrary third-party JS
+      // in this origin (localStorage, same-origin fetch to our Worker) would be
+      // a real XSS vector the moment the field is ever prefilled from a link.
+      case "preload-script": {
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "script";
+        link.href = test.url!;
+        link.onload = () => settle({ blocked: false, method: "loaded" });
+        link.onerror = () => settle({ blocked: true, method: "network" });
+        container.appendChild(link);
+        break;
+      }
       case "script":
       case "image":
       case "pixel": {
@@ -201,16 +234,13 @@ export const AdBlockTest = {
         { name: "TikTok Pixel", type: "pixel", url: "https://analytics.tiktok.com/i18n/pixel/events.js" },
       ],
     },
-    {
-      name: "Fingerprint Protection",
-      importance: "high",
-      tests: [
-        { name: "Canvas fingerprint", type: "script", url: "https://cdn.jsdelivr.net/npm/fingerprintjs@0.5.3/fingerprint.min.js" },
-        { name: "WebGL fingerprint probe", type: "element", className: "fp-canvas-probe" },
-        { name: "AudioContext fingerprint", type: "element", id: "audio-fingerprint" },
-        { name: "ClientRects fingerprint", type: "element", className: "getClientRects-fingerprint" },
-      ],
-    },
+    // No "Fingerprint Protection" category: it claimed to measure whether the
+    // browser resists canvas/WebGL/AudioContext fingerprinting, but every probe
+    // only asked whether a filter list hides an element or blocks a URL. A
+    // browser with resistFingerprinting on and no blocker scored 0 here; Brave,
+    // which actually randomises those surfaces, scored on its filter list alone.
+    // At weight 3 of a total 15 it capped every unblocked visitor near 80.
+    // Real detection has to call the APIs — see the fingerprint panel work.
     {
       name: "Cookie Consent & Annoyances",
       importance: "low",
@@ -247,10 +277,10 @@ export const AdBlockTest = {
 
   // Feature 1: test a user-supplied URL as script + image
   async testCustomUrl(rawUrl: string): Promise<TestWithResult[]> {
-    const url = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+    const url = withHttpsScheme(rawUrl.trim());
     const container = hiddenTestContainer();
 
-    const scriptRes = await probeTest({ type: "script", url }, container);
+    const scriptRes = await probeTest({ type: "preload-script", url }, container);
     const imageRes = await probeTest({ type: "image", url }, container);
 
     container.remove();
@@ -260,9 +290,16 @@ export const AdBlockTest = {
     ];
   },
 
+  /**
+   * Uncertain tests (timeouts) are excluded from every count, so a category
+   * that resolved nothing contributes no weight at all rather than reading as
+   * a category the blocker failed. `score` is null when too little resolved to
+   * mean anything — see UNCERTAIN_LIMIT.
+   */
   getScore(): Score {
     let total = 0;
     let blocked = 0;
+    let uncertain = 0;
     let weightSum = 0;
     let weightedBlocked = 0;
 
@@ -270,6 +307,7 @@ export const AdBlockTest = {
       let catTotal = 0;
       let catBlocked = 0;
       for (const test of cat.tests) {
+        if (test.uncertain) { uncertain++; continue; }
         total++;
         catTotal++;
         if (test.blocked) { blocked++; catBlocked++; }
@@ -281,11 +319,16 @@ export const AdBlockTest = {
       }
     }
 
+    const measured = total + uncertain;
+    const tooUncertain = measured > 0 && uncertain / measured > UNCERTAIN_LIMIT;
+
     return {
-      score: weightSum > 0 ? Math.round((weightedBlocked / weightSum) * 100) : 0,
+      score: weightSum > 0 && !tooUncertain ? Math.round((weightedBlocked / weightSum) * 100) : null,
       total,
       blocked,
       passed: total - blocked,
+      uncertain,
+      tooUncertain,
     };
   },
 

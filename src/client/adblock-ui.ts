@@ -1,6 +1,7 @@
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test.ts";
 import { t } from "./i18n.ts";
-import { escapeHtml, ARROW_SVG } from "./ui-utils.ts";
+import { escapeHtml, ARROW_SVG, createCheckItem, setBadge } from "./ui-utils.ts";
+import { probeFingerprint, summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
 import { enableAdblockSaveButton } from "./adblock-history.ts";
 import { runFilterListDetection } from "./filter-detect-ui.ts";
 
@@ -57,11 +58,40 @@ export function startAdBlock(): void {
   adBlockStarted = true;
   runAdBlockTests();
   runFilterListDetection();
+  renderFingerprint();
+}
+
+// Local-only and instant — no network, so it runs with the tab rather than
+// behind the "these tests contact real ad hosts" gate.
+let fingerprintSignals: FingerprintSignal[] | null = null;
+
+function renderFingerprint(): void {
+  const list = document.getElementById("fingerprint-signals");
+  if (!list) return;
+  if (!fingerprintSignals) fingerprintSignals = probeFingerprint();
+
+  const summary = summarizeFingerprint(fingerprintSignals);
+  setBadge(
+    "fingerprint-level",
+    summary.level === "strong" ? "done" : summary.level === "partial" ? "warn" : "fail",
+    t(`fp.level.${summary.level}`)
+  );
+
+  list.innerHTML = "";
+  const status = { protected: "pass", exposed: "fail", unknown: "info" } as const;
+  for (const signal of fingerprintSignals) {
+    list.appendChild(createCheckItem(
+      status[signal.state],
+      t(`fp.${signal.id}`),
+      signal.detail ?? t(`fp.state.${signal.state}`),
+      t(`fp.${signal.id}.desc`)
+    ));
+  }
 }
 
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
-  renderCategorySkeletons(categoriesEl, 7);
+  renderCategorySkeletons(categoriesEl, 6);
   document.getElementById("score-summary")!.textContent = t("adblock.running");
 
   await AdBlockTest.runAll();
@@ -87,10 +117,24 @@ export function renderAdBlockResults(): void {
   });
 
   const score = AdBlockTest.getScore();
-  document.getElementById("score-number")!.textContent = String(score.score);
-
   const ring = document.getElementById("score-ring-fill") as unknown as SVGCircleElement;
   const circumference = 2 * Math.PI * 54;
+
+  // Too many probes went unanswered to describe the blocker — say that, rather
+  // than rendering a ring out of whatever happened to resolve.
+  if (score.score === null) {
+    document.getElementById("score-number")!.textContent = "—";
+    ring.style.strokeDashoffset = String(circumference);
+    ring.style.stroke = "var(--text-dim)";
+    document.getElementById("score-summary")!.textContent = t("adblock.inconclusive");
+    document.getElementById("score-detail")!.textContent =
+      t("adblock.inconclusiveDetail", score.uncertain);
+    renderScoreBreakdown();
+    renderSuggestions(AdBlockTest.results);
+    return;
+  }
+
+  document.getElementById("score-number")!.textContent = String(score.score);
   ring.style.strokeDashoffset = String(circumference - (score.score / 100) * circumference);
 
   if (score.score >= 80) {
@@ -226,11 +270,6 @@ const CATEGORY_ADVICE: Record<string, CategoryAdviceDef> = {
     i18nKey: "social", fixCount: 4,
     fixUrls: [undefined, undefined, "https://addons.mozilla.org/firefox/addon/facebook-container/", undefined],
   },
-  "Fingerprint Protection": {
-    icon: '<path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.656-1.94 1.018-4.09 1.018-6.53 0-1.678-.345-3.276-.966-4.73m10.58 1.29a12 12 0 0 1 .549 3.44c0 4.418-1.507 8.49-4.03 11.72M7.5 8.5a4.5 4.5 0 1 1 9 0c0 3.047-.987 5.865-2.66 8.15M2 12c0-2.13.476-4.15 1.327-5.96M12 3.5a9 9 0 0 1 9 9c0 3.73-1.135 7.19-3.078 10.06"/>',
-    i18nKey: "fingerprint", fixCount: 4,
-    fixUrls: ["https://brave.com", undefined, "https://addons.mozilla.org/firefox/addon/canvasblocker/", undefined],
-  },
   "Cookie Consent & Annoyances": {
     icon: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
     i18nKey: "annoyances", fixCount: 4,
@@ -338,6 +377,7 @@ function createCategoryWithResults(name: string, tests: { name: string; blocked:
 }
 
 export function refreshAdblockLocaleTexts(): void {
+  if (fingerprintSignals) renderFingerprint();
   if (AdBlockTest.results.length > 0) renderAdBlockResults();
   else renderAdBlockIdle();
   if (lastCustomTests) renderCustomUrlResults(lastCustomTests);

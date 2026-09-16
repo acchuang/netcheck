@@ -29,10 +29,13 @@ export function enableAdblockSaveButton(): void {
 
 function saveSnapshot(): void {
   const score = AdBlockTest.getScore();
-  if (score.total === 0) return;
+  // An inconclusive run has nothing to diff against later — storing it would
+  // put a network hiccup in the history as though it were a blocker change.
+  if (score.total === 0 || score.score === null) return;
   const cats = AdBlockTest.results.map((c) => {
-    const blocked = c.tests.filter((t) => t.blocked).length;
-    return { name: c.name, pct: c.tests.length ? Math.round((blocked / c.tests.length) * 100) : 0 };
+    const resolved = c.tests.filter((t) => !t.uncertain);
+    const blocked = resolved.filter((t) => t.blocked).length;
+    return { name: c.name, pct: resolved.length ? Math.round((blocked / resolved.length) * 100) : 0 };
   });
   const snapshots = loadHistory<AdblockSnapshot>(KEY);
   snapshots.push({ ts: Date.now(), score: score.score, blocked: score.blocked, total: score.total, cats });
