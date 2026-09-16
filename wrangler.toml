@@ -8,9 +8,8 @@ main = "src/worker/index.ts"
 # dev, tests), so the two should stay in step.
 # namespace_id is a local identifier, not an account resource: any stable
 # integer works, and changing it resets the counters.
-[[unsafe.bindings]]
+[[ratelimits]]
 name = "API_RATE_LIMITER"
-type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 20, period = 60 }
 

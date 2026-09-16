@@ -23,7 +23,7 @@ function sections(text: string): string[] {
 
 // Reviewed and intentional. Anything else is a new capability.
 const ALLOWED_SECTIONS = new Set([
-  "unsafe.bindings", // API_RATE_LIMITER — counts requests, holds no data
+  "ratelimits",      // API_RATE_LIMITER — counts requests, holds no data
   "vars",            // plain config, no credentials (PROBE_SECRET is a wrangler secret)
 ]);
 
