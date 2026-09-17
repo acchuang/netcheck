@@ -381,8 +381,8 @@ test("speed-test downloads are capped by bytes moved, not by request count", asy
     { headers: { "cf-connecting-ip": ip } }
   ));
 
-  // Five 100 MB requests sit right at the 500 MB/min budget; the sixth is over.
-  for (let i = 0; i < 5; i++) assert.equal((await ask(100_000_000)).status, 200);
+  // Ten 100 MB requests sit right at the 1 GB/min budget; the eleventh is over.
+  for (let i = 0; i < 10; i++) assert.equal((await ask(100_000_000)).status, 200);
   const over = await ask(1);
   assert.equal(over.status, 429);
 
@@ -399,4 +399,38 @@ test("speed-test downloads are capped by bytes moved, not by request count", asy
     headers: { "cf-connecting-ip": "203.0.113.63" },
   }));
   assert.equal(other.status, 200);
+});
+
+test("an upload is charged what it declares, not the cap", async () => {
+  // Charging every upload at MAX_UPLOAD_BYTES spent the budget ~8x faster than
+  // the run actually moved bytes, so a visitor who re-tested got cut off
+  // mid-run and read the truncated result as their line slowing down.
+  const ip = "203.0.113.64";
+  // A browser sets Content-Length for a Blob body; node's Request does not, so
+  // the test supplies it the way the runtime would.
+  const upload = (size: number, declare = size, who = ip) =>
+    worker.fetch(new Request("https://netcheck.internal/api/speedtest/up", {
+      method: "POST",
+      body: new Uint8Array(size),
+      headers: { "cf-connecting-ip": who, "content-length": String(declare) },
+    }));
+
+  // 150 x 5 MB is 750 MB of real body against a 1 GB budget. At the old flat
+  // 10 MB charge the same requests would have spent 1.5 GB and been cut off.
+  for (let i = 0; i < 150; i++) assert.equal((await upload(5_000_000)).status, 200);
+});
+
+test("understating content-length does not buy free egress", async () => {
+  const ip = "203.0.113.65";
+  const lie = () => worker.fetch(new Request("https://netcheck.internal/api/speedtest/up", {
+    method: "POST",
+    body: new Uint8Array(10_000_000),
+    headers: { "cf-connecting-ip": ip, "content-length": "1" },
+  }));
+
+  // Charged at the declared byte, the budget would never move. The bytes that
+  // actually arrived are billed after the read, so ~100 requests spend it.
+  let blocked = false;
+  for (let i = 0; i < 120 && !blocked; i++) blocked = (await lie()).status === 429;
+  assert.ok(blocked, "a body far larger than it declared never exhausted the budget");
 });

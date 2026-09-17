@@ -96,10 +96,19 @@ export default {
     }
 
     if (url.pathname === "/api/speedtest/up" && request.method === "POST") {
-      // Charged at the cap rather than at the body's real size: the size is
-      // only known once we have read it, and by then the bytes are spent.
-      if (!chargeSpeedBudget(clientIp, MAX_UPLOAD_BYTES)) return budgetExceededResponse();
-      return handleSpeedUp(request);
+      // Charged before the body is read, so it has to go on what the caller
+      // declares — clamped to the cap, and charged at the cap when the header
+      // is absent (chunked). Content-Length is caller-controlled, so the real
+      // count is billed afterwards too: understating it buys one request's
+      // worth of egress, not an unlimited supply of them.
+      const declared = Number(request.headers.get("content-length"));
+      const upfront = Number.isFinite(declared) && declared > 0
+        ? Math.min(declared, MAX_UPLOAD_BYTES)
+        : MAX_UPLOAD_BYTES;
+      if (!chargeSpeedBudget(clientIp, upfront)) return budgetExceededResponse();
+      return handleSpeedUp(request, (actual) => {
+        if (actual > upfront) chargeSpeedBudget(clientIp, actual - upfront);
+      });
     }
 
     // Static assets handled by wrangler assets binding
@@ -323,7 +332,7 @@ async function handleOoklaTargets(request: Request): Promise<Response> {
 // that isolate down with it — and the handler only ever needed the length.
 const MAX_UPLOAD_BYTES = 10_000_000;
 
-async function handleSpeedUp(request: Request): Promise<Response> {
+async function handleSpeedUp(request: Request, onBytes?: (bytes: number) => void): Promise<Response> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES) {
     return uploadTooLarge();
@@ -343,10 +352,12 @@ async function handleSpeedUp(request: Request): Promise<Response> {
     bytes += value.byteLength;
     if (bytes > MAX_UPLOAD_BYTES) {
       await reader.cancel();
+      onBytes?.(bytes);
       return uploadTooLarge();
     }
   }
 
+  onBytes?.(bytes);
   return Response.json({ bytes }, { headers: corsHeaders() });
 }
 
@@ -589,14 +600,16 @@ async function isRateLimited(env: Env | undefined, ip: string, bucket: keyof typ
 // The speed endpoints are not abusive by request count — one run is a handful
 // of requests — they are abusive by volume: a single GET can ask for 100 MB,
 // and nothing stopped a script from asking forever. Egress is the cost, so the
-// budget is in bytes. A full run moves ~160 MB at the client's largest sizes,
-// so 500 MB/minute leaves room for a retry and a re-run without ever being the
-// thing a real visitor notices.
+// budget is in bytes. A full run moves ~185 MB now that the measured steps run
+// four streams wide (~162 MB down, ~24 MB up), so the budget has to be a
+// multiple of that or a visitor who re-tests twice gets cut off mid-run and
+// reads the truncated number as their line getting slower. 1 GB/minute is five
+// runs.
 //
 // ponytail: per-isolate like the counter above, for the same reason — the Rate
 // Limiting binding counts requests, not bytes, so there is nothing to delegate
 // this to. It bounds one client on one isolate, which is the casual case.
-const SPEED_BUDGET_BYTES = 500_000_000;
+const SPEED_BUDGET_BYTES = 1_000_000_000;
 const SPEED_BUDGET_WINDOW_MS = 60_000;
 const MAX_SPEED_TRACKED_IPS = 10_000;
 const speedBudgets = new Map<string, { bytes: number; resetAt: number }>();

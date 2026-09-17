@@ -309,11 +309,27 @@ export function mbps(bytes: number, seconds: number): number | null {
   return Math.round(((bytes * 8) / (seconds * 1e6)) * 100) / 100;
 }
 
+/**
+ * Promise.all adopts the first rejection and leaves the rest unhandled. The
+ * streams of a step share one deadline, so they fail together: one timed-out
+ * step raised three `unhandledrejection` events. Wait for all of them, then
+ * rethrow the first.
+ */
+async function allStreams(tasks: Promise<unknown>[]): Promise<void> {
+  const settled = await Promise.allSettled(tasks);
+  const failed = settled.find((r) => r.status === "rejected");
+  if (failed) throw failed.reason;
+}
+
 /** Streams one download to completion, reporting bytes as they arrive. */
 async function downloadOnce(
   server: SpeedServer, bytes: number, signal: AbortSignal, onBytes: (n: number) => void
 ): Promise<void> {
   const res = await fetch(server.downUrl(bytes), { cache: "no-store", signal });
+  // A 429 or 413 body is a few dozen bytes of JSON that arrive instantly. Left
+  // uncaught it counts as a completed transfer and reports a rejected request
+  // as bandwidth, which is the one failure mode that flatters the result.
+  if (!res.ok) throw new Error(`download ${res.status}`);
   if (!res.body) {
     onBytes((await res.blob()).size);
     return;
@@ -515,7 +531,7 @@ export const SpeedTest = {
         // One deadline shared by the whole step: a straggler stream must not
         // get its own fresh 12s after the others have finished.
         const stepSignal = combineSignal(12000, signal);
-        await Promise.all(
+        await allStreams(
           Array.from({ length: streams }, () => downloadOnce(server, size, stepSignal, addDownloadBytes))
         );
         cb("download", Math.round(((step + 1) / dlSizes.length) * 100), this.results);
@@ -561,15 +577,19 @@ export const SpeedTest = {
 
       try {
         const stepSignal = combineSignal(12000, signal);
-        await Promise.all(Array.from({ length: streams }, () =>
-          fetch(server.upUrl(), {
+        await allStreams(Array.from({ length: streams }, async () => {
+          const res = await fetch(server.upUrl(), {
             method: "POST",
             // A fresh body per stream: one BodyInit cannot be sent twice.
             body: server.makeUploadBody(size),
             cache: "no-store",
             signal: stepSignal,
-          })
-        ));
+          });
+          // fetch resolves for 4xx too. A refused upload returns in milliseconds
+          // without carrying the body, so counting it reports a rejection as
+          // the fastest upload of the run.
+          if (!res.ok) throw new Error(`upload ${res.status}`);
+        }));
         ulTotalBytes += size * streams;
         if (ulMeasureStart !== null) ulMeasuredBytes += size * streams;
         const measuring = ulMeasureStart !== null;
