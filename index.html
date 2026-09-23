@@ -629,7 +629,7 @@
             <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.</p>
+            <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Nearly every test runs client-side against Cloudflare's edge network, and your results are never collected. The one exception is the recursion-path check, described under Privacy.</p>
           </div>
         </div>
         <div class="card">
@@ -640,7 +640,7 @@
             <h2 class="card-title" id="about-privacy-title">Privacy</h2>
           </div>
           <div class="card-body">
-            <p class="info-muted" id="about-privacy-desc">All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.</p>
+            <p class="info-muted" id="about-privacy-desc">All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. The one thing that leaves your browser is the recursion-path check: it makes your resolver look up a name on a nameserver we run, which sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.</p>
           </div>
         </div>
         <div class="card">

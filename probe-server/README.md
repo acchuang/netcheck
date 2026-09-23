@@ -53,11 +53,29 @@ silently break the delegation:
 gcloud compute addresses create netcheck-probe-ip --region=us-central1
 ```
 
-Open UDP/53 from anywhere (resolvers can come from any address) and TCP/8443
-for read-back:
+Open UDP/53 from anywhere (resolvers can come from any address), TCP/8443
+for read-back, and TCP/80 for certbot's HTTP-01 challenge — every renewal needs
+it, not just the first issue. Nothing listens on 80 between renewals:
 
 ```bash
-gcloud compute firewall-rules create allow-dns-probe --allow=udp:53,tcp:8443 --target-tags=dns-probe --source-ranges=0.0.0.0/0
+gcloud compute firewall-rules create allow-dns-probe --allow=udp:53,tcp:80,tcp:8443 --target-tags=dns-probe --source-ranges=0.0.0.0/0
+```
+
+HTTP-01 rather than DNS-01 on purpose: DNS-01 would put a Cloudflare API token
+on this box able to edit `oilygold.xyz`, so a compromised probe could rewrite
+the whole parent zone.
+
+Get the code onto the VM — the repo is public, and the server imports
+`src/shared/dns-wire.ts`, so it needs the checkout, not just this directory:
+
+```bash
+sudo git clone https://github.com/acchuang/netcheck.git /opt/netcheck
+```
+
+To deploy a change later:
+
+```bash
+gcloud compute ssh netcheck-probe --zone us-central1-a -- 'cd /opt/netcheck && sudo git pull --ff-only && sudo systemctl restart netcheck-probe'
 ```
 
 ## Delegation
@@ -68,6 +86,13 @@ Two records in the **parent** zone (`oilygold.xyz`), not in `p`:
 ns-probe.oilygold.xyz.  A   <VM_STATIC_IP>
 p.oilygold.xyz.         NS  ns-probe.oilygold.xyz.
 ```
+
+`oilygold.xyz` is on Cloudflare DNS: both records must be **DNS only (grey
+cloud)**. A proxied `ns-probe` resolves to Cloudflare's anycast IPs, so
+resolvers send UDP/53 to Cloudflare instead of this box.
+
+Add the delegation only after the service answers locally (see below) —
+resolvers cache a lame delegation.
 
 An `AAAA` for `ns-probe` too, if the VM has IPv6 — the v6 listener is useless
 to resolvers that cannot find an address to reach it on.
@@ -142,6 +167,14 @@ WantedBy=multi-user.target
 
 Needs Node 24+ on the VM for native TypeScript execution. Debian 12's packaged
 Node is far older — install from nodesource.
+
+## Monitoring
+
+Point a free external HTTPS monitor (UptimeRobot or similar) at
+`https://ns-probe.oilygold.xyz:8443/healthz`. That catches a dead VM, a crashed
+process, and an expired certificate. It does not catch a lost UDP/53 firewall
+rule or a broken delegation — `dig +trace` at setup covers those. If the box
+is down, the site shows the probe as unavailable rather than failing.
 
 ## Security notes
 

@@ -521,7 +521,7 @@ const en = {
   "about.title": "About NetCheck",
   "about.subtitle": "A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves",
   "about.what.title": "What is NetCheck?",
-  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Every test runs client-side against Cloudflare's edge network. There's no backend collecting your results.",
+  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Nearly every test runs client-side against Cloudflare's edge network, and your results are never collected. The one exception is the recursion-path check, described under Privacy.",
   "about.feat.dns.title": "DNS Check",
   "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.",
   "about.feat.speed.title": "Speed Test",
@@ -531,7 +531,7 @@ const en = {
   "about.feat.headers.title": "Security Headers",
   "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
-  "about.privacy.desc": "All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. Nothing is sent to a server.",
+  "about.privacy.desc": "All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. The one thing that leaves your browser is the recursion-path check: it makes your resolver look up a name on a nameserver we run, which sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.",
 
   // Verdict bars
   "verdict.oneIssue": "1 issue found",
@@ -1060,7 +1060,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.title": "關於 NetCheck",
   "about.subtitle": "純瀏覽器端的網路診斷工具，免安裝、免帳號，除了檢測本身之外不會有任何資料離開您的裝置",
   "about.what.title": "NetCheck 是什麼？",
-  "about.what.desc": "NetCheck 直接在您的瀏覽器中執行一系列網路與隱私診斷：您的 DNS 解析器、其安全狀態、流量實際經過的遞迴路徑、真實的上下載速度與緩衝膨脹、廣告／追蹤攔截器的效果、這個瀏覽器對指紋辨識者有多容易辨識，以及任何您指定網站的安全標頭。所有測試都在用戶端對 Cloudflare 邊緣網路執行，沒有後端收集您的結果。",
+  "about.what.desc": "NetCheck 直接在您的瀏覽器中執行一系列網路與隱私診斷：您的 DNS 解析器、其安全狀態、流量實際經過的遞迴路徑、真實的上下載速度與緩衝膨脹、廣告／追蹤攔截器的效果、這個瀏覽器對指紋辨識者有多容易辨識，以及任何您指定網站的安全標頭。幾乎所有測試都在用戶端對 Cloudflare 邊緣網路執行，也不會收集您的結果；唯一的例外是遞迴路徑檢測，說明見「隱私」。",
   "about.feat.dns.title": "DNS 檢測",
   "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測用名稱伺服器追蹤實際的遞迴路徑，以加密 DNS 探測 8 個公共解析器，並標示缺少 DNSSEC、ECS 子網外洩、未加密 DNS、WebRTC 外洩與惡意軟體過濾缺口，並提供各項修正建議。加密 DNS 的判定以路徑中最差的一跳為準，而非最好的一跳。",
   "about.feat.speed.title": "速度測試",
@@ -1070,7 +1070,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.feat.headers.title": "安全標頭",
   "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，具備多跳、附速率限制的 SSRF 防護，並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
   "about.privacy.title": "隱私",
-  "about.privacy.desc": "所有檢測都在您的瀏覽器中執行。指紋檢測完全在本機進行——只讀取瀏覽器 API，不對外送出任何資料。快照與廣告攔截歷史僅儲存在您裝置的本機儲存空間，絕不上傳。匯出會在您的電腦上產生 Markdown 或 PDF 檔案。不會有任何資料送往伺服器。",
+  "about.privacy.desc": "所有檢測都在您的瀏覽器中執行。指紋檢測完全在本機進行——只讀取瀏覽器 API，不對外送出任何資料。快照與廣告攔截歷史僅儲存在您裝置的本機儲存空間，絕不上傳。匯出會在您的電腦上產生 Markdown 或 PDF 檔案。唯一會離開您瀏覽器的是遞迴路徑檢測：它讓您的解析器向我們架設的名稱伺服器查詢一個名稱，伺服器會看到解析器的 IP；若解析器有轉送，也會看到您網路的截短前綴。這些資料只存在記憶體中最多 5 分鐘，絕不寫入磁碟，且只有留在您分頁中的金鑰才能讀回。",
 
   // Footer
   // Verdict bars
