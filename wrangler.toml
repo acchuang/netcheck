@@ -13,6 +13,13 @@ name = "API_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 20, period = 60 }
 
+# /api/dns/probe-result polls up to ten times per check, so it gets its own,
+# looser budget ("probe" in RATE_LIMITS).
+[[ratelimits]]
+name = "PROBE_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
 # The recursion-path probe is off unless all three are set. It needs an
 # authoritative nameserver you run yourself — see probe-server/README.md.
 # PROBE_SECRET is a secret: `wrangler secret put PROBE_SECRET`, never here.

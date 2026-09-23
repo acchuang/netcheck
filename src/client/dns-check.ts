@@ -81,6 +81,10 @@ interface IpData {
 
 interface ProbeResult {
   resolvers: { ip: string; ecs: string | null; count: number }[];
+  /** The nameserver could not be read at all — not the same as seeing nothing. */
+  unreachable?: boolean;
+  /** Read-back failed partway; the list is what arrived before it did. */
+  incomplete?: boolean;
 }
 
 function hex(bytes: Uint8Array): string {
@@ -104,8 +108,12 @@ async function pollProbe(readKey: string): Promise<ProbeResult | null> {
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, PROBE_POLL_MS));
     const res = await fetch(`/api/dns/probe-result?key=${readKey}`);
-    if (!res.ok) return last;
-    const current = (await res.json()) as ProbeResult;
+    const current = res.ok ? ((await res.json()) as ProbeResult) : null;
+    // A 429 or a dead nameserver must not pass for a finished read: whatever we
+    // already have is labelled partial, and nothing at all is "couldn't look".
+    if (!current || current.unreachable) {
+      return last?.resolvers.length ? { ...last, incomplete: true } : { resolvers: [], unreachable: true };
+    }
     if (last && current.resolvers.length > 0 && current.resolvers.length === last.resolvers.length) {
       return current;
     }
@@ -504,7 +512,7 @@ export async function runDnsChecks(): Promise<void> {
   // visitor's own path, so they wait for the probe and the v6 address rather
   // than guessing without them.
   const [probe, ipv6] = await Promise.all([probePromise, ipv6Promise]);
-  const observed = probe ? probe.resolvers : null;
+  const observed = probe && !probe.unreachable ? probe.resolvers : null;
   const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observed, {
     ipv4: ipData.ip ?? null,
     ipv6,
@@ -553,10 +561,12 @@ function renderIpInfo(ipData: IpData): void {
 // The visitor's own recursion path, kept in its own block. Mixing it into the
 // public resolver table below made eight resolvers we picked look like the
 // eight the visitor uses.
-// Three states, and they mean different things: `undefined` is still running,
+// Four states, and they mean different things: `undefined` is still running,
 // `null` is a deployment with no probe nameserver at all — the section promises
 // "your recursive resolver" and could never deliver one — and an empty resolver
-// list means the probe ran and saw nothing, which is itself a result.
+// list means the probe ran and saw nothing, which is itself a result. A probe
+// that is configured but can't be read comes back `unreachable`, and must never
+// render as that empty result.
 function renderObservedPath(probeResult?: ProbeResult | null): void {
   const section = document.getElementById("dns-observed-section")!;
   const container = document.getElementById("dns-observed-results")!;
@@ -575,6 +585,10 @@ function renderObservedPath(probeResult?: ProbeResult | null): void {
   }
 
   container.innerHTML = "";
+  if (probeResult.unreachable) {
+    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedUnavailable"))}</p>`;
+    return;
+  }
   if (probeResult.resolvers.length === 0) {
     container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedNone"))}</p>`;
     return;
@@ -598,6 +612,9 @@ function renderObservedPath(probeResult?: ProbeResult | null): void {
     `;
     container.appendChild(div);
   });
+  if (probeResult.incomplete) {
+    container.insertAdjacentHTML("beforeend", `<p class="info-muted">${escapeHtml(t("dns.observedIncomplete"))}</p>`);
+  }
 }
 
 function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult | null): void {

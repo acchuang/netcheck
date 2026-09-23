@@ -23,7 +23,7 @@ function sections(text: string): string[] {
 
 // Reviewed and intentional. Anything else is a new capability.
 const ALLOWED_SECTIONS = new Set([
-  "ratelimits",      // API_RATE_LIMITER — counts requests, holds no data
+  "ratelimits",      // API_RATE_LIMITER, PROBE_RATE_LIMITER — count requests, hold no data
   "vars",            // plain config, no credentials (PROBE_SECRET is a wrangler secret)
 ]);
 
@@ -48,5 +48,10 @@ test("the rate limiting binding matches the in-worker fallback budget", () => {
 
   const worker = readFileSync(new URL("../src/worker/index.ts", import.meta.url), "utf8");
   assert.match(worker, /RATE_WINDOW_MS = 60_000/);
-  assert.match(worker, /"headers-check": 20, dns: 20/);
+  assert.match(worker, /"headers-check": 20, dns: 20, probe: 60/);
+
+  const probe = /name\s*=\s*"PROBE_RATE_LIMITER"[\s\S]*?simple\s*=\s*\{([^}]*)\}/.exec(toml);
+  assert.ok(probe, "PROBE_RATE_LIMITER binding missing from wrangler.toml");
+  assert.match(probe[1], /limit\s*=\s*60\b/);
+  assert.match(probe[1], /period\s*=\s*60\b/);
 });

@@ -303,15 +303,36 @@ test("probe-result hands the client the zone once fully configured", async () =>
   assert.deepEqual(await res.json(), { enabled: true, zone: "p.example.com" });
 });
 
-test("probe-result is rate-limited alongside the other dns endpoints", async () => {
+test("probe-result has its own budget, looser than dns and not shared with it", async () => {
+  // One check polls up to ten times. On the shared 20/min dns bucket a second
+  // run inside a minute got 429s mid-poll and showed a cut-off resolver list.
   const ip = "203.0.113.13";
-  let last!: Response;
-  for (let i = 0; i < 21; i++) {
-    last = await worker.fetch(new Request("https://netcheck.internal/api/dns/probe-result", {
-      headers: { "cf-connecting-ip": ip },
-    }));
+  const probe = () => worker.fetch(new Request("https://netcheck.internal/api/dns/probe-result", {
+    headers: { "cf-connecting-ip": ip },
+  }));
+  for (let i = 0; i < 60; i++) assert.equal((await probe()).status, 200);
+  assert.equal((await probe()).status, 429);
+
+  const dns = await worker.fetch(new Request("https://netcheck.internal/api/dns/compare", {
+    headers: { "cf-connecting-ip": ip },
+  }));
+  assert.notEqual(dns.status, 429);
+});
+
+test("an unreachable probe nameserver is reported, not passed off as an empty result", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => { throw new Error("connect ECONNREFUSED"); }) as typeof fetch;
+  try {
+    const res = await worker.fetch(
+      new Request("https://netcheck.internal/api/dns/probe-result?key=00112233445566778899aabbccddeeff", {
+        headers: { "cf-connecting-ip": "203.0.113.14" },
+      }),
+      { PROBE_SERVER_URL: "https://probe.internal:8443", PROBE_SECRET: "s", PROBE_ZONE: "p.example.com" } as never
+    );
+    assert.deepEqual(await res.json(), { resolvers: [], unreachable: true });
+  } finally {
+    globalThis.fetch = realFetch;
   }
-  assert.equal(last.status, 429);
 });
 
 test("a plaintext probe URL is treated as unconfigured, not used", async () => {

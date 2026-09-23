@@ -76,3 +76,25 @@ test("malware filtering is inferred from the probe fetch failing, not succeeding
   const unfiltered = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
   assert.equal(statusOf(unfiltered, "malware"), "warn");
 });
+
+// A failed read-back used to return whatever the last poll saw, so a 429 or a
+// dead nameserver looked like a finished, complete answer.
+function stubProbe(polls: (() => Response)[]): void {
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url === "/api/dns/probe-result") return Response.json({ enabled: true, zone: "p.example.com" });
+    if (url.startsWith("/api/dns/probe-result?key=")) return polls.shift()!();
+    return new Response(null);
+  }) as typeof fetch;
+}
+
+test("a probe read-back cut off by a 429 is marked incomplete", async () => {
+  const seen = { resolvers: [{ ip: "198.51.100.1", ecs: null, count: 1 }] };
+  stubProbe([() => Response.json(seen), () => new Response(null, { status: 429 })]);
+  assert.deepEqual(await DnsCheck.probeRecursionPath(), { ...seen, incomplete: true });
+});
+
+test("an unreachable probe nameserver is not reported as an empty result", async () => {
+  stubProbe([() => Response.json({ resolvers: [], unreachable: true })]);
+  assert.deepEqual(await DnsCheck.probeRecursionPath(), { resolvers: [], unreachable: true });
+});

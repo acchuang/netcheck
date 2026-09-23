@@ -19,6 +19,7 @@ export interface Env {
   PROBE_SECRET?: string;
   PROBE_ZONE?: string;
   API_RATE_LIMITER?: RateLimiterBinding;
+  PROBE_RATE_LIMITER?: RateLimiterBinding;
   [key: string]: unknown;
 }
 
@@ -44,7 +45,7 @@ export default {
     }
 
     if (url.pathname === "/api/dns/probe-result") {
-      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
+      if (await isRateLimited(env, clientIp, "probe")) return rateLimitedResponse();
       return handleProbeResult(request, env);
     }
 
@@ -562,16 +563,18 @@ async function targetAllowed(hostname: string): Promise<boolean> {
 // land on. The binding counts across all of them. The counter stays as the
 // fallback because `wrangler dev` and the tests have no binding, and having no
 // limit there is worse than having a weak one.
-// "dns" also covers /api/dns/check-resolvers, /api/dns/compare and
-// /api/dns/probe-result, which each fan out per request — same abuse shape as
-// headers-check.
+// "dns" also covers /api/dns/check-resolvers and /api/dns/compare, which each
+// fan out per request — same abuse shape as headers-check. /api/dns/probe-result
+// gets its own, looser bucket: one check polls it up to ten times, and each poll
+// is a single fetch to our own nameserver. Sharing "dns" meant a second run
+// inside a minute got 429s mid-poll and showed a cut-off resolver list.
 const RATE_WINDOW_MS = 60_000;
-const RATE_LIMITS: Record<string, number> = { "headers-check": 20, dns: 20 };
+const RATE_LIMITS: Record<string, number> = { "headers-check": 20, dns: 20, probe: 60 };
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
 async function isRateLimited(env: Env | undefined, ip: string, bucket: keyof typeof RATE_LIMITS): Promise<boolean> {
   const key = `${bucket}:${ip}`;
-  const limiter = env?.API_RATE_LIMITER;
+  const limiter = bucket === "probe" ? env?.PROBE_RATE_LIMITER : env?.API_RATE_LIMITER;
   if (limiter) {
     try {
       const { success } = await limiter.limit({ key });
@@ -709,9 +712,11 @@ async function handleProbeResult(request: Request, env?: Env): Promise<Response>
       return Response.json(data, { headers: corsHeaders() });
     }
   } catch {
-    // Probe server unreachable — the check degrades to "unobserved", not an error.
+    // Falls through to the unreachable reply.
   }
-  return Response.json({ resolvers: [] }, { headers: corsHeaders() });
+  // Not the same as an empty list: that means the probe ran and nothing reached
+  // the nameserver, which is a finding. A dead box is not.
+  return Response.json({ resolvers: [], unreachable: true }, { headers: corsHeaders() });
 }
 
 async function handleHeadersCheck(request: Request): Promise<Response> {
