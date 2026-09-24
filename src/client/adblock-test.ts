@@ -118,9 +118,11 @@ export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<Te
     switch (test.type) {
       // Same script-typed request as a <script> tag — Sec-Fetch-Dest: script, so
       // $script filter rules still apply — but the response is never executed.
-      // Used for the user-supplied URL, where running arbitrary third-party JS
-      // in this origin (localStorage, same-origin fetch to our Worker) would be
-      // a real XSS vector the moment the field is ever prefilled from a link.
+      // Every script probe goes this way: a real AdSense/GPT tag that runs here
+      // pulls in more ad code and can hang pop-unders off the next click, and
+      // running arbitrary third-party JS in this origin (localStorage,
+      // same-origin fetch to our Worker) is an XSS vector.
+      case "script":
       case "preload-script": {
         const link = document.createElement("link");
         link.rel = "preload";
@@ -131,12 +133,11 @@ export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<Te
         container.appendChild(link);
         break;
       }
-      case "script":
       case "image":
       case "pixel": {
-        const el = document.createElement(test.type === "script" ? "script" : "img") as HTMLScriptElement | HTMLImageElement;
+        const el = document.createElement("img");
         el.src = test.url!;
-        if (test.type === "pixel" && el instanceof HTMLImageElement) {
+        if (test.type === "pixel") {
           el.width = 1;
           el.height = 1;
         }
