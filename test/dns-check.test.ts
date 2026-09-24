@@ -8,7 +8,7 @@
 
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { DnsCheck } from "../src/client/dns-check.ts";
+import { DnsCheck, planDnsSuggestions } from "../src/client/dns-check.ts";
 
 const realFetch = globalThis.fetch;
 const CLIENT = { ipv4: "203.0.113.5", ipv6: null };
@@ -97,4 +97,32 @@ test("a probe read-back cut off by a 429 is marked incomplete", async () => {
 test("an unreachable probe nameserver is not reported as an empty result", async () => {
   stubProbe([() => Response.json({ resolvers: [], unreachable: true })]);
   assert.deepEqual(await DnsCheck.probeRecursionPath(), { resolvers: [], unreachable: true });
+});
+
+type Checks = Parameters<typeof planDnsSuggestions>[0];
+const passing = (...ids: string[]) =>
+  ids.map((id) => ({ id, status: "pass", detailKey: "x" })) as Checks;
+const row = (name: string, extra: object = {}) => ({ ...resolver(true), name, latency: 20, ...extra });
+const table = [row("Cloudflare"), row("Quad9"), row("Cloudflare Families")];
+
+test("no probe nameserver never produces a 'DNS not encrypted' issue", () => {
+  const plan = planDnsSuggestions(passing("dnssec", "malware"), table);
+  assert.equal(plan.dohUnverified, true);
+  assert.deepEqual(plan.issues, []);
+});
+
+test("an observed plaintext resolver is an issue, and Top Fix is the encryption fix", () => {
+  const checks = [...passing("dnssec", "malware"), { id: "doh", status: "warn", detailKey: "x" }] as Checks;
+  const plan = planDnsSuggestions(checks, table);
+  assert.deepEqual(plan.issues.map((i) => i.id), ["doh"]);
+  assert.equal(plan.topFix?.name, "dns.sug.doh");
+  assert.equal(plan.suggestions[0], plan.topFix);
+});
+
+test("Top Fix resolves the issue and skips resolvers our own table shows failing", () => {
+  const leaky = [row("Cloudflare"), row("Quad9"), row("Cloudflare Families", { forwardsEcs: true })];
+  const plan = planDnsSuggestions(passing("dnssec"), leaky);
+  assert.deepEqual(plan.issues.map((i) => i.id), ["malware"]);
+  assert.equal(plan.topFix?.name, "dns.sug.quad9", "1.1.1.1 doesn't filter malware; Families is leaking ECS");
+  assert.ok(!plan.suggestions.some((s) => s.name === "dns.sug.cfFamily"));
 });

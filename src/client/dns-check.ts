@@ -131,12 +131,29 @@ interface DnsContext {
   reachableCount: number;
 }
 
+type DnsIssue = "webrtc" | "malware" | "doh" | "dnssec" | "slow" | "limited";
+
+// Most severe first: the order issues are listed in the verdict, and the order
+// in which Top Fix looks for a suggestion that resolves one of them.
+const DNS_ISSUES: { id: DnsIssue; key: string }[] = [
+  { id: "webrtc", key: "dns.issueWebrtc" },
+  { id: "malware", key: "dns.issueMalware" },
+  { id: "doh", key: "dns.issueDoh" },
+  { id: "dnssec", key: "dns.issueDnssec" },
+  { id: "slow", key: "dns.issueSlow" },
+  { id: "limited", key: "dns.issueLimited" },
+];
+
 interface Suggestion {
-  name: string; 
+  name: string;
   icon: string;
   tags: string[];
   url: string | null;
   when: (ctx: DnsContext) => boolean;
+  /** Issues switching to this actually resolves — only these can make it Top Fix. */
+  fixes: DnsIssue[];
+  /** Row in the resolver table; if that row is failing we don't recommend it. */
+  resolver?: string;
 }
 
 // --- Core API object ---
@@ -426,26 +443,74 @@ export const DnsCheck = {
 
 const dnsSuggestions: Suggestion[] = [
   { name: "dns.sug.cf", icon: "CF", tags: ["fastest", "DoH", "DoT", "privacy"], url: "https://1.1.1.1",
-    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100 },
+    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100, fixes: ["slow", "dnssec"], resolver: "Cloudflare" },
   { name: "dns.sug.cfFamily", icon: "CF+", tags: ["family safe", "malware blocking", "free"], url: "https://1.1.1.1/family",
-    when: (ctx) => !ctx.hasSecurity("malware") },
+    when: (ctx) => !ctx.hasSecurity("malware"), fixes: ["malware", "dnssec"], resolver: "Cloudflare Families" },
   { name: "dns.sug.quad9", icon: "Q9", tags: ["threat blocking", "non-profit", "DNSSEC"], url: "https://quad9.net",
-    when: (ctx) => !ctx.hasSecurity("malware") || !ctx.hasSecurity("dnssec") },
+    when: (ctx) => !ctx.hasSecurity("malware") || !ctx.hasSecurity("dnssec"), fixes: ["malware", "dnssec"], resolver: "Quad9" },
   { name: "dns.sug.nextdns", icon: "ND", tags: ["customizable", "analytics", "ad blocking"], url: "https://nextdns.io",
-    when: () => true },
+    when: () => true, fixes: ["malware"], resolver: "NextDNS" },
   { name: "dns.sug.doh", icon: "DoH", tags: ["encryption", "privacy", "browser setting"], url: "https://www.cloudflare.com/ssl/encrypted-sni/",
-    when: (ctx) => !ctx.hasSecurity("doh") },
+    when: (ctx) => !ctx.hasSecurity("doh"), fixes: ["doh"] },
   { name: "dns.sug.dnssec", icon: "SEC", tags: ["anti-spoofing", "cryptographic", "validation"], url: "https://www.internetsociety.org/deploy360/dnssec/",
-    when: (ctx) => !ctx.hasSecurity("dnssec") },
+    when: (ctx) => !ctx.hasSecurity("dnssec"), fixes: ["dnssec"] },
   { name: "dns.sug.pihole", icon: "Pi", tags: ["self-hosted", "network-wide", "open source"], url: "https://pi-hole.net",
-    when: (ctx) => !ctx.hasSecurity("malware") },
+    when: (ctx) => !ctx.hasSecurity("malware"), fixes: [] },
   { name: "dns.sug.webrtc", icon: "RTC", tags: ["privacy fix", "IP leak", "browser setting"], url: null,
-    when: (ctx) => ctx.hasWebRtcLeak },
+    when: (ctx) => ctx.hasWebRtcLeak, fixes: ["webrtc"] },
   { name: "dns.sug.adguard", icon: "AG", tags: ["ad blocking", "no install", "cross-platform"], url: "https://adguard.com/adguard-dns/overview.html",
-    when: (ctx) => !ctx.usingResolver("AdGuard DNS") },
+    when: (ctx) => !ctx.usingResolver("AdGuard DNS"), fixes: ["malware"], resolver: "AdGuard DNS" },
   { name: "dns.sug.multi", icon: "2x", tags: ["reliability", "redundancy", "easy setup"], url: null,
-    when: (ctx) => ctx.reachableCount < 3 },
+    when: (ctx) => ctx.reachableCount < 3, fixes: ["limited"] },
 ];
+
+/**
+ * Which issues the verdict reports and which suggestions follow it. Pure, so the
+ * two ways this has gone wrong — asserting "not encrypted" without having looked,
+ * and crowning a Top Fix that doesn't fix anything — stay pinned by tests.
+ */
+export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: ResolverResult[]) {
+  const ctx: DnsContext = {
+    usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
+    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
+    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency ?? Infinity)) : Infinity,
+    hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
+    hasWebRtcLeak: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
+    reachableCount: reachable.length,
+  };
+
+  // "DNS not encrypted" is only defensible when the probe actually saw the
+  // resolver. No probe row at all (probe not configured) or an "info" one (it
+  // saw nothing) both mean "unknown", and asserting an issue there is the
+  // unconditional-pass bug wearing the other hat.
+  const doh = securityChecks.find((c) => c.id === "doh");
+  const dohUnverified = !doh || doh.status === "info";
+
+  const present: Record<DnsIssue, boolean> = {
+    webrtc: ctx.hasWebRtcLeak,
+    malware: !ctx.hasSecurity("malware"),
+    doh: !dohUnverified && doh.status !== "pass",
+    dnssec: !ctx.hasSecurity("dnssec"),
+    slow: ctx.fastestResolver() > 80,
+    limited: ctx.reachableCount < 2,
+  };
+  const issues = DNS_ISSUES.filter((i) => present[i.id]);
+
+  // Never recommend a resolver our own table just showed leaking the visitor's
+  // subnet or failing DNSSEC.
+  const failing = (name: string) =>
+    reachable.some((r) => r.name === name && (r.forwardsEcs === true || r.validatesDnssec === false));
+  const relevant = dnsSuggestions.filter((s) => s.when(ctx) && !(s.resolver && failing(s.resolver)));
+
+  let topFix: Suggestion | null = null;
+  for (const issue of issues) {
+    topFix = relevant.find((s) => s.fixes.includes(issue.id)) ?? null;
+    if (topFix) break;
+  }
+  const suggestions = (topFix ? [topFix, ...relevant.filter((s) => s !== topFix)] : relevant).slice(0, 6);
+
+  return { issues, dohUnverified, suggestions, topFix };
+}
 
 // --- UI Functions ---
 
@@ -738,29 +803,10 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
   const subtitle = document.getElementById("dns-suggestions-subtitle")!;
   const grid = document.getElementById("dns-suggestions-grid")!;
 
-  const ctx: DnsContext = {
-    usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
-    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
-    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency ?? Infinity)) : Infinity,
-    hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
-    hasWebRtcLeak: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
-    reachableCount: reachable.length,
-  };
+  const { issues, dohUnverified, suggestions, topFix } = planDnsSuggestions(securityChecks, reachable);
+  const labels = issues.map((i) => t(i.key));
 
-  // "DNS not encrypted" is only defensible when the probe actually saw the
-  // resolver. If it never reached our nameserver the answer is "unknown", and
-  // asserting an issue there is the unconditional-pass bug wearing the other hat.
-  const dohUnverified = securityChecks.some((c) => c.id === "doh" && c.detailKey === "dns.dohUnknown");
-
-  const issues: string[] = [];
-  if (!ctx.hasSecurity("dnssec")) issues.push(t("dns.issueDnssec"));
-  if (!ctx.hasSecurity("doh") && !dohUnverified) issues.push(t("dns.issueDoh"));
-  if (!ctx.hasSecurity("malware")) issues.push(t("dns.issueMalware"));
-  if (ctx.hasWebRtcLeak) issues.push(t("dns.issueWebrtc"));
-  if (ctx.fastestResolver() > 80) issues.push(t("dns.issueSlow"));
-  if (ctx.reachableCount < 2) issues.push(t("dns.issueLimited"));
-
-  if (issues.length === 0) {
+  if (labels.length === 0) {
     subtitle.textContent = t("dns.suggestGood");
     renderVerdict(
       "dns-verdict",
@@ -769,14 +815,12 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
       dohUnverified ? t("verdict.dnsPassUnverified") : t("verdict.dnsPassDetail")
     );
   } else {
-    subtitle.textContent = t("dns.suggestIssues", issues.join(", "));
-    renderVerdict("dns-verdict", verdictLevel(issues.length), issueHeadline(issues), issues.join(" · "));
+    subtitle.textContent = t("dns.suggestIssues", labels.join(", "));
+    renderVerdict("dns-verdict", verdictLevel(labels.length), issueHeadline(labels), labels.join(" · "));
   }
 
-  const relevant = dnsSuggestions.filter((s) => s.when(ctx)).slice(0, 6);
-
-  grid.innerHTML = relevant
-    .map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "dns.checkBrowser"))
+  grid.innerHTML = suggestions
+    .map((s) => suggestionCardHtml(s, s === topFix, "dns.checkBrowser"))
     .join("");
 
   section.classList.add("visible");
