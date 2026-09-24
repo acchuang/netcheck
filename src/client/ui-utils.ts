@@ -25,11 +25,6 @@ export function animateNumber(el: HTMLElement, from: number, to: number, duratio
   requestAnimationFrame(tick);
 }
 
-export function pulseValue(el: HTMLElement): void {
-  el.classList.add("updating");
-  setTimeout(() => el.classList.remove("updating"), 150);
-}
-
 // "info" is deliberately not a grade: it states something observed that is
 // neither good nor bad, and renders in a neutral colour so it doesn't read as
 // a passed or failed check.
@@ -74,7 +69,7 @@ export function suggestionCardHtml(
     : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t(noLinkKey)}</span>`;
 
   return `
-  <div class="suggestion-card stagger-item${isTop ? " recommended" : ""}">
+  <div class="suggestion-card${isTop ? " recommended" : ""}">
     <div class="suggestion-top">
       <div class="suggestion-icon">${s.icon}</div>
       <div class="suggestion-info">

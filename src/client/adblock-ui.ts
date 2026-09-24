@@ -1,28 +1,39 @@
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test.ts";
 import { t } from "./i18n.ts";
-import { escapeHtml, ARROW_SVG, createCheckItem, setBadge } from "./ui-utils.ts";
+import { escapeHtml, ARROW_SVG } from "./ui-utils.ts";
 import { probeFingerprint, summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
-import { enableAdblockSaveButton } from "./adblock-history.ts";
+import { enableAdblockSaveButton, levelFor } from "./adblock-history.ts";
 import { runFilterListDetection } from "./filter-detect-ui.ts";
 
-// Ad block sits idle until its tab is opened — see startAdBlock. A skeleton
+// Ad block sits idle until its tab is opened — see startAdBlock. Scanning rows
 // here would promise a run that isn't happening.
 export function renderAdBlockIdle(): void {
   document.getElementById("score-summary")!.textContent = t("adblock.idle");
   document.getElementById("score-detail")!.textContent = t("adblock.idleDetail");
 }
 
-// Ad block tests
-function renderCategorySkeletons(container: HTMLElement, count: number): void {
-  container.innerHTML = Array.from({ length: count }, () =>
-    `<div class="test-category" style="pointer-events:none">
+function barHtml(pct: number): string {
+  return `<span class="condition-bar" style="--fill:${pct}%" aria-hidden="true"></span>`;
+}
+
+// Ad block tests: every category is on screen while it runs, named and
+// marked scanning, so the panel shows what is being probed rather than blanks.
+function renderCategoriesScanning(container: HTMLElement): void {
+  container.replaceChildren(...AdBlockTest.categories.map((cat) => {
+    const div = document.createElement("div");
+    div.className = "test-category";
+    div.dataset.state = "scan";
+    div.innerHTML = `
       <div class="test-category-header">
-        <div class="skeleton skeleton-circle" style="width:16px;height:16px"></div>
-        <div class="skeleton skeleton-text" style="flex:1;width:auto"></div>
-        <div class="skeleton skeleton-value" style="width:48px"></div>
-      </div>
-    </div>`
-  ).join("");
+        <span></span>
+        <span class="test-category-name">${escapeHtml(catDisplayName(cat.name))}</span>
+        <span class="condition-state"></span>
+        ${barHtml(0)}
+        <span class="condition-value">—</span>
+      </div>`;
+    div.querySelector(".condition-state")!.textContent = t("state.scan");
+    return div;
+  }));
 }
 
 // English category names double as identity keys (CATEGORY_ADVICE); translate
@@ -71,27 +82,28 @@ function renderFingerprint(): void {
   if (!fingerprintSignals) fingerprintSignals = probeFingerprint();
 
   const summary = summarizeFingerprint(fingerprintSignals);
-  setBadge(
-    "fingerprint-level",
-    summary.level === "strong" ? "done" : summary.level === "partial" ? "warn" : "fail",
-    t(`fp.level.${summary.level}`)
-  );
+  const badge = document.getElementById("fingerprint-level")!;
+  badge.dataset.state = summary.level === "strong" ? "pass" : summary.level === "partial" ? "warn" : "fail";
+  badge.textContent = t(`fp.level.${summary.level}`);
 
-  list.innerHTML = "";
-  const status = { protected: "pass", exposed: "fail", unknown: "info" } as const;
-  for (const signal of fingerprintSignals) {
-    list.appendChild(createCheckItem(
-      status[signal.state],
-      t(`fp.${signal.id}`),
-      signal.detail ?? t(`fp.state.${signal.state}`),
-      t(`fp.${signal.id}.desc`)
-    ));
-  }
+  // Unknown is a signal the page could not read, not one that failed.
+  const state = { protected: "pass", exposed: "fail", unknown: "standby" } as const;
+  list.replaceChildren(...fingerprintSignals.map((signal) => {
+    const li = document.createElement("li");
+    li.className = "condition";
+    li.dataset.state = state[signal.state];
+    li.innerHTML = `<span class="condition-label" tabindex="0" role="note" data-tooltip="${escapeHtml(t(`fp.${signal.id}.desc`))}">
+        ${escapeHtml(t(`fp.${signal.id}`))}
+        ${signal.detail ? `<span class="condition-detail">${escapeHtml(signal.detail)}</span>` : ""}
+      </span>${barHtml(100)}<span class="condition-state"></span>`;
+    li.querySelector(".condition-state")!.textContent = t(`fp.state.${signal.state}`);
+    return li;
+  }));
 }
 
 async function runAdBlockTests(): Promise<void> {
   const categoriesEl = document.getElementById("test-categories")!;
-  renderCategorySkeletons(categoriesEl, 6);
+  renderCategoriesScanning(categoriesEl);
   document.getElementById("score-summary")!.textContent = t("adblock.running");
 
   await AdBlockTest.runAll();
@@ -103,95 +115,77 @@ async function runAdBlockTests(): Promise<void> {
 export function renderAdBlockResults(): void {
   const categoriesEl = document.getElementById("test-categories")!;
   const openIdx = new Set<number>();
-  categoriesEl.querySelectorAll(".test-category").forEach((el, i) => {
-    if (el.classList.contains("open")) openIdx.add(i);
+  categoriesEl.querySelectorAll(".test-category-header").forEach((el, i) => {
+    if (el.getAttribute("aria-expanded") === "true") openIdx.add(i);
   });
 
-  categoriesEl.innerHTML = "";
-  AdBlockTest.results.forEach((cat, i) => {
-    const blocked = cat.tests.filter((t) => t.blocked).length;
-    const catEl = createCategoryWithResults(catDisplayName(cat.name), cat.tests, blocked, cat.importance);
-    catEl.classList.add("stagger-item");
-    if (openIdx.has(i)) catEl.classList.add("open");
-    categoriesEl.appendChild(catEl);
-  });
+  categoriesEl.replaceChildren(...AdBlockTest.results.map((cat, i) =>
+    createCategoryWithResults(i, catDisplayName(cat.name), cat.tests, cat.importance, openIdx.has(i))
+  ));
 
   const score = AdBlockTest.getScore();
-  const ring = document.getElementById("score-ring-fill") as unknown as SVGCircleElement;
-  const circumference = 2 * Math.PI * 54;
+  const readout = document.getElementById("adblock-score")!;
+  const number = document.getElementById("score-number")!;
+  const meter = document.getElementById("score-meter")!;
+  const summary = document.getElementById("score-summary")!;
+  const detail = document.getElementById("score-detail")!;
 
-  // Too many probes went unanswered to describe the blocker — say that, rather
-  // than rendering a ring out of whatever happened to resolve.
+  // Too many probes went unanswered to describe the blocker. Say that, rather
+  // than scoring whatever happened to resolve.
   if (score.score === null) {
-    document.getElementById("score-number")!.textContent = "—";
-    ring.style.strokeDashoffset = String(circumference);
-    ring.style.stroke = "var(--text-dim)";
-    document.getElementById("score-summary")!.textContent = t("adblock.inconclusive");
-    document.getElementById("score-detail")!.textContent =
-      t("adblock.inconclusiveDetail", score.uncertain);
+    readout.dataset.state = "standby";
+    number.textContent = "---";
+    number.classList.add("placeholder");
+    meter.style.width = "0";
+    summary.textContent = t("adblock.inconclusive");
+    detail.textContent = t("adblock.inconclusiveDetail", score.uncertain);
     renderScoreBreakdown();
     renderSuggestions(AdBlockTest.results);
     return;
   }
 
-  document.getElementById("score-number")!.textContent = String(score.score);
-  ring.style.strokeDashoffset = String(circumference - (score.score / 100) * circumference);
-
-  if (score.score >= 80) {
-    ring.style.stroke = "var(--emerald)";
-    document.getElementById("score-summary")!.textContent = t("adblock.excellent");
-  } else if (score.score >= 50) {
-    ring.style.stroke = "var(--grade-mid)";
-    document.getElementById("score-summary")!.textContent = t("adblock.good");
-  } else if (score.score >= 20) {
-    ring.style.stroke = "var(--amber)";
-    document.getElementById("score-summary")!.textContent = t("adblock.basic");
-  } else {
-    ring.style.stroke = "var(--red)";
-    document.getElementById("score-summary")!.textContent = t("adblock.minimal");
-  }
-
-  document.getElementById("score-detail")!.textContent =
-    t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
+  readout.dataset.state = levelFor(score.score);
+  number.textContent = String(score.score);
+  number.classList.remove("placeholder");
+  meter.style.width = `${score.score}%`;
+  summary.textContent = t(
+    score.score >= 80 ? "adblock.excellent" : score.score >= 50 ? "adblock.good" : score.score >= 20 ? "adblock.basic" : "adblock.minimal"
+  );
+  detail.textContent = t("adblock.scoreDetail", score.blocked, score.total, AdBlockTest.results.length);
 
   renderScoreBreakdown();
   renderSuggestions(AdBlockTest.results);
 }
 
-// Blocked share per risk tier, aggregated from the same category results the
-// rows below expand. Fills the score card's empty right half with the one thing
-// the ring can't say: which kind of tracker is getting through — and, above it,
-// which half of blocking is doing the work.
+// Which half of blocking is doing the work (network vs cosmetic), then which
+// kind of tracker is getting through. The score alone can't say either.
 function renderScoreBreakdown(): void {
   const split = AdBlockTest.getSplitScore();
-  const splitHtml = `
-    <div class="info-row">
-      <span class="info-label" data-tooltip="${escapeHtml(t("adblock.hostsTip"))}">${t("adblock.hosts")}</span>
-      <span class="info-value">${t("adblock.blockedOf", split.hosts.blocked, split.hosts.total)}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label" data-tooltip="${escapeHtml(t("adblock.cosmeticsTip"))}">${t("adblock.cosmetics")}</span>
-      <span class="info-value">${t("adblock.blockedOf", split.cosmetics.blocked, split.cosmetics.total)}</span>
-    </div>`;
+  const rows: { label: string; tip?: string; blocked: number; total: number }[] = [
+    { label: t("adblock.hosts"), tip: t("adblock.hostsTip"), ...split.hosts },
+    { label: t("adblock.cosmetics"), tip: t("adblock.cosmeticsTip"), ...split.cosmetics },
+  ];
+  for (const imp of ["high", "medium", "low"] as const) {
+    const tests = AdBlockTest.results.filter((c) => c.importance === imp).flatMap((c) => c.tests);
+    if (tests.length) rows.push({ label: t(`adblock.risk.${imp}`), blocked: tests.filter((x) => x.blocked).length, total: tests.length });
+  }
 
-  const hint = AdBlockTest.isNetworkOnlyFiltering()
-    ? `<p class="score-hint">${t("adblock.networkOnlyHint")}</p>`
-    : "";
-
-  const tiers = ["high", "medium", "low"] as const;
-  const tierHtml = tiers
-    .map((imp) => {
-      const tests = AdBlockTest.results.filter((c) => c.importance === imp).flatMap((c) => c.tests);
-      if (tests.length === 0) return "";
-      const blocked = tests.filter((x) => x.blocked).length;
-      return `<div class="info-row">
-        <span class="info-label">${t(`adblock.risk.${imp}`)}</span>
-        <span class="info-value">${t("adblock.blockedOf", blocked, tests.length)}</span>
-      </div>`;
+  document.getElementById("score-breakdown")!.innerHTML = rows
+    .filter((r) => r.total > 0)
+    .map((r) => {
+      const pct = Math.round((r.blocked / r.total) * 100);
+      const tip = r.tip ? ` tabindex="0" role="note" data-tooltip="${escapeHtml(r.tip)}"` : "";
+      return `<li class="condition" data-state="${levelFor(pct)}">
+        <span class="condition-label"${tip}>${escapeHtml(r.label)}</span>
+        ${barHtml(pct)}
+        <span class="condition-value">${r.blocked}/${r.total}</span>
+      </li>`;
     })
     .join("");
 
-  document.getElementById("score-breakdown")!.innerHTML = splitHtml + tierHtml + hint;
+  const hint = document.getElementById("score-hint")!;
+  hint.hidden = !AdBlockTest.isNetworkOnlyFiltering();
+  hint.textContent = hint.hidden ? "" : t("adblock.networkOnlyHint");
 }
 
 // Feature 1 + re-test: custom URL test + re-run adblock tests
@@ -205,6 +199,15 @@ export function initAdblockUI(): void {
   const customInput = document.getElementById("adblock-custom-url") as HTMLInputElement | null;
   customBtn?.addEventListener("click", runCustomUrlTest);
   customInput?.addEventListener("keydown", (e) => { if (e.key === "Enter") runCustomUrlTest(); });
+
+  document.getElementById("test-categories")?.addEventListener("click", (e) => {
+    const head = (e.target as Element).closest(".test-category-header");
+    const body = head && document.getElementById(head.getAttribute("aria-controls") ?? "");
+    if (!head || !body) return;
+    const open = head.getAttribute("aria-expanded") !== "true";
+    head.setAttribute("aria-expanded", String(open));
+    body.hidden = !open;
+  });
 }
 
 let lastCustomTests: Awaited<ReturnType<typeof AdBlockTest.testCustomUrl>> | null = null;
@@ -223,17 +226,20 @@ async function runCustomUrlTest(): Promise<void> {
 
 function renderCustomUrlResults(tests: NonNullable<typeof lastCustomTests>): void {
   const results = document.getElementById("adblock-custom-results")!;
-  results.innerHTML = tests.map((tt) => {
-    const status = tt.blocked ? "blocked" : "not-blocked";
-    const label = tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
-    const iconSvg = tt.blocked ? '<polyline points="9 12 11.5 14.5 16 9.5"/>' : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-    const method = methodLabel(tt.method);
-    return `<div class="dns-check-item fade-in">
-      <svg class="check-icon ${status === "blocked" ? "fail" : "pass"}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>${iconSvg}</svg>
-      <span class="check-label" data-tooltip="${escapeHtml(method)}">${escapeHtml(tt.name)}</span>
-      <span class="check-value ${status}">${label}</span>
+  results.innerHTML = tests.map(testItemHtml).join("");
+}
+
+// Blocked is the pass here: the probe is a tracker, and it didn't get through.
+function testItemHtml(tt: { name: string; blocked: boolean; uncertain?: boolean; method?: string }): string {
+  const state = tt.uncertain ? "standby" : tt.blocked ? "pass" : "fail";
+  const label = tt.uncertain ? t("adblock.uncertain") : tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
+  const method = methodLabel(tt.method);
+  const tip = method ? ` data-tooltip="${escapeHtml(method)}"` : "";
+  return `<div class="test-item" data-state="${state}">
+      <span class="test-dot" aria-hidden="true"></span>
+      <span class="test-name">${escapeHtml(tt.name)}</span>
+      <span class="test-result"${tip}>${escapeHtml(label)}</span>
     </div>`;
-  }).join("");
 }
 
 // Per-category adblock suggestions
@@ -318,7 +324,7 @@ function renderSuggestions(results: CategoryResult[]): void {
       }).join("");
 
       return `
-      <div class="suggestion-card category-advice stagger-item">
+      <div class="suggestion-card category-advice">
         <div class="suggestion-top">
           <div class="suggestion-icon-svg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>
@@ -338,40 +344,24 @@ function renderSuggestions(results: CategoryResult[]): void {
   section.classList.add("visible");
 }
 
-function createCategoryWithResults(name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], blocked: number, importance: Importance): HTMLDivElement {
+function createCategoryWithResults(index: number, name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], importance: Importance, open: boolean): HTMLDivElement {
+  const blocked = tests.filter((tt) => tt.blocked).length;
+  const pct = Math.round((blocked / tests.length) * 100);
+  // Indexed, not slugged: a zh-TW name slugs to nothing and every body collides.
+  const bodyId = `adblock-cat-${index}`;
+
   const div = document.createElement("div");
   div.className = "test-category";
-
-  const testsHtml = tests
-    .map((tt) => {
-      const status = tt.uncertain ? "uncertain" : tt.blocked ? "blocked" : "not-blocked";
-      const label = tt.uncertain ? t("adblock.uncertain") : tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
-      const iconSvg = tt.blocked
-        ? '<polyline points="9 12 11.5 14.5 16 9.5"/>'
-        : '<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
-      const method = methodLabel(tt.method);
-
-      return `
-      <div class="test-item">
-        <svg class="test-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>${iconSvg}
-        </svg>
-        <span class="test-name">${tt.name}</span>
-        <span class="test-result ${status}" data-tooltip="${method}">${label}</span>
-      </div>`;
-    })
-    .join("");
-
-  const bodyId = "adblock-cat-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
+  div.dataset.state = levelFor(pct);
   div.innerHTML = `
-    <div class="test-category-header" role="button" tabindex="0" aria-expanded="false" aria-controls="${bodyId}" onclick="const p=this.parentElement;const open=p.classList.toggle('open');this.setAttribute('aria-expanded',open?'true':'false');const b=document.getElementById('${bodyId}');if(b)b.setAttribute('aria-hidden',open?'false':'true');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();const p=this.parentElement;const open=p.classList.toggle('open');this.setAttribute('aria-expanded',open?'true':'false');const b=document.getElementById('${bodyId}');if(b)b.setAttribute('aria-hidden',open?'false':'true');}">
-      <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      <span class="test-category-name">${name}</span>
-      <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>
-      <span class="test-category-score">${t("adblock.blockedOf", blocked, tests.length)}</span>
-    </div>
-    <div class="test-category-body" id="${bodyId}" aria-hidden="true">${testsHtml}</div>
+    <button type="button" class="test-category-header" aria-expanded="${open}" aria-controls="${bodyId}">
+      <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="test-category-name">${escapeHtml(name)}</span>
+      <span class="test-category-importance imp-${importance}" data-tooltip="${escapeHtml(importanceTip(importance))}">${importanceLabel(importance)}</span>
+      ${barHtml(pct)}
+      <span class="condition-value">${blocked}/${tests.length}</span>
+    </button>
+    <div class="test-category-body" id="${bodyId}"${open ? "" : " hidden"}>${tests.map(testItemHtml).join("")}</div>
   `;
   return div;
 }

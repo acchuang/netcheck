@@ -257,35 +257,42 @@ export const ReportExporter = {
     // Wrap <li> in <ul>
     html = html.replace(/((?:<li>.+<\/li>\n?)+)/g, "<ul>$1</ul>");
 
+    // The print window is about:blank, so font URLs must be absolute.
+    const origin = location.origin;
     return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>NetCheck Report \u2014 ${data.date}</title>
 <style>
+  @font-face { font-family: "Chakra Petch"; font-weight: 500; src: url("${origin}/fonts/chakra-petch-latin-500-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Chakra Petch"; font-weight: 700; src: url("${origin}/fonts/chakra-petch-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url("${origin}/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "Inter", -apple-system, system-ui, sans-serif; font-size: 13px; line-height: 1.6; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px 24px; }
-  h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  h2 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
-  h3 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
-  .meta { font-size: 12px; color: #6b7280; margin-bottom: 20px; }
+  body { font-family: "Chakra Petch", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; font-weight: 500; font-size: 13px; line-height: 1.6; color: #111; max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding-bottom: 6px; border-bottom: 3px solid #ff5a00; margin-bottom: 8px; }
+  h2 { font-size: 16px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin: 28px 0 12px; padding-bottom: 4px; border-bottom: 1px solid #111; break-after: avoid; }
+  h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; break-after: avoid; }
+  .meta { font-size: 12px; color: #555; margin-bottom: 20px; }
   table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 12px; }
-  th, td { padding: 6px 10px; text-align: left; border: 1px solid #e5e7eb; }
-  th { background: #f9fafb; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; color: #6b7280; }
-  td { color: #1f2937; }
-  code { font-family: "SF Mono", Menlo, monospace; font-size: 12px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
+  tr { break-inside: avoid; }
+  th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid #ccc; }
+  th { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #555; border-bottom-color: #111; }
+  td { font-family: "JetBrains Mono", ui-monospace, Menlo, "PingFang TC", monospace; font-size: 11.5px; }
+  code { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 11.5px; }
   ul { list-style: none; margin: 4px 0 12px; }
   li { padding: 3px 0; font-size: 12px; }
-  hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0 12px; }
-  em { color: #6b7280; font-style: italic; }
-  strong { font-weight: 600; }
-  a { color: #5e6ad2; text-decoration: none; }
-  @media print { body { padding: 0; } }
+  hr { border: none; border-top: 1px solid #ccc; margin: 24px 0 12px; }
+  em { color: #555; font-style: normal; }
+  strong { font-weight: 700; }
+  a { color: #111; }
+  @page { margin: 16mm; }
+  @media print { body { padding: 0; max-width: none; } }
 </style>
 </head>
 <body>
 ${html}
-<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script>
+<script>window.onload=()=>document.fonts.ready.then(()=>{window.print();window.onafterprint=()=>window.close();});</script>
 </body>
 </html>`;
   },
@@ -317,10 +324,12 @@ ${html}
   showExportMenu(): void {
     const menu = document.getElementById("export-menu");
     if (!menu) return;
-    menu.classList.toggle("open");
+    const open = menu.classList.toggle("open");
+    document.getElementById("export-btn")?.setAttribute("aria-expanded", String(open));
   },
 
   hideExportMenu(): void {
     document.getElementById("export-menu")?.classList.remove("open");
+    document.getElementById("export-btn")?.setAttribute("aria-expanded", "false");
   },
 };

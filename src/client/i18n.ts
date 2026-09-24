@@ -8,20 +8,13 @@ const en = {
   // Nav
   "nav.dns": "DNS Check",
   "nav.speed": "Speed Test",
-  "nav.adblock": "Ad Block Test",
+  "nav.adblock": "Ad Block",
   "nav.export": "Export",
   "nav.exportReport": "Export Report",
   "nav.downloadMd": "Download Markdown",
   "nav.savePdf": "Save as PDF",
 
   // Themes
-  "theme.label": "Theme",
-  "theme.system": "System",
-  "theme.dark": "Dark",
-  "theme.light": "Light",
-  "theme.phosphor": "Phosphor",
-  "theme.nord": "Nord",
-  "theme.glass": "Glass",
   "theme.contrast": "High contrast",
 
   // DNS section
@@ -77,6 +70,29 @@ const en = {
   "dns.tabCompare": "Compare Resolvers",
   "dns.tabHealth": "Domain Email Health",
   "dns.copyJson": "Copy JSON",
+  "station.path": "Connection path",
+  "station.verdict": "Verdict",
+  "station.you": "You",
+  "station.router": "Router",
+  "station.isp": "ISP",
+  "station.resolver": "Resolver",
+  "station.edge": "Edge",
+  "station.routerStandby": "Not visible to a web page",
+  "station.resolverStandby": "Not observable from this site",
+  "station.resolverNone": "No resolver seen by the probe",
+  "station.resolverUnreachable": "Probe unreachable, try again later",
+  "station.noReading": "No reading",
+  "station.fastest": "Fastest public resolver",
+  "station.fastestNone": "No public resolver answered",
+  "station.checks": "Checks",
+  "station.run": "Run",
+  "state.pass": "Pass",
+  "state.warn": "Warn",
+  "state.fail": "Fail",
+  "state.seen": "Seen",
+  "state.standby": "Standby",
+  "state.scan": "Scanning",
+  "state.complete": "Complete",
   "speed.cancelBtn": "Cancel Test",
   "speed.cancelled": "Speed test cancelled",
   "history.confirmClear": "Confirm clear?",
@@ -106,7 +122,7 @@ const en = {
   "dns.checking": "Checking your DNS configuration...",
   "dns.publicSubhead": "Public resolvers, for comparison",
   "dns.publicNote": "These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.",
-  "dns.publicNoteOnly": "These are probed from your browser to compare speed and features. They are not your system resolver — this site cannot see which resolver you actually use.",
+  "dns.publicNoteOnly": "These are probed from your browser to compare speed and features. They are not your system resolver; this site cannot see which resolver you actually use.",
   "dns.recursionActive": "active",
 
   // EDNS Client Subnet
@@ -154,7 +170,7 @@ const en = {
   "dns.webrtcLeak": "WebRTC exposes {0}, which is not the address this site sees: your real path is leaking past your VPN or proxy",
   "dns.webrtcPass": "No WebRTC IP leak detected",
   "dns.webrtcUnknown": "Could not check WebRTC",
-  "dns.lanExposed": "{0} — a private address every device behind a router has. Visible to scripts, but it identifies nobody on the internet",
+  "dns.lanExposed": "{0}: a private address every device behind a router has. Visible to scripts, but it identifies nobody on the internet",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1 (Cloudflare DNS)",
@@ -191,7 +207,9 @@ const en = {
   // Speed section
   "speed.title": "Speed Test",
   "speed.subtitle": "Measure your connection speed via Cloudflare's global edge network",
-  "speed.testServer": "Test Server",
+  "speed.route": "Test route",
+  "speed.server": "Server",
+  "speed.readings": "Readings",
   "speed.server.edge": "Nearest Edge (Worker)",
   "speed.server.cfSpeed": "Cloudflare Speed Test",
   "speed.server.fast": "Netflix (fast.com)",
@@ -201,8 +219,6 @@ const en = {
   "speed.customUrlRequired": "Enter a server URL first",
   "speed.customUrlHint": "Must implement /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "Selected server is unreachable",
-  "speed.autoNearest": "Automatic (nearest edge)",
-  "speed.you": "You",
   "speed.download": "Download",
   "speed.upload": "Upload",
   "speed.latency": "Latency",
@@ -288,7 +304,7 @@ const en = {
 
   // Fingerprint surface — measured from browser APIs, kept out of the block score
   "fp.title": "Fingerprint Surface",
-  "fp.note": "Read straight from the browser APIs a fingerprinter would call — no filter list involved, and no effect on the block score above. One exposed signal can identify this browser on its own, so these are listed, not averaged.",
+  "fp.note": "Read straight from the browser APIs a fingerprinter would call. No filter list is involved, and none of it counts toward the block score. One exposed signal can identify this browser on its own, so these are listed, not averaged.",
   "fp.level.strong": "resisting",
   "fp.level.partial": "partly resisting",
   "fp.level.none": "readable",
@@ -315,17 +331,17 @@ const en = {
   "adblock.idle": "Not started",
   "adblock.idleDetail": "These tests contact real ad and tracking hosts, so they only run once you open this tab.",
   "adblock.hosts": "Hosts / network",
-  "adblock.hostsTip": "Script, image and pixel requests — blocked by DNS filtering, a hosts file, or a blocker's network rules",
+  "adblock.hostsTip": "Script, image and pixel requests, blocked by DNS filtering, a hosts file, or a blocker's network rules",
   "adblock.cosmetics": "Cosmetics",
-  "adblock.cosmeticsTip": "Ad-shaped elements and iframes — hidden by CSS rules, which needs something running inside the page",
-  "adblock.networkOnlyHint": "Requests are being stopped at the network layer while the page itself is untouched — the signature of DNS or hosts-level filtering like Pi-hole, NextDNS or AdGuard DNS. That is real protection; what it can't do is hide the leftover ad boxes. Only a browser extension does that half.",
+  "adblock.cosmeticsTip": "Ad-shaped elements and iframes, hidden by CSS rules. That takes something running inside the page.",
+  "adblock.networkOnlyHint": "Requests are being stopped at the network layer while the page itself is untouched. That is the signature of DNS or hosts-level filtering like Pi-hole, NextDNS or AdGuard DNS. It is real protection; what it can't do is hide the leftover ad boxes. Only a browser extension does that half.",
   "adblock.excellent": "Excellent protection",
   "adblock.good": "Good protection",
   "adblock.basic": "Basic protection",
   "adblock.minimal": "Minimal protection",
   "adblock.scoreDetail": "{0} of {1} trackers/ads blocked across {2} categories",
   "adblock.inconclusive": "Not enough probes answered",
-  "adblock.inconclusiveDetail": "{0} probes timed out — check your connection and run the test again",
+  "adblock.inconclusiveDetail": "{0} probes timed out. Check your connection and run the test again.",
   "adblock.testing": "testing {0} items...",
   "adblock.blocked": "blocked",
   "adblock.allowed": "allowed",
@@ -358,9 +374,12 @@ const en = {
   "adblock.blockerCard": "Detected Blocker",
   "adblock.customCard": "Custom URL Test",
   "adblock.recommendations": "Recommendations",
+  "adblock.categories": "Categories",
+  "adblock.score": "Block score",
+  "adblock.breakdown": "Breakdown",
   "adblock.suggestPerfect": "Your ad blocker is performing excellently across all categories. No action needed.",
   "adblock.suggestGaps": "Found gaps in {0} of {1} categories. Here's how to fix each one:",
-  "adblock.suggestNetworkOnly": "Your network filtering is blocking the requests. The {0} gaps below are cosmetic — the elements that stay behind — which only an in-page blocker can close:",
+  "adblock.suggestNetworkOnly": "Your network filtering is blocking the requests. The {0} gaps below are cosmetic (the elements that stay behind), which only an in-page blocker can close:",
   "adblock.blockedOf": "{0}/{1} blocked",
 
   // Ad block categories
@@ -487,19 +506,21 @@ const en = {
   "nav.headers": "Headers",
   "headers.title": "Security Headers",
   "headers.subtitle": "Analyze HTTP security headers of any website",
-  "headers.checkTitle": "Check URL",
   "headers.scan": "Scan",
   "headers.scanning": "Scanning...",
-  "headers.detailTitle": "Header Analysis",
-  "headers.scoreOf": "{0} of {1} security headers present",
+  "headers.detailTitle": "Header checklist",
+  "headers.verdictTitle": "Verdict",
+  "headers.gradeLabel": "Grade",
+  "headers.countLabel": "Headers present",
   "headers.missing": "missing",
+  "headers.notSet": "not set",
   "headers.desc.strict-transport-security": "Forces HTTPS connections, preventing downgrade attacks",
   "headers.desc.content-security-policy": "Controls which resources the browser can load, mitigating XSS",
   "headers.desc.x-content-type-options": "Prevents MIME type sniffing attacks",
   "headers.desc.x-frame-options": "Prevents clickjacking by controlling iframe embedding",
   "headers.desc.referrer-policy": "Controls how much referrer information is sent with requests",
   "headers.desc.permissions-policy": "Controls which browser features the page can use",
-  "headers.desc.x-xss-protection": "Legacy XSS filter (mostly superseded by CSP)",
+  "headers.desc.x-xss-protection": "Legacy filter that current browsers ignore. Not graded: 0 or leaving it unset is the safe choice",
   "headers.desc.cross-origin-opener-policy": "Isolates browsing context from cross-origin popups",
   "headers.desc.cross-origin-embedder-policy": "Requires CORS/CORP for all cross-origin resources",
   "headers.desc.cross-origin-resource-policy": "Controls which origins can embed this resource",
@@ -514,7 +535,7 @@ const en = {
   "about.title": "About NetCheck",
   "about.subtitle": "A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves",
   "about.what.title": "What is NetCheck?",
-  "about.what.desc": "NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Nearly every test runs client-side against Cloudflare's edge network, and your results are never collected. The one exception is the recursion-path check, described under Privacy.",
+  "about.what.desc": "NetCheck runs network and privacy diagnostics in your browser: your DNS resolver, its security posture and the real recursion path your traffic takes; download and upload speed and bufferbloat; how well your ad and tracker blocker works; how identifiable this browser is to a fingerprinter; and the security headers of any site you point it at. Your results are never collected. Two checks go through servers we run, listed under Privacy.",
   "about.feat.dns.title": "DNS Check",
   "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.",
   "about.feat.speed.title": "Speed Test",
@@ -522,9 +543,17 @@ const en = {
   "about.feat.adblock.title": "Ad Block Test",
   "about.feat.adblock.desc": "Runs 25+ tests across 6 categories with weighted scoring, detects filter lists, identifies which blocker you're running, and tests any custom URL. Probes that never resolve count for neither side, so a flaky connection reports no score instead of a perfect one. Fingerprint resistance is measured separately, from the browser APIs themselves.",
   "about.feat.headers.title": "Security Headers",
-  "about.feat.headers.desc": "Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.",
+  "about.feat.headers.desc": "Our worker fetches the URL you enter, with multi-hop, rate-limited SSRF validation, and grades its response headers for protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
-  "about.privacy.desc": "All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. The one thing that leaves your browser is the recursion-path check: it makes your resolver look up a name on a nameserver we run, which sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.",
+  "about.privacy.desc": "The header scan sends the URL you enter to our worker, which fetches that page and returns its response headers. The recursion-path check makes your resolver look up a name on a nameserver we run. It sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.",
+  "about.ledger.title": "What leaves this browser",
+  "about.ledger.fp": "Fingerprint checks",
+  "about.ledger.history": "Snapshots and history",
+  "about.ledger.export": "Exported reports",
+  "about.ledger.headers": "Header scan URL",
+  "about.ledger.probe": "Recursion probe",
+  "about.ledger.local": "Stays local",
+  "about.ledger.sent": "Sent to us",
 
   // Verdict bars
   "verdict.oneIssue": "1 issue found",
@@ -546,19 +575,12 @@ const zhTW: Record<keyof typeof en, string> = {
   // Nav
   "nav.dns": "DNS 檢測",
   "nav.speed": "測速",
-  "nav.adblock": "廣告攔截測試",
+  "nav.adblock": "廣告攔截",
   "nav.export": "匯出",
   "nav.exportReport": "匯出報告",
   "nav.downloadMd": "下載 Markdown",
   "nav.savePdf": "儲存為 PDF",
 
-  "theme.label": "主題",
-  "theme.system": "跟隨系統",
-  "theme.dark": "深色",
-  "theme.light": "淺色",
-  "theme.phosphor": "螢光終端",
-  "theme.nord": "Nord",
-  "theme.glass": "玻璃",
   "theme.contrast": "高對比",
 
   // DNS section
@@ -614,6 +636,29 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.tabCompare": "比較解析器",
   "dns.tabHealth": "網域郵件健康度",
   "dns.copyJson": "複製 JSON",
+  "station.path": "連線路徑",
+  "station.verdict": "判定",
+  "station.you": "本機",
+  "station.router": "路由器",
+  "station.isp": "電信業者",
+  "station.resolver": "解析器",
+  "station.edge": "邊緣節點",
+  "station.routerStandby": "網頁看不到",
+  "station.resolverStandby": "本站觀察不到",
+  "station.resolverNone": "探測沒有觀察到解析器",
+  "station.resolverUnreachable": "探測暫時連不上，請稍後再試",
+  "station.noReading": "無讀數",
+  "station.fastest": "最快的公共解析器",
+  "station.fastestNone": "沒有公共解析器回應",
+  "station.checks": "檢查項目",
+  "station.run": "執行",
+  "state.pass": "通過",
+  "state.warn": "注意",
+  "state.fail": "失敗",
+  "state.seen": "已觀察",
+  "state.standby": "待機",
+  "state.scan": "掃描中",
+  "state.complete": "完成",
   "speed.cancelBtn": "取消測試",
   "speed.cancelled": "測速已取消",
   "history.confirmClear": "確認清除？",
@@ -643,7 +688,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.checking": "正在檢查您的 DNS 設定…",
   "dns.publicSubhead": "公共解析器（對照用）",
   "dns.publicNote": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。除非上方區塊指出，否則它們並不是您系統實際使用的解析器。",
-  "dns.publicNoteOnly": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。它們並不是您系統實際使用的解析器——本站無法得知您實際使用哪一個解析器。",
+  "dns.publicNoteOnly": "這些公共解析器是從您的瀏覽器測的，用來比較速度和功能。它們不是您系統實際使用的解析器，本站也看不到您實際用的是哪一個。",
   "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet
@@ -658,7 +703,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.ecsNo": "不傳送",
 
   // DNS suggestions
-  "dns.suggestGood": "您的 DNS 設定良好。以下工具可進一步增強防護：",
+  "dns.suggestGood": "您的 DNS 設定沒問題。想再加強防護，可以用這些工具：",
   "dns.suggestIssues": "發現問題：{0}。以下工具和設定可協助改善：",
   "dns.issueDnssec": "DNSSEC 未驗證",
   "dns.issueDoh": "DNS 未加密",
@@ -688,7 +733,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.webrtcLeak": "WebRTC 暴露了 {0}，與本站看到的位址不同：您的真實連線路徑正繞過 VPN 或代理洩漏出去",
   "dns.webrtcPass": "未偵測到 WebRTC IP 洩漏",
   "dns.webrtcUnknown": "無法檢查 WebRTC",
-  "dns.lanExposed": "{0} — 路由器後面每台裝置都會有的私有位址。腳本看得到，但在網際網路上無法識別任何人",
+  "dns.lanExposed": "{0}：路由器後面每台裝置都有的私有位址。網頁腳本看得到，但在網際網路上認不出任何人",
 
   // DNS suggestion items
   "dns.sug.cf.name": "1.1.1.1（Cloudflare DNS）",
@@ -702,10 +747,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.sug.quad9.desc": "非營利 DNS 服務，利用 25+ 來源的威脅情報阻擋惡意網域，DNSSEC 驗證能力強。",
   "dns.sug.nextdns.name": "NextDNS",
   "dns.sug.nextdns.type": "可自訂 DNS",
-  "dns.sug.nextdns.desc": "高度可配置的 DNS，支援裝置政策、廣告/追蹤器攔截、家長控制與詳細分析面板。",
+  "dns.sug.nextdns.desc": "設定彈性很大的 DNS，可以依裝置設政策，也有廣告／追蹤器攔截、家長控制和詳細的分析面板。",
   "dns.sug.doh.name": "啟用 DNS-over-HTTPS",
   "dns.sug.doh.type": "瀏覽器設定",
-  "dns.sug.doh.desc": "加密 DNS 查詢以防止 ISP 窺探和中間人攻擊。在 Firefox、Chrome、Edge 和 Brave 設定中可用。",
+  "dns.sug.doh.desc": "加密 DNS 查詢，防止 ISP 窺探和中間人攻擊。Firefox、Chrome、Edge 和 Brave 的設定裡都能開啟。",
   "dns.sug.dnssec.name": "啟用 DNSSEC",
   "dns.sug.dnssec.type": "DNS 安全",
   "dns.sug.dnssec.desc": "DNSSEC 透過加密簽章防止 DNS 欺騙。請切換至支援 DNSSEC 驗證的解析器（Cloudflare、Google、Quad9）。",
@@ -714,18 +759,20 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.sug.pihole.desc": "自架 DNS 黑洞，在網路層級為所有裝置攔截廣告、追蹤器和惡意軟體。",
   "dns.sug.webrtc.name": "停用 WebRTC 洩漏",
   "dns.sug.webrtc.type": "瀏覽器修正",
-  "dns.sug.webrtc.desc": "您的瀏覽器正透過 WebRTC 洩漏本地 IP。請在瀏覽器設定中停用，或使用 uBlock Origin 等擴充功能。",
+  "dns.sug.webrtc.desc": "您的瀏覽器正透過 WebRTC 洩漏本機 IP。請在瀏覽器設定中停用，或使用 uBlock Origin 等擴充功能。",
   "dns.sug.adguard.name": "AdGuard DNS",
   "dns.sug.adguard.type": "廣告攔截 DNS",
-  "dns.sug.adguard.desc": "在 DNS 層級攔截廣告和追蹤器。無需安裝任何軟體，適用於所有應用程式和裝置。",
+  "dns.sug.adguard.desc": "在 DNS 層級攔截廣告和追蹤器。不用安裝任何軟體，所有應用程式和裝置都適用。",
   "dns.sug.multi.name": "使用多個 DNS 提供者",
   "dns.sug.multi.type": "可靠性建議",
-  "dns.sug.multi.desc": "配置備用 DNS 解析器。主要 DNS 故障時網路不會中斷。大多數路由器支援主要＋備用設定。",
+  "dns.sug.multi.desc": "設定一組備用 DNS 解析器，主要 DNS 故障時網路也不會斷。大多數路由器都能設定主要和備用 DNS。",
 
   // Speed section
   "speed.title": "測速",
   "speed.subtitle": "透過 Cloudflare 全球邊緣網路測量連線速度",
-  "speed.testServer": "測試伺服器",
+  "speed.route": "測試路線",
+  "speed.server": "伺服器",
+  "speed.readings": "讀數",
   "speed.server.edge": "最近邊緣節點 (Worker)",
   "speed.server.cfSpeed": "Cloudflare 測速",
   "speed.server.fast": "Netflix (fast.com)",
@@ -735,8 +782,6 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.customUrlRequired": "請先輸入伺服器網址",
   "speed.customUrlHint": "必須實作 /api/speedtest/{ping,down,up}",
   "speed.serverUnreachable": "所選伺服器無法連線",
-  "speed.autoNearest": "自動（最近節點）",
-  "speed.you": "您",
   "speed.download": "下載",
   "speed.upload": "上傳",
   "speed.latency": "延遲",
@@ -763,8 +808,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.testingUpload": "測試上傳",
 
   // Speed suggestions
-  "speed.suggestGreat": "您的連線表現優異！以下方法可保持最佳狀態：",
-  "speed.suggestDecent": "連線尚可。以下方法可進一步改善：",
+  "speed.suggestGreat": "連線表現很好。以下幾個方法可以維持這個狀態：",
+  "speed.suggestDecent": "連線還可以。以下方法可以再改善：",
   "speed.suggestIssues": "偵測到問題：{0}。以下工具和建議可協助改善：",
   "speed.issueSlowDl": "下載速度慢",
   "speed.issueModDl": "下載速度中等",
@@ -780,16 +825,16 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.sug.cf.desc": "最快的公共 DNS 解析器。從 ISP 預設 DNS 切換可減少查詢時間，改善頁面載入速度。",
   "speed.sug.warp.name": "Cloudflare WARP",
   "speed.sug.warp.type": "VPN / 網路優化器",
-  "speed.sug.warp.desc": "透過 WireGuard 將流量路由至 Cloudflare 網路。降低延遲、改善路由並加密連線。",
+  "speed.sug.warp.desc": "透過 WireGuard 把流量導到 Cloudflare 網路，可以降低延遲、改善路由，連線也會加密。",
   "speed.sug.ethernet.name": "使用乙太網路取代 Wi-Fi",
   "speed.sug.ethernet.type": "硬體升級",
-  "speed.sug.ethernet.desc": "有線乙太網路消除 Wi-Fi 干擾、降低抖動，通常可將吞吐量提升一倍。",
+  "speed.sug.ethernet.desc": "改用有線網路可以避開 Wi-Fi 干擾、降低抖動，吞吐量通常能提升一倍。",
   "speed.sug.wifi6e.name": "Wi-Fi 6E / Wi-Fi 7 路由器",
   "speed.sug.wifi6e.type": "硬體升級",
-  "speed.sug.wifi6e.desc": "升級至 Wi-Fi 6E 或 7 提供更寬頻道、6 GHz 頻段更少擁塞，大幅降低延遲。",
+  "speed.sug.wifi6e.desc": "Wi-Fi 6E 或 7 的頻道更寬，6 GHz 頻段也比較不擁擠，延遲可以大幅降低。",
   "speed.sug.qos.name": "QoS / SQM（智慧佇列管理）",
   "speed.sug.qos.type": "路由器設定",
-  "speed.sug.qos.desc": "在路由器上啟用 SQM 或 fq_codel 消除緩衝區膨脹。即使連線滿載也能維持低延遲。",
+  "speed.sug.qos.desc": "在路由器上啟用 SQM 或 fq_codel 來消除緩衝膨脹，連線滿載時也能維持低延遲。",
   "speed.sug.isp.name": "聯繫您的 ISP",
   "speed.sug.isp.type": "服務",
   "speed.sug.isp.desc": "若速度明顯低於方案，ISP 可能需要檢查線路、更換設備或調查壅塞問題。",
@@ -798,7 +843,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "speed.sug.bg.desc": "雲端備份、系統更新和其他裝置的串流可能佔滿頻寬。檢查目前正在使用頻寬的項目。",
   "speed.sug.nextdns.name": "NextDNS",
   "speed.sug.nextdns.type": "DNS + 隱私",
-  "speed.sug.nextdns.desc": "快速 DNS，內建廣告/追蹤器攔截。減少不必要的網路請求，改善體感速度。",
+  "speed.sug.nextdns.desc": "速度快的 DNS，內建廣告／追蹤器攔截。少掉不必要的網路請求，用起來會更順。",
 
   // Speed grades
   "speed.grade.exceptional": "卓越",
@@ -820,7 +865,7 @@ const zhTW: Record<keyof typeof en, string> = {
 
   // Fingerprint surface
   "fp.title": "指紋辨識暴露面",
-  "fp.note": "直接呼叫指紋辨識腳本會用的瀏覽器 API 來量測，不經過過濾清單，也不計入上方的攔截分數。單一項暴露就足以辨識這個瀏覽器，因此逐項列出而非取平均。",
+  "fp.note": "直接呼叫指紋辨識腳本會用的瀏覽器 API 來量測，不經過過濾清單，也不計入攔截分數。只要有一項暴露就足以辨識這個瀏覽器，所以逐項列出，不取平均。",
   "fp.level.strong": "具抵抗力",
   "fp.level.partial": "部分抵抗",
   "fp.level.none": "可被讀取",
@@ -847,10 +892,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.idle": "尚未開始",
   "adblock.idleDetail": "這些測試會實際連線到廣告與追蹤主機，因此只有在您開啟此分頁後才會執行。",
   "adblock.hosts": "主機／網路層",
-  "adblock.hostsTip": "script、image 與 pixel 請求 — 由 DNS 過濾、hosts 檔或攔截器的網路規則擋下",
+  "adblock.hostsTip": "script、image 與 pixel 請求，由 DNS 過濾、hosts 檔或攔截器的網路規則擋下",
   "adblock.cosmetics": "外觀層",
-  "adblock.cosmeticsTip": "廣告尺寸的元素與 iframe — 由 CSS 規則隱藏，需要在頁面內執行的元件才辦得到",
-  "adblock.networkOnlyHint": "請求在網路層就被擋掉，但頁面本身沒有被改動 — 這是 Pi-hole、NextDNS 或 AdGuard DNS 這類 DNS／hosts 層過濾的特徵。那是真正有效的防護；它做不到的只是把剩下的廣告空位隱藏起來，那一半得靠瀏覽器擴充套件。",
+  "adblock.cosmeticsTip": "廣告尺寸的元素與 iframe，靠 CSS 規則隱藏，要有東西在頁面裡執行才做得到",
+  "adblock.networkOnlyHint": "請求在網路層就被擋掉，頁面本身卻沒被改動，這是 Pi-hole、NextDNS 或 AdGuard DNS 這類 DNS／hosts 層過濾的特徵。這是真的有效的防護，只是沒辦法把剩下的廣告空位藏起來，那一半要靠瀏覽器擴充功能。",
   "adblock.excellent": "防護優異",
   "adblock.good": "防護良好",
   "adblock.basic": "基本防護",
@@ -890,8 +935,11 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.blockerCard": "偵測到的攔截器",
   "adblock.customCard": "自訂網址測試",
   "adblock.recommendations": "建議",
-  "adblock.suggestPerfect": "您的廣告攔截器在所有類別中表現優異。無需操作。",
-  "adblock.suggestGaps": "在 {1} 個類別中發現 {0} 個缺口。以下是改善方法：",
+  "adblock.categories": "攔截類別",
+  "adblock.score": "攔截分數",
+  "adblock.breakdown": "細項",
+  "adblock.suggestPerfect": "您的廣告攔截器在每個類別都擋得很好，不用再做什麼。",
+  "adblock.suggestGaps": "{1} 個類別裡有 {0} 個缺口，可以這樣補：",
   "adblock.suggestNetworkOnly": "您的網路層過濾已經擋下這些請求。下方 {0} 個缺口屬於外觀層（被擋掉後留下的空位），只有頁面內的攔截器才補得起來：",
   "adblock.blockedOf": "{0}/{1} 已攔截",
 
@@ -908,24 +956,24 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.advice.contextual.desc": "Google AdSense、Amazon 廣告或廣告投放腳本正在載入。這些會注入展示廣告並追蹤您的瀏覽行為。",
   "adblock.advice.contextual.fix1": "安裝 uBlock Origin：可攔截 99% 已知廣告腳本",
   "adblock.advice.contextual.fix2": "在攔截器中啟用 EasyList（通常預設開啟）",
-  "adblock.advice.contextual.fix3": "使用 DNS 層級攔截（Pi-hole 或 NextDNS）實現全網路覆蓋",
+  "adblock.advice.contextual.fix3": "改用 DNS 層級攔截（Pi-hole 或 NextDNS），整個網路的裝置都擋得到",
 
   "adblock.advice.analytics.title": "追蹤器正在運作",
   "adblock.advice.analytics.desc": "Google Analytics、Facebook Pixel 或 Hotjar 等分析腳本正在載入。這些會在各網站建立您的瀏覽行為檔案。",
   "adblock.advice.analytics.fix1": "在廣告攔截器中啟用 EasyPrivacy 過濾清單",
-  "adblock.advice.analytics.fix2": "安裝 Privacy Badger 進行學習式追蹤器攔截",
+  "adblock.advice.analytics.fix2": "安裝 Privacy Badger，它會自己學著攔截追蹤器",
   "adblock.advice.analytics.fix3": "使用 Firefox 並將增強型追蹤保護設為嚴格模式",
-  "adblock.advice.analytics.fix4": "加入 AdGuard 追蹤保護清單以擴大覆蓋範圍",
+  "adblock.advice.analytics.fix4": "加入 AdGuard 追蹤保護清單，擋得更廣",
 
   "adblock.advice.banner.title": "展示廣告可見",
   "adblock.advice.banner.desc": "橫幅 iframe（728x90、300x250）和 DoubleClick 廣告元素正在顯示。這些是拖慢頁面的經典廣告版位。",
   "adblock.advice.banner.fix1": "在廣告攔截器中啟用外觀過濾（隱藏廣告容器）",
-  "adblock.advice.banner.fix2": "檢查攔截器是否處於精簡或白名單模式",
-  "adblock.advice.banner.fix3": "加入 Fanboy's Enhanced Tracking List 以覆蓋 DoubleClick",
+  "adblock.advice.banner.fix2": "確認攔截器沒有開在精簡或白名單模式",
+  "adblock.advice.banner.fix3": "加入 Fanboy's Enhanced Tracking List，把 DoubleClick 也擋掉",
 
   "adblock.advice.devtools.title": "開發工具腳本正在載入",
-  "adblock.advice.devtools.desc": "Sentry、Bugsnag 或 LogRocket 等錯誤監控服務正在載入。雖然對開發者有用，但可能擷取工作階段重播和使用者互動。",
-  "adblock.advice.devtools.fix1": "這些通常是可接受的：開發者用來修復錯誤",
+  "adblock.advice.devtools.desc": "Sentry、Bugsnag 或 LogRocket 等錯誤監控服務正在載入。這些對開發者有用，但可能會錄下工作階段重播和使用者的操作。",
+  "adblock.advice.devtools.fix1": "這些通常可以接受，開發者靠它們修錯誤",
   "adblock.advice.devtools.fix2": "若要攔截：在 uBlock 中為 cdn.sentry.io、bugsnag.com、logrocket.com 新增自訂規則",
   "adblock.advice.devtools.fix3": "使用注重隱私的瀏覽器來限制腳本執行",
 
@@ -938,7 +986,7 @@ const zhTW: Record<keyof typeof en, string> = {
 
 
   "adblock.advice.annoyances.title": "干擾元素正在顯示",
-  "adblock.advice.annoyances.desc": "Cookie 同意橫幅、電子報彈窗、推播通知提示和問卷小工具未被隱藏。這些增加每次造訪的摩擦力。",
+  "adblock.advice.annoyances.desc": "Cookie 同意橫幅、電子報彈窗、推播通知提示和問卷小工具沒有被隱藏，每次造訪都多一道麻煩。",
   "adblock.advice.annoyances.fix1": "在廣告攔截器中啟用 Fanboy's Annoyances 清單",
   "adblock.advice.annoyances.fix2": "啟用 uBlock Origin 內建的干擾過濾器（設定 → 過濾清單 → 干擾）",
   "adblock.advice.annoyances.fix3": "安裝 'I don't care about cookies' 擴充功能",
@@ -947,7 +995,7 @@ const zhTW: Record<keyof typeof en, string> = {
   // Filter lists
   "filter.title": "偵測到的過濾清單",
   "filter.detecting": "正在辨識您的廣告攔截器使用的過濾清單...",
-  "filter.noneDetected": "未偵測到過濾清單。您可能未安裝廣告攔截器。",
+  "filter.noneDetected": "沒有偵測到過濾清單，您可能還沒安裝廣告攔截器。",
   "filter.detected": "偵測到 {1} 個過濾清單中的 {0} 個。",
   "filter.acceptableAds": " Acceptable Ads 已啟用。",
   "filter.enabled": "已啟用",
@@ -1019,34 +1067,36 @@ const zhTW: Record<keyof typeof en, string> = {
   "nav.headers": "安全標頭",
   "headers.title": "安全標頭檢測",
   "headers.subtitle": "分析任何網站的 HTTP 安全標頭",
-  "headers.checkTitle": "檢查 URL",
   "headers.scan": "掃描",
   "headers.scanning": "掃描中...",
-  "headers.detailTitle": "標頭分析",
-  "headers.scoreOf": "{1} 個安全標頭中有 {0} 個存在",
-  "headers.missing": "缺失",
+  "headers.detailTitle": "標頭清單",
+  "headers.verdictTitle": "判定",
+  "headers.gradeLabel": "等級",
+  "headers.countLabel": "具備的標頭",
+  "headers.missing": "缺少",
+  "headers.notSet": "未設定",
   "headers.desc.strict-transport-security": "強制使用 HTTPS 連線，防止降級攻擊",
   "headers.desc.content-security-policy": "控制瀏覽器可載入的資源，減輕 XSS 攻擊",
   "headers.desc.x-content-type-options": "防止 MIME 類型嗅探攻擊",
   "headers.desc.x-frame-options": "控制 iframe 嵌入以防止點擊劫持",
   "headers.desc.referrer-policy": "控制請求中傳送多少來源網址資訊",
   "headers.desc.permissions-policy": "控制頁面可使用的瀏覽器功能",
-  "headers.desc.x-xss-protection": "舊式 XSS 過濾器（大多已被 CSP 取代）",
+  "headers.desc.x-xss-protection": "舊式過濾器，現在的瀏覽器已不理會。不列入評分：設為 0 或不設定都是安全的做法",
   "headers.desc.cross-origin-opener-policy": "將瀏覽情境與跨來源彈出視窗隔離",
   "headers.desc.cross-origin-embedder-policy": "要求所有跨來源資源皆須 CORS/CORP",
   "headers.desc.cross-origin-resource-policy": "控制哪些來源可以嵌入此資源",
   "headers.allPresent": "全部具備",
   "headers.nMissing": "缺少 {0} 項",
-  "headers.error": "掃描 URL 失敗",
+  "headers.error": "掃描網址失敗",
   "headers.emptyTitle": "尚未掃描任何網站",
-  "headers.emptyDesc": "在上方輸入網址，檢查其回應標頭對 XSS、點擊劫持與 MIME 探測的防護。或先試試以下網站：",
+  "headers.emptyDesc": "在上方輸入網址，檢查它的回應標頭對 XSS、點擊劫持與 MIME 嗅探的防護。也可以先試試這幾個網站：",
 
   // About section
   "nav.about": "關於",
   "about.title": "關於 NetCheck",
   "about.subtitle": "純瀏覽器端的網路診斷工具，免安裝、免帳號，除了檢測本身之外不會有任何資料離開您的裝置",
   "about.what.title": "NetCheck 是什麼？",
-  "about.what.desc": "NetCheck 直接在您的瀏覽器中執行一系列網路與隱私診斷：您的 DNS 解析器、其安全狀態、流量實際經過的遞迴路徑、真實的上下載速度與緩衝膨脹、廣告／追蹤攔截器的效果、這個瀏覽器對指紋辨識者有多容易辨識，以及任何您指定網站的安全標頭。幾乎所有測試都在用戶端對 Cloudflare 邊緣網路執行，也不會收集您的結果；唯一的例外是遞迴路徑檢測，說明見「隱私」。",
+  "about.what.desc": "NetCheck 直接在瀏覽器裡跑網路與隱私診斷：DNS 解析器、它的安全狀態和流量實際走的遞迴路徑；上下載速度與緩衝膨脹；廣告和追蹤攔截器的效果；這個瀏覽器對指紋辨識來說有多好認；還有您指定網站的安全標頭。檢測結果不會被收集。有兩項檢測會經過本站的伺服器，列在「隱私」。",
   "about.feat.dns.title": "DNS 檢測",
   "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測用名稱伺服器追蹤實際的遞迴路徑，以加密 DNS 探測 8 個公共解析器，並標示缺少 DNSSEC、ECS 子網外洩、未加密 DNS、WebRTC 外洩與惡意軟體過濾缺口，並提供各項修正建議。加密 DNS 的判定以路徑中最差的一跳為準，而非最好的一跳。",
   "about.feat.speed.title": "速度測試",
@@ -1054,9 +1104,17 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.feat.adblock.title": "廣告攔截測試",
   "about.feat.adblock.desc": "在 6 個類別中執行 25+ 項加權評分測試，偵測過濾清單、辨識您使用的攔截器，並可測試任何自訂網址。未能完成的探測兩邊都不計入，因此連線不穩時會顯示無法評分，而不是滿分。指紋辨識抵抗力則直接以瀏覽器 API 另行量測。",
   "about.feat.headers.title": "安全標頭",
-  "about.feat.headers.desc": "掃描任何網址的 HTTP 回應標頭，具備多跳、附速率限制的 SSRF 防護，並評估其對 XSS、點擊劫持與 MIME 嗅探攻擊的防護程度。",
+  "about.feat.headers.desc": "由本站 worker 抓取您輸入的網址（多跳驗證、有速率限制的 SSRF 防護），再評估回應標頭對 XSS、點擊劫持與 MIME 嗅探的防護。",
   "about.privacy.title": "隱私",
-  "about.privacy.desc": "所有檢測都在您的瀏覽器中執行。指紋檢測完全在本機進行——只讀取瀏覽器 API，不對外送出任何資料。快照與廣告攔截歷史僅儲存在您裝置的本機儲存空間，絕不上傳。匯出會在您的電腦上產生 Markdown 或 PDF 檔案。唯一會離開您瀏覽器的是遞迴路徑檢測：它讓您的解析器向我們架設的名稱伺服器查詢一個名稱，伺服器會看到解析器的 IP；若解析器有轉送，也會看到您網路的截短前綴。這些資料只存在記憶體中最多 5 分鐘，絕不寫入磁碟，且只有留在您分頁中的金鑰才能讀回。",
+  "about.privacy.desc": "安全標頭掃描會把您輸入的網址送到本站的 worker，由它抓取該頁面並回傳回應標頭。遞迴路徑檢測會讓您的解析器向本站架設的名稱伺服器查詢一個名稱，伺服器會看到解析器的 IP；若解析器有轉送，也會看到您網路的截短前綴。這些資料只放在記憶體中，最多 5 分鐘，不寫入磁碟，而且只有留在您分頁裡的金鑰才能讀回。",
+  "about.ledger.title": "哪些資料會離開瀏覽器",
+  "about.ledger.fp": "指紋檢測",
+  "about.ledger.history": "快照與歷史紀錄",
+  "about.ledger.export": "匯出的報告",
+  "about.ledger.headers": "標頭掃描的網址",
+  "about.ledger.probe": "遞迴路徑探測",
+  "about.ledger.local": "留在本機",
+  "about.ledger.sent": "送到本站",
 
   // Footer
   // Verdict bars
@@ -1075,6 +1133,23 @@ const zhTW: Record<keyof typeof en, string> = {
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
+
+// Station labels always show both languages, zh-TW over EN caps. Only the
+// active one is exposed to assistive tech, so nothing is announced twice.
+export function setBilingual(el: Element | null, key: string): void {
+  if (!el) return;
+  const k = key as keyof typeof en;
+  const zh = document.createElement("span");
+  zh.className = "bi-zh";
+  zh.lang = "zh-TW";
+  zh.textContent = zhTW[k] ?? key;
+  const latin = document.createElement("span");
+  latin.className = "bi-en";
+  latin.lang = "en";
+  latin.textContent = en[k] ?? key;
+  (current === "en" ? zh : latin).setAttribute("aria-hidden", "true");
+  el.replaceChildren(zh, latin);
+}
 
 export function t(key: string, ...args: (string | number)[]): string {
   let str = locales[current]?.[key] ?? locales.en[key as keyof typeof en] ?? key;
@@ -1124,6 +1199,8 @@ function applyStaticTranslations(): void {
     const el = document.getElementById(id);
     if (el) el.setAttribute(attr, t(key));
   };
+  const bl = setBilingual;
+  const b = (id: string, key: keyof typeof en) => bl(document.getElementById(id), key);
 
   // Update lang toggle label
   const langBtn = document.getElementById("lang-toggle");
@@ -1133,15 +1210,8 @@ function applyStaticTranslations(): void {
   }
 
   // Nav
-  document.querySelectorAll<HTMLAnchorElement>(".nav-link[data-tab]").forEach((link) => {
-    const tab = link.dataset.tab;
-    const textEl = link.querySelector(".nav-link-text");
-    const target = textEl || link;
-    if (tab === "dns") target.textContent = t("nav.dns");
-    else if (tab === "speed") target.textContent = t("nav.speed");
-    else if (tab === "adblock") target.textContent = t("nav.adblock");
-    else if (tab === "headers") target.textContent = t("nav.headers");
-    else if (tab === "about") target.textContent = t("nav.about");
+  document.querySelectorAll<HTMLElement>(".nav-link[data-tab]").forEach((link) => {
+    bl(link.querySelector(".nav-link-text"), `nav.${link.dataset.tab}` as keyof typeof en);
   });
 
   s("export-btn-text", "nav.export");
@@ -1150,43 +1220,56 @@ function applyStaticTranslations(): void {
   s("export-pdf-text", "nav.savePdf");
 
   // DNS section
-  s("dns-title", "dns.title");
+  b("dns-title", "dns.title");
   s("dns-subtitle", "dns.subtitle");
-  s("dns-ip-title", "dns.ipTitle");
+  b("dns-ip-title", "dns.ipTitle");
   s("dns-ipv4-label", "dns.ipv4");
   s("dns-ipv6-label", "dns.ipv6");
   s("dns-location-label", "dns.location");
   s("dns-isp-label", "dns.isp");
   s("dns-timezone-label", "dns.timezone");
   s("dns-colo-label", "dns.colo");
-  s("dns-resolver-title", "dns.resolverTitle");
+  b("dns-resolver-title", "dns.resolverTitle");
   s("dns-observed-subhead", "dns.observedSubhead");
   s("dns-public-subhead", "dns.publicSubhead");
   s("dns-public-note", "dns.publicNote");
-  s("dns-security-title", "dns.securityTitle");
-  s("dns-ecs-title", "dns.ecsTitle");
+  b("dns-security-title", "dns.securityTitle");
+  b("dns-ecs-title", "dns.ecsTitle");
   s("dns-ecs-note", "dns.ecsNote");
   s("dns-lookup-title", "dns.lookupTitle");
   s("dns-lookup-btn", "dns.lookupBtn");
   s("dns-compare-btn", "dns.compareBtn");
   s("dns-health-btn", "dns.healthBtn");
   sa("dns-health-selector", "dns.healthSelectorPlaceholder", "placeholder");
-  s("dns-raw-json-summary", "dns.rawJson");
+  s("dns-raw-json-label", "dns.rawJson");
+  s("dns-copy-json-btn", "dns.copyJson");
+  b("dns-workstation-title", "dns.workstationTitle");
+  s("tab-tool-lookup", "dns.tabLookup");
+  s("tab-tool-compare", "dns.tabCompare");
+  s("tab-tool-health", "dns.tabHealth");
+  b("dns-path-title", "station.path");
+  b("dns-verdict-title", "station.verdict");
+  (["you", "router", "isp", "resolver", "edge"] as const).forEach((hop) => b(`hop-${hop}-key`, `station.${hop}`));
+  b("dns-fastest-label", "station.fastest");
+  b("dns-checks-title", "station.checks");
+  s("dns-run-label", "station.run");
   s("dns-ptr-option", "dns.ptrReverse");
   s("dns-all-option", "dns.allRecords");
-  s("dns-suggestions-title", "dns.recommendations");
+  b("dns-suggestions-title", "dns.recommendations");
 
   // Speed section
-  s("speed-title", "speed.title");
+  b("speed-title", "speed.title");
   s("speed-subtitle", "speed.subtitle");
-  s("speed-server-label", "speed.testServer");
+  b("speed-route-title", "speed.route");
+  b("speed-route-server", "speed.server");
+  b("speed-readings-title", "speed.readings");
   // server <option> labels are re-rendered by app.ts renderServerOptionLabels on locale change
-  s("speed-download-label", "speed.download");
-  s("speed-upload-label", "speed.upload");
-  s("speed-latency-label", "speed.latency");
-  s("speed-jitter-label", "speed.jitter");
-  s("speed-bufferbloat-label", "speed.bufferbloat");
-  s("speed-graph-title-text", "speed.graphTitle");
+  b("speed-download-label", "speed.download");
+  b("speed-upload-label", "speed.upload");
+  b("speed-latency-label", "speed.latency");
+  b("speed-jitter-label", "speed.jitter");
+  b("speed-bufferbloat-label", "speed.bufferbloat");
+  b("speed-graph-title-text", "speed.graphTitle");
   sa("speed-download-label", "speed.tip.download", "data-tooltip");
   sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
   sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
@@ -1194,25 +1277,29 @@ function applyStaticTranslations(): void {
   sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
   s("speed-dl-legend", "speed.download");
   s("speed-ul-legend", "speed.upload");
-  s("speed-suggestions-title", "speed.recommendations");
-  s("speed-route-you", "speed.you");
+  b("speed-suggestions-title", "speed.recommendations");
+  b("speed-route-you", "station.you");
   s("speed-custom-url-hint", "speed.customUrlHint");
-  s("snapshot-title", "snap.title");
+  s("speed-cancel-btn", "speed.cancelBtn");
+  b("snapshot-title", "snap.title");
   s("snapshot-save-btn", "snap.save");
   s("snapshot-clear-btn", "snap.clear");
 
   // Ad block section
-  s("adblock-title", "adblock.title");
+  b("adblock-title", "adblock.title");
   s("adblock-subtitle", "adblock.subtitle");
   s("adblock-rerun-btn", "adblock.rerun");
+  b("adblock-cats-title", "adblock.categories");
+  b("adblock-score-title", "adblock.score");
+  b("adblock-breakdown-title", "adblock.breakdown");
   s("adblock-custom-btn", "adblock.testUrl");
-  s("adblock-blocker-title", "adblock.blockerCard");
-  s("fingerprint-title", "fp.title");
+  b("adblock-blocker-title", "adblock.blockerCard");
+  b("fingerprint-title", "fp.title");
   s("fingerprint-note", "fp.note");
-  s("adblock-custom-title", "adblock.customCard");
-  s("filter-list-title", "filter.title");
-  s("adblock-suggestions-title", "adblock.recommendations");
-  s("adblock-history-title", "snap.scoreTitle");
+  b("adblock-custom-title", "adblock.customCard");
+  b("filter-list-title", "filter.title");
+  b("adblock-suggestions-title", "adblock.recommendations");
+  b("adblock-history-title", "snap.scoreTitle");
   s("adblock-history-save-btn", "snap.save");
   s("adblock-history-clear-btn", "snap.clear");
 
@@ -1221,29 +1308,34 @@ function applyStaticTranslations(): void {
   s("dns-tls-label", "dns.tls");
 
   // Headers section
-  s("headers-title", "headers.title");
+  b("headers-title", "headers.title");
   s("headers-subtitle", "headers.subtitle");
-  s("headers-check-title", "headers.checkTitle");
   s("headers-check-btn", "headers.scan");
-  s("headers-detail-title", "headers.detailTitle");
+  b("headers-detail-title", "headers.detailTitle");
+  b("headers-verdict-title", "headers.verdictTitle");
+  b("headers-grade-label", "headers.gradeLabel");
+  b("headers-count-label", "headers.countLabel");
   s("headers-empty-title", "headers.emptyTitle");
   s("headers-empty-desc", "headers.emptyDesc");
 
   // About section
-  s("about-title", "about.title");
+  b("about-title", "about.title");
   s("about-subtitle", "about.subtitle");
-  s("about-what-title", "about.what.title");
+  b("about-what-title", "about.what.title");
   s("about-what-desc", "about.what.desc");
-  s("about-feat-dns-title", "about.feat.dns.title");
+  b("about-feat-dns-title", "about.feat.dns.title");
   s("about-feat-dns-desc", "about.feat.dns.desc");
-  s("about-feat-speed-title", "about.feat.speed.title");
+  b("about-feat-speed-title", "about.feat.speed.title");
   s("about-feat-speed-desc", "about.feat.speed.desc");
-  s("about-feat-adblock-title", "about.feat.adblock.title");
+  b("about-feat-adblock-title", "about.feat.adblock.title");
   s("about-feat-adblock-desc", "about.feat.adblock.desc");
-  s("about-feat-headers-title", "about.feat.headers.title");
+  b("about-feat-headers-title", "about.feat.headers.title");
   s("about-feat-headers-desc", "about.feat.headers.desc");
-  s("about-privacy-title", "about.privacy.title");
+  b("about-privacy-title", "about.privacy.title");
   s("about-privacy-desc", "about.privacy.desc");
+  b("about-ledger-title", "about.ledger.title");
+  (["fp", "history", "export", "headers", "probe"] as const).forEach((k) => s(`about-ledger-${k}`, `about.ledger.${k}`));
+  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((el) => (el.textContent = t(`about.ledger.${el.dataset.ledger}`)));
 
   // Footer
   s("footer-text", "footer.text");

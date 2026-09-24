@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="wall">
 <head>
   <meta charset="UTF-8">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.svg">
-  <meta name="theme-color" content="#08090a">
+  <meta name="theme-color" content="#000000">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetCheck - DNS & Ad Block Tester</title>
   <meta name="description" content="Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.">
@@ -15,20 +15,19 @@
   <meta property="og:url" content="https://netcheck.oilygold.xyz">
   <meta name="twitter:card" content="summary">
   <script>
-    // Runs before the stylesheet so the first painted frame is already the right
-    // theme. The bundle applies it too, but only after parse — long enough that a
-    // light-theme user saw a dark flash on every load. An unknown value is safe:
-    // the dark tokens are also on :root, so it falls back rather than unstyling.
-    // Storage key must match STORAGE_KEY in src/client/theme.ts.
+    // Runs before the stylesheet so a high-contrast user never sees a frame of
+    // the dim wall. Anything but "contrast" (including values saved by the old
+    // theme menu) is the wall. Storage key must match src/client/theme.ts.
     try {
-      var t = localStorage.getItem("netcheck-theme") || "dark";
-      if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", t);
+      if (localStorage.getItem("netcheck-theme") === "contrast") {
+        document.documentElement.setAttribute("data-theme", "contrast");
+      }
     } catch (e) {
       /* private mode can throw on localStorage; the markup default stands */
     }
   </script>
-  <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/chakra-petch-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -73,15 +72,12 @@
           </svg>
           <span class="lang-label">中文</span>
         </button>
-        <div class="theme-dropdown">
-          <button class="btn-nav-action" id="theme-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Theme">
-            <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-          </button>
-          <!-- Options are rendered by src/client/theme.ts from its THEMES array. -->
-          <div class="theme-menu" id="theme-menu" role="menu"></div>
-        </div>
+        <button class="btn-nav-action" id="theme-toggle" aria-pressed="false" aria-label="High contrast">
+          <svg class="nav-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18"/>
+            <path d="M3 3h18L3 21z" fill="currentColor"/>
+          </svg>
+        </button>
         <div class="export-dropdown">
           <button class="btn-export" id="export-btn" title="Export Report">
             <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -114,7 +110,72 @@
         <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
       </div>
 
-      <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
+      <div class="station">
+        <div class="schematic">
+          <div class="panel-head">
+            <h2 class="card-title" id="dns-path-title">Connection path</h2>
+            <span class="status-badge" id="dns-scan-status" aria-live="polite"></span>
+          </div>
+          <ol class="path" id="dns-path" aria-labelledby="dns-path-title">
+            <li class="hop" data-hop="you" data-state="pending">
+              <span class="hop-node" aria-hidden="true"></span>
+              <div class="hop-label">
+                <span class="hop-key" id="hop-you-key">You</span>
+                <span class="hop-reading">—</span>
+                <span class="hop-state"></span>
+              </div>
+            </li>
+            <li class="hop" data-hop="router" data-state="pending">
+              <span class="hop-node" aria-hidden="true"></span>
+              <div class="hop-label">
+                <span class="hop-key" id="hop-router-key">Router</span>
+                <span class="hop-reading">—</span>
+                <span class="hop-state"></span>
+              </div>
+            </li>
+            <li class="hop" data-hop="isp" data-state="pending">
+              <span class="hop-node" aria-hidden="true"></span>
+              <div class="hop-label">
+                <span class="hop-key" id="hop-isp-key">ISP</span>
+                <span class="hop-reading">—</span>
+                <span class="hop-state"></span>
+              </div>
+            </li>
+            <li class="hop" data-hop="resolver" data-state="pending">
+              <span class="hop-node" aria-hidden="true"></span>
+              <div class="hop-label">
+                <span class="hop-key" id="hop-resolver-key">Resolver</span>
+                <span class="hop-reading">—</span>
+                <span class="hop-state"></span>
+              </div>
+            </li>
+            <li class="hop" data-hop="edge" data-state="pending">
+              <span class="hop-node" aria-hidden="true"></span>
+              <div class="hop-label">
+                <span class="hop-key" id="hop-edge-key">Edge</span>
+                <span class="hop-reading">—</span>
+                <span class="hop-state"></span>
+              </div>
+            </li>
+            <li class="scan-cursor" aria-hidden="true"></li>
+          </ol>
+        </div>
+
+        <div class="readout-panel">
+          <div class="panel-head">
+            <h2 class="card-title" id="dns-verdict-title">Verdict</h2>
+          </div>
+          <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
+          <div class="readout">
+            <span class="readout-label" id="dns-fastest-label">Fastest public resolver</span>
+            <span class="readout-value"><span class="seg" id="dns-fastest-value">---</span><span class="seg-unit">ms</span></span>
+            <span class="readout-sub" id="dns-fastest-name"></span>
+          </div>
+          <h3 class="readout-label" id="dns-checks-title">Checks</h3>
+          <ul class="conditions" id="dns-conditions"></ul>
+          <button type="button" class="btn btn-primary btn-run" id="dns-run-btn"><span id="dns-run-label">Run</span></button>
+        </div>
+      </div>
 
       <div class="cards-grid">
         <!-- IP Info Card -->
@@ -261,7 +322,7 @@
               <div id="dns-lookup-table"></div>
               <details class="raw-toggle">
                 <summary class="raw-toggle-summary" id="dns-raw-json-summary">
-                  <span>Raw JSON</span>
+                  <span id="dns-raw-json-label">Raw JSON</span>
                   <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" title="Copy raw JSON output">Copy JSON</button>
                 </summary>
                 <pre class="code-block"><code id="dns-lookup-output"></code></pre>
@@ -303,16 +364,12 @@
       <div class="section-header">
         <h1 class="display" id="speed-title">Speed Test</h1>
         <p class="subtitle" id="speed-subtitle">Measure your connection speed via Cloudflare's global edge network</p>
-        <div class="speed-server-badge" id="speed-server-badge">
-          <div class="server-badge-row">
-            <svg class="server-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <div class="server-badge-info">
-              <span class="server-badge-label" id="speed-server-label">Test Server</span>
-              <span class="server-badge-value" id="speed-server-value">Automatic (nearest edge)</span>
-            </div>
+      </div>
+
+      <div class="station speed-station">
+        <div class="schematic">
+          <div class="panel-head">
+            <h2 class="card-title" id="speed-route-title">Test route</h2>
             <select id="speed-server-select" class="input select server-select" aria-label="Test server">
               <option value="edge">Nearest Edge (Worker)</option>
               <option value="cf-speed" selected>Cloudflare Speed Test</option>
@@ -320,90 +377,80 @@
               <option value="custom">Custom Server…</option>
             </select>
           </div>
-          <div class="server-badge-detail hidden" id="speed-server-detail">
-            <div class="server-badge-route">
-              <span class="route-you" id="speed-route-you">You</span>
-              <span class="route-line"></span>
-              <span class="route-dist" id="speed-server-dist"></span>
-              <span class="route-line"></span>
-              <span class="route-server" id="speed-server-colo"></span>
+          <div class="route" id="speed-route" data-state="standby">
+            <div class="route-end">
+              <span class="route-node" aria-hidden="true"></span>
+              <span class="route-key" id="speed-route-you">You</span>
+            </div>
+            <div class="route-track">
+              <span class="route-dist" id="speed-server-dist">--- km</span>
+            </div>
+            <div class="route-end">
+              <span class="route-node" aria-hidden="true"></span>
+              <span class="route-key" id="speed-route-server">Server</span>
+              <span class="route-server" id="speed-server-value">Automatic (nearest edge)</span>
             </div>
           </div>
-          <div class="server-badge-detail hidden" id="speed-custom-url-row">
+          <div class="route-custom hidden" id="speed-custom-url-row">
             <input type="url" id="speed-custom-url" class="input" placeholder="https://your-worker.example.com" aria-label="Custom speed test server URL" />
             <p class="info-muted" id="speed-custom-url-hint">Must implement /api/speedtest/{ping,down,up}</p>
           </div>
-        </div>
-      </div>
-
-      <div class="verdict" id="speed-verdict" role="status" aria-live="polite" hidden></div>
-
-      <div class="speed-dashboard">
-        <div class="speed-gauge-row">
-          <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-download-label" tabindex="0" role="note" data-tooltip="Maximum download speed measured via progressive file transfers">Download</div>
-            <div class="speed-gauge-value placeholder" id="speed-download">—</div>
-            <div class="speed-gauge-unit">Mbps</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill download" id="speed-download-bar"></div>
+          <div class="speed-graph-card">
+            <div class="speed-graph-header">
+              <h3 class="readout-label" id="speed-graph-title-text">Speed Over Time</h3>
+              <div class="speed-graph-legend">
+                <span class="legend-item"><span class="legend-dot download"></span><span id="speed-dl-legend">Download</span></span>
+                <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend">Upload</span></span>
+              </div>
             </div>
-          </div>
-          <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-upload-label" tabindex="0" role="note" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</div>
-            <div class="speed-gauge-value placeholder" id="speed-upload">—</div>
-            <div class="speed-gauge-unit">Mbps</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill upload" id="speed-upload-bar"></div>
-            </div>
-          </div>
-          <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-latency-label" tabindex="0" role="note" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</div>
-            <div class="speed-gauge-value placeholder" id="speed-latency">—</div>
-            <div class="speed-gauge-unit">ms</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill latency" id="speed-latency-bar"></div>
-            </div>
-          </div>
-          <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-jitter-label" tabindex="0" role="note" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</div>
-            <div class="speed-gauge-value placeholder" id="speed-jitter">—</div>
-            <div class="speed-gauge-unit">ms</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill jitter" id="speed-jitter-bar"></div>
-            </div>
-          </div>
-          <div class="speed-gauge">
-            <div class="speed-gauge-label" id="speed-bufferbloat-label" tabindex="0" role="note" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</div>
-            <div class="speed-gauge-value placeholder" id="speed-bufferbloat">—</div>
-            <div class="speed-gauge-unit" id="speed-bufferbloat-unit">grade</div>
-            <div class="speed-progress-bar">
-              <div class="speed-progress-fill bufferbloat" id="speed-bufferbloat-bar"></div>
-            </div>
+            <canvas id="speed-graph" width="1100" height="200" role="img" aria-label="Real-time speed test performance curve"></canvas>
           </div>
         </div>
 
-        <div class="speed-status-row">
-          <div class="speed-grade" id="speed-grade">—</div>
-          <div class="speed-grade-info">
+        <div class="readout-panel speed-readouts">
+          <div class="panel-head">
+            <h2 class="card-title" id="speed-readings-title">Readings</h2>
+          </div>
+          <div class="speed-controls">
+            <button type="button" class="btn btn-primary btn-run" id="speed-start-btn">Run Speed Test</button>
+            <button type="button" class="btn btn-danger btn-run hidden" id="speed-cancel-btn">Cancel Test</button>
             <p class="speed-grade-label" id="speed-grade-label" aria-live="polite">Waiting to start</p>
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>
-          <button class="btn btn-primary btn-large" id="speed-start-btn">Run Speed Test</button>
-          <button class="btn btn-danger btn-large hidden" id="speed-cancel-btn">Cancel Test</button>
-          <button class="btn btn-small" id="snapshot-save-btn" title="Save current results to compare later" disabled>Save Snapshot</button>
-        </div>
-        <!-- Speed Graph -->
-        <div class="speed-graph-card" hidden>
-          <div class="speed-graph-header">
-            <span class="speed-graph-title" id="speed-graph-title-text">Speed Over Time</span>
-            <div class="speed-graph-legend">
-              <span class="legend-item"><span class="legend-dot download"></span><span id="speed-dl-legend">Download</span></span>
-              <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend">Upload</span></span>
+          <div class="verdict" id="speed-verdict" role="status" aria-live="polite" hidden></div>
+          <div class="readout" data-metric="download">
+            <span class="readout-label" id="speed-download-label" tabindex="0" role="note" data-tooltip="Maximum download speed measured via progressive file transfers">Download</span>
+            <span class="readout-value"><span class="seg placeholder" id="speed-download">---</span><span class="seg-unit">Mbps</span></span>
+            <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-download-bar"></span></span>
+          </div>
+          <div class="readout" data-metric="upload">
+            <span class="readout-label" id="speed-upload-label" tabindex="0" role="note" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</span>
+            <span class="readout-value"><span class="seg placeholder" id="speed-upload">---</span><span class="seg-unit">Mbps</span></span>
+            <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-upload-bar"></span></span>
+          </div>
+          <div class="readout-trio">
+            <div class="readout" data-metric="latency">
+              <span class="readout-label" id="speed-latency-label" tabindex="0" role="note" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</span>
+              <span class="readout-value"><span class="seg seg-sm placeholder" id="speed-latency">---</span><span class="seg-unit">ms</span></span>
+              <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-latency-bar"></span></span>
+            </div>
+            <div class="readout" data-metric="jitter">
+              <span class="readout-label" id="speed-jitter-label" tabindex="0" role="note" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</span>
+              <span class="readout-value"><span class="seg seg-sm placeholder" id="speed-jitter">---</span><span class="seg-unit">ms</span></span>
+              <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-jitter-bar"></span></span>
+            </div>
+            <div class="readout" data-metric="bufferbloat">
+              <span class="readout-label" id="speed-bufferbloat-label" tabindex="0" role="note" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</span>
+              <span class="readout-value"><span class="readout-grade placeholder" id="speed-bufferbloat">---</span></span>
+              <span class="readout-sub" id="speed-bufferbloat-unit">grade</span>
+              <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-bufferbloat-bar"></span></span>
             </div>
           </div>
-          <canvas id="speed-graph" width="1100" height="200" role="img" aria-label="Real-time speed test performance curve"></canvas>
+          <button type="button" class="btn btn-small speed-snapshot-btn" id="snapshot-save-btn" title="Save current results to compare later" disabled>Save Snapshot</button>
         </div>
+      </div>
 
+      <div class="speed-dashboard">
         <!-- Speed Snapshot History -->
         <div class="snapshot-section" id="snapshot-section" hidden>
           <div class="snapshot-header">
@@ -427,71 +474,65 @@
       <div class="section-header">
         <h1 class="display" id="adblock-title">Ad Block Tester</h1>
         <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
-        <div class="adblock-toolbar">
-          <button class="btn btn-small" id="adblock-rerun-btn" title="Re-run tests">Re-test</button>
+      </div>
+
+      <div class="station adblock-station">
+        <div class="schematic">
+          <div class="panel-head">
+            <h2 class="card-title" id="adblock-cats-title">Categories</h2>
+          </div>
+          <div class="test-categories" id="test-categories"></div>
           <div class="adblock-custom">
             <input type="text" id="adblock-custom-url" class="input" placeholder="example.com or https://..." aria-label="Custom test URL">
-            <button class="btn btn-small" id="adblock-custom-btn">Test URL</button>
+            <button type="button" class="btn btn-small" id="adblock-custom-btn">Test URL</button>
+          </div>
+          <div class="adblock-custom-results" id="adblock-custom-card" hidden>
+            <h3 class="readout-label" id="adblock-custom-title">Custom URL Test</h3>
+            <div id="adblock-custom-results"></div>
+          </div>
+        </div>
+
+        <div class="readout-panel adblock-readouts">
+          <div class="panel-head">
+            <h2 class="card-title" id="adblock-score-title">Block score</h2>
+          </div>
+          <div class="readout" id="adblock-score">
+            <span class="readout-value"><span class="seg placeholder" id="score-number">---</span><span class="seg-unit">/ 100</span></span>
+            <span class="meter" aria-hidden="true"><span class="meter-fill" id="score-meter"></span></span>
+            <p class="score-summary" id="score-summary" aria-live="polite"></p>
+            <p class="readout-sub" id="score-detail"></p>
+          </div>
+          <h3 class="readout-label" id="adblock-breakdown-title">Breakdown</h3>
+          <ul class="conditions" id="score-breakdown"></ul>
+          <p class="score-hint" id="score-hint" hidden></p>
+          <div class="readout blocker-readout" id="adblock-blocker-card" hidden>
+            <span class="readout-label" id="adblock-blocker-title">Detected Blocker</span>
+            <span class="blocker-name" id="adblock-blocker-name" aria-live="polite">—</span>
+            <span class="readout-sub" id="adblock-blocker-detail"></span>
+          </div>
+          <div class="adblock-actions">
+            <button type="button" class="btn btn-small" id="adblock-history-save-btn" title="Save current score to compare later" disabled>Save Snapshot</button>
+            <button type="button" class="btn btn-primary" id="adblock-rerun-btn">Re-test</button>
           </div>
         </div>
       </div>
 
-      <div class="card card-wide" id="adblock-blocker-card" hidden>
-        <div class="card-header">
-          <h2 class="card-title" id="adblock-blocker-title">Detected Blocker</h2>
-          <span class="status-badge done" id="adblock-blocker-name" aria-live="polite">—</span>
-        </div>
-        <div class="card-body">
-          <p class="info-muted" id="adblock-blocker-detail"></p>
-        </div>
-      </div>
-
-      <div class="card card-wide" id="fingerprint-card">
-        <div class="card-header">
-          <h2 class="card-title" id="fingerprint-title">Fingerprint Surface</h2>
-          <span class="status-badge" id="fingerprint-level" aria-live="polite">—</span>
-        </div>
-        <div class="card-body">
-          <p class="info-muted" id="fingerprint-note">Read straight from the browser APIs a fingerprinter would call — no filter list involved, and no effect on the block score above.</p>
-          <div id="fingerprint-signals"></div>
-        </div>
-      </div>
-
-      <div class="card card-wide" id="adblock-custom-card" hidden>
-        <div class="card-header">
-          <h2 class="card-title" id="adblock-custom-title">Custom URL Test</h2>
-        </div>
-        <div class="card-body" id="adblock-custom-results"></div>
-      </div>
-
-      <div class="score-card">
-        <div class="score-ring">
-          <svg viewBox="0 0 120 120">
-            <circle class="score-ring-bg" cx="60" cy="60" r="54" />
-            <circle class="score-ring-fill" id="score-ring-fill" cx="60" cy="60" r="54" />
-          </svg>
-          <div class="score-value">
-            <span class="score-number" id="score-number">—</span>
-            <span class="score-label">/ 100</span>
+      <div class="station adblock-lower">
+        <div class="schematic" id="filter-list-section">
+          <div class="panel-head">
+            <h2 class="card-title" id="filter-list-title">Detected Filter Lists</h2>
           </div>
+          <p class="panel-note" id="filter-list-subtitle">Identifying which filter lists your ad blocker uses...</p>
+          <ul class="filter-list-grid" id="filter-list-grid"></ul>
         </div>
-        <div class="score-meta">
-          <p class="score-summary" id="score-summary">Running tests...</p>
-          <p class="score-detail" id="score-detail"></p>
-        </div>
-        <div class="score-breakdown" id="score-breakdown"></div>
-      </div>
 
-      <div class="test-categories" id="test-categories">
-        <!-- Populated by JS -->
-      </div>
-
-      <!-- Filter List Detector -->
-      <div class="filter-list-section" id="filter-list-section">
-        <h2 class="suggestions-title" id="filter-list-title">Detected Filter Lists</h2>
-        <p class="suggestions-subtitle" id="filter-list-subtitle">Identifying which filter lists your ad blocker uses...</p>
-        <div class="filter-list-grid" id="filter-list-grid">
-          <!-- Populated by JS -->
+        <div class="readout-panel" id="fingerprint-card">
+          <div class="panel-head">
+            <h2 class="card-title" id="fingerprint-title">Fingerprint Surface</h2>
+            <span class="status-badge" id="fingerprint-level" aria-live="polite"></span>
+          </div>
+          <p class="panel-note" id="fingerprint-note">Read straight from the browser APIs a fingerprinter would call.</p>
+          <ul class="conditions" id="fingerprint-signals"></ul>
         </div>
       </div>
 
@@ -508,10 +549,7 @@
       <div class="snapshot-section" id="adblock-history-section" hidden>
         <div class="snapshot-header">
           <h2 class="snapshot-title" id="adblock-history-title">Score History</h2>
-          <div class="snapshot-actions">
-            <button class="btn btn-small" id="adblock-history-save-btn" disabled>Save Snapshot</button>
-            <button class="btn btn-small" id="adblock-history-clear-btn" title="Clear history">Clear</button>
-          </div>
+          <button class="btn btn-small" id="adblock-history-clear-btn" title="Clear history">Clear</button>
         </div>
         <div class="snapshot-list" id="adblock-history-list"></div>
       </div>
@@ -524,51 +562,42 @@
         <p class="subtitle" id="headers-subtitle">Analyze HTTP security headers of any website</p>
       </div>
 
-      <div class="verdict" id="headers-verdict" role="status" aria-live="polite" hidden></div>
-
-      <div class="card card-wide">
-        <div class="card-header">
-          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <h2 class="card-title" id="headers-check-title">Check URL</h2>
-        </div>
-        <div class="card-body">
-          <div class="lookup-form">
+      <div class="station">
+        <div class="schematic">
+          <div class="panel-head">
+            <h2 class="card-title" id="headers-detail-title">Header checklist</h2>
+            <span class="status-badge" id="headers-status" hidden></span>
+          </div>
+          <div class="lookup-form headers-form">
             <input type="text" id="headers-url-input" class="input input-wide" placeholder="example.com" value="" aria-label="Target website URL for security headers scan">
             <button id="headers-check-btn" class="btn btn-primary">Scan</button>
           </div>
-        </div>
-      </div>
-
-      <div class="empty-state" id="headers-empty">
-        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        <p class="empty-state-title" id="headers-empty-title">No site scanned yet</p>
-        <p class="empty-state-desc" id="headers-empty-desc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
-        <div class="empty-state-actions">
-          <button class="btn btn-small" data-headers-example="github.com">github.com</button>
-          <button class="btn btn-small" data-headers-example="cloudflare.com">cloudflare.com</button>
-          <button class="btn btn-small" data-headers-example="wikipedia.org">wikipedia.org</button>
-        </div>
-      </div>
-
-      <div id="headers-results" class="hidden">
-        <!-- Headers List -->
-        <div class="card card-wide">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <h2 class="card-title" id="headers-detail-title">Header Analysis</h2>
-            <span class="status-badge" id="headers-status">—</span>
+          <div class="empty-state" id="headers-empty">
+            <p class="empty-state-title" id="headers-empty-title">No site scanned yet</p>
+            <p class="empty-state-desc" id="headers-empty-desc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
+            <div class="empty-state-actions">
+              <button class="btn btn-small" data-headers-example="github.com">github.com</button>
+              <button class="btn btn-small" data-headers-example="cloudflare.com">cloudflare.com</button>
+              <button class="btn btn-small" data-headers-example="wikipedia.org">wikipedia.org</button>
+            </div>
           </div>
-          <div class="card-body">
-            <p class="info-muted" id="headers-server-info"></p>
-            <div id="headers-check-results"></div>
+          <ul class="header-list hidden" id="headers-check-results" aria-labelledby="headers-detail-title"></ul>
+        </div>
+
+        <div class="readout-panel">
+          <div class="panel-head">
+            <h2 class="card-title" id="headers-verdict-title">Verdict</h2>
+          </div>
+          <div class="verdict" id="headers-verdict" role="status" aria-live="polite" hidden></div>
+          <div class="readout" id="headers-grade-readout" data-state="standby">
+            <span class="readout-label" id="headers-grade-label">Grade</span>
+            <span class="readout-value"><span class="seg placeholder" id="headers-grade">-</span></span>
+            <span class="readout-sub" id="headers-server-info"></span>
+          </div>
+          <div class="readout" id="headers-count-readout" data-state="standby">
+            <span class="readout-label" id="headers-count-label">Headers present</span>
+            <span class="readout-value"><span class="seg seg-sm placeholder" id="headers-count">--</span><span class="seg-unit" id="headers-total"></span></span>
+            <span class="meter" aria-hidden="true"><span class="meter-fill" id="headers-meter"></span></span>
           </div>
         </div>
       </div>
@@ -577,70 +606,49 @@
     <!-- About Section -->
     <section id="about" class="section" role="tabpanel" aria-labelledby="tab-about">
       <div class="section-header">
-        <h1 class="display display-hero" id="about-title">About NetCheck</h1>
+        <h1 class="display" id="about-title">About NetCheck</h1>
         <p class="subtitle" id="about-subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
       </div>
 
-      <div class="cards-grid cards-grid-2up">
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
+      <div class="station">
+        <div class="schematic">
+          <div class="panel-head">
             <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
           </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-what-desc">NetCheck runs a set of network and privacy diagnostics directly in your browser: your DNS resolver, its security posture, and the real recursion path your traffic takes, real-world download/upload speed and bufferbloat, how well your ad/tracker blocker performs, how identifiable this browser is to a fingerprinter, and the security headers of any site you point it at. Nearly every test runs client-side against Cloudflare's edge network, and your results are never collected. The one exception is the recursion-path check, described under Privacy.</p>
-          </div>
+          <p class="about-lede" id="about-what-desc"></p>
+          <dl class="about-tools">
+            <div class="about-tool">
+              <dt class="readout-label" id="about-feat-dns-title">DNS Check</dt>
+              <dd id="about-feat-dns-desc"></dd>
+            </div>
+            <div class="about-tool">
+              <dt class="readout-label" id="about-feat-speed-title">Speed Test</dt>
+              <dd id="about-feat-speed-desc"></dd>
+            </div>
+            <div class="about-tool">
+              <dt class="readout-label" id="about-feat-adblock-title">Ad Block Test</dt>
+              <dd id="about-feat-adblock-desc"></dd>
+            </div>
+            <div class="about-tool">
+              <dt class="readout-label" id="about-feat-headers-title">Security Headers</dt>
+              <dd id="about-feat-headers-desc"></dd>
+            </div>
+          </dl>
         </div>
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+
+        <div class="readout-panel">
+          <div class="panel-head">
             <h2 class="card-title" id="about-privacy-title">Privacy</h2>
           </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-privacy-desc">All checks run in your browser. The fingerprint checks are local-only — they read browser APIs and send nothing anywhere. Snapshots and adblock history are saved only to your device's local storage, never uploaded. Export creates a Markdown or PDF file on your machine. The one thing that leaves your browser is the recursion-path check: it makes your resolver look up a name on a nameserver we run, which sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <h2 class="card-title" id="about-feat-dns-title">DNS Check</h2>
-          </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-feat-dns-desc">Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <h2 class="card-title" id="about-feat-speed-title">Speed Test</h2>
-          </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-feat-speed-desc">Measures download, upload, latency, jitter, and bufferbloat against Cloudflare's edge, Cloudflare Speed Test, Netflix Fast.com, Ookla Speedtest, or a custom server. Steps under 5 MB warm the connection up and are left out of the clock, the measured steps run four connections wide so one TCP window can't cap a fast link, and bufferbloat is reported from whichever direction queued worse.</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <h2 class="card-title" id="about-feat-adblock-title">Ad Block Test</h2>
-          </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-feat-adblock-desc">Runs 25+ tests across 6 categories with weighted scoring, detects filter lists, identifies which blocker you're running, and tests any custom URL. Probes that never resolve count for neither side, so a flaky connection reports no score instead of a perfect one. Fingerprint resistance is measured separately, from the browser APIs themselves.</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            <h2 class="card-title" id="about-feat-headers-title">Security Headers</h2>
-          </div>
-          <div class="card-body">
-            <p class="info-muted" id="about-feat-headers-desc">Scans any URL's HTTP response headers with multi-hop, rate-limited SSRF validation and grades protection against XSS, clickjacking, and MIME sniffing.</p>
-          </div>
+          <h3 class="readout-label" id="about-ledger-title">What leaves this browser</h3>
+          <ul class="conditions about-ledger">
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-fp"></span><span class="condition-state" data-ledger="local"></span></li>
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-history"></span><span class="condition-state" data-ledger="local"></span></li>
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-export"></span><span class="condition-state" data-ledger="local"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-headers"></span><span class="condition-state" data-ledger="sent"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-probe"></span><span class="condition-state" data-ledger="sent"></span></li>
+          </ul>
+          <p class="panel-note about-privacy" id="about-privacy-desc"></p>
         </div>
       </div>
     </section>

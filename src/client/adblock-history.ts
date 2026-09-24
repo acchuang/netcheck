@@ -51,16 +51,13 @@ function clearSnapshots(): void {
     return;
   }
 
-  const originalText = btn.dataset.defaultText || btn.textContent || "Clear";
-  btn.dataset.defaultText = originalText;
-
   if (btn.dataset.confirming === "true") {
     if (clearTimer) {
       clearTimeout(clearTimer);
       clearTimer = null;
     }
     btn.dataset.confirming = "false";
-    btn.textContent = originalText;
+    btn.textContent = t("snap.clear");
     btn.classList.remove("btn-warn");
     localStorage.removeItem(KEY);
     renderHistory();
@@ -70,7 +67,7 @@ function clearSnapshots(): void {
     btn.classList.add("btn-warn");
     clearTimer = window.setTimeout(() => {
       btn.dataset.confirming = "false";
-      btn.textContent = originalText;
+      btn.textContent = t("snap.clear");
       btn.classList.remove("btn-warn");
       clearTimer = null;
     }, 4000);
@@ -84,6 +81,12 @@ function fmtDelta(cur: number, prev: number | undefined, lowerBetter = false): s
   const good = lowerBetter ? d < 0 : d > 0;
   const sign = d > 0 ? "+" : "";
   return `<span class="snap-delta ${good ? "good" : "bad"}">${sign}${d}</span>`;
+}
+
+// One scale for the score, the category bars, the breakdown rows and the
+// history, so a bar and the number above it never disagree about how bad it is.
+export function levelFor(pct: number): "pass" | "warn" | "fail" {
+  return pct >= 80 ? "pass" : pct >= 20 ? "warn" : "fail";
 }
 
 function renderHistory(): void {
@@ -107,11 +110,10 @@ function renderHistory(): void {
       const prev = i < snapshots.length - 1 ? snapshots[snapshots.length - 2 - i] : undefined;
       const isLatest = i === 0;
       const scoreDelta = isLatest ? fmtDelta(s.score, prev?.score) : "";
-      const color = s.score >= 80 ? "var(--emerald)" : s.score >= 50 ? "var(--grade-mid)" : s.score >= 20 ? "var(--amber)" : "var(--red)";
 
       return `<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
-        <span class="snap-val" style="color:${color};font-weight:600">${s.score}/100 ${scoreDelta}</span>
+        <span class="snap-val snap-score" data-state="${levelFor(s.score)}">${s.score}/100 ${scoreDelta}</span>
         <span class="snap-val">${s.blocked}/${s.total} ${isLatest ? fmtDelta(s.blocked, prev?.blocked) : ""}</span>
         <span class="snap-val snap-colo">${s.cats.map((c) => `${c.name.split(" ")[0]}:${c.pct}%`).join(" ")}</span>
       </div>`;
