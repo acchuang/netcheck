@@ -380,15 +380,22 @@
           <div class="route" id="speed-route" data-state="standby">
             <div class="route-end">
               <span class="route-node" aria-hidden="true"></span>
-              <span class="route-key" id="speed-route-you">You</span>
+              <div class="route-card">
+                <span class="route-key" id="speed-route-you">You</span>
+                <span class="route-reading" id="speed-you-isp">—</span>
+                <span class="route-reading" id="speed-you-city"></span>
+              </div>
             </div>
             <div class="route-track">
               <span class="route-dist" id="speed-server-dist">--- km</span>
             </div>
             <div class="route-end">
               <span class="route-node" aria-hidden="true"></span>
-              <span class="route-key" id="speed-route-server">Server</span>
-              <span class="route-server" id="speed-server-value">Automatic (nearest edge)</span>
+              <div class="route-card">
+                <span class="route-key" id="speed-route-server">Server</span>
+                <span class="route-reading" id="speed-server-value">Automatic (nearest edge)</span>
+                <span class="route-reading" id="speed-server-ping"></span>
+              </div>
             </div>
           </div>
           <div class="route-custom hidden" id="speed-custom-url-row">

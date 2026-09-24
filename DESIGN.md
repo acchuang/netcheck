@@ -223,7 +223,7 @@ A 1320px max container, 24px gutters (16px under 768px). Each tab opens with a b
 
 **DNS path.** Five hops (You, Router, ISP, Resolver, Edge) share a three-row grid: labels above, a 40px track row, labels below. Hops alternate: odd hops hang their card above the track, even hops below, each tied to its 20px node by a 36px leader line in the hop colour. The track is a 1px orange line from first node to last.
 
-**Speed route.** The same grammar with two ends (You, Server): 20px nodes on a 1px track, keys hanging below, distance printed mid-track.
+**Speed route.** The same grammar with two ends (You, Server): 20px nodes at either end of a 1px track, distance printed mid-track. Each end hangs a hop-style card on a 36px leader line, the You card reading ISP, AS and city, the Server card reading location and probe latency.
 
 **Responsive.** At 1024px and below the station stacks and the readout panel moves first, so the verdict and the Run button precede the path. At 1000px and below the nav tabs become a fixed bottom bar. At 720px and below the path becomes a vertical rail: nodes in a 28px left column, every hop card to the right with a left state edge, leader lines removed; the scan cursor travels vertically. Touch targets are 44px minimum under 768px.
 

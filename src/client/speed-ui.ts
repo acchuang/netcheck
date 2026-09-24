@@ -20,6 +20,20 @@ function setRoute(serverText: string, km: number | null): void {
   document.getElementById("speed-route")!.dataset.state = km === null ? "standby" : "seen";
 }
 
+// The You card: whose line the test runs on. Same /api/ip the DNS path reads.
+let youIp: { asOrganization?: string; asn?: string; city?: string; country?: string } | null = null;
+
+function renderYou(): void {
+  const isp = youIp?.asOrganization ? `${youIp.asOrganization}\u00a0· AS${youIp.asn}` : t("station.noReading");
+  document.getElementById("speed-you-isp")!.textContent = youIp ? isp : "—";
+  document.getElementById("speed-you-city")!.textContent = [youIp?.city, youIp?.country].filter(Boolean).join(", ");
+}
+
+function renderServerPing(probe: ServerProbeResult | undefined): void {
+  document.getElementById("speed-server-ping")!.textContent = !probe ? ""
+    : probe.reachable ? `${t("speed.latency")} ${probe.latency} ms` : t("speed.server.unreachable");
+}
+
 function updateServerBadge(colo: string, userLat?: number | null, userLon?: number | null): void {
   const pop = CF_POPS[colo];
   const cityName = pop ? pop[0] : colo;
@@ -94,6 +108,7 @@ export async function initSpeedTest(): Promise<void> {
 
     // show the probed location right away if we already know it for the selected server
     const probe = serverProbeState[sel.value];
+    renderServerPing(probe);
     if (probe?.colo) updateServerBadge(probe.colo, probe.lat, probe.lon);
   }
 
@@ -118,13 +133,20 @@ export async function initSpeedTest(): Promise<void> {
     const [result] = await probeServers(["custom"]);
     serverProbeState.custom = result;
     renderServerOptionLabels();
+    if (sel?.value === "custom") renderServerPing(result);
     if (sel?.value === "custom" && result.colo) updateServerBadge(result.colo, result.lat, result.lon);
   });
 
   onLocaleChange(() => {
     renderServerOptionLabels();
     updateServerValueLabel();
+    renderYou();
   });
+
+  fetch("/api/ip")
+    .then((res) => res.json() as Promise<NonNullable<typeof youIp>>)
+    .catch(() => ({}))
+    .then((ip) => { youIp = ip; renderYou(); });
 
   // probe-on-load: skip "custom" (probed on blur) and servers needing async init/discovery
   // (e.g. fast.com) — those are lazy-probed only once the user actually selects them.
