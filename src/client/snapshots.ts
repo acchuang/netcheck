@@ -55,16 +55,13 @@ function clearSnapshots(): void {
     return;
   }
 
-  const originalText = btn.dataset.defaultText || btn.textContent || "Clear";
-  btn.dataset.defaultText = originalText;
-
   if (btn.dataset.confirming === "true") {
     if (clearTimer) {
       clearTimeout(clearTimer);
       clearTimer = null;
     }
     btn.dataset.confirming = "false";
-    btn.textContent = originalText;
+    btn.textContent = t("snap.clear");
     btn.classList.remove("btn-warn");
     localStorage.removeItem(KEY);
     renderSnapshotHistory();
@@ -74,7 +71,7 @@ function clearSnapshots(): void {
     btn.classList.add("btn-warn");
     clearTimer = window.setTimeout(() => {
       btn.dataset.confirming = "false";
-      btn.textContent = originalText;
+      btn.textContent = t("snap.clear");
       btn.classList.remove("btn-warn");
       clearTimer = null;
     }, 4000);

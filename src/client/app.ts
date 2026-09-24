@@ -22,6 +22,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 function initTooltips(): void {
   const tip = document.createElement("div");
   tip.className = "tooltip";
+  tip.id = "tooltip";
+  tip.setAttribute("role", "tooltip");
   document.body.appendChild(tip);
 
   let activeTarget: HTMLElement | null = null;
@@ -29,7 +31,9 @@ function initTooltips(): void {
   function showTip(target: HTMLElement): void {
     const text = target.dataset.tooltip;
     if (!text) return;
+    activeTarget?.removeAttribute("aria-describedby");
     activeTarget = target;
+    target.setAttribute("aria-describedby", "tooltip");
     tip.textContent = text;
     tip.classList.add("visible");
 
@@ -42,6 +46,7 @@ function initTooltips(): void {
   }
 
   function hideTip(): void {
+    activeTarget?.removeAttribute("aria-describedby");
     activeTarget = null;
     tip.classList.remove("visible");
   }
@@ -87,6 +92,10 @@ function initTooltips(): void {
     }
   });
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideTip();
+  });
+
   // Ensure all elements with data-tooltip are keyboard focusable
   const makeFocusable = () => {
     document.querySelectorAll<HTMLElement>("[data-tooltip]").forEach((el) => {
@@ -106,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTooltips();
   renderInitialSkeletons();
   runDnsChecks();
+  document.getElementById("dns-run-btn")?.addEventListener("click", () => runDnsChecks());
   initSpeedTest();
   initHeadersCheck();
   initSnapshots();
@@ -114,9 +124,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initDnsWorkstation();
 
-  // Landing straight on #adblock is a request to run it; activating the tab
-  // goes through the same click handler that starts the probes.
-  if (location.hash === "#adblock") document.getElementById("tab-adblock")?.click();
+  // A deep link opens its tab through the same click handler, so #adblock
+  // starts the probes. The browser's own jump is cancelled in CSS (.section).
+  const deepLink = document.querySelector<HTMLElement>(`.nav-link[data-tab="${CSS.escape(location.hash.slice(1))}"]`);
+  deepLink?.click();
 
   // Idle-state texts live in the HTML in English; localize them on first load
   // and re-render all dynamic content when the locale changes.
@@ -159,12 +170,16 @@ function initTabs(): void {
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       document.getElementById(tab)!.classList.add("active");
 
+      history.replaceState(null, "", `#${tab}`);
       if (tab === "adblock") startAdBlock();
     });
   });
 
   // Export button
-  document.getElementById("export-btn")!.addEventListener("click", (e) => {
+  const exportBtn = document.getElementById("export-btn")!;
+  exportBtn.setAttribute("aria-haspopup", "menu");
+  exportBtn.setAttribute("aria-expanded", "false");
+  exportBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     ReportExporter.showExportMenu();
   });
@@ -178,6 +193,11 @@ function initTabs(): void {
   });
   document.addEventListener("click", (e) => {
     if (!(e.target instanceof Element) || !e.target.closest(".export-dropdown")) ReportExporter.hideExportMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || exportBtn.getAttribute("aria-expanded") !== "true") return;
+    ReportExporter.hideExportMenu();
+    exportBtn.focus();
   });
 }
 

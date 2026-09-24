@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-24T02:02:19.954Z",
+  "title": "Design System: NetCheck",
+  "extensions": {
+    "colorMeta": {
+      "wall-black": {
+        "role": "neutral",
+        "displayName": "Wall Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "oklch(15% 0.000 0.0)",
+          "oklch(26% 0.000 0.0)",
+          "oklch(37% 0.000 0.0)",
+          "oklch(48% 0.000 0.0)",
+          "oklch(59% 0.000 0.0)",
+          "oklch(70% 0.000 0.0)",
+          "oklch(82% 0.000 0.0)",
+          "oklch(95% 0.000 0.0)"
+        ]
+      },
+      "stealth-panel": {
+        "role": "neutral",
+        "displayName": "Stealth Panel",
+        "canonical": "#0b0b0b",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(59% 0.000 89.9)",
+          "oklch(70% 0.000 89.9)",
+          "oklch(82% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#121212",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(59% 0.000 89.9)",
+          "oklch(70% 0.000 89.9)",
+          "oklch(82% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "surface-elevated": {
+        "role": "neutral",
+        "displayName": "Surface Elevated",
+        "canonical": "#1c1c1c",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(59% 0.000 89.9)",
+          "oklch(70% 0.000 89.9)",
+          "oklch(82% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "ink-primary": {
+        "role": "neutral",
+        "displayName": "Ink Primary",
+        "canonical": "#fff3e8",
+        "tonalRamp": [
+          "oklch(15% 0.020 65.1)",
+          "oklch(26% 0.020 65.1)",
+          "oklch(37% 0.020 65.1)",
+          "oklch(48% 0.020 65.1)",
+          "oklch(59% 0.020 65.1)",
+          "oklch(70% 0.020 65.1)",
+          "oklch(82% 0.020 65.1)",
+          "oklch(95% 0.020 65.1)"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "#e6d8ca",
+        "tonalRamp": [
+          "oklch(15% 0.024 67.5)",
+          "oklch(26% 0.024 67.5)",
+          "oklch(37% 0.024 67.5)",
+          "oklch(48% 0.024 67.5)",
+          "oklch(59% 0.024 67.5)",
+          "oklch(70% 0.024 67.5)",
+          "oklch(82% 0.024 67.5)",
+          "oklch(95% 0.024 67.5)"
+        ]
+      },
+      "ink-tertiary": {
+        "role": "neutral",
+        "displayName": "Ink Tertiary",
+        "canonical": "#bfae9d",
+        "tonalRamp": [
+          "oklch(15% 0.031 67.3)",
+          "oklch(26% 0.031 67.3)",
+          "oklch(37% 0.031 67.3)",
+          "oklch(48% 0.031 67.3)",
+          "oklch(59% 0.031 67.3)",
+          "oklch(70% 0.031 67.3)",
+          "oklch(82% 0.031 67.3)",
+          "oklch(95% 0.031 67.3)"
+        ]
+      },
+      "ink-quaternary": {
+        "role": "neutral",
+        "displayName": "Ink Quaternary",
+        "canonical": "#a08f7e",
+        "tonalRamp": [
+          "oklch(15% 0.032 67.2)",
+          "oklch(26% 0.032 67.2)",
+          "oklch(37% 0.032 67.2)",
+          "oklch(48% 0.032 67.2)",
+          "oklch(59% 0.032 67.2)",
+          "oklch(70% 0.032 67.2)",
+          "oklch(82% 0.032 67.2)",
+          "oklch(95% 0.032 67.2)"
+        ]
+      },
+      "phosphor-orange": {
+        "role": "primary",
+        "displayName": "Phosphor Orange",
+        "canonical": "#ff5a00",
+        "tonalRamp": [
+          "oklch(15% 0.200 40.1)",
+          "oklch(26% 0.200 40.1)",
+          "oklch(37% 0.200 40.1)",
+          "oklch(48% 0.200 40.1)",
+          "oklch(59% 0.200 40.1)",
+          "oklch(70% 0.200 40.1)",
+          "oklch(82% 0.200 40.1)",
+          "oklch(95% 0.200 40.1)"
+        ]
+      },
+      "phosphor-orange-hover": {
+        "role": "primary",
+        "displayName": "Phosphor Orange Hover",
+        "canonical": "#ff7a33",
+        "tonalRamp": [
+          "oklch(15% 0.181 45.3)",
+          "oklch(26% 0.181 45.3)",
+          "oklch(37% 0.181 45.3)",
+          "oklch(48% 0.181 45.3)",
+          "oklch(59% 0.181 45.3)",
+          "oklch(70% 0.181 45.3)",
+          "oklch(82% 0.181 45.3)",
+          "oklch(95% 0.181 45.3)"
+        ]
+      },
+      "rule-subtle": {
+        "role": "neutral",
+        "displayName": "Rule Subtle",
+        "canonical": "rgba(255, 90, 0, 0.16)",
+        "tonalRamp": [
+          "oklch(15% 0.200 40.1)",
+          "oklch(26% 0.200 40.1)",
+          "oklch(37% 0.200 40.1)",
+          "oklch(48% 0.200 40.1)",
+          "oklch(59% 0.200 40.1)",
+          "oklch(70% 0.200 40.1)",
+          "oklch(82% 0.200 40.1)",
+          "oklch(95% 0.200 40.1)"
+        ]
+      },
+      "rule-standard": {
+        "role": "neutral",
+        "displayName": "Rule Standard",
+        "canonical": "rgba(255, 90, 0, 0.34)",
+        "tonalRamp": [
+          "oklch(15% 0.200 40.1)",
+          "oklch(26% 0.200 40.1)",
+          "oklch(37% 0.200 40.1)",
+          "oklch(48% 0.200 40.1)",
+          "oklch(59% 0.200 40.1)",
+          "oklch(70% 0.200 40.1)",
+          "oklch(82% 0.200 40.1)",
+          "oklch(95% 0.200 40.1)"
+        ]
+      },
+      "rule-deep": {
+        "role": "neutral",
+        "displayName": "Rule Deep",
+        "canonical": "#4a2a14",
+        "tonalRamp": [
+          "oklch(15% 0.059 53.5)",
+          "oklch(26% 0.059 53.5)",
+          "oklch(37% 0.059 53.5)",
+          "oklch(48% 0.059 53.5)",
+          "oklch(59% 0.059 53.5)",
+          "oklch(70% 0.059 53.5)",
+          "oklch(82% 0.059 53.5)",
+          "oklch(95% 0.059 53.5)"
+        ]
+      },
+      "acid-green": {
+        "role": "secondary",
+        "displayName": "Acid Green",
+        "canonical": "#39ff14",
+        "tonalRamp": [
+          "oklch(15% 0.200 141.5)",
+          "oklch(26% 0.200 141.5)",
+          "oklch(37% 0.200 141.5)",
+          "oklch(48% 0.200 141.5)",
+          "oklch(59% 0.200 141.5)",
+          "oklch(70% 0.200 141.5)",
+          "oklch(82% 0.200 141.5)",
+          "oklch(95% 0.200 141.5)"
+        ]
+      },
+      "hazard-yellow": {
+        "role": "secondary",
+        "displayName": "Hazard Yellow",
+        "canonical": "#ffe600",
+        "tonalRamp": [
+          "oklch(15% 0.192 101.4)",
+          "oklch(26% 0.192 101.4)",
+          "oklch(37% 0.192 101.4)",
+          "oklch(48% 0.192 101.4)",
+          "oklch(59% 0.192 101.4)",
+          "oklch(70% 0.192 101.4)",
+          "oklch(82% 0.192 101.4)",
+          "oklch(95% 0.192 101.4)"
+        ]
+      },
+      "alarm-red": {
+        "role": "tertiary",
+        "displayName": "Alarm Red",
+        "canonical": "#ff003c",
+        "tonalRamp": [
+          "oklch(15% 0.200 21.8)",
+          "oklch(26% 0.200 21.8)",
+          "oklch(37% 0.200 21.8)",
+          "oklch(48% 0.200 21.8)",
+          "oklch(59% 0.200 21.8)",
+          "oklch(70% 0.200 21.8)",
+          "oklch(82% 0.200 21.8)",
+          "oklch(95% 0.200 21.8)"
+        ]
+      },
+      "grade-mid-green": {
+        "role": "tertiary",
+        "displayName": "Grade-Mid Green",
+        "canonical": "#b4f59a",
+        "tonalRamp": [
+          "oklch(15% 0.136 137.1)",
+          "oklch(26% 0.136 137.1)",
+          "oklch(37% 0.136 137.1)",
+          "oklch(48% 0.136 137.1)",
+          "oklch(59% 0.136 137.1)",
+          "oklch(70% 0.136 137.1)",
+          "oklch(82% 0.136 137.1)",
+          "oklch(95% 0.136 137.1)"
+        ]
+      },
+      "standby-grey": {
+        "role": "neutral",
+        "displayName": "Standby Grey",
+        "canonical": "#8a7d71",
+        "tonalRamp": [
+          "oklch(15% 0.024 65.1)",
+          "oklch(26% 0.024 65.1)",
+          "oklch(37% 0.024 65.1)",
+          "oklch(48% 0.024 65.1)",
+          "oklch(59% 0.024 65.1)",
+          "oklch(70% 0.024 65.1)",
+          "oklch(82% 0.024 65.1)",
+          "oklch(95% 0.024 65.1)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "zh-TW tab title only; Noto Sans TC Display 900 subset of the title glyphs."
+      },
+      "display-en": {
+        "displayName": "Display EN",
+        "purpose": "English caps line under the tab title, orange."
+      },
+      "readout": {
+        "displayName": "Readout",
+        "purpose": "Seven-segment headline readings."
+      },
+      "readout-sm": {
+        "displayName": "Readout Small",
+        "purpose": "Seven-segment secondary readings (latency, jitter, grade)."
+      },
+      "title-zh": {
+        "displayName": "Title zh-TW",
+        "purpose": "Upper line of every bilingual frame title."
+      },
+      "title-en": {
+        "displayName": "Title EN",
+        "purpose": "Tracked caps line under every bilingual frame title."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "NETCHECK in the nav strip."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose and default UI text, tabular slashed-zero numerals."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Badges, state lamps, buttons, units: uppercase caps."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "IPs, ASNs, hop readings, inputs, header values."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 12px 32px rgba(0, 0, 0, 0.75)",
+        "purpose": "Export menu and tooltip only; frames never cast shadows."
+      }
+    ],
+    "motion": [
+      {
+        "name": "scan-step",
+        "value": "transform 0.28s steps(4, end)",
+        "purpose": "Scan cursor travel between hops."
+      },
+      {
+        "name": "scan-blink",
+        "value": "0.8s steps(2, jump-none) infinite",
+        "purpose": "Scan cursor blink."
+      },
+      {
+        "name": "route-run",
+        "value": "0.64s steps(4) infinite",
+        "purpose": "Speed-route chaser while bytes are in flight."
+      },
+      {
+        "name": "ui-state",
+        "value": "0.12s",
+        "purpose": "Colour, border and background changes on controls."
+      },
+      {
+        "name": "menu",
+        "value": "opacity 0.12s ease-out, transform 0.12s ease-out",
+        "purpose": "Export menu open/close."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "station-stack",
+        "value": "1024px"
+      },
+      {
+        "name": "bottom-nav",
+        "value": "1000px"
+      },
+      {
+        "name": "touch",
+        "value": "768px"
+      },
+      {
+        "name": "rail",
+        "value": "720px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The launch key: orange slab, cut corner, stripe tab. Run on each station.",
+      "html": "<button class=\"ds-btn-primary\">RUN</button>",
+      "css": ".ds-btn-primary { position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 8px 30px 8px 16px; font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #000; border: none; border-radius: 0; cursor: pointer; background: repeating-linear-gradient(-45deg, #000 0 3px, transparent 3px 6px) right 0 top 0 / 14px 100% no-repeat, linear-gradient(315deg, transparent 8px, #ff5a00 8px); transition: background-color 0.12s, color 0.12s; } .ds-btn-primary:hover { background: repeating-linear-gradient(-45deg, #000 0 3px, transparent 3px 6px) right 0 top 0 / 14px 100% no-repeat, linear-gradient(315deg, transparent 8px, #ff7a33 8px); } .ds-btn-primary:focus-visible { outline: 2px solid #39ff14; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined bracket for every non-launch action.",
+      "html": "<button class=\"ds-btn\">COMPARE</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #fff3e8; background: transparent; border: 1px solid rgba(255, 90, 0, 0.34); border-radius: 0; cursor: pointer; transition: background-color 0.12s, color 0.12s, border-color 0.12s; } .ds-btn:hover { border-color: #ff5a00; background: rgba(255, 90, 0, 0.07); } .ds-btn:active { background: rgba(255, 90, 0, 0.12); } .ds-btn:focus-visible { outline: 2px solid #39ff14; outline-offset: 2px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Black field, mono entry, green block caret.",
+      "html": "<input class=\"ds-input\" placeholder=\"example.com\">",
+      "css": ".ds-input { min-height: 40px; padding: 9px 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; color: #fff3e8; background: #000; border: 1px solid rgba(255, 90, 0, 0.34); border-radius: 0; caret-color: #39ff14; caret-shape: block; transition: border-color 0.12s; } .ds-input::placeholder { color: #a08f7e; } .ds-input:hover, .ds-input:focus { border-color: #ff5a00; outline: none; } .ds-input:focus-visible { outline: 2px solid #39ff14; outline-offset: 2px; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Square readout tag; takes the state colour via data-state.",
+      "html": "<span class=\"ds-badge\">SCANNING</span> <span class=\"ds-badge ds-pass\">PASS</span> <span class=\"ds-badge ds-standby\">STANDBY</span>",
+      "css": ".ds-badge { display: inline-flex; padding: 3px 8px; font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #bfae9d; border: 1px solid rgba(255, 90, 0, 0.34); } .ds-pass { color: #39ff14; border-color: #39ff14; } .ds-standby { color: #8a7d71; border-color: #8a7d71; background-image: repeating-linear-gradient(135deg, rgba(138, 125, 113, 0.28) 0 2px, transparent 2px 7px); }"
+    },
+    {
+      "name": "Nav Station Tabs",
+      "kind": "nav",
+      "refersTo": "nav-link-active",
+      "description": "Bilingual station keys; active is green with a 3px bar.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-tab ds-active\" href=\"#\"><span class=\"ds-zh\">DNS 檢測</span><span class=\"ds-en\">DNS CHECK</span></a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-zh\">測速</span><span class=\"ds-en\">SPEED TEST</span></a></nav>",
+      "css": ".ds-nav { display: flex; height: 60px; background: #000; border-bottom: 1px solid #ff5a00; } .ds-tab { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 0 16px; color: #bfae9d; text-decoration: none; border-left: 1px solid rgba(255, 90, 0, 0.16); transition: color 0.12s, background-color 0.12s; } .ds-tab:hover { color: #fff3e8; background: rgba(255, 90, 0, 0.07); } .ds-tab:focus-visible { outline: 2px solid #39ff14; outline-offset: -3px; } .ds-active { color: #39ff14; background: rgba(57, 255, 20, 0.06); } .ds-active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: #39ff14; } .ds-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; } .ds-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Frame",
+      "kind": "card",
+      "refersTo": "frame",
+      "description": "Chamfered panel with orange rule and corner tick.",
+      "html": "<section class=\"ds-frame\"><header class=\"ds-frame-head\"><span class=\"ds-zh\">判定</span><span class=\"ds-en\">VERDICT</span></header><div class=\"ds-frame-body\">Readings hang here.</div></section>",
+      "css": ".ds-frame { position: relative; color: #e6d8ca; font-family: 'Chakra Petch', sans-serif; font-size: 14px; background: linear-gradient(to bottom left, transparent calc(50% - 0.7px), rgba(255, 90, 0, 0.34) 50%, transparent calc(50% + 0.7px)) top right / 12px 12px no-repeat, linear-gradient(to bottom left, transparent calc(50% - 0.7px), rgba(255, 90, 0, 0.34) 50%, transparent calc(50% + 0.7px)) bottom left / 12px 12px no-repeat, #0b0b0b; border: 1px solid rgba(255, 90, 0, 0.34); clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); } .ds-frame::before { content: ''; position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid #ff5a00; border-left: 2px solid #ff5a00; } .ds-frame-head { display: flex; flex-direction: column; padding: 14px 20px; border-bottom: 1px solid rgba(255, 90, 0, 0.16); } .ds-frame-head .ds-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; color: #fff3e8; } .ds-frame-head .ds-en { font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #ff5a00; } .ds-frame-body { padding: 16px 20px; }"
+    },
+    {
+      "name": "Hop Card",
+      "kind": "custom",
+      "refersTo": "hop-card",
+      "description": "A path hop: bilingual key, mono reading, state tag, 2px state edge facing the track, 20px node.",
+      "html": "<div class=\"ds-hops\"><div class=\"ds-hop\" style=\"--hop-color:#ff5a00\"><div class=\"ds-hop-card\"><span class=\"ds-hop-zh\">電信業者</span><span class=\"ds-hop-en\">ISP</span><span class=\"ds-hop-reading\">ARCTEL · AS55736</span><span class=\"ds-hop-state\">SEEN</span></div><span class=\"ds-node\"></span></div><div class=\"ds-hop ds-standby\" style=\"--hop-color:#8a7d71\"><div class=\"ds-hop-card\"><span class=\"ds-hop-zh\">解析器</span><span class=\"ds-hop-en\">RESOLVER</span><span class=\"ds-hop-reading\">Not observable from this site</span><span class=\"ds-hop-state\">STANDBY</span></div><span class=\"ds-node\"></span></div></div>",
+      "css": ".ds-hops { display: flex; gap: 12px; padding: 24px; background: #000 repeating-linear-gradient(to bottom, rgba(255, 90, 0, 0.05) 0 1px, transparent 1px 3px); } .ds-hop { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 180px; } .ds-hop-card { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding: 12px 8px; text-align: center; background: #0b0b0b; border: 1px solid rgba(255, 90, 0, 0.16); border-top: 2px solid var(--hop-color); } .ds-hop-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 18px; font-weight: 700; color: #fff3e8; } .ds-hop-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; color: #ff5a00; } .ds-hop-reading { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #e6d8ca; } .ds-hop-state { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--hop-color); } .ds-node { width: 20px; height: 20px; background: var(--hop-color); border: 1px solid var(--hop-color); } .ds-standby .ds-node { background: #000 repeating-linear-gradient(135deg, rgba(138, 125, 113, 0.28) 0 2px, transparent 2px 7px); border-style: dashed; } .ds-standby .ds-hop-reading { color: #a08f7e; }"
+    },
+    {
+      "name": "Segment Readout",
+      "kind": "custom",
+      "refersTo": "readout",
+      "description": "Bilingual label over a seven-segment value and caps unit.",
+      "html": "<div class=\"ds-readout\"><span class=\"ds-rl-zh\">最快的公共解析器</span><span class=\"ds-rl-en\">FASTEST PUBLIC RESOLVER</span><span class=\"ds-rv\"><span class=\"ds-seg\">28</span><span class=\"ds-unit\">MS</span></span></div>",
+      "css": ".ds-readout { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: #0b0b0b; } .ds-rl-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 13px; font-weight: 700; color: #fff3e8; } .ds-rl-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; color: #ff5a00; } .ds-rv { display: flex; align-items: baseline; gap: 8px; } .ds-seg { font-family: 'DSEG7', 'JetBrains Mono', monospace; font-size: 52px; line-height: 1.1; color: #ff5a00; } .ds-unit { font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #bfae9d; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Crisis Command Wall",
+    "overview": "NetCheck is a challenger-anime command wall reading one connection. Every tab is a station: a schematic of the path on the left, a readout panel on the right, both hung in cut-corner frames on absolute black. Phosphor-orange rules draw the structure; state colour is the only other voice, and it is earned. Green means a reading passed or a station is active, yellow means warn, red means a failure that was actually observed. Anything the page cannot see sits in 待機 STANDBY: dim, hatched, never red.\n\nThe wall is dense but ordered. Headline readings are seven-segment digits, labels stack zh-TW over tracked roman caps, data is monospace. Motion is an instrument's: linear steps and short ease-outs, a scan cursor that ticks hop to hop and locks each hop to its state colour on arrival, never a bounce. Under reduced motion every animation collapses to an instant.\n\nIt rejects the category default, a stack of rounded result cards under a score donut. There are no rounded corners anywhere in the system and no light theme.",
+    "keyCharacteristics": [
+      "Absolute black ground, stealth panels, 1px phosphor-orange rules.",
+      "Chamfered frames with a bright corner tick; zero border radius.",
+      "One shared state scale (pass, warn, fail, seen, scan, standby) on every tab.",
+      "Bilingual station labels: zh-TW over EN caps.",
+      "Seven-segment digits for headline readings; mono for raw data.",
+      "Two themes only: Wall and High Contrast."
+    ],
+    "rules": [
+      {
+        "name": "The Earned Red Rule",
+        "body": "Red appears only on a failure that was observed. Unknown is standby grey with a hatch, never red, never yellow.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Ink Rule",
+        "body": "Structure is orange. Green, yellow and red are reserved for state and focus; no decorative use.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stacked Station Label Rule",
+        "body": "Titles, nav tabs, frame titles, hop and route keys and readout labels always show both languages, zh-TW set large over tracked EN caps, built by `setBilingual` into `.bi-zh` / `.bi-en`. Only the active language is exposed to assistive tech.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Locale Rule",
+        "body": "Badges, state lamps, status tags and buttons show only the active locale via `t()` and re-render on locale change. CSS-generated text switches with `:lang(zh-TW)`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Wall Rule",
+        "body": "Frames sit flat on the wall. Shadows exist only for things that float above it.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** route every state through `[data-state]` and `--hop-color`; the same six states on every tab.",
+      "**Do** mark anything unobservable as standby: grey, hatched, dashed, with `---` placeholders rather than zeros.",
+      "**Do** stack zh-TW over EN caps on titles, tabs, frame titles, hop/route keys and readout labels via `setBilingual`, and show badges, lamps and buttons in the active locale only via `t()`.",
+      "**Do** write zh-TW copy with 您, without em dashes, using 解析器, 探測, 公共解析器, 觀察 and 本站.",
+      "**Do** keep motion to linear steps and short ease-outs, and let reduced motion collapse it.",
+      "**Do** re-subset \"Noto Sans TC Display\" when a tab title gains a new character.",
+      "**Do** keep High Contrast working for every new component; it is one of only two themes."
+    ],
+    "donts": [
+      "**Don't** use red for anything but an observed failure, and don't use the red hazard band outside a fail verdict (the black stripe tab on the primary button is a separate device).",
+      "**Don't** round a corner. Radius is 0; frames are cut, not curved.",
+      "**Don't** add a third theme or a light mode.",
+      "**Don't** give a component its own state palette.",
+      "**Don't** use bounce or overshoot easing.",
+      "**Don't** load Chakra Petch weights other than 500 and 700; other weights synthesize."
+    ]
+  }
+}

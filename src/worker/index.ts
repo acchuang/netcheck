@@ -803,8 +803,12 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       };
     });
 
-    const present = checks.filter((c) => c.present).length;
-    const total = checks.length;
+    // X-XSS-Protection is reported but not graded: browsers removed the filter,
+    // and the current advice is to send 0 or leave it out, so its absence is
+    // not a gap.
+    const graded = checks.filter((c) => c.key !== "x-xss-protection");
+    const present = graded.filter((c) => c.present).length;
+    const total = graded.length;
     const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
 
     return Response.json({

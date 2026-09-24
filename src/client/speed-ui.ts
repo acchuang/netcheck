@@ -1,31 +1,30 @@
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test.ts";
 import { t, onLocaleChange } from "./i18n.ts";
-import { escapeHtml, animateNumber, pulseValue, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { escapeHtml, animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { enableSaveButton } from "./snapshots.ts";
 
 function setActiveGauge(phase: string): void {
-  document.querySelectorAll(".speed-gauge").forEach((g, i) => {
-    const phases = ["download", "upload", "latency", "jitter"];
-    g.classList.toggle("active", phases[i] === phase);
+  document.querySelectorAll<HTMLElement>(".speed-readouts [data-metric]").forEach((r) => {
+    r.classList.toggle("active", r.dataset.metric === phase);
   });
+  // The route track runs while bytes are moving, and only then.
+  const route = document.getElementById("speed-route");
+  if (route) route.toggleAttribute("data-running", phase === "download" || phase === "upload");
+}
+
+// The route is only drawn as known once the server has a place and a distance;
+// until then it stays hatched, and the distance reads as dashes, not a number.
+function setRoute(serverText: string, km: number | null): void {
+  document.getElementById("speed-server-value")!.textContent = serverText;
+  document.getElementById("speed-server-dist")!.textContent = km === null ? "--- km" : `${km.toLocaleString()} km`;
+  document.getElementById("speed-route")!.dataset.state = km === null ? "standby" : "seen";
 }
 
 function updateServerBadge(colo: string, userLat?: number | null, userLon?: number | null): void {
   const pop = CF_POPS[colo];
   const cityName = pop ? pop[0] : colo;
-  const badge = document.getElementById("speed-server-badge")!;
-  badge.classList.add("active");
-
-  document.getElementById("speed-server-value")!.textContent = `${cityName} (${colo})`;
-
-  if (pop && userLat != null && userLon != null) {
-    const [, popLat, popLon] = pop;
-    const km = Math.round(haversineKm(userLat, userLon, popLat, popLon));
-    const detail = document.getElementById("speed-server-detail")!;
-    detail.classList.remove("hidden");
-    document.getElementById("speed-server-dist")!.textContent = `${km.toLocaleString()} km`;
-    document.getElementById("speed-server-colo")!.textContent = `${cityName}`;
-  }
+  const km = pop && userLat != null && userLon != null ? Math.round(haversineKm(userLat, userLon, pop[1], pop[2])) : null;
+  setRoute(`${cityName} (${colo})`, km);
 }
 
 // Speed test
@@ -90,9 +89,7 @@ export async function initSpeedTest(): Promise<void> {
 
   function updateServerValueLabel(): void {
     if (!sel) return;
-    const v = document.getElementById("speed-server-value")!;
-    v.textContent = serverLabel(sel.value);
-    document.getElementById("speed-server-detail")!.classList.add("hidden");
+    setRoute(serverLabel(sel.value), null);
     customRow?.classList.toggle("hidden", sel.value !== "custom");
 
     // show the probed location right away if we already know it for the selected server
@@ -159,16 +156,16 @@ function drawSpeedGraph(): void {
   if (allVals.length === 0) return;
   const maxVal = Math.max(...allVals, 1) * 1.15;
 
-  // ponytail: read theme CSS vars so grid/labels are visible in light mode too
+  // Read the wall's tokens so the contrast theme repaints the graph too.
   const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const gridColor = cssVar("--border-standard") || "rgba(128,128,128,0.1)";
-  const labelColor = cssVar("--text-tertiary") || "rgba(128,128,128,0.6)";
+  const gridColor = cssVar("--border-subtle");
+  const labelColor = cssVar("--text-tertiary");
 
   // Grid lines
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
   const gridLines = 4;
-  ctx.font = "11px Inter, sans-serif";
+  ctx.font = `11px ${cssVar("--font-mono")}`;
   ctx.fillStyle = labelColor;
   ctx.textAlign = "right";
   for (let i = 0; i <= gridLines; i++) {
@@ -186,27 +183,23 @@ function drawSpeedGraph(): void {
     const px = (p: { time: number }) => pad.left + (p.time / maxTime) * plotW;
     const py = (p: { value: number }) => pad.top + plotH - (p.value / maxVal) * plotH;
 
+    // A plotter trace: hold each reading until the next one lands, so a
+    // pause between steps shows as a flat line, never an invented slope.
     const line = new Path2D();
-    points.forEach((p, i) => (i === 0 ? line.moveTo(px(p), py(p)) : line.lineTo(px(p), py(p))));
-
-    const area = new Path2D(line);
-    area.lineTo(px(points[points.length - 1]), pad.top + plotH);
-    area.lineTo(px(points[0]), pad.top + plotH);
-    area.closePath();
-
-    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    grad.addColorStop(0, color.replace("1)", "0.15)"));
-    grad.addColorStop(1, color.replace("1)", "0)"));
-    ctx.fillStyle = grad;
-    ctx.fill(area);
-
+    points.forEach((p, i) => {
+      if (i === 0) line.moveTo(px(p), py(p));
+      else {
+        line.lineTo(px(p), py(points[i - 1]));
+        line.lineTo(px(p), py(p));
+      }
+    });
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke(line);
   }
 
-  drawLine(speedGraphData.download, "rgba(94, 106, 210, 1)");
-  drawLine(speedGraphData.upload, "rgba(52, 211, 153, 1)");
+  drawLine(speedGraphData.download, cssVar("--accent"));
+  drawLine(speedGraphData.upload, cssVar("--text-primary"));
 
   ctx.fillStyle = labelColor;
   ctx.textAlign = "center";
@@ -244,16 +237,14 @@ async function runSpeedTest(): Promise<void> {
 
   speedGraphData.download = [];
   speedGraphData.upload = [];
-  document.querySelector(".speed-graph-card")?.removeAttribute("hidden");
   drawSpeedGraph();
 
-  document.getElementById("speed-grade")!.hidden = false;
   (["download", "upload", "latency", "jitter", "bufferbloat"] as const).forEach((k) => setGauge(`speed-${k}`, null));
   document.getElementById("speed-bufferbloat")!.style.color = "";
+  document.getElementById("speed-bufferbloat-bar")!.style.background = "";
   document.getElementById("speed-bufferbloat-unit")!.textContent = t("speed.grade");
   (document.getElementById("speed-bufferbloat-bar") as HTMLElement).style.width = "0%";
-  document.getElementById("speed-server-value")!.textContent =
-    getServer(serverId).locatable === false ? serverLabel(serverId) : t("speed.detecting");
+  setRoute(getServer(serverId).locatable === false ? serverLabel(serverId) : t("speed.detecting"), null);
   (["download", "upload", "latency", "jitter"] as const).forEach((k) => {
     (document.getElementById(`speed-${k}-bar`) as HTMLElement).style.width = "0%";
   });
@@ -274,28 +265,30 @@ async function runSpeedTest(): Promise<void> {
         if (data.colo) updateServerBadge(data.colo, data.userLat, data.userLon);
         if (data.latency !== null) {
           const el = document.getElementById("speed-latency")!;
+          el.classList.remove("placeholder");
           animateNumber(el, prevValues.latency, data.latency, 200, (v) => String(Math.round(v)));
-          pulseValue(el);
           prevValues.latency = data.latency;
         }
         if (data.jitter !== null) {
           const el = document.getElementById("speed-jitter")!;
+          el.classList.remove("placeholder");
           animateNumber(el, prevValues.jitter, data.jitter, 200, (v) => String(Math.round(v)));
-          pulseValue(el);
           prevValues.jitter = data.jitter;
         }
-        if (data.download !== null) {
+        // results.download stays set through the upload phase; plotting it
+        // there drew the download trace on across a phase it had left.
+        if (phase === "download" && data.download !== null) {
           const el = document.getElementById("speed-download")!;
+          el.classList.remove("placeholder");
           animateNumber(el, prevValues.download, data.download, 250, (v) => v.toFixed(1));
-          pulseValue(el);
           prevValues.download = data.download;
           speedGraphData.download.push({ time: (performance.now() - startTime) / 1000, value: data.download });
           drawSpeedGraph();
         }
-        if (data.upload !== null) {
+        if (phase === "upload" && data.upload !== null) {
           const el = document.getElementById("speed-upload")!;
+          el.classList.remove("placeholder");
           animateNumber(el, prevValues.upload, data.upload, 250, (v) => v.toFixed(1));
-          pulseValue(el);
           prevValues.upload = data.upload;
           speedGraphData.upload.push({ time: (performance.now() - startTime) / 1000, value: data.upload });
           drawSpeedGraph();
@@ -336,11 +329,10 @@ async function runSpeedTest(): Promise<void> {
   btn.textContent = t("speed.runAgain");
 }
 
-// A bare dash at 32px reads as a measurement. Dim it so an unmeasured gauge
-// looks unmeasured.
+// Dashes, dimmed: a zero or a bright dash would read as a measurement.
 function setGauge(id: string, text: string | null): void {
   const el = document.getElementById(id)!;
-  el.textContent = text ?? "—";
+  el.textContent = text ?? "---";
   el.classList.toggle("placeholder", text === null);
 }
 
@@ -351,21 +343,17 @@ function renderSpeedResults(results: SpeedTestResults): void {
   setGauge("speed-jitter", results.jitter !== null ? String(results.jitter) : null);
 
   const bbGrade = SpeedTest.getBufferbloatGrade(results.bufferbloatIncrease);
-  const gradeColors: Record<string, string> = { "A+": "var(--emerald)", A: "var(--emerald)", B: "var(--grade-mid)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
+  const gradeColors: Record<string, string> = { "A+": "var(--green)", A: "var(--green)", B: "var(--grade-mid)", C: "var(--amber)", D: "var(--red)", F: "var(--red)" };
   const bbEl = document.getElementById("speed-bufferbloat")!;
-  bbEl.textContent = bbGrade.grade;
+  bbEl.textContent = results.bufferbloatIncrease === null ? "---" : bbGrade.grade;
   bbEl.style.color = gradeColors[bbGrade.grade] || "";
   bbEl.classList.toggle("placeholder", results.bufferbloatIncrease === null);
   document.getElementById("speed-bufferbloat-unit")!.textContent =
     results.bufferbloatIncrease !== null ? `+${results.bufferbloatIncrease}ms · ${t(bbGrade.labelKey)}` : t("speed.grade");
   const bbBar = document.getElementById("speed-bufferbloat-bar") as HTMLElement;
   bbBar.style.width = results.bufferbloatIncrease !== null ? "100%" : "0%";
-  bbBar.style.background = gradeColors[bbGrade.grade] || "var(--brand)";
+  bbBar.style.background = gradeColors[bbGrade.grade] || "";
 
-  // The verdict bar above carries the grade and the headline numbers now, so the
-  // status row drops back to being a control strip: state, the one metric the
-  // verdict has no room for, and the buttons.
-  document.getElementById("speed-grade")!.hidden = true;
   document.getElementById("speed-grade-label")!.textContent = t("speed.complete");
   document.getElementById("speed-phase")!.textContent =
     results.failedProbes !== null ? `${results.failedProbes}% ${t("speed.loss")}` : t("speed.compareHint");

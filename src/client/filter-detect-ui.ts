@@ -4,14 +4,9 @@ import { t } from "./i18n.ts";
 
 function renderFilterListSkeletons(container: HTMLElement, count: number): void {
   container.innerHTML = Array.from({ length: count }, () =>
-    `<div class="filter-list-item" style="opacity:0.6">
-      <div class="skeleton skeleton-circle" style="width:8px;height:8px"></div>
-      <div class="filter-list-info">
-        <div class="skeleton skeleton-text" style="width:70%;margin-bottom:4px"></div>
-        <div class="skeleton skeleton-text-short" style="height:11px;width:50%"></div>
-      </div>
-      <div class="skeleton skeleton-value" style="width:48px;height:16px"></div>
-    </div>`
+    `<li class="filter-list-item" data-state="scan">
+      <span class="skeleton skeleton-text"></span>
+    </li>`
   ).join("");
 }
 
@@ -45,26 +40,26 @@ export function renderFilterLists(): void {
 
   grid.innerHTML = FilterListDetector.results
     .map((list) => {
-      let dotClass: string, badgeClass: string, badgeText: string;
+      // Acceptable Ads inverts the sense: detecting it means ads are let through.
+      // A list that isn't found gets no state at all: absent, not failed.
+      let state: string, badgeText: string;
       if (list.special === "acceptableAds") {
-        dotClass = list.detected ? "warning" : "active";
-        badgeClass = list.detected ? "warning" : "active";
+        state = list.detected ? "warn" : "pass";
         badgeText = list.detected ? t("filter.enabled") : t("filter.disabled");
       } else {
-        dotClass = list.detected ? "active" : "inactive";
-        badgeClass = list.detected ? "active" : "inactive";
+        state = list.detected ? "pass" : "off";
         badgeText = list.detected ? t("filter.found") : t("filter.notFound");
       }
 
       return `
-      <div class="filter-list-item stagger-item ${list.detected && list.special !== "acceptableAds" ? "detected" : "not-detected"}">
-        <div class="filter-list-dot ${dotClass}"></div>
-        <div class="filter-list-info">
-          <div class="filter-list-name">${list.name}</div>
-          <div class="filter-list-desc">${list.desc}</div>
-        </div>
-        <span class="filter-list-badge ${badgeClass}">${badgeText}</span>
-      </div>`;
+      <li class="filter-list-item" data-state="${state}">
+        <span class="test-dot" aria-hidden="true"></span>
+        <span class="filter-list-info">
+          <span class="filter-list-name">${list.name}</span>
+          <span class="filter-list-desc">${list.desc}</span>
+        </span>
+        <span class="filter-list-badge">${badgeText}</span>
+      </li>`;
     })
     .join("");
 }

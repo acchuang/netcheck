@@ -1,6 +1,7 @@
 import { t, onLocaleChange } from "./i18n.ts";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
+import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire.ts";
 import {
   dohVerdict, forwardedClientSubnet, encryptedDnsOperator, evaluateWebRtc,
@@ -543,7 +544,18 @@ onLocaleChange(() => {
 });
 
 export async function runDnsChecks(): Promise<void> {
+  const runBtn = document.getElementById("dns-run-btn") as HTMLButtonElement | null;
+  if (runBtn) runBtn.disabled = true;
+  try {
+    await runStation();
+  } finally {
+    if (runBtn) runBtn.disabled = false;
+  }
+}
+
+async function runStation(): Promise<void> {
   hideVerdict("dns-verdict");
+  resetStation();
 
   const ipv6Promise = DnsCheck.detectIpv6();
   ipv6Promise.then((v6) => {
@@ -567,11 +579,16 @@ export async function runDnsChecks(): Promise<void> {
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
   }
+  lockIpHops(ipData);
 
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
   lastResolvers = resolvers;
   renderResolvers(resolvers, lastProbeResult);
   renderEcs(resolvers);
+  const answered = resolvers.filter((r) => r.reachable && r.latency !== null);
+  setFastest(answered.length
+    ? answered.reduce((a, b) => (a.latency! <= b.latency! ? a : b)) as { name: string; latency: number }
+    : null);
 
   // Both the encrypted-DNS verdict and the WebRTC comparison are about the
   // visitor's own path, so they wait for the probe and the v6 address rather
@@ -584,8 +601,48 @@ export async function runDnsChecks(): Promise<void> {
   });
   lastSecurity = securityChecks;
   renderSecurity(securityChecks);
+  lockPathHops(securityChecks, probe);
 
   renderDnsSuggestions({ securityChecks, reachable: resolvers.filter((r) => r.reachable) });
+}
+
+// Only what this page can actually see gets a reading. Everything else is
+// standby, never a guess and never red.
+function lockIpHops(ip: IpData): void {
+  const none = () => t("station.noReading");
+  lockHop("you", ip.ip ? "seen" : "standby", ip.ip ? () => ip.ip! : none);
+  lockHop("isp", ip.asOrganization ? "seen" : "standby",
+    ip.asOrganization ? () => `${ip.asOrganization} · AS${ip.asn}` : none);
+  const pop = ip.colo ? CF_POPS[ip.colo] : null;
+  lockHop("edge", ip.colo ? "seen" : "standby",
+    ip.colo ? () => [pop ? `${pop[0]} (${ip.colo})` : ip.colo, ip.httpProtocol].filter(Boolean).join(" · ") : none);
+}
+
+function checkState(status: SecurityStatus): HopState {
+  return status === "info" ? "standby" : status;
+}
+
+function lockPathHops(checks: SecurityCheck[], probe: ProbeResult | null): void {
+  // A web page cannot see the router. WebRTC sometimes gives away a LAN
+  // address behind it, which is a fact about the path, not a verdict.
+  const lan = checks.find((c) => c.id === "lan");
+  lockHop("router", lan ? "seen" : "standby", lan ? () => lan.detailArg ?? "" : () => t("station.routerStandby"));
+
+  // Without the self-hosted probe there is no way to see the visitor's resolver,
+  // which is the normal case on the public site.
+  const doh = checks.find((c) => c.id === "doh");
+  if (!probe) {
+    lockHop("resolver", "standby", () => t("station.resolverStandby"));
+  } else if (probe.unreachable || probe.resolvers.length === 0) {
+    lockHop("resolver", "standby", () => t(probe.unreachable ? "station.resolverUnreachable" : "station.resolverNone"));
+  } else {
+    const ips = probe.resolvers.map((r) => r.ip).join(", ");
+    lockHop("resolver", doh ? checkState(doh.status) : "seen", () => ips);
+  }
+
+  setConditions(checks
+    .filter((c) => c.id !== "lan")
+    .map((c) => ({ label: () => t(`dns.check.${c.id}`), state: checkState(c.status) })));
 }
 
 function renderIpv6(ip: string | null): void {
@@ -817,6 +874,15 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
   } else {
     subtitle.textContent = t("dns.suggestIssues", labels.join(", "));
     renderVerdict("dns-verdict", verdictLevel(labels.length), issueHeadline(labels), labels.join(" · "));
+    // The verdict names the problem; put the one fix next to it rather than
+    // leaving it in the recommendations below the fold.
+    if (topFix) {
+      const fix = document.createElement("a");
+      fix.className = "verdict-fix";
+      fix.href = "#dns-suggestions-section";
+      fix.innerHTML = `<span class="suggestion-badge">${t("dns.topFix")}</span>${escapeHtml(t(topFix.name + ".name"))} →`;
+      document.querySelector("#dns-verdict .verdict-body")?.appendChild(fix);
+    }
   }
 
   grid.innerHTML = suggestions
