@@ -112,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initAdblockHistory();
   initAdblockUI();
 
-  initQuickCheck();
   initDnsWorkstation();
 
   // Landing straight on #adblock is a request to run it; activating the tab
@@ -266,94 +265,3 @@ function initDnsWorkstation(): void {
   });
 }
 
-function initQuickCheck(): void {
-  const quickBtn = document.getElementById("quick-check-btn");
-  if (!quickBtn) return;
-
-  // Jump to tabs on card click
-  document.getElementById("qm-dns")?.addEventListener("click", () => {
-    document.getElementById("tab-dns")?.click();
-    document.getElementById("dns-security-title")?.scrollIntoView({ behavior: "smooth" });
-  });
-  document.getElementById("qm-speed")?.addEventListener("click", () => {
-    document.getElementById("tab-speed")?.click();
-  });
-  document.getElementById("qm-adblock")?.addEventListener("click", () => {
-    document.getElementById("tab-adblock")?.click();
-  });
-
-  quickBtn.addEventListener("click", async () => {
-    const btnText = document.getElementById("quick-check-btn-text")!;
-    btnText.textContent = t("quick.running") || "Running diagnostic...";
-    (quickBtn as HTMLButtonElement).disabled = true;
-
-    const dnsStatus = document.getElementById("qm-dns-status");
-    const dnsVal = document.getElementById("qm-dns-val");
-    const speedStatus = document.getElementById("qm-speed-status");
-    const speedVal = document.getElementById("qm-speed-val");
-    const adblockStatus = document.getElementById("qm-adblock-status");
-    const adblockVal = document.getElementById("qm-adblock-val");
-
-    if (dnsStatus) { dnsStatus.className = "status-badge"; dnsStatus.textContent = "testing..."; }
-    if (speedStatus) { speedStatus.className = "status-badge"; speedStatus.textContent = "testing..."; }
-    if (adblockStatus) { adblockStatus.className = "status-badge"; adblockStatus.textContent = "testing..."; }
-
-    // 1. Run DNS checks in background
-    runDnsChecks();
-
-    // 2. Run adblock test
-    startAdBlock();
-
-    // 3. Measure quick edge ping
-    try {
-      const pingStart = performance.now();
-      await fetch("https://speed.cloudflare.com/__down?bytes=0", { cache: "no-store", signal: AbortSignal.timeout(3000) });
-      const pingMs = Math.round(performance.now() - pingStart);
-      if (speedStatus && speedVal) {
-        speedStatus.className = pingMs < 60 ? "status-badge done" : "status-badge warn";
-        speedStatus.textContent = `${pingMs}ms`;
-        speedVal.textContent = pingMs < 60 ? "Fast connection" : "Moderate latency";
-      }
-    } catch {
-      if (speedStatus && speedVal) {
-        speedStatus.className = "status-badge";
-        speedStatus.textContent = "checked";
-        speedVal.textContent = "Cloudflare Edge";
-      }
-    }
-
-    // Monitor DNS completion
-    const checkDnsStatus = setInterval(() => {
-      const secBadge = document.getElementById("dns-security-status");
-      if (secBadge && secBadge.textContent !== "pending..." && secBadge.textContent !== "detecting...") {
-        clearInterval(checkDnsStatus);
-        if (dnsStatus && dnsVal) {
-          const isDone = secBadge.classList.contains("done");
-          dnsStatus.className = isDone ? "status-badge done" : "status-badge warn";
-          dnsStatus.textContent = secBadge.textContent || "done";
-          dnsVal.textContent = isDone ? "DNSSEC · No Leaks" : "Review Issues";
-        }
-      }
-    }, 500);
-
-    // Monitor Adblock completion
-    const checkAbStatus = setInterval(() => {
-      const scoreNum = document.getElementById("score-number");
-      if (scoreNum && scoreNum.textContent && scoreNum.textContent !== "—") {
-        clearInterval(checkAbStatus);
-        const score = parseInt(scoreNum.textContent, 10) || 0;
-        if (adblockStatus && adblockVal) {
-          adblockStatus.className = score >= 80 ? "status-badge done" : score >= 50 ? "status-badge warn" : "status-badge error";
-          adblockStatus.textContent = `${score}/100`;
-          adblockVal.textContent = score >= 80 ? "Strong Protection" : score >= 50 ? "Moderate Protection" : "Unprotected";
-        }
-      }
-    }, 500);
-
-    // Re-enable button after 5s
-    setTimeout(() => {
-      btnText.textContent = t("quick.btn") || "Re-run Audit";
-      (quickBtn as HTMLButtonElement).disabled = false;
-    }, 5000);
-  });
-}

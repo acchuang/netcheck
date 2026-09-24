@@ -116,43 +116,6 @@
 
       <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
 
-      <!-- Quick Health Check Banner -->
-      <div class="quick-check-banner" id="quick-check-banner">
-        <div class="quick-check-header">
-          <div class="quick-check-info">
-            <h2 class="quick-check-title" id="quick-check-title">Quick Health Check</h2>
-            <p class="quick-check-subtitle" id="quick-check-subtitle">10-second automated diagnostic across DNS security, connection speed, and adblock protection</p>
-          </div>
-          <button id="quick-check-btn" class="btn btn-primary">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span id="quick-check-btn-text">Run 10-Second Complete Audit</span>
-          </button>
-        </div>
-        <div class="quick-check-metrics" id="quick-check-metrics">
-          <div class="quick-metric-card" id="qm-dns" role="button" tabindex="0" title="Click to view DNS Security details">
-            <div class="qm-header">
-              <span class="qm-label" id="qm-dns-label">DNS Privacy</span>
-              <span class="status-badge" id="qm-dns-status">pending</span>
-            </div>
-            <div class="qm-value" id="qm-dns-val">DNSSEC · Leak Guard</div>
-          </div>
-          <div class="quick-metric-card" id="qm-speed" role="button" tabindex="0" title="Click to view Speed Test">
-            <div class="qm-header">
-              <span class="qm-label" id="qm-speed-label">Speed & Ping</span>
-              <span class="status-badge" id="qm-speed-status">ready</span>
-            </div>
-            <div class="qm-value" id="qm-speed-val">Latency & Bandwidth</div>
-          </div>
-          <div class="quick-metric-card" id="qm-adblock" role="button" tabindex="0" title="Click to view Ad Block Test">
-            <div class="qm-header">
-              <span class="qm-label" id="qm-adblock-label">Ad & Tracker Block</span>
-              <span class="status-badge" id="qm-adblock-status">ready</span>
-            </div>
-            <div class="qm-value" id="qm-adblock-val">Tracker Defense</div>
-          </div>
-        </div>
-      </div>
-
       <div class="cards-grid">
         <!-- IP Info Card -->
         <div class="card">
@@ -685,7 +648,7 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-text" id="footer-text">NetCheck - DNS & Ad Block diagnostics. All tests run locally in your browser.</p>
+    <p class="footer-text" id="footer-text">NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.</p>
     <a href="https://github.com/acchuang/netcheck" target="_blank" rel="noopener noreferrer" class="footer-link">
       <svg class="footer-gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       GitHub

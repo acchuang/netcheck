@@ -1052,80 +1052,6 @@ html::before {
   grid-column: 1 / -1;
 }
 
-/* Quick Health Check Banner */
-.quick-check-banner {
-  background: var(--card-bg);
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--card-inset);
-  animation: slide-up 0.3s ease-out both;
-}
-
-.quick-check-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.quick-check-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.quick-check-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 4px 0 0;
-}
-
-.quick-check-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.quick-metric-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.15s;
-}
-
-.quick-metric-card:hover {
-  border-color: var(--hover-border);
-  background: var(--bg-hover);
-  transform: translateY(-1px);
-}
-
-.qm-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.qm-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.qm-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-top: 6px;
-}
-
 /* DNS Diagnostic Workstation */
 .dns-workstation-card {
   margin-top: 24px;
@@ -2703,10 +2629,6 @@ select option {
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
 
-  .quick-check-metrics {
-    grid-template-columns: 1fr;
-  }
-
   .workstation-tabs {
     width: 100%;
   }
@@ -2880,7 +2802,7 @@ select option {
 
 /* Print styles */
 @media print {
-  .nav, .footer, .btn, .export-dropdown, .theme-dropdown, .suggestions-section, .speed-server-badge, .workstation-tabs, .quick-check-banner {
+  .nav, .footer, .btn, .export-dropdown, .theme-dropdown, .suggestions-section, .speed-server-badge, .workstation-tabs {
     display: none !important;
   }
 

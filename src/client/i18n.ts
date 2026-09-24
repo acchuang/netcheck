@@ -77,13 +77,6 @@ const en = {
   "dns.tabCompare": "Compare Resolvers",
   "dns.tabHealth": "Domain Email Health",
   "dns.copyJson": "Copy JSON",
-  "quick.title": "Quick Health Check",
-  "quick.subtitle": "10-second automated diagnostic across DNS security, connection speed, and adblock protection",
-  "quick.btn": "Run 10-Second Complete Audit",
-  "quick.running": "Running diagnostic...",
-  "quick.dns": "DNS Privacy",
-  "quick.speed": "Speed & Ping",
-  "quick.adblock": "Ad & Tracker Block",
   "speed.cancelBtn": "Cancel Test",
   "speed.cancelled": "Speed test cancelled",
   "history.confirmClear": "Confirm clear?",
@@ -546,7 +539,7 @@ const en = {
   "verdict.headersFail": "Weak header configuration",
 
   // Footer
-  "footer.text": "NetCheck - DNS & Ad Block diagnostics. All tests run locally in your browser.",
+  "footer.text": "NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
@@ -621,13 +614,6 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.tabCompare": "比較解析器",
   "dns.tabHealth": "網域郵件健康度",
   "dns.copyJson": "複製 JSON",
-  "quick.title": "快速健康檢測",
-  "quick.subtitle": "10 秒全自動檢測：涵蓋 DNS 安全、連線測速與廣告攔截",
-  "quick.btn": "執行 10 秒完整健檢",
-  "quick.running": "正在檢測中...",
-  "quick.dns": "DNS 隱私安全",
-  "quick.speed": "連線速度與延遲",
-  "quick.adblock": "廣告與追蹤保護",
   "speed.cancelBtn": "取消測試",
   "speed.cancelled": "測速已取消",
   "history.confirmClear": "確認清除？",
@@ -1085,7 +1071,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "verdict.headersWarn": "部分防護缺失",
   "verdict.headersFail": "標頭設定薄弱",
 
-  "footer.text": "NetCheck - DNS 與廣告攔截診斷。所有測試在瀏覽器本地執行。",
+  "footer.text": "NetCheck - DNS 與廣告攔截診斷。測試在瀏覽器中執行，少數例外請見「關於」。",
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
