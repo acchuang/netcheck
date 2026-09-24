@@ -82,7 +82,7 @@ function renderHeadersResults(data: HeadersResponse): void {
   if (data.server) serverParts.push(`Server: ${data.server}`);
   if (data.poweredBy) serverParts.push(`Powered by: ${data.poweredBy}`);
   serverParts.push(`HTTP ${data.statusCode}`);
-  document.getElementById("headers-server-info")!.textContent = serverParts.join(" · ");
+  document.getElementById("headers-server-info")!.textContent = serverParts.join("\u00a0· ");
 
   const { present, total } = data.score;
   const missing = total - present;

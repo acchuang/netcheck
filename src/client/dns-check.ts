@@ -615,7 +615,7 @@ function lockIpHops(ip: IpData): void {
     ip.asOrganization ? () => `${ip.asOrganization} · AS${ip.asn}` : none);
   const pop = ip.colo ? CF_POPS[ip.colo] : null;
   lockHop("edge", ip.colo ? "seen" : "standby",
-    ip.colo ? () => [pop ? `${pop[0]} (${ip.colo})` : ip.colo, ip.httpProtocol].filter(Boolean).join(" · ") : none);
+    ip.colo ? () => [pop ? `${pop[0]} (${ip.colo})` : ip.colo, ip.httpProtocol].filter(Boolean).join("\u00a0· ") : none);
 }
 
 function checkState(status: SecurityStatus): HopState {
@@ -873,7 +873,7 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
     );
   } else {
     subtitle.textContent = t("dns.suggestIssues", labels.join(", "));
-    renderVerdict("dns-verdict", verdictLevel(labels.length), issueHeadline(labels), labels.join(" · "));
+    renderVerdict("dns-verdict", verdictLevel(labels.length), issueHeadline(labels), labels.join("\u00a0· "));
     // The verdict names the problem; put the one fix next to it rather than
     // leaving it in the recommendations below the fold.
     if (topFix) {
