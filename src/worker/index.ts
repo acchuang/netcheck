@@ -70,7 +70,7 @@ export default {
 
     if (url.pathname === "/api/speedtest/ping") {
       const cf = getCf(request);
-      const colo = cf.colo || "unknown";
+      const colo = cf.colo || "";
       return new Response("pong", {
         headers: {
           ...corsHeaders(),
@@ -137,14 +137,16 @@ function getCf(request: Request): CfProperties {
 }
 
 function handleIpCheck(request: Request): Response {
-  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
-  const country = request.headers.get("cf-ipcountry") || "unknown";
+  // Missing values go out as null, not a placeholder string: the client reads
+  // any truthy value as a real reading.
+  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
+  const country = request.headers.get("cf-ipcountry") || null;
   const cf = getCf(request);
 
   return Response.json({
     ip,
     country,
-    colo: cf.colo || "unknown",
+    colo: cf.colo || null,
     asn: cf.asn || null,
     asOrganization: cf.asOrganization || null,
     city: cf.city || null,
