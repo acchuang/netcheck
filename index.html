@@ -117,7 +117,7 @@
             <span class="status-badge" id="dns-scan-status" aria-live="polite"></span>
           </div>
           <ol class="path" id="dns-path" aria-labelledby="dns-path-title">
-            <li class="hop" data-hop="you" data-state="pending">
+            <li class="hop" data-hop="you" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-you-key">You</span>
@@ -125,7 +125,7 @@
                 <span class="hop-state"></span>
               </div>
             </li>
-            <li class="hop" data-hop="router" data-state="pending">
+            <li class="hop" data-hop="router" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-router-key">Router</span>
@@ -133,7 +133,7 @@
                 <span class="hop-state"></span>
               </div>
             </li>
-            <li class="hop" data-hop="isp" data-state="pending">
+            <li class="hop" data-hop="isp" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-isp-key">ISP</span>
@@ -141,7 +141,7 @@
                 <span class="hop-state"></span>
               </div>
             </li>
-            <li class="hop" data-hop="resolver" data-state="pending">
+            <li class="hop" data-hop="resolver" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-resolver-key">Resolver</span>
@@ -149,7 +149,7 @@
                 <span class="hop-state"></span>
               </div>
             </li>
-            <li class="hop" data-hop="edge" data-state="pending">
+            <li class="hop" data-hop="edge" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-edge-key">Edge</span>
@@ -395,7 +395,7 @@
             <input type="url" id="speed-custom-url" class="input" placeholder="https://your-worker.example.com" aria-label="Custom speed test server URL" />
             <p class="info-muted" id="speed-custom-url-hint">Must implement /api/speedtest/{ping,down,up}</p>
           </div>
-          <div class="speed-graph-card">
+          <div class="speed-graph-card" id="speed-graph-card">
             <div class="speed-graph-header">
               <h3 class="readout-label" id="speed-graph-title-text">Speed Over Time</h3>
               <div class="speed-graph-legend">
@@ -413,7 +413,7 @@
           </div>
           <div class="speed-controls">
             <button type="button" class="btn btn-primary btn-run" id="speed-start-btn">Run Speed Test</button>
-            <button type="button" class="btn btn-danger btn-run hidden" id="speed-cancel-btn">Cancel Test</button>
+            <button type="button" class="btn btn-run hidden" id="speed-cancel-btn">Cancel Test</button>
             <p class="speed-grade-label" id="speed-grade-label" aria-live="polite">Waiting to start</p>
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>

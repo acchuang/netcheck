@@ -85,7 +85,7 @@ export function resetStation(): void {
   const path = document.getElementById("dns-path");
   if (path) path.dataset.scan = "running";
   document.querySelectorAll<HTMLElement>(".hop").forEach((hop) => {
-    hop.dataset.state = "pending";
+    hop.dataset.state = "standby";
     hop.querySelector<HTMLElement>(".hop-reading")!.textContent = "—";
     hop.querySelector<HTMLElement>(".hop-state")!.textContent = "";
   });

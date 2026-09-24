@@ -1274,6 +1274,7 @@ function applyStaticTranslations(): void {
   sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
   sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
   sa("speed-jitter-label", "speed.tip.jitter", "data-tooltip");
+  sa("speed-graph-card", "state.standby", "data-standby");
   sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
   s("speed-dl-legend", "speed.download");
   s("speed-ul-legend", "speed.upload");

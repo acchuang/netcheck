@@ -126,7 +126,6 @@
   --emerald: #39ff14;
   --amber: #ffe600;
   --red: #ff003c;
-  --teal: #ffb27f;
   --grade-mid: #b4f59a;
   --standby: #8a7d71;
 
@@ -141,16 +140,11 @@
   --bg-hover: var(--hover-bg);
 
   --surface-1: #0b0b0b;
-  --surface-2: #121212;
-  --surface-3: #1a1a1a;
   --card-bg: var(--surface-1);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.75);
 
   --hatch: repeating-linear-gradient(135deg, rgba(138, 125, 113, 0.28) 0 2px, transparent 2px 7px);
-  --chevron: repeating-linear-gradient(-45deg, var(--amber) 0 10px, #000 10px 20px);
   --scanlines: repeating-linear-gradient(to bottom, rgba(255, 90, 0, 0.05) 0 1px, transparent 1px 3px);
   color-scheme: dark;
 }
@@ -179,8 +173,6 @@
   --active-bg: #2b2b2b;
 
   --surface-1: #000000;
-  --surface-2: #0d0d0d;
-  --surface-3: #141414;
 
   --hatch: repeating-linear-gradient(135deg, #9a9a9a 0 2px, transparent 2px 7px);
   --scanlines: none;
@@ -223,7 +215,7 @@ html {
 body {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums slashed-zero;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 14px;
   line-height: 1.55;
   color: var(--text-secondary);
@@ -998,17 +990,6 @@ select option {
   background-image: var(--hatch);
 }
 
-.btn-danger {
-  color: var(--red);
-  border-color: var(--red);
-}
-
-.btn-danger:hover {
-  color: #000;
-  background: var(--red);
-  border-color: var(--red);
-}
-
 .btn-warn {
   color: var(--amber) !important;
   border-color: var(--amber) !important;
@@ -1264,10 +1245,6 @@ select option {
 
 .hop[data-state="standby"] .hop-reading {
   color: var(--text-quaternary);
-}
-
-.hop[data-state="pending"] .hop-label {
-  opacity: 0.55;
 }
 
 /* The scan cursor: a bracket that steps from hop to hop and parks on the one
@@ -1696,7 +1673,8 @@ select option {
 }
 
 #speed:has(#speed-download.placeholder) .speed-graph-card::after {
-  content: "STANDBY";
+  content: attr(data-standby);
+  text-transform: uppercase;
   position: absolute;
   left: 50%;
   bottom: 112px;
@@ -1709,8 +1687,6 @@ select option {
   letter-spacing: 0.16em;
   color: var(--standby);
 }
-
-:lang(zh-TW) #speed:has(#speed-download.placeholder) .speed-graph-card::after { content: "待機"; }
 
 .speed-controls {
   display: grid;
@@ -2082,9 +2058,8 @@ select option {
 
 .suggestions-title {
   font-size: 20px;
-  font-weight: 590;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.24px;
   margin-bottom: 6px;
 }
 
@@ -2151,14 +2126,13 @@ select option {
 
 .suggestion-name {
   font-size: 14px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-primary);
-  letter-spacing: -0.182px;
 }
 
 .suggestion-type {
   font-size: 11px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-quaternary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2166,7 +2140,7 @@ select option {
 
 .suggestion-badge {
   font-size: 11px;
-  font-weight: 510;
+  font-weight: 500;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   color: var(--accent);
@@ -2190,7 +2164,7 @@ select option {
 
 .suggestion-tag {
   font-size: 11px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-quaternary);
   padding: 2px 8px;
   border-radius: var(--radius-pill);
@@ -2199,7 +2173,7 @@ select option {
 
 .suggestion-link {
   font-size: 13px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--accent);
   text-decoration: none;
   display: inline-flex;
@@ -2369,7 +2343,7 @@ select option {
 }
 
 .dns-table th {
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-tertiary);
   font-size: 11px;
   text-transform: uppercase;
@@ -2392,9 +2366,8 @@ select option {
 .dns-type-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 4px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: var(--font-mono);
   background: var(--icon-bg);
   color: var(--accent);
@@ -2412,7 +2385,7 @@ select option {
 
 .raw-toggle-summary {
   font-size: 12px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-quaternary);
   cursor: pointer;
   padding: 4px 0;
@@ -2440,7 +2413,7 @@ select option {
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  font-weight: 510;
+  font-weight: 500;
   color: var(--text-quaternary);
   text-decoration: none;
   margin-top: 8px;
@@ -2814,9 +2787,9 @@ select option {
 .snap-time { color: var(--text-tertiary); }
 .snap-val { color: var(--text-secondary); }
 .snap-colo { color: var(--text-quaternary); text-align: right; }
-.snap-score[data-state] { color: var(--hop-color); font-weight: 600; }
+.snap-score[data-state] { color: var(--hop-color); font-weight: 700; }
 .snap-delta { font-size: 11px; margin-left: 4px; }
-.snap-delta.good { color: var(--emerald, #10b981); }
-.snap-delta.bad { color: var(--red, #ef4444); }
+.snap-delta.good { color: var(--green); }
+.snap-delta.bad { color: var(--red); }
 .snap-delta.same { color: var(--text-quaternary); }
 

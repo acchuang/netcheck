@@ -271,7 +271,7 @@ Bracketed, uppercase, tracked labels.
 A sticky black strip with an orange bottom rule, 60px tall. Wordmark in 700 caps at 0.28em. Tabs are bilingual station keys separated by subtle vertical rules. Hover washes orange; the active tab turns green with a 3px green bar on the rule. Under 1000px the tabs move to a fixed bottom bar with icons, and the active bar sits on top.
 
 ### Hop Card and Node (signature)
-Each hop is a framed card: stealth fill, 1px subtle rule, and a 2px edge in the state colour facing the track, on top for the upper row and on the bottom for the lower row. It holds the bilingual key, a mono reading, and a state tag. The 20px square node on the track is filled with the state colour once locked. Standby nodes are black, hatched and dashed, and pending cards are at 55% opacity. On mobile the cards sit on a vertical rail with a 2px left state edge.
+Each hop is a framed card: stealth fill, 1px subtle rule, and a 2px edge in the state colour facing the track, on top for the upper row and on the bottom for the lower row. It holds the bilingual key, a mono reading, and a state tag. The 20px square node on the track is filled with the state colour once locked. Unread and standby hops share one state: black, hatched, dashed node. On mobile the cards sit on a vertical rail with a 2px left state edge.
 
 ### State Scale (signature)
 `[data-state]` sets `--hop-color` everywhere: pass → green, warn → yellow, fail → red, seen → orange, scan → primary ink, standby → standby grey. Hop cards and nodes, condition lamps, test dots, readouts, status badges, route and snapshot scores all read it. There is no per-tab palette.
