@@ -27,11 +27,6 @@ typography:
     fontWeight: 900
     lineHeight: 1.05
     letterSpacing: "0.06em"
-  display-en:
-    fontFamily: "Chakra Petch, PingFang TC, Noto Sans TC, sans-serif"
-    fontSize: "clamp(12px, 1.1vw, 15px)"
-    fontWeight: 700
-    letterSpacing: "0.42em"
   readout:
     fontFamily: "DSEG7, JetBrains Mono, ui-monospace, monospace"
     fontSize: "52px"
@@ -42,18 +37,12 @@ typography:
     fontSize: "28px"
     fontWeight: 700
     lineHeight: 1.1
-  title-zh:
-    fontFamily: "PingFang TC, Noto Sans TC, Microsoft JhengHei, Heiti TC, sans-serif"
+  title:
+    fontFamily: "Chakra Petch, PingFang TC, Noto Sans TC, Microsoft JhengHei, Heiti TC, sans-serif"
     fontSize: "16px"
     fontWeight: 700
     lineHeight: 1.15
-    letterSpacing: "0.04em"
-  title-en:
-    fontFamily: "Chakra Petch, PingFang TC, Noto Sans TC, sans-serif"
-    fontSize: "11px"
-    fontWeight: 700
-    lineHeight: 1.3
-    letterSpacing: "0.24em"
+    letterSpacing: "0.06em"
   wordmark:
     fontFamily: "Chakra Petch, PingFang TC, Noto Sans TC, sans-serif"
     fontSize: "17px"
@@ -159,7 +148,7 @@ It rejects the category default, a stack of rounded result cards under a score d
 - Absolute black ground, stealth panels, 1px phosphor-orange rules.
 - Chamfered frames with a bright corner tick; zero border radius.
 - One shared state scale (pass, warn, fail, seen, scan, standby) on every tab.
-- Bilingual station labels: zh-TW over EN caps.
+- One locale at a time: zh-TW, or EN in tracked caps.
 - Seven-segment digits for headline readings; mono for raw data.
 - Two themes only: Wall and High Contrast.
 
@@ -204,22 +193,19 @@ A black-glass wall with one ink (phosphor orange) and three signal colours that 
 **Character:** A squared, techno sans for the wall's voice, a hard mono for raw data, and a seven-segment face for the numbers that matter. Chinese sets in the system CJK face, except the tab titles, which use the heavy subset.
 
 ### Hierarchy
-- **Display** (900, clamp(34px, 4.6vw, 60px), 1.05): the zh-TW tab title only. Its glyphs come from the Noto Sans TC Display subset; a new character in a title falls back to the system CJK face (`--font-cjk`), so re-subset the font when a title changes.
-- **Display EN** (700, clamp(12px, 1.1vw, 15px), 0.42em, uppercase, orange): the English line under the tab title.
+- **Display** (900, clamp(34px, 4.6vw, 60px), 1.05, uppercase): the tab title in the active locale. EN renders at Chakra Petch 700 in caps. The zh-TW glyphs come from the Noto Sans TC Display subset; a new character in a title falls back to the system CJK face (`--font-cjk`), so re-subset the font when a title changes.
 - **Readout** (DSEG7 700, 52px; 28px small, 22px under 720px): headline readings such as fastest resolver latency, download, upload, grades. Placeholder is `---` in standby grey, never zeros.
-- **Title** (zh 700 16px over EN 700 11px 0.24em caps): frame titles. Hop and route keys use 18px zh over 11px EN; readout labels 13px over 11px.
+- **Title** (700, 16px, 0.06em, uppercase): frame titles. Hop and route keys use 18px, readout labels 13px, nav tabs 13px (12px on the bottom bar). One line, active locale only.
 - **Body** (Chakra Petch, 14px, 1.55, tabular and slashed-zero numerals): prose, capped at 68 to 72ch.
 - **Label** (700, 11 to 13px, 0.12 to 0.16em, uppercase): badges, state lamps, info labels, buttons, units.
 - **Data** (JetBrains Mono 400, 12 to 13px): IPs, ASNs, hop readings, header values, inputs.
 
 ### Named Rules
-**The Stacked Station Label Rule.** Titles, nav tabs, frame titles, hop and route keys and readout labels always show both languages, zh-TW set large over tracked EN caps, built by `setBilingual` into `.bi-zh` / `.bi-en`. Only the active language is exposed to assistive tech.
-
-**The One Locale Rule.** Badges, state lamps, status tags and buttons show only the active locale via `t()` and re-render on locale change. CSS-generated text switches with `:lang(zh-TW)`.
+**The One Locale Rule.** Every string on the page, titles and nav included, shows only the active locale via `t()` and re-renders on locale change. Station labels (titles, nav tabs, frame titles, hop and route keys, readout labels) are set in the display face, 700, uppercase, so EN reads as tracked caps and zh-TW is unaffected. CSS-generated text switches with `:lang(zh-TW)`.
 
 ## Layout
 
-A 1320px max container, 24px gutters (16px under 768px). Each tab opens with a bilingual title block over a subtle rule (32px below), then a station: a two-column grid, schematic 2fr and readout panel 1fr (min 300px), 16px gap. Supporting frames follow in an auto-fit grid of min 340px columns, 16px gap. Inside frames, the rhythm is 16px by 20px padding with 1px subtle dividers between sections.
+A 1320px max container, 24px gutters (16px under 768px). Each tab opens with a title block over a subtle rule (32px below), then a station: a two-column grid, schematic 2fr and readout panel 1fr (min 300px), 16px gap. Supporting frames follow in an auto-fit grid of min 340px columns, 16px gap. Inside frames, the rhythm is 16px by 20px padding with 1px subtle dividers between sections.
 
 **DNS path.** Five hops (You, Router, ISP, Resolver, Edge) share a three-row grid: labels above, a 40px track row, labels below. Hops alternate: odd hops hang their card above the track, even hops below, each tied to its 20px node by a 36px leader line in the hop colour. The track is a 1px orange line from first node to last.
 
@@ -268,10 +254,10 @@ Bracketed, uppercase, tracked labels.
 - **Select:** same field with an orange chevron.
 
 ### Navigation
-A sticky black strip with an orange bottom rule, 60px tall. Wordmark in 700 caps at 0.28em. Tabs are bilingual station keys separated by subtle vertical rules. Hover washes orange; the active tab turns green with a 3px green bar on the rule. Under 1000px the tabs move to a fixed bottom bar with icons, and the active bar sits on top.
+A sticky black strip with an orange bottom rule, 60px tall. Wordmark in 700 caps at 0.28em. Tabs are station keys separated by subtle vertical rules. Hover washes orange; the active tab turns green with a 3px green bar on the rule. Under 1000px the tabs move to a fixed bottom bar with icons, and the active bar sits on top.
 
 ### Hop Card and Node (signature)
-Each hop is a framed card: stealth fill, 1px subtle rule, and a 2px edge in the state colour facing the track, on top for the upper row and on the bottom for the lower row. It holds the bilingual key, a mono reading, and a state tag. The 20px square node on the track is filled with the state colour once locked. Unread and standby hops share one state: black, hatched, dashed node. On mobile the cards sit on a vertical rail with a 2px left state edge.
+Each hop is a framed card: stealth fill, 1px subtle rule, and a 2px edge in the state colour facing the track, on top for the upper row and on the bottom for the lower row. It holds the key, a mono reading, and a state tag. The 20px square node on the track is filled with the state colour once locked. Unread and standby hops share one state: black, hatched, dashed node. On mobile the cards sit on a vertical rail with a 2px left state edge.
 
 ### State Scale (signature)
 `[data-state]` sets `--hop-color` everywhere: pass → green, warn → yellow, fail → red, seen → orange, scan → primary ink, standby → standby grey. Hop cards and nodes, condition lamps, test dots, readouts, status badges, route and snapshot scores all read it. There is no per-tab palette.
@@ -280,7 +266,7 @@ Each hop is a framed card: stealth fill, 1px subtle rule, and a 2px edge in the 
 A 40px four-corner bracket in acid green that steps hop to hop (`steps(4)`, 280ms) and blinks in two steps. Hops lock strictly in path order, and the cursor leaves when every hop has locked. The speed route marches a green chaser in hard steps while bytes are in flight.
 
 ### Readout and Condition Row
-A readout is a bilingual label over a seven-segment value and a unit in label caps; with a state it takes the state colour, standby hatched. A condition row is a label, a segmented bar (ten 4px cells; a three-cell lamp for pass/warn/fail checks) and a state tag.
+A readout is a label over a seven-segment value and a unit in label caps; with a state it takes the state colour, standby hatched. A condition row is a label, a segmented bar (ten 4px cells; a three-cell lamp for pass/warn/fail checks) and a state tag.
 
 ### Verdict Panel
 The answer before the evidence: a panel whose rule, icon box and grade take the verdict colour. Only a fail verdict carries the red/black hazard band along its top.
@@ -290,7 +276,7 @@ The answer before the evidence: a panel whose rule, icon box and grade take the 
 ### Do:
 - **Do** route every state through `[data-state]` and `--hop-color`; the same six states on every tab.
 - **Do** mark anything unobservable as standby: grey, hatched, dashed, with `---` placeholders rather than zeros.
-- **Do** stack zh-TW over EN caps on titles, tabs, frame titles, hop/route keys and readout labels via `setBilingual`, and show badges, lamps and buttons in the active locale only via `t()`.
+- **Do** show every string in the active locale only via `t()`; never stack both languages.
 - **Do** write zh-TW copy with 您, without em dashes, using 解析器, 探測, 公共解析器, 觀察 and 本站.
 - **Do** keep motion to linear steps and short ease-outs, and let reduced motion collapse it.
 - **Do** re-subset "Noto Sans TC Display" when a tab title gains a new character.

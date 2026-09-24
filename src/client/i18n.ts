@@ -1134,23 +1134,6 @@ const zhTW: Record<keyof typeof en, string> = {
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
 
-// Station labels always show both languages, zh-TW over EN caps. Only the
-// active one is exposed to assistive tech, so nothing is announced twice.
-export function setBilingual(el: Element | null, key: string): void {
-  if (!el) return;
-  const k = key as keyof typeof en;
-  const zh = document.createElement("span");
-  zh.className = "bi-zh";
-  zh.lang = "zh-TW";
-  zh.textContent = zhTW[k] ?? key;
-  const latin = document.createElement("span");
-  latin.className = "bi-en";
-  latin.lang = "en";
-  latin.textContent = en[k] ?? key;
-  (current === "en" ? zh : latin).setAttribute("aria-hidden", "true");
-  el.replaceChildren(zh, latin);
-}
-
 export function t(key: string, ...args: (string | number)[]): string {
   let str = locales[current]?.[key] ?? locales.en[key as keyof typeof en] ?? key;
   args.forEach((arg, i) => {
@@ -1199,8 +1182,6 @@ function applyStaticTranslations(): void {
     const el = document.getElementById(id);
     if (el) el.setAttribute(attr, t(key));
   };
-  const bl = setBilingual;
-  const b = (id: string, key: keyof typeof en) => bl(document.getElementById(id), key);
 
   // Update lang toggle label
   const langBtn = document.getElementById("lang-toggle");
@@ -1211,7 +1192,8 @@ function applyStaticTranslations(): void {
 
   // Nav
   document.querySelectorAll<HTMLElement>(".nav-link[data-tab]").forEach((link) => {
-    bl(link.querySelector(".nav-link-text"), `nav.${link.dataset.tab}` as keyof typeof en);
+    const text = link.querySelector(".nav-link-text");
+    if (text) text.textContent = t(`nav.${link.dataset.tab}`);
   });
 
   s("export-btn-text", "nav.export");
@@ -1220,21 +1202,21 @@ function applyStaticTranslations(): void {
   s("export-pdf-text", "nav.savePdf");
 
   // DNS section
-  b("dns-title", "dns.title");
+  s("dns-title", "dns.title");
   s("dns-subtitle", "dns.subtitle");
-  b("dns-ip-title", "dns.ipTitle");
+  s("dns-ip-title", "dns.ipTitle");
   s("dns-ipv4-label", "dns.ipv4");
   s("dns-ipv6-label", "dns.ipv6");
   s("dns-location-label", "dns.location");
   s("dns-isp-label", "dns.isp");
   s("dns-timezone-label", "dns.timezone");
   s("dns-colo-label", "dns.colo");
-  b("dns-resolver-title", "dns.resolverTitle");
+  s("dns-resolver-title", "dns.resolverTitle");
   s("dns-observed-subhead", "dns.observedSubhead");
   s("dns-public-subhead", "dns.publicSubhead");
   s("dns-public-note", "dns.publicNote");
-  b("dns-security-title", "dns.securityTitle");
-  b("dns-ecs-title", "dns.ecsTitle");
+  s("dns-security-title", "dns.securityTitle");
+  s("dns-ecs-title", "dns.ecsTitle");
   s("dns-ecs-note", "dns.ecsNote");
   s("dns-lookup-title", "dns.lookupTitle");
   s("dns-lookup-btn", "dns.lookupBtn");
@@ -1243,33 +1225,33 @@ function applyStaticTranslations(): void {
   sa("dns-health-selector", "dns.healthSelectorPlaceholder", "placeholder");
   s("dns-raw-json-label", "dns.rawJson");
   s("dns-copy-json-btn", "dns.copyJson");
-  b("dns-workstation-title", "dns.workstationTitle");
+  s("dns-workstation-title", "dns.workstationTitle");
   s("tab-tool-lookup", "dns.tabLookup");
   s("tab-tool-compare", "dns.tabCompare");
   s("tab-tool-health", "dns.tabHealth");
-  b("dns-path-title", "station.path");
-  b("dns-verdict-title", "station.verdict");
-  (["you", "router", "isp", "resolver", "edge"] as const).forEach((hop) => b(`hop-${hop}-key`, `station.${hop}`));
-  b("dns-fastest-label", "station.fastest");
-  b("dns-checks-title", "station.checks");
+  s("dns-path-title", "station.path");
+  s("dns-verdict-title", "station.verdict");
+  (["you", "router", "isp", "resolver", "edge"] as const).forEach((hop) => s(`hop-${hop}-key`, `station.${hop}`));
+  s("dns-fastest-label", "station.fastest");
+  s("dns-checks-title", "station.checks");
   s("dns-run-label", "station.run");
   s("dns-ptr-option", "dns.ptrReverse");
   s("dns-all-option", "dns.allRecords");
-  b("dns-suggestions-title", "dns.recommendations");
+  s("dns-suggestions-title", "dns.recommendations");
 
   // Speed section
-  b("speed-title", "speed.title");
+  s("speed-title", "speed.title");
   s("speed-subtitle", "speed.subtitle");
-  b("speed-route-title", "speed.route");
-  b("speed-route-server", "speed.server");
-  b("speed-readings-title", "speed.readings");
+  s("speed-route-title", "speed.route");
+  s("speed-route-server", "speed.server");
+  s("speed-readings-title", "speed.readings");
   // server <option> labels are re-rendered by app.ts renderServerOptionLabels on locale change
-  b("speed-download-label", "speed.download");
-  b("speed-upload-label", "speed.upload");
-  b("speed-latency-label", "speed.latency");
-  b("speed-jitter-label", "speed.jitter");
-  b("speed-bufferbloat-label", "speed.bufferbloat");
-  b("speed-graph-title-text", "speed.graphTitle");
+  s("speed-download-label", "speed.download");
+  s("speed-upload-label", "speed.upload");
+  s("speed-latency-label", "speed.latency");
+  s("speed-jitter-label", "speed.jitter");
+  s("speed-bufferbloat-label", "speed.bufferbloat");
+  s("speed-graph-title-text", "speed.graphTitle");
   sa("speed-download-label", "speed.tip.download", "data-tooltip");
   sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
   sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
@@ -1278,29 +1260,29 @@ function applyStaticTranslations(): void {
   sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
   s("speed-dl-legend", "speed.download");
   s("speed-ul-legend", "speed.upload");
-  b("speed-suggestions-title", "speed.recommendations");
-  b("speed-route-you", "station.you");
+  s("speed-suggestions-title", "speed.recommendations");
+  s("speed-route-you", "station.you");
   s("speed-custom-url-hint", "speed.customUrlHint");
   s("speed-cancel-btn", "speed.cancelBtn");
-  b("snapshot-title", "snap.title");
+  s("snapshot-title", "snap.title");
   s("snapshot-save-btn", "snap.save");
   s("snapshot-clear-btn", "snap.clear");
 
   // Ad block section
-  b("adblock-title", "adblock.title");
+  s("adblock-title", "adblock.title");
   s("adblock-subtitle", "adblock.subtitle");
   s("adblock-rerun-btn", "adblock.rerun");
-  b("adblock-cats-title", "adblock.categories");
-  b("adblock-score-title", "adblock.score");
-  b("adblock-breakdown-title", "adblock.breakdown");
+  s("adblock-cats-title", "adblock.categories");
+  s("adblock-score-title", "adblock.score");
+  s("adblock-breakdown-title", "adblock.breakdown");
   s("adblock-custom-btn", "adblock.testUrl");
-  b("adblock-blocker-title", "adblock.blockerCard");
-  b("fingerprint-title", "fp.title");
+  s("adblock-blocker-title", "adblock.blockerCard");
+  s("fingerprint-title", "fp.title");
   s("fingerprint-note", "fp.note");
-  b("adblock-custom-title", "adblock.customCard");
-  b("filter-list-title", "filter.title");
-  b("adblock-suggestions-title", "adblock.recommendations");
-  b("adblock-history-title", "snap.scoreTitle");
+  s("adblock-custom-title", "adblock.customCard");
+  s("filter-list-title", "filter.title");
+  s("adblock-suggestions-title", "adblock.recommendations");
+  s("adblock-history-title", "snap.scoreTitle");
   s("adblock-history-save-btn", "snap.save");
   s("adblock-history-clear-btn", "snap.clear");
 
@@ -1309,32 +1291,32 @@ function applyStaticTranslations(): void {
   s("dns-tls-label", "dns.tls");
 
   // Headers section
-  b("headers-title", "headers.title");
+  s("headers-title", "headers.title");
   s("headers-subtitle", "headers.subtitle");
   s("headers-check-btn", "headers.scan");
-  b("headers-detail-title", "headers.detailTitle");
-  b("headers-verdict-title", "headers.verdictTitle");
-  b("headers-grade-label", "headers.gradeLabel");
-  b("headers-count-label", "headers.countLabel");
+  s("headers-detail-title", "headers.detailTitle");
+  s("headers-verdict-title", "headers.verdictTitle");
+  s("headers-grade-label", "headers.gradeLabel");
+  s("headers-count-label", "headers.countLabel");
   s("headers-empty-title", "headers.emptyTitle");
   s("headers-empty-desc", "headers.emptyDesc");
 
   // About section
-  b("about-title", "about.title");
+  s("about-title", "about.title");
   s("about-subtitle", "about.subtitle");
-  b("about-what-title", "about.what.title");
+  s("about-what-title", "about.what.title");
   s("about-what-desc", "about.what.desc");
-  b("about-feat-dns-title", "about.feat.dns.title");
+  s("about-feat-dns-title", "about.feat.dns.title");
   s("about-feat-dns-desc", "about.feat.dns.desc");
-  b("about-feat-speed-title", "about.feat.speed.title");
+  s("about-feat-speed-title", "about.feat.speed.title");
   s("about-feat-speed-desc", "about.feat.speed.desc");
-  b("about-feat-adblock-title", "about.feat.adblock.title");
+  s("about-feat-adblock-title", "about.feat.adblock.title");
   s("about-feat-adblock-desc", "about.feat.adblock.desc");
-  b("about-feat-headers-title", "about.feat.headers.title");
+  s("about-feat-headers-title", "about.feat.headers.title");
   s("about-feat-headers-desc", "about.feat.headers.desc");
-  b("about-privacy-title", "about.privacy.title");
+  s("about-privacy-title", "about.privacy.title");
   s("about-privacy-desc", "about.privacy.desc");
-  b("about-ledger-title", "about.ledger.title");
+  s("about-ledger-title", "about.ledger.title");
   (["fp", "history", "export", "headers", "probe"] as const).forEach((k) => s(`about-ledger-${k}`, `about.ledger.${k}`));
   document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((el) => (el.textContent = t(`about.ledger.${el.dataset.ledger}`)));
 

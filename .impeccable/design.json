@@ -278,11 +278,7 @@
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "zh-TW tab title only; Noto Sans TC Display 900 subset of the title glyphs."
-      },
-      "display-en": {
-        "displayName": "Display EN",
-        "purpose": "English caps line under the tab title, orange."
+        "purpose": "Tab title in the active locale; zh-TW uses the Noto Sans TC Display 900 subset, EN renders Chakra Petch caps."
       },
       "readout": {
         "displayName": "Readout",
@@ -292,13 +288,9 @@
         "displayName": "Readout Small",
         "purpose": "Seven-segment secondary readings (latency, jitter, grade)."
       },
-      "title-zh": {
-        "displayName": "Title zh-TW",
-        "purpose": "Upper line of every bilingual frame title."
-      },
-      "title-en": {
-        "displayName": "Title EN",
-        "purpose": "Tracked caps line under every bilingual frame title."
+      "title": {
+        "displayName": "Title",
+        "purpose": "Frame titles, hop/route keys, readout labels and nav tabs, in the active locale."
       },
       "wordmark": {
         "displayName": "Wordmark",
@@ -407,7 +399,7 @@
       "name": "Nav Station Tabs",
       "kind": "nav",
       "refersTo": "nav-link-active",
-      "description": "Bilingual station keys; active is green with a 3px bar.",
+      "description": "Station keys; active is green with a 3px bar.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-tab ds-active\" href=\"#\"><span class=\"ds-zh\">DNS 檢測</span><span class=\"ds-en\">DNS CHECK</span></a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-zh\">測速</span><span class=\"ds-en\">SPEED TEST</span></a></nav>",
       "css": ".ds-nav { display: flex; height: 60px; background: #000; border-bottom: 1px solid #ff5a00; } .ds-tab { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 0 16px; color: #bfae9d; text-decoration: none; border-left: 1px solid rgba(255, 90, 0, 0.16); transition: color 0.12s, background-color 0.12s; } .ds-tab:hover { color: #fff3e8; background: rgba(255, 90, 0, 0.07); } .ds-tab:focus-visible { outline: 2px solid #39ff14; outline-offset: -3px; } .ds-active { color: #39ff14; background: rgba(57, 255, 20, 0.06); } .ds-active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: #39ff14; } .ds-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; } .ds-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }"
     },
@@ -423,7 +415,7 @@
       "name": "Hop Card",
       "kind": "custom",
       "refersTo": "hop-card",
-      "description": "A path hop: bilingual key, mono reading, state tag, 2px state edge facing the track, 20px node.",
+      "description": "A path hop: key, mono reading, state tag, 2px state edge facing the track, 20px node.",
       "html": "<div class=\"ds-hops\"><div class=\"ds-hop\" style=\"--hop-color:#ff5a00\"><div class=\"ds-hop-card\"><span class=\"ds-hop-zh\">電信業者</span><span class=\"ds-hop-en\">ISP</span><span class=\"ds-hop-reading\">ARCTEL · AS55736</span><span class=\"ds-hop-state\">SEEN</span></div><span class=\"ds-node\"></span></div><div class=\"ds-hop ds-standby\" style=\"--hop-color:#8a7d71\"><div class=\"ds-hop-card\"><span class=\"ds-hop-zh\">解析器</span><span class=\"ds-hop-en\">RESOLVER</span><span class=\"ds-hop-reading\">Not observable from this site</span><span class=\"ds-hop-state\">STANDBY</span></div><span class=\"ds-node\"></span></div></div>",
       "css": ".ds-hops { display: flex; gap: 12px; padding: 24px; background: #000 repeating-linear-gradient(to bottom, rgba(255, 90, 0, 0.05) 0 1px, transparent 1px 3px); } .ds-hop { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 180px; } .ds-hop-card { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding: 12px 8px; text-align: center; background: #0b0b0b; border: 1px solid rgba(255, 90, 0, 0.16); border-top: 2px solid var(--hop-color); } .ds-hop-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 18px; font-weight: 700; color: #fff3e8; } .ds-hop-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; color: #ff5a00; } .ds-hop-reading { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #e6d8ca; } .ds-hop-state { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--hop-color); } .ds-node { width: 20px; height: 20px; background: var(--hop-color); border: 1px solid var(--hop-color); } .ds-standby .ds-node { background: #000 repeating-linear-gradient(135deg, rgba(138, 125, 113, 0.28) 0 2px, transparent 2px 7px); border-style: dashed; } .ds-standby .ds-hop-reading { color: #a08f7e; }"
     },
@@ -431,7 +423,7 @@
       "name": "Segment Readout",
       "kind": "custom",
       "refersTo": "readout",
-      "description": "Bilingual label over a seven-segment value and caps unit.",
+      "description": "Label over a seven-segment value and caps unit.",
       "html": "<div class=\"ds-readout\"><span class=\"ds-rl-zh\">最快的公共解析器</span><span class=\"ds-rl-en\">FASTEST PUBLIC RESOLVER</span><span class=\"ds-rv\"><span class=\"ds-seg\">28</span><span class=\"ds-unit\">MS</span></span></div>",
       "css": ".ds-readout { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: #0b0b0b; } .ds-rl-zh { font-family: 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 13px; font-weight: 700; color: #fff3e8; } .ds-rl-en { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; color: #ff5a00; } .ds-rv { display: flex; align-items: baseline; gap: 8px; } .ds-seg { font-family: 'DSEG7', 'JetBrains Mono', monospace; font-size: 52px; line-height: 1.1; color: #ff5a00; } .ds-unit { font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #bfae9d; }"
     }
@@ -443,7 +435,7 @@
       "Absolute black ground, stealth panels, 1px phosphor-orange rules.",
       "Chamfered frames with a bright corner tick; zero border radius.",
       "One shared state scale (pass, warn, fail, seen, scan, standby) on every tab.",
-      "Bilingual station labels: zh-TW over EN caps.",
+      "One locale at a time: zh-TW, or EN in tracked caps.",
       "Seven-segment digits for headline readings; mono for raw data.",
       "Two themes only: Wall and High Contrast."
     ],
@@ -459,13 +451,8 @@
         "section": "colors"
       },
       {
-        "name": "The Stacked Station Label Rule",
-        "body": "Titles, nav tabs, frame titles, hop and route keys and readout labels always show both languages, zh-TW set large over tracked EN caps, built by `setBilingual` into `.bi-zh` / `.bi-en`. Only the active language is exposed to assistive tech.",
-        "section": "typography"
-      },
-      {
         "name": "The One Locale Rule",
-        "body": "Badges, state lamps, status tags and buttons show only the active locale via `t()` and re-render on locale change. CSS-generated text switches with `:lang(zh-TW)`.",
+        "body": "Every string on the page, titles and nav included, shows only the active locale via `t()` and re-renders on locale change. Station labels are set in the display face, 700, uppercase, so EN reads as tracked caps. CSS-generated text switches with `:lang(zh-TW)`.",
         "section": "typography"
       },
       {
@@ -477,7 +464,7 @@
     "dos": [
       "**Do** route every state through `[data-state]` and `--hop-color`; the same six states on every tab.",
       "**Do** mark anything unobservable as standby: grey, hatched, dashed, with `---` placeholders rather than zeros.",
-      "**Do** stack zh-TW over EN caps on titles, tabs, frame titles, hop/route keys and readout labels via `setBilingual`, and show badges, lamps and buttons in the active locale only via `t()`.",
+      "**Do** show every string in the active locale only via `t()`; never stack both languages.",
       "**Do** write zh-TW copy with 您, without em dashes, using 解析器, 探測, 公共解析器, 觀察 and 本站.",
       "**Do** keep motion to linear steps and short ease-outs, and let reduced motion collapse it.",
       "**Do** re-subset \"Noto Sans TC Display\" when a tab title gains a new character.",

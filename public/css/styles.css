@@ -237,29 +237,24 @@ textarea {
   caret-color: var(--green);
 }
 
-/* Bilingual station title: zh-TW set large over tracked roman caps. Titles
-   show both; badges, states and buttons follow the locale. i18n.ts hides the
-   inactive language from assistive tech. */
-.bi-zh,
-.bi-en {
-  display: block;
-}
-
-.bi-zh {
-  font-family: var(--font-cjk);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.15;
-}
-
-.bi-en {
+/* Station labels: one line in the active locale. EN reads as tracked caps. */
+.nav-link-text,
+.display,
+.card-title,
+.hop-key,
+.readout-label,
+.route-key {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.72em;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
   text-transform: uppercase;
-  color: var(--accent);
-  line-height: 1.3;
+}
+
+.hop-key,
+.readout-label,
+.route-key {
+  display: block;
 }
 
 /* Nav: the station strip. */
@@ -327,8 +322,7 @@ textarea {
   border-right: 1px solid var(--border-subtle);
 }
 
-.nav-link .bi-zh { font-size: 13px; white-space: nowrap; }
-.nav-link .bi-en { font-size: 11px; letter-spacing: 0.16em; color: inherit; white-space: nowrap; }
+.nav-link-text { font-size: 13px; white-space: nowrap; }
 
 .nav-link-icon {
   display: none;
@@ -497,20 +491,10 @@ textarea {
 .display {
   color: var(--text-primary);
   margin-bottom: 12px;
-}
-
-.display .bi-zh {
   font-family: "Chakra Petch", "Noto Sans TC Display", var(--font-cjk);
   font-weight: 900;
   font-size: clamp(34px, 4.6vw, 60px);
   line-height: 1.05;
-  letter-spacing: 0.06em;
-}
-
-.display .bi-en {
-  margin-top: 6px;
-  font-size: clamp(12px, 1.1vw, 15px);
-  letter-spacing: 0.42em;
 }
 
 .subtitle {
@@ -688,10 +672,9 @@ textarea {
   flex: 1;
   min-width: 0;
   color: var(--text-primary);
+  font-size: 16px;
 }
 
-.card-title .bi-zh { font-size: 16px; }
-.card-title .bi-en { font-size: 11px; margin-top: 2px; }
 
 .card-body {
   padding: 16px 20px;
@@ -1195,10 +1178,9 @@ select option {
 
 .hop-key {
   color: var(--text-primary);
+  font-size: 18px;
 }
 
-.hop-key .bi-zh { font-size: 18px; }
-.hop-key .bi-en { font-size: 11px; }
 
 .hop-reading {
   font-family: var(--font-mono);
@@ -1310,10 +1292,9 @@ select option {
 
 .readout-label {
   color: var(--text-primary);
+  font-size: 13px;
 }
 
-.readout-label .bi-zh { font-size: 13px; }
-.readout-label .bi-en { font-size: 11px; }
 
 .readout-panel > .readout-label {
   padding: 16px 20px 8px;
@@ -1595,9 +1576,7 @@ select option {
 
 .route-end:last-child .route-card::before { left: auto; right: 9px; }
 
-.route-key { color: var(--text-primary); }
-.route-key .bi-zh { font-size: 18px; }
-.route-key .bi-en { font-size: 11px; }
+.route-key { color: var(--text-primary); font-size: 18px; }
 
 .route-reading {
   font-family: var(--font-mono);
@@ -2560,8 +2539,7 @@ select option {
     min-height: 56px;
   }
 
-  .nav-link .bi-zh { font-size: 12px; }
-  .nav-link .bi-en { letter-spacing: 0.04em; }
+  .nav-link-text { font-size: 12px; }
 
   .nav-link:first-child {
     border-left: none;
