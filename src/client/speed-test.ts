@@ -401,20 +401,8 @@ export async function probeServers(ids?: string[]): Promise<ServerProbeResult[]>
 }
 
 export function combineSignal(timeoutMs: number, abortSignal?: AbortSignal): AbortSignal {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
-  if (abortSignal) {
-    if (abortSignal.aborted) {
-      clearTimeout(timer);
-      ctrl.abort(abortSignal.reason);
-    } else {
-      abortSignal.addEventListener("abort", () => {
-        clearTimeout(timer);
-        ctrl.abort(abortSignal.reason);
-      }, { once: true });
-    }
-  }
-  return ctrl.signal;
+  const timeout = AbortSignal.timeout(timeoutMs);
+  return abortSignal ? AbortSignal.any([timeout, abortSignal]) : timeout;
 }
 
 export const SpeedTest = {

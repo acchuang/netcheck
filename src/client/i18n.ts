@@ -1174,15 +1174,6 @@ export function initI18n(): void {
 }
 
 function applyStaticTranslations(): void {
-  const s = (id: string, key: string) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
-  };
-  const sa = (id: string, key: string, attr: string) => {
-    const el = document.getElementById(id);
-    if (el) el.setAttribute(attr, t(key));
-  };
-
   // Update lang toggle label
   const langBtn = document.getElementById("lang-toggle");
   if (langBtn) {
@@ -1196,132 +1187,13 @@ function applyStaticTranslations(): void {
     if (text) text.textContent = t(`nav.${link.dataset.tab}`);
   });
 
-  s("export-btn-text", "nav.export");
-  sa("export-btn", "nav.exportReport", "title");
-  s("export-md-text", "nav.downloadMd");
-  s("export-pdf-text", "nav.savePdf");
-
-  // DNS section
-  s("dns-title", "dns.title");
-  s("dns-subtitle", "dns.subtitle");
-  s("dns-ip-title", "dns.ipTitle");
-  s("dns-ipv4-label", "dns.ipv4");
-  s("dns-ipv6-label", "dns.ipv6");
-  s("dns-location-label", "dns.location");
-  s("dns-isp-label", "dns.isp");
-  s("dns-timezone-label", "dns.timezone");
-  s("dns-colo-label", "dns.colo");
-  s("dns-resolver-title", "dns.resolverTitle");
-  s("dns-observed-subhead", "dns.observedSubhead");
-  s("dns-public-subhead", "dns.publicSubhead");
-  s("dns-public-note", "dns.publicNote");
-  s("dns-security-title", "dns.securityTitle");
-  s("dns-ecs-title", "dns.ecsTitle");
-  s("dns-ecs-note", "dns.ecsNote");
-  s("dns-lookup-title", "dns.lookupTitle");
-  s("dns-lookup-btn", "dns.lookupBtn");
-  s("dns-compare-btn", "dns.compareBtn");
-  s("dns-health-btn", "dns.healthBtn");
-  sa("dns-health-selector", "dns.healthSelectorPlaceholder", "placeholder");
-  s("dns-raw-json-label", "dns.rawJson");
-  s("dns-copy-json-btn", "dns.copyJson");
-  s("dns-workstation-title", "dns.workstationTitle");
-  s("tab-tool-lookup", "dns.tabLookup");
-  s("tab-tool-compare", "dns.tabCompare");
-  s("tab-tool-health", "dns.tabHealth");
-  s("dns-path-title", "station.path");
-  s("dns-verdict-title", "station.verdict");
-  (["you", "router", "isp", "resolver", "edge"] as const).forEach((hop) => s(`hop-${hop}-key`, `station.${hop}`));
-  s("dns-fastest-label", "station.fastest");
-  s("dns-checks-title", "station.checks");
-  s("dns-run-label", "station.run");
-  s("dns-ptr-option", "dns.ptrReverse");
-  s("dns-all-option", "dns.allRecords");
-  s("dns-suggestions-title", "dns.recommendations");
-
-  // Speed section
-  s("speed-title", "speed.title");
-  s("speed-subtitle", "speed.subtitle");
-  s("speed-route-title", "speed.route");
-  s("speed-route-server", "speed.server");
-  s("speed-readings-title", "speed.readings");
-  // server <option> labels are re-rendered by app.ts renderServerOptionLabels on locale change
-  s("speed-download-label", "speed.download");
-  s("speed-upload-label", "speed.upload");
-  s("speed-latency-label", "speed.latency");
-  s("speed-jitter-label", "speed.jitter");
-  s("speed-bufferbloat-label", "speed.bufferbloat");
-  s("speed-graph-title-text", "speed.graphTitle");
-  sa("speed-download-label", "speed.tip.download", "data-tooltip");
-  sa("speed-upload-label", "speed.tip.upload", "data-tooltip");
-  sa("speed-latency-label", "speed.tip.latency", "data-tooltip");
-  sa("speed-jitter-label", "speed.tip.jitter", "data-tooltip");
-  sa("speed-graph-card", "state.standby", "data-standby");
-  sa("speed-bufferbloat-label", "speed.tip.bufferbloat", "data-tooltip");
-  s("speed-dl-legend", "speed.download");
-  s("speed-ul-legend", "speed.upload");
-  s("speed-suggestions-title", "speed.recommendations");
-  s("speed-route-you", "station.you");
-  s("speed-custom-url-hint", "speed.customUrlHint");
-  s("speed-cancel-btn", "speed.cancelBtn");
-  s("snapshot-title", "snap.title");
-  s("snapshot-save-btn", "snap.save");
-  s("snapshot-clear-btn", "snap.clear");
-
-  // Ad block section
-  s("adblock-title", "adblock.title");
-  s("adblock-subtitle", "adblock.subtitle");
-  s("adblock-rerun-btn", "adblock.rerun");
-  s("adblock-cats-title", "adblock.categories");
-  s("adblock-score-title", "adblock.score");
-  s("adblock-breakdown-title", "adblock.breakdown");
-  s("adblock-custom-btn", "adblock.testUrl");
-  s("adblock-blocker-title", "adblock.blockerCard");
-  s("fingerprint-title", "fp.title");
-  s("fingerprint-note", "fp.note");
-  s("adblock-custom-title", "adblock.customCard");
-  s("filter-list-title", "filter.title");
-  s("adblock-suggestions-title", "adblock.recommendations");
-  s("adblock-history-title", "snap.scoreTitle");
-  s("adblock-history-save-btn", "snap.save");
-  s("adblock-history-clear-btn", "snap.clear");
-
-  // DNS connection info
-  s("dns-http-label", "dns.http");
-  s("dns-tls-label", "dns.tls");
-
-  // Headers section
-  s("headers-title", "headers.title");
-  s("headers-subtitle", "headers.subtitle");
-  s("headers-check-btn", "headers.scan");
-  s("headers-detail-title", "headers.detailTitle");
-  s("headers-verdict-title", "headers.verdictTitle");
-  s("headers-grade-label", "headers.gradeLabel");
-  s("headers-count-label", "headers.countLabel");
-  s("headers-empty-title", "headers.emptyTitle");
-  s("headers-empty-desc", "headers.emptyDesc");
-
-  // About section
-  s("about-title", "about.title");
-  s("about-subtitle", "about.subtitle");
-  s("about-what-title", "about.what.title");
-  s("about-what-desc", "about.what.desc");
-  s("about-feat-dns-title", "about.feat.dns.title");
-  s("about-feat-dns-desc", "about.feat.dns.desc");
-  s("about-feat-speed-title", "about.feat.speed.title");
-  s("about-feat-speed-desc", "about.feat.speed.desc");
-  s("about-feat-adblock-title", "about.feat.adblock.title");
-  s("about-feat-adblock-desc", "about.feat.adblock.desc");
-  s("about-feat-headers-title", "about.feat.headers.title");
-  s("about-feat-headers-desc", "about.feat.headers.desc");
-  s("about-privacy-title", "about.privacy.title");
-  s("about-privacy-desc", "about.privacy.desc");
-  s("about-ledger-title", "about.ledger.title");
-  (["fp", "history", "export", "headers", "probe"] as const).forEach((k) => s(`about-ledger-${k}`, `about.ledger.${k}`));
-  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((el) => (el.textContent = t(`about.ledger.${el.dataset.ledger}`)));
-
-  // Footer
-  s("footer-text", "footer.text");
+  document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n!);
+  });
+  document.querySelectorAll<HTMLElement>("[data-i18n-attr]").forEach((el) => {
+    const [attr, key] = el.dataset.i18nAttr!.split(":");
+    if (attr && key) el.setAttribute(attr, t(key));
+  });
 
   // Page title
   document.title = current === "zh-TW" ? "NetCheck - DNS 與廣告攔截測試" : "NetCheck - DNS & Ad Block Tester";

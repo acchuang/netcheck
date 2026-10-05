@@ -122,6 +122,22 @@ test("worker handles OPTIONS preflight request with 204 and CORS headers", async
   assert.match(res.headers.get("Access-Control-Allow-Methods") || "", /POST/);
 });
 
+test("headers endpoint reflects request headers as a json object with cors", async () => {
+  const req = new Request("https://netcheck.internal/api/headers", {
+    headers: {
+      "x-test-header": "test-val",
+      "user-agent": "custom-agent",
+    },
+  });
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*");
+  const data = (await res.json()) as { headers: Record<string, string> };
+  assert.equal(data.headers["x-test-header"], "test-val");
+  assert.equal(data.headers["user-agent"], "custom-agent");
+});
+
+
 // SSRF guard: IP literals are checked synchronously (no DoH round-trip), so
 // these hit the guard's range math directly without touching the network.
 test("headers/check blocks private, loopback, link-local, and multicast IP literals", async () => {

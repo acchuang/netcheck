@@ -2,7 +2,7 @@ import { t, onLocaleChange } from "./i18n.ts";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
-import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES } from "../shared/dns-wire.ts";
+import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES, toHex } from "../shared/dns-wire.ts";
 import {
   dohVerdict, forwardedClientSubnet, encryptedDnsOperator, evaluateWebRtc,
   type WebRtcVerdict, type ObservedResolver,
@@ -86,10 +86,6 @@ interface ProbeResult {
   unreachable?: boolean;
   /** Read-back failed partway; the list is what arrived before it did. */
   incomplete?: boolean;
-}
-
-function hex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 const PROBE_POLL_MS = 400;
@@ -266,11 +262,11 @@ export const DnsCheck = {
       // can be exchanged for the result.
       const keyBytes = new Uint8Array(16);
       crypto.getRandomValues(keyBytes);
-      const readKey = hex(keyBytes);
+      const readKey = toHex(keyBytes);
       // Hash the hex text, not the raw bytes — the nameserver only ever sees the
       // key as the string it arrives as, and both sides must hash the same thing.
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(readKey));
-      const label = hex(new Uint8Array(digest)).slice(0, 16);
+      const label = toHex(new Uint8Array(digest)).slice(0, 16);
 
       // Trigger system recursive resolver by fetching canary image
       await fetch(`https://${label}.${config.zone}/pixel.png?_=${Date.now()}`, {

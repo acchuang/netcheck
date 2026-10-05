@@ -1,9 +1,6 @@
 // ponytail: mirrors snapshots.ts — adblock scores over time, color-coded deltas
 import { AdBlockTest } from "./adblock-test.ts";
-import { loadHistory, persistHistory } from "./ui-utils.ts";
-import { t } from "./i18n.ts";
-
-let clearTimer: number | null = null;
+import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
 
 interface AdblockSnapshot {
   ts: number;
@@ -44,34 +41,10 @@ function saveSnapshot(): void {
 }
 
 function clearSnapshots(): void {
-  const btn = document.getElementById("adblock-history-clear-btn") as HTMLButtonElement | null;
-  if (!btn) {
+  confirmAction(document.getElementById("adblock-history-clear-btn") as HTMLButtonElement | null, () => {
     localStorage.removeItem(KEY);
     renderHistory();
-    return;
-  }
-
-  if (btn.dataset.confirming === "true") {
-    if (clearTimer) {
-      clearTimeout(clearTimer);
-      clearTimer = null;
-    }
-    btn.dataset.confirming = "false";
-    btn.textContent = t("snap.clear");
-    btn.classList.remove("btn-warn");
-    localStorage.removeItem(KEY);
-    renderHistory();
-  } else {
-    btn.dataset.confirming = "true";
-    btn.textContent = t("history.confirmClear");
-    btn.classList.add("btn-warn");
-    clearTimer = window.setTimeout(() => {
-      btn.dataset.confirming = "false";
-      btn.textContent = t("snap.clear");
-      btn.classList.remove("btn-warn");
-      clearTimer = null;
-    }, 4000);
-  }
+  });
 }
 
 function fmtDelta(cur: number, prev: number | undefined, lowerBetter = false): string {

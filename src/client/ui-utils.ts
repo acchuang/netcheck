@@ -193,6 +193,44 @@ export function persistHistory<T>(key: string, items: T[], max: number): void {
   localStorage.setItem(key, JSON.stringify(items.slice(-max)));
 }
 
+const confirmTimers = new WeakMap<HTMLButtonElement, number>();
+
+export function confirmAction(
+  btn: HTMLButtonElement | null,
+  onConfirm: () => void,
+  defaultKey = "snap.clear",
+  confirmKey = "history.confirmClear"
+): void {
+  if (!btn) return;
+
+  const reset = () => {
+    btn.dataset.confirming = "false";
+    btn.dataset.i18n = defaultKey;
+    btn.textContent = t(defaultKey);
+    btn.classList.remove("btn-warn");
+  };
+
+  const existingTimer = confirmTimers.get(btn);
+  if (btn.dataset.confirming === "true") {
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      confirmTimers.delete(btn);
+    }
+    reset();
+    onConfirm();
+  } else {
+    btn.dataset.confirming = "true";
+    btn.dataset.i18n = confirmKey;
+    btn.textContent = t(confirmKey);
+    btn.classList.add("btn-warn");
+    const timer = window.setTimeout(() => {
+      reset();
+      confirmTimers.delete(btn);
+    }, 4000);
+    confirmTimers.set(btn, timer);
+  }
+}
+
 export function isHidden(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect();
   return rect.width === 0 || rect.height === 0 ||

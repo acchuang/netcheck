@@ -79,22 +79,22 @@
           </svg>
         </button>
         <div class="export-dropdown">
-          <button class="btn-export" id="export-btn" title="Export Report">
+          <button class="btn-export" id="export-btn" data-i18n-attr="title:nav.exportReport" title="Export Report">
             <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span class="export-btn-text" id="export-btn-text">Export</span>
+            <span class="export-btn-text" id="export-btn-text" data-i18n="nav.export">Export</span>
           </button>
           <div class="export-menu" id="export-menu">
             <button class="export-option" data-format="markdown">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span id="export-md-text">Download Markdown</span>
+              <span id="export-md-text" data-i18n="nav.downloadMd">Download Markdown</span>
             </button>
             <button class="export-option" data-format="pdf">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-              <span id="export-pdf-text">Save as PDF</span>
+              <span id="export-pdf-text" data-i18n="nav.savePdf">Save as PDF</span>
             </button>
           </div>
         </div>
@@ -106,21 +106,21 @@
     <!-- DNS Check Section -->
     <section id="dns" class="section active" role="tabpanel" aria-labelledby="tab-dns">
       <div class="section-header">
-        <h1 class="display" id="dns-title">DNS & Network Check</h1>
-        <p class="subtitle" id="dns-subtitle">Detect your IP, DNS resolvers, and network configuration</p>
+        <h1 class="display" id="dns-title" data-i18n="dns.title">DNS & Network Check</h1>
+        <p class="subtitle" id="dns-subtitle" data-i18n="dns.subtitle">Detect your IP, DNS resolvers, and network configuration</p>
       </div>
 
       <div class="station">
         <div class="schematic">
           <div class="panel-head">
-            <h2 class="card-title" id="dns-path-title">Connection path</h2>
+            <h2 class="card-title" id="dns-path-title" data-i18n="station.path">Connection path</h2>
             <span class="status-badge" id="dns-scan-status" aria-live="polite"></span>
           </div>
           <ol class="path" id="dns-path" aria-labelledby="dns-path-title">
             <li class="hop" data-hop="you" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
-                <span class="hop-key" id="hop-you-key">You</span>
+                <span class="hop-key" id="hop-you-key" data-i18n="station.you">You</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -128,7 +128,7 @@
             <li class="hop" data-hop="router" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
-                <span class="hop-key" id="hop-router-key">Router</span>
+                <span class="hop-key" id="hop-router-key" data-i18n="station.router">Router</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -136,7 +136,7 @@
             <li class="hop" data-hop="isp" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
-                <span class="hop-key" id="hop-isp-key">ISP</span>
+                <span class="hop-key" id="hop-isp-key" data-i18n="station.isp">ISP</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -144,7 +144,7 @@
             <li class="hop" data-hop="resolver" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
-                <span class="hop-key" id="hop-resolver-key">Resolver</span>
+                <span class="hop-key" id="hop-resolver-key" data-i18n="station.resolver">Resolver</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -152,7 +152,7 @@
             <li class="hop" data-hop="edge" data-state="standby">
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
-                <span class="hop-key" id="hop-edge-key">Edge</span>
+                <span class="hop-key" id="hop-edge-key" data-i18n="station.edge">Edge</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -163,17 +163,17 @@
 
         <div class="readout-panel">
           <div class="panel-head">
-            <h2 class="card-title" id="dns-verdict-title">Verdict</h2>
+            <h2 class="card-title" id="dns-verdict-title" data-i18n="station.verdict">Verdict</h2>
           </div>
           <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
           <div class="readout">
-            <span class="readout-label" id="dns-fastest-label">Fastest public resolver</span>
+            <span class="readout-label" id="dns-fastest-label" data-i18n="station.fastest">Fastest public resolver</span>
             <span class="readout-value"><span class="seg" id="dns-fastest-value">---</span><span class="seg-unit">ms</span></span>
             <span class="readout-sub" id="dns-fastest-name"></span>
           </div>
-          <h3 class="readout-label" id="dns-checks-title">Checks</h3>
+          <h3 class="readout-label" id="dns-checks-title" data-i18n="station.checks">Checks</h3>
           <ul class="conditions" id="dns-conditions"></ul>
-          <button type="button" class="btn btn-primary btn-run" id="dns-run-btn"><span id="dns-run-label">Run</span></button>
+          <button type="button" class="btn btn-primary btn-run" id="dns-run-btn"><span id="dns-run-label" data-i18n="station.run">Run</span></button>
         </div>
       </div>
 
@@ -185,40 +185,40 @@
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
               <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
             </svg>
-            <h2 class="card-title" id="dns-ip-title">Your IP Address</h2>
+            <h2 class="card-title" id="dns-ip-title" data-i18n="dns.ipTitle">Your IP Address</h2>
             <span class="status-badge" id="ip-status">detecting...</span>
           </div>
           <div class="card-body">
             <div class="info-row">
-              <span class="info-label" id="dns-ipv4-label">IPv4</span>
+              <span class="info-label" id="dns-ipv4-label" data-i18n="dns.ipv4">IPv4</span>
               <span class="info-value mono" id="ip-address">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-ipv6-label">IPv6</span>
+              <span class="info-label" id="dns-ipv6-label" data-i18n="dns.ipv6">IPv6</span>
               <span class="info-value mono" id="ip-address-v6">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-location-label">Location</span>
+              <span class="info-label" id="dns-location-label" data-i18n="dns.location">Location</span>
               <span class="info-value" id="ip-location">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-isp-label">ISP / ASN</span>
+              <span class="info-label" id="dns-isp-label" data-i18n="dns.isp">ISP / ASN</span>
               <span class="info-value" id="ip-asn">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-timezone-label">Timezone</span>
+              <span class="info-label" id="dns-timezone-label" data-i18n="dns.timezone">Timezone</span>
               <span class="info-value" id="ip-timezone">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-colo-label">Cloudflare PoP</span>
+              <span class="info-label" id="dns-colo-label" data-i18n="dns.colo">Cloudflare PoP</span>
               <span class="info-value mono" id="ip-colo">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-http-label">HTTP Protocol</span>
+              <span class="info-label" id="dns-http-label" data-i18n="dns.http">HTTP Protocol</span>
               <span class="info-value mono" id="ip-http">—</span>
             </div>
             <div class="info-row">
-              <span class="info-label" id="dns-tls-label">TLS Version</span>
+              <span class="info-label" id="dns-tls-label" data-i18n="dns.tls">TLS Version</span>
               <span class="info-value mono" id="ip-tls">—</span>
             </div>
           </div>
@@ -230,20 +230,20 @@
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
-            <h2 class="card-title" id="dns-resolver-title">DNS Resolver</h2>
+            <h2 class="card-title" id="dns-resolver-title" data-i18n="dns.resolverTitle">DNS Resolver</h2>
             <span class="status-badge" id="dns-resolver-status">detecting...</span>
           </div>
           <div class="card-body">
             <!-- Hidden unless the deployment runs its own authoritative nameserver;
                  without one there is no way to see the visitor's recursion path. -->
             <div id="dns-observed-section">
-              <p class="card-subhead" id="dns-observed-subhead">Your recursive resolver</p>
+              <p class="card-subhead" id="dns-observed-subhead" data-i18n="dns.observedSubhead">Your recursive resolver</p>
               <div id="dns-observed-results">
                 <p class="info-muted">Checking your DNS configuration...</p>
               </div>
             </div>
-            <p class="card-subhead" id="dns-public-subhead">Public resolvers, for comparison</p>
-            <p class="card-note" id="dns-public-note">These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.</p>
+            <p class="card-subhead" id="dns-public-subhead" data-i18n="dns.publicSubhead">Public resolvers, for comparison</p>
+            <p class="card-note" id="dns-public-note" data-i18n="dns.publicNote">These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.</p>
             <div id="dns-resolver-results"></div>
           </div>
         </div>
@@ -254,7 +254,7 @@
             <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
-            <h2 class="card-title" id="dns-security-title">DNS Security</h2>
+            <h2 class="card-title" id="dns-security-title" data-i18n="dns.securityTitle">DNS Security</h2>
             <span class="status-badge" id="dns-security-status">pending...</span>
           </div>
           <div class="card-body">
@@ -272,12 +272,12 @@
               <line x1="2" y1="12" x2="22" y2="12"/>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
-            <h2 class="card-title" id="dns-ecs-title">EDNS Client Subnet</h2>
+            <h2 class="card-title" id="dns-ecs-title" data-i18n="dns.ecsTitle">EDNS Client Subnet</h2>
             <span class="status-badge" id="dns-ecs-status">pending...</span>
           </div>
           <div class="card-body">
             <p class="info-muted" id="dns-ecs-summary">Checking which resolvers reveal your subnet...</p>
-            <p class="card-note" id="dns-ecs-note">ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server, at the cost of revealing roughly where you are.</p>
+            <p class="card-note" id="dns-ecs-note" data-i18n="dns.ecsNote">ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server, at the cost of revealing roughly where you are.</p>
             <div id="dns-ecs-results"></div>
           </div>
         </div>
@@ -291,12 +291,12 @@
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <h2 class="card-title" id="dns-workstation-title">DNS Diagnostic Workstation</h2>
+            <h2 class="card-title" id="dns-workstation-title" data-i18n="dns.workstationTitle">DNS Diagnostic Workstation</h2>
           </div>
           <div class="workstation-tabs" role="tablist" aria-label="DNS Diagnostic Tools">
-            <button type="button" class="workstation-tab active" role="tab" aria-selected="true" aria-controls="dns-panel-lookup" id="tab-tool-lookup" data-tool="lookup">Record Lookup</button>
-            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-compare" id="tab-tool-compare" data-tool="compare">Compare Resolvers</button>
-            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-health" id="tab-tool-health" data-tool="health">Domain Email Health</button>
+            <button type="button" class="workstation-tab active" role="tab" aria-selected="true" aria-controls="dns-panel-lookup" id="tab-tool-lookup" data-i18n="dns.tabLookup" data-tool="lookup">Record Lookup</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-compare" id="tab-tool-compare" data-i18n="dns.tabCompare" data-tool="compare">Compare Resolvers</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-health" id="tab-tool-health" data-i18n="dns.tabHealth" data-tool="health">Domain Email Health</button>
           </div>
         </div>
         <div class="card-body">
@@ -313,17 +313,17 @@
                 <option value="CNAME">CNAME</option>
                 <option value="SOA">SOA</option>
                 <option value="SRV">SRV</option>
-                <option value="PTR" id="dns-ptr-option">PTR (Reverse)</option>
-                <option value="ALL" id="dns-all-option">All Records</option>
+                <option value="PTR" id="dns-ptr-option" data-i18n="dns.ptrReverse">PTR (Reverse)</option>
+                <option value="ALL" id="dns-all-option" data-i18n="dns.allRecords">All Records</option>
               </select>
-              <button id="dns-lookup-btn" class="btn btn-primary">Lookup</button>
+              <button id="dns-lookup-btn" data-i18n="dns.lookupBtn" class="btn btn-primary">Lookup</button>
             </div>
             <div id="dns-lookup-results" class="lookup-results hidden">
               <div id="dns-lookup-table"></div>
               <details class="raw-toggle">
                 <summary class="raw-toggle-summary" id="dns-raw-json-summary">
-                  <span id="dns-raw-json-label">Raw JSON</span>
-                  <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" title="Copy raw JSON output">Copy JSON</button>
+                  <span id="dns-raw-json-label" data-i18n="dns.rawJson">Raw JSON</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" data-i18n="dns.copyJson" title="Copy raw JSON output">Copy JSON</button>
                 </summary>
                 <pre class="code-block"><code id="dns-lookup-output"></code></pre>
               </details>
@@ -334,7 +334,7 @@
           <div class="workstation-panel" id="dns-panel-compare" role="tabpanel" aria-labelledby="tab-tool-compare" hidden>
             <div class="lookup-form">
               <input type="text" id="dns-compare-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to compare across resolvers">
-              <button id="dns-compare-btn" class="btn btn-primary">Compare Resolvers</button>
+              <button id="dns-compare-btn" data-i18n="dns.compareBtn" class="btn btn-primary">Compare Resolvers</button>
             </div>
             <div id="dns-compare-results" class="lookup-results hidden"></div>
           </div>
@@ -343,8 +343,8 @@
           <div class="workstation-panel" id="dns-panel-health" role="tabpanel" aria-labelledby="tab-tool-health" hidden>
             <div class="lookup-form">
               <input type="text" id="dns-health-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name for email health check">
-              <input type="text" id="dns-health-selector" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
-              <button id="dns-health-btn" class="btn btn-primary">Check Domain Health</button>
+              <input type="text" id="dns-health-selector" data-i18n-attr="placeholder:dns.healthSelectorPlaceholder" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
+              <button id="dns-health-btn" data-i18n="dns.healthBtn" class="btn btn-primary">Check Domain Health</button>
             </div>
             <div id="dns-health-results" class="lookup-results hidden"></div>
           </div>
@@ -353,7 +353,7 @@
 
       <!-- DNS Suggestions -->
       <div class="suggestions-section" id="dns-suggestions-section">
-        <h2 class="suggestions-title" id="dns-suggestions-title">Recommendations</h2>
+        <h2 class="suggestions-title" id="dns-suggestions-title" data-i18n="dns.recommendations">Recommendations</h2>
         <p class="suggestions-subtitle" id="dns-suggestions-subtitle"></p>
         <div class="suggestions-grid" id="dns-suggestions-grid"></div>
       </div>
@@ -362,14 +362,14 @@
     <!-- Speed Test Section -->
     <section id="speed" class="section" role="tabpanel" aria-labelledby="tab-speed">
       <div class="section-header">
-        <h1 class="display" id="speed-title">Speed Test</h1>
-        <p class="subtitle" id="speed-subtitle">Measure your connection speed via Cloudflare's global edge network</p>
+        <h1 class="display" id="speed-title" data-i18n="speed.title">Speed Test</h1>
+        <p class="subtitle" id="speed-subtitle" data-i18n="speed.subtitle">Measure your connection speed via Cloudflare's global edge network</p>
       </div>
 
       <div class="station speed-station">
         <div class="schematic">
           <div class="panel-head">
-            <h2 class="card-title" id="speed-route-title">Test route</h2>
+            <h2 class="card-title" id="speed-route-title" data-i18n="speed.route">Test route</h2>
             <select id="speed-server-select" class="input select server-select" aria-label="Test server">
               <option value="edge">Nearest Edge (Worker)</option>
               <option value="cf-speed" selected>Cloudflare Speed Test</option>
@@ -381,7 +381,7 @@
             <div class="route-end">
               <span class="route-node" aria-hidden="true"></span>
               <div class="route-card">
-                <span class="route-key" id="speed-route-you">You</span>
+                <span class="route-key" id="speed-route-you" data-i18n="station.you">You</span>
                 <span class="route-reading" id="speed-you-isp">—</span>
                 <span class="route-reading" id="speed-you-city"></span>
               </div>
@@ -392,7 +392,7 @@
             <div class="route-end">
               <span class="route-node" aria-hidden="true"></span>
               <div class="route-card">
-                <span class="route-key" id="speed-route-server">Server</span>
+                <span class="route-key" id="speed-route-server" data-i18n="speed.server">Server</span>
                 <span class="route-reading" id="speed-server-value">Automatic (nearest edge)</span>
                 <span class="route-reading" id="speed-server-ping"></span>
               </div>
@@ -400,14 +400,14 @@
           </div>
           <div class="route-custom hidden" id="speed-custom-url-row">
             <input type="url" id="speed-custom-url" class="input" placeholder="https://your-worker.example.com" aria-label="Custom speed test server URL" />
-            <p class="info-muted" id="speed-custom-url-hint">Must implement /api/speedtest/{ping,down,up}</p>
+            <p class="info-muted" id="speed-custom-url-hint" data-i18n="speed.customUrlHint">Must implement /api/speedtest/{ping,down,up}</p>
           </div>
-          <div class="speed-graph-card" id="speed-graph-card">
+          <div class="speed-graph-card" id="speed-graph-card" data-i18n-attr="data-standby:state.standby">
             <div class="speed-graph-header">
-              <h3 class="readout-label" id="speed-graph-title-text">Speed Over Time</h3>
+              <h3 class="readout-label" id="speed-graph-title-text" data-i18n="speed.graphTitle">Speed Over Time</h3>
               <div class="speed-graph-legend">
-                <span class="legend-item"><span class="legend-dot download"></span><span id="speed-dl-legend">Download</span></span>
-                <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend">Upload</span></span>
+                <span class="legend-item"><span class="legend-dot download"></span><span id="speed-dl-legend" data-i18n="speed.download">Download</span></span>
+                <span class="legend-item"><span class="legend-dot upload"></span><span id="speed-ul-legend" data-i18n="speed.upload">Upload</span></span>
               </div>
             </div>
             <canvas id="speed-graph" width="1100" height="200" role="img" aria-label="Real-time speed test performance curve"></canvas>
@@ -416,44 +416,44 @@
 
         <div class="readout-panel speed-readouts">
           <div class="panel-head">
-            <h2 class="card-title" id="speed-readings-title">Readings</h2>
+            <h2 class="card-title" id="speed-readings-title" data-i18n="speed.readings">Readings</h2>
           </div>
           <div class="speed-controls">
             <button type="button" class="btn btn-primary btn-run" id="speed-start-btn">Run Speed Test</button>
-            <button type="button" class="btn btn-run hidden" id="speed-cancel-btn">Cancel Test</button>
+            <button type="button" class="btn btn-run hidden" id="speed-cancel-btn" data-i18n="speed.cancelBtn">Cancel Test</button>
             <p class="speed-grade-label" id="speed-grade-label" aria-live="polite">Waiting to start</p>
             <p class="speed-phase" id="speed-phase">Click the button below to begin</p>
           </div>
           <div class="verdict" id="speed-verdict" role="status" aria-live="polite" hidden></div>
           <div class="readout" data-metric="download">
-            <span class="readout-label" id="speed-download-label" tabindex="0" role="note" data-tooltip="Maximum download speed measured via progressive file transfers">Download</span>
+            <span class="readout-label" id="speed-download-label" data-i18n-attr="data-tooltip:speed.tip.download" data-i18n="speed.download" tabindex="0" role="note" data-tooltip="Maximum download speed measured via progressive file transfers">Download</span>
             <span class="readout-value"><span class="seg placeholder" id="speed-download">---</span><span class="seg-unit">Mbps</span></span>
             <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-download-bar"></span></span>
           </div>
           <div class="readout" data-metric="upload">
-            <span class="readout-label" id="speed-upload-label" tabindex="0" role="note" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</span>
+            <span class="readout-label" id="speed-upload-label" data-i18n-attr="data-tooltip:speed.tip.upload" data-i18n="speed.upload" tabindex="0" role="note" data-tooltip="Maximum upload speed measured via progressive data transfers">Upload</span>
             <span class="readout-value"><span class="seg placeholder" id="speed-upload">---</span><span class="seg-unit">Mbps</span></span>
             <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-upload-bar"></span></span>
           </div>
           <div class="readout-trio">
             <div class="readout" data-metric="latency">
-              <span class="readout-label" id="speed-latency-label" tabindex="0" role="note" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</span>
+              <span class="readout-label" id="speed-latency-label" data-i18n-attr="data-tooltip:speed.tip.latency" data-i18n="speed.latency" tabindex="0" role="note" data-tooltip="Round-trip time to the nearest Cloudflare edge server (median of 10 pings)">Latency</span>
               <span class="readout-value"><span class="seg seg-sm placeholder" id="speed-latency">---</span><span class="seg-unit">ms</span></span>
               <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-latency-bar"></span></span>
             </div>
             <div class="readout" data-metric="jitter">
-              <span class="readout-label" id="speed-jitter-label" tabindex="0" role="note" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</span>
+              <span class="readout-label" id="speed-jitter-label" data-i18n-attr="data-tooltip:speed.tip.jitter" data-i18n="speed.jitter" tabindex="0" role="note" data-tooltip="Variation in latency. Lower is better for gaming and video calls">Jitter</span>
               <span class="readout-value"><span class="seg seg-sm placeholder" id="speed-jitter">---</span><span class="seg-unit">ms</span></span>
               <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-jitter-bar"></span></span>
             </div>
             <div class="readout" data-metric="bufferbloat">
-              <span class="readout-label" id="speed-bufferbloat-label" tabindex="0" role="note" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</span>
+              <span class="readout-label" id="speed-bufferbloat-label" data-i18n-attr="data-tooltip:speed.tip.bufferbloat" data-i18n="speed.bufferbloat" tabindex="0" role="note" data-tooltip="Latency increase while the link is saturated by the download/upload test. Lower is better for gaming and video calls">Bufferbloat</span>
               <span class="readout-value"><span class="readout-grade placeholder" id="speed-bufferbloat">---</span></span>
               <span class="readout-sub" id="speed-bufferbloat-unit">grade</span>
               <span class="meter" aria-hidden="true"><span class="meter-fill" id="speed-bufferbloat-bar"></span></span>
             </div>
           </div>
-          <button type="button" class="btn btn-small speed-snapshot-btn" id="snapshot-save-btn" title="Save current results to compare later" disabled>Save Snapshot</button>
+          <button type="button" class="btn btn-small speed-snapshot-btn" id="snapshot-save-btn" data-i18n="snap.save" title="Save current results to compare later" disabled>Save Snapshot</button>
         </div>
       </div>
 
@@ -461,15 +461,15 @@
         <!-- Speed Snapshot History -->
         <div class="snapshot-section" id="snapshot-section" hidden>
           <div class="snapshot-header">
-            <h2 class="snapshot-title" id="snapshot-title">History</h2>
-            <button class="btn btn-small" id="snapshot-clear-btn" title="Clear history">Clear</button>
+            <h2 class="snapshot-title" id="snapshot-title" data-i18n="snap.title">History</h2>
+            <button class="btn btn-small" id="snapshot-clear-btn" data-i18n="snap.clear" title="Clear history">Clear</button>
           </div>
           <div class="snapshot-list" id="snapshot-list"></div>
         </div>
 
         <!-- Speed Suggestions -->
         <div class="suggestions-section" id="speed-suggestions-section">
-          <h2 class="suggestions-title" id="speed-suggestions-title">Recommendations</h2>
+          <h2 class="suggestions-title" id="speed-suggestions-title" data-i18n="speed.recommendations">Recommendations</h2>
           <p class="suggestions-subtitle" id="speed-suggestions-subtitle"></p>
           <div class="suggestions-grid" id="speed-suggestions-grid"></div>
         </div>
@@ -479,29 +479,29 @@
     <!-- Ad Block Test Section -->
     <section id="adblock" class="section" role="tabpanel" aria-labelledby="tab-adblock">
       <div class="section-header">
-        <h1 class="display" id="adblock-title">Ad Block Tester</h1>
-        <p class="subtitle" id="adblock-subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
+        <h1 class="display" id="adblock-title" data-i18n="adblock.title">Ad Block Tester</h1>
+        <p class="subtitle" id="adblock-subtitle" data-i18n="adblock.subtitle">Test the effectiveness of your ad blocker across multiple categories</p>
       </div>
 
       <div class="station adblock-station">
         <div class="schematic">
           <div class="panel-head">
-            <h2 class="card-title" id="adblock-cats-title">Categories</h2>
+            <h2 class="card-title" id="adblock-cats-title" data-i18n="adblock.categories">Categories</h2>
           </div>
           <div class="test-categories" id="test-categories"></div>
           <div class="adblock-custom">
             <input type="text" id="adblock-custom-url" class="input" placeholder="example.com or https://..." aria-label="Custom test URL">
-            <button type="button" class="btn btn-small" id="adblock-custom-btn">Test URL</button>
+            <button type="button" class="btn btn-small" id="adblock-custom-btn" data-i18n="adblock.testUrl">Test URL</button>
           </div>
           <div class="adblock-custom-results" id="adblock-custom-card" hidden>
-            <h3 class="readout-label" id="adblock-custom-title">Custom URL Test</h3>
+            <h3 class="readout-label" id="adblock-custom-title" data-i18n="adblock.customCard">Custom URL Test</h3>
             <div id="adblock-custom-results"></div>
           </div>
         </div>
 
         <div class="readout-panel adblock-readouts">
           <div class="panel-head">
-            <h2 class="card-title" id="adblock-score-title">Block score</h2>
+            <h2 class="card-title" id="adblock-score-title" data-i18n="adblock.score">Block score</h2>
           </div>
           <div class="readout" id="adblock-score">
             <span class="readout-value"><span class="seg placeholder" id="score-number">---</span><span class="seg-unit">/ 100</span></span>
@@ -509,17 +509,17 @@
             <p class="score-summary" id="score-summary" aria-live="polite"></p>
             <p class="readout-sub" id="score-detail"></p>
           </div>
-          <h3 class="readout-label" id="adblock-breakdown-title">Breakdown</h3>
+          <h3 class="readout-label" id="adblock-breakdown-title" data-i18n="adblock.breakdown">Breakdown</h3>
           <ul class="conditions" id="score-breakdown"></ul>
           <p class="score-hint" id="score-hint" hidden></p>
           <div class="readout blocker-readout" id="adblock-blocker-card" hidden>
-            <span class="readout-label" id="adblock-blocker-title">Detected Blocker</span>
+            <span class="readout-label" id="adblock-blocker-title" data-i18n="adblock.blockerCard">Detected Blocker</span>
             <span class="blocker-name" id="adblock-blocker-name" aria-live="polite">—</span>
             <span class="readout-sub" id="adblock-blocker-detail"></span>
           </div>
           <div class="adblock-actions">
-            <button type="button" class="btn btn-small" id="adblock-history-save-btn" title="Save current score to compare later" disabled>Save Snapshot</button>
-            <button type="button" class="btn btn-primary" id="adblock-rerun-btn">Re-test</button>
+            <button type="button" class="btn btn-small" id="adblock-history-save-btn" data-i18n="snap.save" title="Save current score to compare later" disabled>Save Snapshot</button>
+            <button type="button" class="btn btn-primary" id="adblock-rerun-btn" data-i18n="adblock.rerun">Re-test</button>
           </div>
         </div>
       </div>
@@ -527,7 +527,7 @@
       <div class="station adblock-lower">
         <div class="schematic" id="filter-list-section">
           <div class="panel-head">
-            <h2 class="card-title" id="filter-list-title">Detected Filter Lists</h2>
+            <h2 class="card-title" id="filter-list-title" data-i18n="filter.title">Detected Filter Lists</h2>
           </div>
           <p class="panel-note" id="filter-list-subtitle">Identifying which filter lists your ad blocker uses...</p>
           <ul class="filter-list-grid" id="filter-list-grid"></ul>
@@ -535,17 +535,17 @@
 
         <div class="readout-panel" id="fingerprint-card">
           <div class="panel-head">
-            <h2 class="card-title" id="fingerprint-title">Fingerprint Surface</h2>
+            <h2 class="card-title" id="fingerprint-title" data-i18n="fp.title">Fingerprint Surface</h2>
             <span class="status-badge" id="fingerprint-level" aria-live="polite"></span>
           </div>
-          <p class="panel-note" id="fingerprint-note">Read straight from the browser APIs a fingerprinter would call.</p>
+          <p class="panel-note" id="fingerprint-note" data-i18n="fp.note">Read straight from the browser APIs a fingerprinter would call.</p>
           <ul class="conditions" id="fingerprint-signals"></ul>
         </div>
       </div>
 
       <!-- Suggestions -->
       <div class="suggestions-section" id="suggestions-section">
-        <h2 class="suggestions-title" id="adblock-suggestions-title">Recommendations</h2>
+        <h2 class="suggestions-title" id="adblock-suggestions-title" data-i18n="adblock.recommendations">Recommendations</h2>
         <p class="suggestions-subtitle" id="suggestions-subtitle"></p>
         <div class="suggestions-grid" id="suggestions-grid">
           <!-- Populated by JS -->
@@ -555,8 +555,8 @@
       <!-- Adblock Score History -->
       <div class="snapshot-section" id="adblock-history-section" hidden>
         <div class="snapshot-header">
-          <h2 class="snapshot-title" id="adblock-history-title">Score History</h2>
-          <button class="btn btn-small" id="adblock-history-clear-btn" title="Clear history">Clear</button>
+          <h2 class="snapshot-title" id="adblock-history-title" data-i18n="snap.scoreTitle">Score History</h2>
+          <button class="btn btn-small" id="adblock-history-clear-btn" data-i18n="snap.clear" title="Clear history">Clear</button>
         </div>
         <div class="snapshot-list" id="adblock-history-list"></div>
       </div>
@@ -565,23 +565,23 @@
     <!-- Security Headers Section -->
     <section id="headers" class="section" role="tabpanel" aria-labelledby="tab-headers">
       <div class="section-header">
-        <h1 class="display" id="headers-title">Security Headers</h1>
-        <p class="subtitle" id="headers-subtitle">Analyze HTTP security headers of any website</p>
+        <h1 class="display" id="headers-title" data-i18n="headers.title">Security Headers</h1>
+        <p class="subtitle" id="headers-subtitle" data-i18n="headers.subtitle">Analyze HTTP security headers of any website</p>
       </div>
 
       <div class="station">
         <div class="schematic">
           <div class="panel-head">
-            <h2 class="card-title" id="headers-detail-title">Header checklist</h2>
+            <h2 class="card-title" id="headers-detail-title" data-i18n="headers.detailTitle">Header checklist</h2>
             <span class="status-badge" id="headers-status" hidden></span>
           </div>
           <div class="lookup-form headers-form">
             <input type="text" id="headers-url-input" class="input input-wide" placeholder="example.com" value="" aria-label="Target website URL for security headers scan">
-            <button id="headers-check-btn" class="btn btn-primary">Scan</button>
+            <button id="headers-check-btn" data-i18n="headers.scan" class="btn btn-primary">Scan</button>
           </div>
           <div class="empty-state" id="headers-empty">
-            <p class="empty-state-title" id="headers-empty-title">No site scanned yet</p>
-            <p class="empty-state-desc" id="headers-empty-desc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
+            <p class="empty-state-title" id="headers-empty-title" data-i18n="headers.emptyTitle">No site scanned yet</p>
+            <p class="empty-state-desc" id="headers-empty-desc" data-i18n="headers.emptyDesc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
             <div class="empty-state-actions">
               <button class="btn btn-small" data-headers-example="github.com">github.com</button>
               <button class="btn btn-small" data-headers-example="cloudflare.com">cloudflare.com</button>
@@ -593,16 +593,16 @@
 
         <div class="readout-panel">
           <div class="panel-head">
-            <h2 class="card-title" id="headers-verdict-title">Verdict</h2>
+            <h2 class="card-title" id="headers-verdict-title" data-i18n="headers.verdictTitle">Verdict</h2>
           </div>
           <div class="verdict" id="headers-verdict" role="status" aria-live="polite" hidden></div>
           <div class="readout" id="headers-grade-readout" data-state="standby">
-            <span class="readout-label" id="headers-grade-label">Grade</span>
+            <span class="readout-label" id="headers-grade-label" data-i18n="headers.gradeLabel">Grade</span>
             <span class="readout-value"><span class="seg placeholder" id="headers-grade">-</span></span>
             <span class="readout-sub" id="headers-server-info"></span>
           </div>
           <div class="readout" id="headers-count-readout" data-state="standby">
-            <span class="readout-label" id="headers-count-label">Headers present</span>
+            <span class="readout-label" id="headers-count-label" data-i18n="headers.countLabel">Headers present</span>
             <span class="readout-value"><span class="seg seg-sm placeholder" id="headers-count">--</span><span class="seg-unit" id="headers-total"></span></span>
             <span class="meter" aria-hidden="true"><span class="meter-fill" id="headers-meter"></span></span>
           </div>
@@ -613,49 +613,49 @@
     <!-- About Section -->
     <section id="about" class="section" role="tabpanel" aria-labelledby="tab-about">
       <div class="section-header">
-        <h1 class="display" id="about-title">About NetCheck</h1>
-        <p class="subtitle" id="about-subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
+        <h1 class="display" id="about-title" data-i18n="about.title">About NetCheck</h1>
+        <p class="subtitle" id="about-subtitle" data-i18n="about.subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
       </div>
 
       <div class="station">
         <div class="schematic">
           <div class="panel-head">
-            <h2 class="card-title" id="about-what-title">What is NetCheck?</h2>
+            <h2 class="card-title" id="about-what-title" data-i18n="about.what.title">What is NetCheck?</h2>
           </div>
-          <p class="about-lede" id="about-what-desc"></p>
+          <p class="about-lede" id="about-what-desc" data-i18n="about.what.desc"></p>
           <dl class="about-tools">
             <div class="about-tool">
-              <dt class="readout-label" id="about-feat-dns-title">DNS Check</dt>
-              <dd id="about-feat-dns-desc"></dd>
+              <dt class="readout-label" id="about-feat-dns-title" data-i18n="about.feat.dns.title">DNS Check</dt>
+              <dd id="about-feat-dns-desc" data-i18n="about.feat.dns.desc"></dd>
             </div>
             <div class="about-tool">
-              <dt class="readout-label" id="about-feat-speed-title">Speed Test</dt>
-              <dd id="about-feat-speed-desc"></dd>
+              <dt class="readout-label" id="about-feat-speed-title" data-i18n="about.feat.speed.title">Speed Test</dt>
+              <dd id="about-feat-speed-desc" data-i18n="about.feat.speed.desc"></dd>
             </div>
             <div class="about-tool">
-              <dt class="readout-label" id="about-feat-adblock-title">Ad Block Test</dt>
-              <dd id="about-feat-adblock-desc"></dd>
+              <dt class="readout-label" id="about-feat-adblock-title" data-i18n="about.feat.adblock.title">Ad Block Test</dt>
+              <dd id="about-feat-adblock-desc" data-i18n="about.feat.adblock.desc"></dd>
             </div>
             <div class="about-tool">
-              <dt class="readout-label" id="about-feat-headers-title">Security Headers</dt>
-              <dd id="about-feat-headers-desc"></dd>
+              <dt class="readout-label" id="about-feat-headers-title" data-i18n="about.feat.headers.title">Security Headers</dt>
+              <dd id="about-feat-headers-desc" data-i18n="about.feat.headers.desc"></dd>
             </div>
           </dl>
         </div>
 
         <div class="readout-panel">
           <div class="panel-head">
-            <h2 class="card-title" id="about-privacy-title">Privacy</h2>
+            <h2 class="card-title" id="about-privacy-title" data-i18n="about.privacy.title">Privacy</h2>
           </div>
-          <h3 class="readout-label" id="about-ledger-title">What leaves this browser</h3>
+          <h3 class="readout-label" id="about-ledger-title" data-i18n="about.ledger.title">What leaves this browser</h3>
           <ul class="conditions about-ledger">
-            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-fp"></span><span class="condition-state" data-ledger="local"></span></li>
-            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-history"></span><span class="condition-state" data-ledger="local"></span></li>
-            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-export"></span><span class="condition-state" data-ledger="local"></span></li>
-            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-headers"></span><span class="condition-state" data-ledger="sent"></span></li>
-            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-probe"></span><span class="condition-state" data-ledger="sent"></span></li>
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-fp" data-i18n="about.ledger.fp"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-history" data-i18n="about.ledger.history"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
+            <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-export" data-i18n="about.ledger.export"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-headers" data-i18n="about.ledger.headers"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-probe" data-i18n="about.ledger.probe"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
           </ul>
-          <p class="panel-note about-privacy" id="about-privacy-desc"></p>
+          <p class="panel-note about-privacy" id="about-privacy-desc" data-i18n="about.privacy.desc"></p>
         </div>
       </div>
     </section>
@@ -663,7 +663,7 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-text" id="footer-text">NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.</p>
+    <p class="footer-text" id="footer-text" data-i18n="footer.text">NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.</p>
     <a href="https://github.com/acchuang/netcheck" target="_blank" rel="noopener noreferrer" class="footer-link">
       <svg class="footer-gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       GitHub

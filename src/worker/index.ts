@@ -188,11 +188,7 @@ async function handleDnsCheck(request: Request): Promise<Response> {
 }
 
 function handleHeaders(request: Request): Response {
-  const headers: Record<string, string> = {};
-  for (const [key, value] of request.headers) {
-    headers[key] = value;
-  }
-  return Response.json({ headers }, { headers: corsHeaders() });
+  return Response.json({ headers: Object.fromEntries(request.headers) }, { headers: corsHeaders() });
 }
 
 const MAX_DOWNLOAD_BYTES = 100_000_000;

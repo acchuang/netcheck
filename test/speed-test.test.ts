@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  SpeedTest, jitterOf, mbps, streamsFor, worseLoadedLatency, MEASURE_FROM_BYTES, MEASURED_STREAMS,
+  SpeedTest, jitterOf, mbps, streamsFor, worseLoadedLatency, combineSignal, MEASURE_FROM_BYTES, MEASURED_STREAMS,
 } from "../src/client/speed-test.ts";
 
 test("download grade bands are inclusive at their lower bound", () => {
@@ -94,3 +94,29 @@ test("loaded latency reports the worse direction, and survives one missing", () 
   assert.equal(worseLoadedLatency(55, null), 55);
   assert.equal(worseLoadedLatency(null, null), null);
 });
+
+test("combineSignal produces timeout when abortSignal is omitted", async () => {
+  const signal = combineSignal(20);
+  assert.equal(signal.aborted, false);
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  assert.equal(signal.aborted, true);
+  assert.equal((signal.reason as DOMException)?.name, "TimeoutError");
+});
+
+test("combineSignal aborts immediately if abortSignal is already aborted", () => {
+  const ctrl = new AbortController();
+  ctrl.abort(new Error("caller cancelled"));
+  const signal = combineSignal(1000, ctrl.signal);
+  assert.equal(signal.aborted, true);
+  assert.equal((signal.reason as Error)?.message, "caller cancelled");
+});
+
+test("combineSignal aborts when caller aborts before timeout", () => {
+  const ctrl = new AbortController();
+  const signal = combineSignal(1000, ctrl.signal);
+  assert.equal(signal.aborted, false);
+  ctrl.abort(new Error("aborted early"));
+  assert.equal(signal.aborted, true);
+  assert.equal((signal.reason as Error)?.message, "aborted early");
+});
+
