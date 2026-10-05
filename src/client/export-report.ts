@@ -2,6 +2,7 @@ import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test.
 import { t } from "./i18n.ts";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
 import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
+import { escapeHtml } from "./ui-utils.ts";
 
 type CheckStatus = "pass" | "fail" | "warn";
 
@@ -230,24 +231,24 @@ export const ReportExporter = {
   generatePrintHtml(data: ReportData): string {
     const md = this.generateMarkdown(data);
 
-    // Convert markdown to basic HTML
-    let html = md
+    // Escape raw HTML first so data fields cannot inject arbitrary tags/attributes
+    let html = escapeHtml(md)
       .replace(/^### (.+)$/gm, "<h3>$1</h3>")
       .replace(/^## (.+)$/gm, "<h2>$1</h2>")
       .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-      .replace(/^> (.+)$/gm, '<p class="meta">$1</p>')
+      .replace(/^&gt; (.+)$/gm, '<p class="meta">$1</p>')
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/`(.+?)`/g, "<code>$1</code>")
       .replace(/^---$/gm, "<hr>")
       .replace(/^- (.+)$/gm, "<li>$1</li>")
-      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[(.+?)\]\(((?:https?:\/\/|\/)[^")\s]+)\)/g, '<a href="$2">$1</a>');
 
     // Convert tables
     html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock: string) => {
       const rows = tableBlock.trim().split("\n").filter((r) => !r.match(/^\|[\s-|]+\|$/));
       if (rows.length === 0) return "";
-      const toRow = (row: string, tag: string): string =>
+      const toRow = (row: string, tag: "th" | "td"): string =>
         "<tr>" + row.split("|").filter((_: string, i: number, a: string[]) => i > 0 && i < a.length - 1).map((c: string) => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
       const header = toRow(rows[0], "th");
       const body = rows.slice(1).map((r) => toRow(r, "td")).join("");
@@ -263,7 +264,7 @@ export const ReportExporter = {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NetCheck Report \u2014 ${data.date}</title>
+<title>NetCheck Report \u2014 ${escapeHtml(data.date)}</title>
 <style>
   @font-face { font-family: "Chakra Petch"; font-weight: 500; src: url("${origin}/fonts/chakra-petch-latin-500-normal.woff2") format("woff2"); }
   @font-face { font-family: "Chakra Petch"; font-weight: 700; src: url("${origin}/fonts/chakra-petch-latin-700-normal.woff2") format("woff2"); }

@@ -9,6 +9,7 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { DnsCheck, planDnsSuggestions } from "../src/client/dns-check.ts";
+import { parseWhoami } from "../src/shared/dns-wire.ts";
 
 const realFetch = globalThis.fetch;
 const CLIENT = { ipv4: "203.0.113.5", ipv6: null };
@@ -125,4 +126,16 @@ test("Top Fix resolves the issue and skips resolvers our own table shows failing
   assert.deepEqual(plan.issues.map((i) => i.id), ["malware"]);
   assert.equal(plan.topFix?.name, "dns.sug.quad9", "1.1.1.1 doesn't filter malware; Families is leaking ECS");
   assert.ok(!plan.suggestions.some((s) => s.name === "dns.sug.cfFamily"));
+});
+
+test("parseWhoami accepts valid IP and drops non-IP or malicious values", () => {
+  const validMsg = {
+    Answer: [{ name: "whoami.example", type: 16, TTL: 60, data: '"ns" "198.51.100.1"' }]
+  } as any;
+  assert.equal(parseWhoami(validMsg).egressIp, "198.51.100.1");
+
+  const xssMsg = {
+    Answer: [{ name: "whoami.example", type: 16, TTL: 60, data: '"ns" "<script>alert(1)</script>"' }]
+  } as any;
+  assert.equal(parseWhoami(xssMsg).egressIp, null);
 });

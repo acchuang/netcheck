@@ -759,7 +759,7 @@ function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult 
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
       const egress = r.egressIp
-        ? `<span class="check-sublabel">${t("dns.egressVia", r.egressIp)}</span>`
+        ? `<span class="check-sublabel">${t("dns.egressVia", escapeHtml(r.egressIp))}</span>`
         : "";
       div.innerHTML = `
         <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>

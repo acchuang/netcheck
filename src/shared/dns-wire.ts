@@ -10,6 +10,8 @@
 // Decoded answers use the DoH-JSON field names (name/type/TTL/data) so callers
 // that already speak that shape don't need to change.
 
+import { isIp } from "./ip-classify.ts";
+
 const RR_TYPES: Record<string, number> = {
   A: 1, NS: 2, CNAME: 5, SOA: 6, PTR: 12, MX: 15, TXT: 16,
   AAAA: 28, SRV: 33, DS: 43, DNSKEY: 48, HTTPS: 65,
@@ -412,7 +414,7 @@ export function parseWhoami(msg: DnsMessage): WhoamiResult {
   for (const answer of msg.Answer) {
     const match = WHOAMI_TXT_RE.exec(answer.data);
     if (!match) continue;
-    if (match[1] === "ns") result.egressIp = match[2];
+    if (match[1] === "ns" && isIp(match[2])) result.egressIp = match[2];
     // Raw value is "203.0.113.0/24/24" — source prefix, then scope prefix.
     if (match[1] === "ecs") result.ecsSubnet = match[2].replace(/\/(\d+)$/, "");
   }

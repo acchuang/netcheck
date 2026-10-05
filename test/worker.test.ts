@@ -226,6 +226,14 @@ test("headers/check rejects non-http(s) schemes before any fetch", async () => {
   assert.equal(res.status, 400);
 });
 
+test("headers/check rejects non-standard ports before any fetch", async () => {
+  const req = new Request("https://netcheck.internal/api/headers/check?url=" + encodeURIComponent("https://example.com:22/"));
+  const res = await worker.fetch(req);
+  assert.equal(res.status, 400);
+  const data = (await res.json()) as { error: string };
+  assert.match(data.error, /standard web ports/);
+});
+
 test("dns endpoints are rate-limited per IP, headers-check has its own bucket", async () => {
   const dnsIp = "203.0.113.201";
   let last!: Response;

@@ -1,5 +1,5 @@
 import { SpeedTest } from "./speed-test.ts";
-import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
+import { loadHistory, persistHistory, confirmAction, escapeHtml } from "./ui-utils.ts";
 
 interface Snapshot {
   ts: number;
@@ -38,7 +38,7 @@ function saveSnapshot(): void {
     upload: r.upload,
     latency: r.latency,
     jitter: r.jitter,
-    colo: r.colo,
+    colo: r.colo ? String(r.colo).slice(0, 32) : null,
   });
   persistHistory(KEY, snapshots, MAX);
   renderSnapshotHistory();
@@ -92,7 +92,7 @@ function renderSnapshotHistory(): void {
         <span class="snap-val">${SpeedTest.formatSpeed(s.download)} ${dlDelta}</span>
         <span class="snap-val">${SpeedTest.formatSpeed(s.upload)} ${ulDelta}</span>
         <span class="snap-val">${s.latency ?? "—"}ms ${latDelta}</span>
-        <span class="snap-val snap-colo">${s.colo || "—"}</span>
+        <span class="snap-val snap-colo">${s.colo ? escapeHtml(s.colo) : "—"}</span>
       </div>`;
     })
     .join("");

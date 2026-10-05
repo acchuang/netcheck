@@ -180,8 +180,9 @@ async function handleDnsCheck(request: Request): Promise<Response> {
     const msg = await dohQuery("cloudflare-dns.com", domain, type, { dnssecOk: true });
     return Response.json(msg, { headers: corsHeaders() });
   } catch (err) {
+    console.error("DNS lookup error:", err);
     return Response.json(
-      { error: "DNS lookup failed", detail: String(err) },
+      { error: "DNS lookup failed" },
       { status: 500, headers: corsHeaders() }
     );
   }
@@ -252,8 +253,9 @@ async function handleFastTargets(): Promise<Response> {
     await edgeCache.default.put(FAST_TARGETS_CACHE_KEY, response.clone());
     return response;
   } catch (err) {
+    console.error("fast.com discovery error:", err);
     return Response.json(
-      { error: "fast.com discovery failed", detail: String(err) },
+      { error: "fast.com discovery failed" },
       { status: 502, headers: corsHeaders() }
     );
   }
@@ -318,8 +320,9 @@ async function handleOoklaTargets(request: Request): Promise<Response> {
     await edgeCache.default.put(cacheKey, response.clone());
     return response;
   } catch (err) {
+    console.error("Ookla discovery error:", err);
     return Response.json(
-      { error: "Ookla discovery failed", detail: String(err) },
+      { error: "Ookla discovery failed" },
       { status: 502, headers: corsHeaders() }
     );
   }
@@ -717,6 +720,11 @@ async function handleProbeResult(request: Request, env?: Env): Promise<Response>
   return Response.json({ resolvers: [], unreachable: true }, { headers: corsHeaders() });
 }
 
+function isAllowedPort(portStr: string, protocol: string): boolean {
+  const port = portStr ? Number(portStr) : (protocol === "https:" ? 443 : 80);
+  return [80, 443, 8080, 8443].includes(port);
+}
+
 async function handleHeadersCheck(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const target = url.searchParams.get("url");
@@ -734,6 +742,9 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     const parsed = new URL(withHttpsScheme(target));
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return Response.json({ error: "Only http(s) URLs are allowed" }, { status: 400, headers: corsHeaders() });
+    }
+    if (!isAllowedPort(parsed.port, parsed.protocol)) {
+      return Response.json({ error: "Only standard web ports (80, 443, 8080, 8443) are allowed" }, { status: 400, headers: corsHeaders() });
     }
     targetUrl = parsed.href;
   } catch {
@@ -762,12 +773,16 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       });
 
       if ([301, 302, 303, 307, 308].includes(res.status)) {
+        await res.body?.cancel();
         const location = res.headers.get("location");
         if (!location) break;
         try {
           const nextUrl = new URL(location, currentUrl);
           if (nextUrl.protocol !== "http:" && nextUrl.protocol !== "https:") {
             return Response.json({ error: "Redirected to non-http(s) URL" }, { status: 400, headers: corsHeaders() });
+          }
+          if (!isAllowedPort(nextUrl.port, nextUrl.protocol)) {
+            return Response.json({ error: "Redirected to non-standard port" }, { status: 400, headers: corsHeaders() });
           }
           currentUrl = nextUrl.href;
           if (redirectCount === MAX_REDIRECTS) {
@@ -789,6 +804,7 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     for (const [key, value] of res.headers) {
       headers[key.toLowerCase()] = value;
     }
+    await res.body?.cancel();
 
     const checks = SECURITY_HEADERS.map((h) => {
       const value = headers[h.key] || null;
@@ -819,8 +835,9 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
       poweredBy: headers["x-powered-by"] || null,
     }, { headers: corsHeaders() });
   } catch (err) {
+    console.error("handleHeadersCheck error:", err);
     return Response.json(
-      { error: "Failed to fetch URL", detail: String(err) },
+      { error: "Failed to fetch URL" },
       { status: 500, headers: corsHeaders() }
     );
   }
