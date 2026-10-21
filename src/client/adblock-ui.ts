@@ -1,6 +1,7 @@
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test.ts";
 import { t } from "./i18n.ts";
-import { escapeHtml, ARROW_SVG } from "./ui-utils.ts";
+import { ARROW_SVG } from "./ui-utils.ts";
+import { html, raw, setHtml, type Safe } from "./html.ts";
 import { probeFingerprint, summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
 import { enableAdblockSaveButton, levelFor } from "./adblock-history.ts";
 import { runFilterListDetection } from "./filter-detect-ui.ts";
@@ -12,8 +13,8 @@ export function renderAdBlockIdle(): void {
   document.getElementById("score-detail")!.textContent = t("adblock.idleDetail");
 }
 
-function barHtml(pct: number): string {
-  return `<span class="condition-bar" style="--fill:${pct}%" aria-hidden="true"></span>`;
+function barHtml(pct: number): Safe {
+  return html`<span class="condition-bar" style="--fill:${pct}%" aria-hidden="true"></span>`;
 }
 
 // Ad block tests: every category is on screen while it runs, named and
@@ -23,14 +24,14 @@ function renderCategoriesScanning(container: HTMLElement): void {
     const div = document.createElement("div");
     div.className = "test-category";
     div.dataset.state = "scan";
-    div.innerHTML = `
+    setHtml(div, html`
       <div class="test-category-header">
         <span></span>
-        <span class="test-category-name">${escapeHtml(catDisplayName(cat.name))}</span>
+        <span class="test-category-name">${catDisplayName(cat.name)}</span>
         <span class="condition-state"></span>
         ${barHtml(0)}
         <span class="condition-value">—</span>
-      </div>`;
+      </div>`);
     div.querySelector(".condition-state")!.textContent = t("state.scan");
     return div;
   }));
@@ -92,10 +93,10 @@ function renderFingerprint(): void {
     const li = document.createElement("li");
     li.className = "condition";
     li.dataset.state = state[signal.state];
-    li.innerHTML = `<span class="condition-label" tabindex="0" role="note" data-tooltip="${escapeHtml(t(`fp.${signal.id}.desc`))}">
-        ${escapeHtml(t(`fp.${signal.id}`))}
-        ${signal.detail ? `<span class="condition-detail">${escapeHtml(signal.detail)}</span>` : ""}
-      </span>${barHtml(100)}<span class="condition-state"></span>`;
+    setHtml(li, html`<span class="condition-label" tabindex="0" role="note" data-tooltip="${t(`fp.${signal.id}.desc`)}">
+        ${t(`fp.${signal.id}`)}
+        ${signal.detail ? html`<span class="condition-detail">${signal.detail}</span>` : ""}
+      </span>${barHtml(100)}<span class="condition-state"></span>`);
     li.querySelector(".condition-state")!.textContent = t(`fp.state.${signal.state}`);
     return li;
   }));
@@ -170,18 +171,17 @@ function renderScoreBreakdown(): void {
     if (tests.length) rows.push({ label: t(`adblock.risk.${imp}`), blocked: tests.filter((x) => x.blocked).length, total: tests.length });
   }
 
-  document.getElementById("score-breakdown")!.innerHTML = rows
+  setHtml(document.getElementById("score-breakdown")!, html`${rows
     .filter((r) => r.total > 0)
     .map((r) => {
       const pct = Math.round((r.blocked / r.total) * 100);
-      const tip = r.tip ? ` tabindex="0" role="note" data-tooltip="${escapeHtml(r.tip)}"` : "";
-      return `<li class="condition" data-state="${levelFor(pct)}">
-        <span class="condition-label"${tip}>${escapeHtml(r.label)}</span>
+      const tip = r.tip ? html` tabindex="0" role="note" data-tooltip="${r.tip}"` : "";
+      return html`<li class="condition" data-state="${levelFor(pct)}">
+        <span class="condition-label"${tip}>${r.label}</span>
         ${barHtml(pct)}
         <span class="condition-value">${r.blocked}/${r.total}</span>
       </li>`;
-    })
-    .join("");
+    })}`);
 
   const hint = document.getElementById("score-hint")!;
   hint.hidden = !AdBlockTest.isNetworkOnlyFiltering();
@@ -219,26 +219,26 @@ async function runCustomUrlTest(): Promise<void> {
   const card = document.getElementById("adblock-custom-card")!;
   const results = document.getElementById("adblock-custom-results")!;
   card.hidden = false;
-  results.innerHTML = `<p class="info-muted">${t("adblock.testing")}</p>`;
+  setHtml(results, html`<p class="info-muted">${t("adblock.testing")}</p>`);
   lastCustomTests = await AdBlockTest.testCustomUrl(url);
   renderCustomUrlResults(lastCustomTests);
 }
 
 function renderCustomUrlResults(tests: NonNullable<typeof lastCustomTests>): void {
   const results = document.getElementById("adblock-custom-results")!;
-  results.innerHTML = tests.map(testItemHtml).join("");
+  setHtml(results, html`${tests.map(testItemHtml)}`);
 }
 
 // Blocked is the pass here: the probe is a tracker, and it didn't get through.
-function testItemHtml(tt: { name: string; blocked: boolean; uncertain?: boolean; method?: string }): string {
+function testItemHtml(tt: { name: string; blocked: boolean; uncertain?: boolean; method?: string }): Safe {
   const state = tt.uncertain ? "standby" : tt.blocked ? "pass" : "fail";
   const label = tt.uncertain ? t("adblock.uncertain") : tt.blocked ? t("adblock.blocked") : t("adblock.allowed");
   const method = methodLabel(tt.method);
-  const tip = method ? ` data-tooltip="${escapeHtml(method)}"` : "";
-  return `<div class="test-item" data-state="${state}">
+  const tip = method ? html` data-tooltip="${method}"` : "";
+  return html`<div class="test-item" data-state="${state}">
       <span class="test-dot" aria-hidden="true"></span>
-      <span class="test-name">${escapeHtml(tt.name)}</span>
-      <span class="test-result"${tip}>${escapeHtml(label)}</span>
+      <span class="test-name">${tt.name}</span>
+      <span class="test-result"${tip}>${label}</span>
     </div>`;
 }
 
@@ -306,7 +306,7 @@ function renderSuggestions(results: CategoryResult[]): void {
     ? t("adblock.suggestNetworkOnly", weakCategories.length)
     : t("adblock.suggestGaps", weakCategories.length, results.length);
 
-  grid.innerHTML = weakCategories
+  setHtml(grid, html`${weakCategories
     .map((cat) => {
       const advice = CATEGORY_ADVICE[cat.name];
       if (!advice) return "";
@@ -319,15 +319,15 @@ function renderSuggestions(results: CategoryResult[]): void {
         const label = t(`${key}.fix${i + 1}`);
         const url = advice.fixUrls[i];
         return url
-          ? `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${ARROW_SVG}</a></li>`
-          : `<li>${label}</li>`;
-      }).join("");
+          ? html`<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label} ${raw(ARROW_SVG)}</a></li>`
+          : html`<li>${label}</li>`;
+      });
 
-      return `
+      return html`
       <div class="suggestion-card category-advice">
         <div class="suggestion-top">
           <div class="suggestion-icon-svg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${advice.icon}</svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${raw(advice.icon)}</svg>
           </div>
           <div class="suggestion-info">
             <div class="suggestion-name">${t(key + ".title")}</div>
@@ -338,8 +338,7 @@ function renderSuggestions(results: CategoryResult[]): void {
         <div class="suggestion-desc">${t(key + ".desc")}</div>
         <ul class="suggestion-fixes">${fixesHtml}</ul>
       </div>`;
-    })
-    .join("");
+    })}`);
 
   section.classList.add("visible");
 }
@@ -353,16 +352,16 @@ function createCategoryWithResults(index: number, name: string, tests: { name: s
   const div = document.createElement("div");
   div.className = "test-category";
   div.dataset.state = levelFor(pct);
-  div.innerHTML = `
+  setHtml(div, html`
     <button type="button" class="test-category-header" aria-expanded="${open}" aria-controls="${bodyId}">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-      <span class="test-category-name">${escapeHtml(name)}</span>
-      <span class="test-category-importance imp-${importance}" data-tooltip="${escapeHtml(importanceTip(importance))}">${importanceLabel(importance)}</span>
+      <span class="test-category-name">${name}</span>
+      <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>
       ${barHtml(pct)}
       <span class="condition-value">${blocked}/${tests.length}</span>
     </button>
-    <div class="test-category-body" id="${bodyId}"${open ? "" : " hidden"}>${tests.map(testItemHtml).join("")}</div>
-  `;
+    <div class="test-category-body" id="${bodyId}"${open ? "" : raw(" hidden")}>${tests.map(testItemHtml)}</div>
+  `);
   return div;
 }
 
