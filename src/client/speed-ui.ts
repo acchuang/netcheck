@@ -1,6 +1,7 @@
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test.ts";
 import { t, onLocaleChange } from "./i18n.ts";
-import { escapeHtml, animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { html, setHtml } from "./html.ts";
+import { animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { enableSaveButton } from "./snapshots.ts";
 
 function setActiveGauge(phase: string): void {
@@ -97,7 +98,7 @@ export async function initSpeedTest(): Promise<void> {
   // Options come from the SERVERS array; the static HTML options are just initial paint.
   if (sel) {
     const current = sel.value;
-    sel.innerHTML = SERVERS.map((s) => `<option value="${s.id}">${escapeHtml(serverLabel(s.id))}</option>`).join("");
+    setHtml(sel, html`${SERVERS.map((s) => html`<option value="${s.id}">${serverLabel(s.id)}</option>`)}`);
     if (Array.from(sel.options).some((o) => o.value === current)) sel.value = current;
   }
 
@@ -469,9 +470,7 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
     .filter((s) => s.when(r))
     .slice(0, 6);
 
-  grid.innerHTML = relevant
-    .map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "speed.noSetup"))
-    .join("");
+  setHtml(grid, html`${relevant.map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "speed.noSetup"))}`);
 
   section.classList.add("visible");
 }

@@ -1,6 +1,7 @@
 // ponytail: mirrors snapshots.ts — adblock scores over time, color-coded deltas
 import { AdBlockTest } from "./adblock-test.ts";
 import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
+import { html, setHtml, type Safe } from "./html.ts";
 
 interface AdblockSnapshot {
   ts: number;
@@ -47,13 +48,13 @@ function clearSnapshots(): void {
   });
 }
 
-function fmtDelta(cur: number, prev: number | undefined, lowerBetter = false): string {
+function fmtDelta(cur: number, prev: number | undefined, lowerBetter = false): Safe | "" {
   if (prev === undefined) return "";
   const d = cur - prev;
-  if (d === 0) return `<span class="snap-delta same">±0</span>`;
+  if (d === 0) return html`<span class="snap-delta same">±0</span>`;
   const good = lowerBetter ? d < 0 : d > 0;
   const sign = d > 0 ? "+" : "";
-  return `<span class="snap-delta ${good ? "good" : "bad"}">${sign}${d}</span>`;
+  return html`<span class="snap-delta ${good ? "good" : "bad"}">${sign}${d}</span>`;
 }
 
 // One scale for the score, the category bars, the breakdown rows and the
@@ -74,7 +75,7 @@ function renderHistory(): void {
   }
 
   section.hidden = false;
-  list.innerHTML = snapshots
+  setHtml(list, html`${snapshots
     .slice()
     .reverse()
     .map((s, i) => {
@@ -84,12 +85,11 @@ function renderHistory(): void {
       const isLatest = i === 0;
       const scoreDelta = isLatest ? fmtDelta(s.score, prev?.score) : "";
 
-      return `<div class="snap-row${isLatest ? " latest" : ""}">
+      return html`<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
         <span class="snap-val snap-score" data-state="${levelFor(s.score)}">${s.score}/100 ${scoreDelta}</span>
         <span class="snap-val">${s.blocked}/${s.total} ${isLatest ? fmtDelta(s.blocked, prev?.blocked) : ""}</span>
         <span class="snap-val snap-colo">${s.cats.map((c) => `${c.name.split(" ")[0]}:${c.pct}%`).join(" ")}</span>
       </div>`;
-    })
-    .join("");
+    })}`);
 }

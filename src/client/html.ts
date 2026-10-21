@@ -34,6 +34,6 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Safe 
   return new Safe(out);
 }
 
-export function setHtml(el: Element, markup: Safe): void {
+export function setHtml(el: { innerHTML: string }, markup: Safe): void {
   el.innerHTML = markup.value;
 }

@@ -1,6 +1,7 @@
 import { FilterListDetector } from "./filter-lists.ts";
 import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint.ts";
 import { t } from "./i18n.ts";
+import { html, setHtml } from "./html.ts";
 
 function renderFilterListSkeletons(container: HTMLElement, count: number): void {
   container.innerHTML = Array.from({ length: count }, () =>
@@ -38,7 +39,7 @@ export function renderFilterLists(): void {
     subtitle.textContent = t("filter.detected", summary.detected.length, summary.total) + (summary.acceptableAdsEnabled ? t("filter.acceptableAds") : "");
   }
 
-  grid.innerHTML = FilterListDetector.results
+  setHtml(grid, html`${FilterListDetector.results
     .map((list) => {
       // Acceptable Ads inverts the sense: detecting it means ads are let through.
       // A list that isn't found gets no state at all: absent, not failed.
@@ -51,7 +52,7 @@ export function renderFilterLists(): void {
         badgeText = list.detected ? t("filter.found") : t("filter.notFound");
       }
 
-      return `
+      return html`
       <li class="filter-list-item" data-state="${state}">
         <span class="test-dot" aria-hidden="true"></span>
         <span class="filter-list-info">
@@ -60,8 +61,7 @@ export function renderFilterLists(): void {
         </span>
         <span class="filter-list-badge">${badgeText}</span>
       </li>`;
-    })
-    .join("");
+    })}`);
 }
 
 let lastFingerprint: BlockerFingerprint | null = null;

@@ -1,5 +1,6 @@
 import { t, onLocaleChange } from "./i18n.ts";
-import { escapeHtml, renderVerdict, hideVerdict } from "./ui-utils.ts";
+import { renderVerdict, hideVerdict } from "./ui-utils.ts";
+import { html, setHtml } from "./html.ts";
 
 interface HeaderCheckResult {
   name: string;
@@ -64,13 +65,13 @@ async function runHeadersCheck(): Promise<void> {
     const res = await fetch(`/api/headers/check?url=${encodeURIComponent(url)}`);
     const data: HeadersResponse = await res.json();
     if (data.error) {
-      list.innerHTML = `<li class="error-message">${t("headers.error")}: ${escapeHtml(data.error)}</li>`;
+      setHtml(list, html`<li class="error-message">${t("headers.error")}: ${data.error}</li>`);
     } else {
       lastHeadersData = data;
       renderHeadersResults(data);
     }
   } catch {
-    list.innerHTML = `<li class="error-message">${t("headers.error")}</li>`;
+    setHtml(list, html`<li class="error-message">${t("headers.error")}</li>`);
   }
 
   btn.disabled = false;
@@ -114,7 +115,7 @@ function renderHeadersResults(data: HeadersResponse): void {
     data.url
   );
 
-  document.getElementById("headers-check-results")!.innerHTML = data.checks.map((check) => {
+  setHtml(document.getElementById("headers-check-results")!, html`${data.checks.map((check) => {
     const descKey = `headers.desc.${check.key}`;
     const translated = t(descKey);
     const desc = translated === descKey ? check.desc : translated; // fall back to worker text for unknown headers
@@ -123,15 +124,15 @@ function renderHeadersResults(data: HeadersResponse): void {
     const legacy = check.key === "x-xss-protection";
     const state = legacy ? "seen" : check.present ? "pass" : "fail";
     const value = check.present
-      ? `<span class="header-value" data-tooltip="${escapeHtml(check.value)}">${escapeHtml(check.value)}</span>`
-      : `<span class="test-result">${t(legacy ? "headers.notSet" : "headers.missing")}</span>`;
-    return `<li class="header-row" data-state="${state}">
+      ? html`<span class="header-value" data-tooltip="${check.value}">${check.value}</span>`
+      : html`<span class="test-result">${t(legacy ? "headers.notSet" : "headers.missing")}</span>`;
+    return html`<li class="header-row" data-state="${state}">
       <span class="test-dot" aria-hidden="true"></span>
       <span class="header-info">
-        <span class="header-name">${escapeHtml(check.name)}</span>
-        <span class="header-desc">${escapeHtml(desc)}</span>
+        <span class="header-name">${check.name}</span>
+        <span class="header-desc">${desc}</span>
       </span>
       ${value}
     </li>`;
-  }).join("");
+  })}`);
 }

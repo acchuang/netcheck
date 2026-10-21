@@ -1,5 +1,6 @@
 import { SpeedTest } from "./speed-test.ts";
-import { loadHistory, persistHistory, confirmAction, escapeHtml } from "./ui-utils.ts";
+import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
+import { html, setHtml, type Safe } from "./html.ts";
 
 interface Snapshot {
   ts: number;
@@ -51,14 +52,14 @@ function clearSnapshots(): void {
   });
 }
 
-function fmtDelta(cur: number | null, prev: number | null, unit: string, lowerBetter = false): string {
+function fmtDelta(cur: number | null, prev: number | null, unit: string, lowerBetter = false): Safe | string {
   if (cur === null || prev === null) return `—`;
   const d = cur - prev;
-  if (Math.abs(d) < 0.05) return `<span class="snap-delta same">±0 ${unit}</span>`;
+  if (Math.abs(d) < 0.05) return html`<span class="snap-delta same">±0 ${unit}</span>`;
   const good = lowerBetter ? d < 0 : d > 0;
   const sign = d > 0 ? "+" : "";
   const cls = good ? "good" : "bad";
-  return `<span class="snap-delta ${cls}">${sign}${d.toFixed(1)} ${unit}</span>`;
+  return html`<span class="snap-delta ${cls}">${sign}${d.toFixed(1)} ${unit}</span>`;
 }
 
 function renderSnapshotHistory(): void {
@@ -74,7 +75,7 @@ function renderSnapshotHistory(): void {
 
   section.hidden = false;
 
-  list.innerHTML = snapshots
+  setHtml(list, html`${snapshots
     .slice()
     .reverse()
     .map((s, i) => {
@@ -87,13 +88,12 @@ function renderSnapshotHistory(): void {
       const ulDelta = isLatest && prev ? fmtDelta(s.upload, prev.upload, "Mbps") : "";
       const latDelta = isLatest && prev ? fmtDelta(s.latency, prev.latency, "ms", true) : "";
 
-      return `<div class="snap-row${isLatest ? " latest" : ""}">
+      return html`<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
         <span class="snap-val">${SpeedTest.formatSpeed(s.download)} ${dlDelta}</span>
         <span class="snap-val">${SpeedTest.formatSpeed(s.upload)} ${ulDelta}</span>
         <span class="snap-val">${s.latency ?? "—"}ms ${latDelta}</span>
-        <span class="snap-val snap-colo">${s.colo ? escapeHtml(s.colo) : "—"}</span>
+        <span class="snap-val snap-colo">${s.colo ?? "—"}</span>
       </div>`;
-    })
-    .join("");
+    })}`);
 }
