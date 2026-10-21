@@ -2,7 +2,7 @@ import { t, onLocaleChange } from "./i18n.ts";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS } from "../shared/resolvers.ts";
 import {
-  blankResult, emptyReport,
+  blankResult, emptyReport, ipFields, resolverRows, ecsView, ecsSummary, securityRows,
   type DnsReport, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck, type SecurityStatus,
 } from "./dns-report.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
@@ -470,6 +470,10 @@ function renderReport(r: DnsReport): void {
   }
 }
 
+export function getDnsReport(): DnsReport {
+  return report;
+}
+
 onLocaleChange(() => {
   renderReport(report);
   if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
@@ -598,19 +602,13 @@ function renderIpInfo(ipData: IpData): void {
       });
     };
   }
-  document.getElementById("ip-location")!.textContent =
-    [ipData.city, ipData.region, ipData.country].filter(Boolean).join(", ") || "—";
-  document.getElementById("ip-asn")!.textContent =
-    ipData.asOrganization ? `${ipData.asOrganization} (AS${ipData.asn})` : "—";
-  document.getElementById("ip-timezone")!.textContent = ipData.timezone || "—";
-
-  const coloCode = ipData.colo;
-  const popInfo = coloCode ? CF_POPS[coloCode] : null;
-  document.getElementById("ip-colo")!.textContent = popInfo
-    ? `${popInfo[0]} (${coloCode})`
-    : coloCode || "—";
-  document.getElementById("ip-http")!.textContent = ipData.httpProtocol || "—";
-  document.getElementById("ip-tls")!.textContent = ipData.tlsVersion || "—";
+  const f = ipFields(ipData);
+  document.getElementById("ip-location")!.textContent = f.location;
+  document.getElementById("ip-asn")!.textContent = f.asn;
+  document.getElementById("ip-timezone")!.textContent = f.timezone;
+  document.getElementById("ip-colo")!.textContent = f.colo;
+  document.getElementById("ip-http")!.textContent = f.http;
+  document.getElementById("ip-tls")!.textContent = f.tls;
   setBadge("ip-status", "done", t("dns.detected"));
 }
 
@@ -679,44 +677,36 @@ function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult 
   const resolverContainer = document.getElementById("dns-resolver-results")!;
   resolverContainer.innerHTML = "";
 
-  const reachable = resolvers.filter((r) => r.reachable);
-  if (reachable.length > 0) {
-    const fastest = reachable.reduce((a, b) => ((a.latency ?? Infinity) < (b.latency ?? Infinity) ? a : b));
-    reachable.forEach((r) => {
-      const badges: string[] = [];
-      if (r.validatesDnssec === true) badges.push('<span class="resolver-badge pass">DNSSEC</span>');
-      if (r.validatesDnssec === false) badges.push('<span class="resolver-badge leak">NO DNSSEC</span>');
-      if (r.forwardsEcs === true) badges.push('<span class="resolver-badge leak">ECS</span>');
-      if (r.filtering) badges.push('<span class="resolver-badge filter">Filtering</span>');
-      const badgeHtml = badges.length > 0 ? ` ${badges.join(" ")}` : "";
+  const rows = resolverRows(resolvers);
+  const reachableCount = rows.filter((r) => r.reachable).length;
+  if (reachableCount > 0) {
+    rows.forEach((r) => {
+      if (!r.reachable) {
+        resolverContainer.appendChild(createCheckItem("fail", r.label, r.value));
+        return;
+      }
+      const badgeHtml = r.badges.map((b) => ` <span class="resolver-badge ${b.kind}">${b.text}</span>`).join("");
 
       const div = document.createElement("div");
       div.className = "dns-check-item fade-in";
-      const status = r.name === fastest.name ? "pass" : "warn";
-      const iconSvg = status === "pass"
+      const iconSvg = r.status === "pass"
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
       const egress = r.egressIp
         ? `<span class="check-sublabel">${t("dns.egressVia", escapeHtml(r.egressIp))}</span>`
         : "";
       div.innerHTML = `
-        <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+        <svg class="check-icon ${r.status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
           <span class="check-label">${escapeHtml(r.name)} <span class="resolver-ip">${escapeHtml(r.ip)}</span>${badgeHtml}</span>
           ${egress}
         </div>
-        <span class="check-value">${r.latency}ms</span>
+        <span class="check-value">${r.value}</span>
       `;
       resolverContainer.appendChild(div);
     });
 
-    const unreachable = resolvers.filter((r) => !r.reachable);
-    unreachable.forEach((r) => {
-      const item = createCheckItem("fail", `${r.name} (${r.ip})`, t("dns.unreachable"));
-      resolverContainer.appendChild(item);
-    });
-
-    setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachable.length, resolvers.length));
+    setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachableCount, resolvers.length));
   } else {
     resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
     setBadge("dns-resolver-status", "error", t("dns.nonefound"));
@@ -730,37 +720,24 @@ function renderEcs(resolvers: ResolverResult[]): void {
   const summary = document.getElementById("dns-ecs-summary")!;
   container.innerHTML = "";
 
-  const known = resolvers.filter((r) => r.reachable && r.forwardsEcs !== null);
-  // Only a browser-side probe sees the visitor's own subnet; the Worker's probe
-  // would report Cloudflare's edge, so never show a subnet sourced from it.
-  const leaked = known.find((r) => r.measuredFromBrowser && r.ecsSubnet);
-
-  if (known.length === 0) {
-    summary.textContent = t("dns.ecsUnknown");
+  const ecs = ecsView(resolvers);
+  if (ecs.known.length === 0) {
+    summary.textContent = ecsSummary(ecs);
     setBadge("dns-ecs-status", "error", t("dns.failed"));
     return;
   }
 
-  const forwarding = known.filter((r) => r.forwardsEcs);
-  if (leaked) {
-    summary.innerHTML = t("dns.ecsLeaking", `<span class="mono">${escapeHtml(leaked.ecsSubnet!)}</span>`);
-  } else if (forwarding.length > 0) {
-    summary.textContent = t("dns.ecsForwardOnly", String(forwarding.length), String(known.length));
+  if (ecs.leakedSubnet) {
+    summary.innerHTML = ecsSummary(ecs, (s) => `<span class="mono">${escapeHtml(s)}</span>`);
   } else {
-    summary.textContent = t("dns.ecsNone");
+    summary.textContent = ecsSummary(ecs);
   }
-
-  known.forEach((r) => {
-    const value = r.forwardsEcs
-      ? (r.measuredFromBrowser && r.ecsSubnet ? r.ecsSubnet : t("dns.ecsYes"))
-      : t("dns.ecsNo");
-    container.appendChild(createCheckItem(r.forwardsEcs ? "warn" : "pass", r.name, value));
-  });
+  ecs.rows.forEach((r) => container.appendChild(createCheckItem(r.status, r.label, r.value)));
 
   setBadge(
     "dns-ecs-status",
-    forwarding.length === 0 ? "done" : "error",
-    t("dns.ecsForwardingOf", String(forwarding.length), String(known.length))
+    ecs.forwarding.length === 0 ? "done" : "error",
+    t("dns.ecsForwardingOf", String(ecs.forwarding.length), String(ecs.known.length))
   );
 }
 
@@ -774,10 +751,8 @@ function renderSecurity(securityChecks: SecurityCheck[]): void {
   const allPass = graded.every((c) => c.status === "pass");
   const anyFail = graded.some((c) => c.status === "fail");
 
-  securityChecks.forEach((check) => {
-    const detail = check.detailArg !== undefined ? t(check.detailKey, check.detailArg) : t(check.detailKey);
-    const item = createCheckItem(check.status, t(`dns.check.${check.id}`), "", detail);
-    securityContainer.appendChild(item);
+  securityRows(securityChecks).forEach((r) => {
+    securityContainer.appendChild(createCheckItem(r.status, r.label, r.value, r.sublabel));
   });
 
   if (allPass) {

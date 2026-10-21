@@ -3,6 +3,8 @@ import { t } from "./i18n.ts";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
 import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
 import { escapeHtml } from "./ui-utils.ts";
+import { getDnsReport } from "./dns-check.ts";
+import { ipFields, resolverRows, ecsView, ecsSummary, securityRows } from "./dns-report.ts";
 
 type CheckStatus = "pass" | "fail" | "warn";
 
@@ -49,41 +51,25 @@ interface ReportData {
 
 export const ReportExporter = {
   collectData(): ReportData {
+    const rep = getDnsReport();
+    const f = ipFields(rep.ip);
+    const resolvers = rep.resolvers ?? [];
+    const ecs = ecsView(resolvers);
+    // The screen never colours a row "info", so the export reads it as a warning.
+    const item = (r: { label: string; value: string; status: string }): DnsCheckItem =>
+      ({ label: r.label, value: r.value, status: r.status === "pass" || r.status === "fail" ? r.status : "warn" });
+
     const dns: DnsData = {
-      ip: document.getElementById("ip-address")?.textContent || "\u2014",
-      location: document.getElementById("ip-location")?.textContent || "\u2014",
-      asn: document.getElementById("ip-asn")?.textContent || "\u2014",
-      timezone: document.getElementById("ip-timezone")?.textContent || "\u2014",
-      colo: document.getElementById("ip-colo")?.textContent || "\u2014",
-      resolvers: [],
-      security: [],
-      ecs: [],
-      ecsSummary: document.getElementById("dns-ecs-summary")?.textContent?.trim() || "",
+      ip: f.ip,
+      location: f.location,
+      asn: f.asn,
+      timezone: f.timezone,
+      colo: f.colo,
+      resolvers: resolverRows(resolvers).map(item),
+      security: securityRows(rep.security ?? []).map((r) => item({ ...r, value: r.sublabel ?? r.value })),
+      ecs: ecs.rows.map(item),
+      ecsSummary: rep.resolvers ? ecsSummary(ecs) : "",
     };
-
-    document.querySelectorAll("#dns-resolver-results .dns-check-item").forEach((item) => {
-      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
-      const icon = item.querySelector(".check-icon");
-      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
-      dns.resolvers.push({ label, value, status });
-    });
-
-    document.querySelectorAll("#dns-security-results .dns-check-item").forEach((item) => {
-      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = (item.querySelector(".check-value") || item.querySelector(".check-sublabel"))?.textContent?.trim() || "";
-      const icon = item.querySelector(".check-icon");
-      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
-      dns.security.push({ label, value, status });
-    });
-
-    document.querySelectorAll("#dns-ecs-results .dns-check-item").forEach((item) => {
-      const label = item.querySelector(".check-label")?.textContent?.trim() || "";
-      const value = item.querySelector(".check-value")?.textContent?.trim() || "";
-      const icon = item.querySelector(".check-icon");
-      const status: CheckStatus = icon?.classList.contains("pass") ? "pass" : icon?.classList.contains("fail") ? "fail" : "warn";
-      dns.ecs.push({ label, value, status });
-    });
 
     // Speed
     const sr: SpeedTestResults = SpeedTest.results;
