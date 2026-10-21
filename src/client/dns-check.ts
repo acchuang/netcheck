@@ -1,5 +1,6 @@
 import { t, onLocaleChange } from "./i18n.ts";
-import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { html, raw, setHtml, type Safe } from "./html.ts";
+import { setBadge, createCheckItem, CF_POPS, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS } from "../shared/resolvers.ts";
 import {
   blankResult, emptyReport, ipFields, resolverRows, ecsView, ecsSummary, securityRows,
@@ -634,40 +635,38 @@ function renderObservedPath(probeResult?: ProbeResult | null): void {
   }
 
   if (probeResult === undefined) {
-    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.checking"))}</p>`;
+    setHtml(container, html`<p class="info-muted">${t("dns.checking")}</p>`);
     return;
   }
 
   container.innerHTML = "";
   if (probeResult.unreachable) {
-    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedUnavailable"))}</p>`;
+    setHtml(container, html`<p class="info-muted">${t("dns.observedUnavailable")}</p>`);
     return;
   }
   if (probeResult.resolvers.length === 0) {
-    container.innerHTML = `<p class="info-muted">${escapeHtml(t("dns.observedNone"))}</p>`;
+    setHtml(container, html`<p class="info-muted">${t("dns.observedNone")}</p>`);
     return;
   }
 
   probeResult.resolvers.forEach((obs) => {
     const div = document.createElement("div");
     div.className = "dns-check-item fade-in";
-    const ecsHtml = obs.ecs ? ` · ECS: ${escapeHtml(obs.ecs)}` : "";
+    const ecsHtml = obs.ecs ? html` · ECS: ${obs.ecs}` : "";
     const operator = encryptedDnsOperator(obs.ip);
-    const sublabel = operator
-      ? `${escapeHtml(t("dns.observedOperator", operator))}${ecsHtml}`
-      : `${escapeHtml(t("dns.observedByNs"))}${ecsHtml}`;
-    div.innerHTML = `
+    const sublabel = operator ? t("dns.observedOperator", operator) : t("dns.observedByNs");
+    setHtml(div, html`
       <svg class="check-icon pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
       <div class="check-label-block">
-        <span class="check-label">${escapeHtml(t("dns.actualResolver"))} <span class="resolver-ip">${escapeHtml(obs.ip)}</span></span>
-        <span class="check-sublabel">${sublabel}</span>
+        <span class="check-label">${t("dns.actualResolver")} <span class="resolver-ip">${obs.ip}</span></span>
+        <span class="check-sublabel">${sublabel}${ecsHtml}</span>
       </div>
-      <span class="check-value pass">${escapeHtml(t("dns.recursionActive"))}</span>
-    `;
+      <span class="check-value pass">${t("dns.recursionActive")}</span>
+    `);
     container.appendChild(div);
   });
   if (probeResult.incomplete) {
-    container.insertAdjacentHTML("beforeend", `<p class="info-muted">${escapeHtml(t("dns.observedIncomplete"))}</p>`);
+    container.insertAdjacentHTML("beforeend", html`<p class="info-muted">${t("dns.observedIncomplete")}</p>`.value);
   }
 }
 
@@ -685,7 +684,7 @@ function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult 
         resolverContainer.appendChild(createCheckItem("fail", r.label, r.value));
         return;
       }
-      const badgeHtml = r.badges.map((b) => ` <span class="resolver-badge ${b.kind}">${b.text}</span>`).join("");
+      const badgeHtml = r.badges.map((b) => html` <span class="resolver-badge ${b.kind}">${b.text}</span>`);
 
       const div = document.createElement("div");
       div.className = "dns-check-item fade-in";
@@ -693,22 +692,22 @@ function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult 
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
       const egress = r.egressIp
-        ? `<span class="check-sublabel">${t("dns.egressVia", escapeHtml(r.egressIp))}</span>`
+        ? html`<span class="check-sublabel">${t("dns.egressVia", r.egressIp)}</span>`
         : "";
-      div.innerHTML = `
+      setHtml(div, html`
         <svg class="check-icon ${r.status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
         <div class="check-label-block">
-          <span class="check-label">${escapeHtml(r.name)} <span class="resolver-ip">${escapeHtml(r.ip)}</span>${badgeHtml}</span>
+          <span class="check-label">${r.name} <span class="resolver-ip">${r.ip}</span>${badgeHtml}</span>
           ${egress}
         </div>
         <span class="check-value">${r.value}</span>
-      `;
+      `);
       resolverContainer.appendChild(div);
     });
 
     setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachableCount, resolvers.length));
   } else {
-    resolverContainer.innerHTML = `<p class="info-muted">${t("dns.noResolvers")}</p>`;
+    setHtml(resolverContainer, html`<p class="info-muted">${t("dns.noResolvers")}</p>`);
     setBadge("dns-resolver-status", "error", t("dns.nonefound"));
   }
 }
@@ -728,7 +727,7 @@ function renderEcs(resolvers: ResolverResult[]): void {
   }
 
   if (ecs.leakedSubnet) {
-    summary.innerHTML = ecsSummary(ecs, (s) => `<span class="mono">${escapeHtml(s)}</span>`);
+    setHtml(summary, raw(ecsSummary(ecs, (s) => html`<span class="mono">${s}</span>`.value)));
   } else {
     summary.textContent = ecsSummary(ecs);
   }
@@ -789,14 +788,12 @@ function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: S
       const fix = document.createElement("a");
       fix.className = "verdict-fix";
       fix.href = "#dns-suggestions-section";
-      fix.innerHTML = `<span class="suggestion-badge">${t("dns.topFix")}</span>${escapeHtml(t(topFix.name + ".name"))} →`;
+      setHtml(fix, html`<span class="suggestion-badge">${t("dns.topFix")}</span>${t(topFix.name + ".name")} →`);
       document.querySelector("#dns-verdict .verdict-body")?.appendChild(fix);
     }
   }
 
-  grid.innerHTML = suggestions
-    .map((s) => suggestionCardHtml(s, s === topFix, "dns.checkBrowser"))
-    .join("");
+  setHtml(grid, html`${suggestions.map((s) => suggestionCardHtml(s, s === topFix, "dns.checkBrowser"))}`);
 
   section.classList.add("visible");
 }
@@ -815,14 +812,14 @@ export async function runDnsCompare(): Promise<void> {
 
   const container = document.getElementById("dns-compare-results")!;
   container.classList.remove("hidden");
-  container.innerHTML = `<p class="info-muted">${t("dns.comparing")}</p>`;
+  setHtml(container, html`<p class="info-muted">${t("dns.comparing")}</p>`);
 
   try {
     const res = await fetch(`/api/dns/compare?domain=${encodeURIComponent(domain)}`);
     lastCompare = await res.json();
     renderCompareResults(lastCompare!);
   } catch {
-    container.innerHTML = `<p class="error-message">${t("dns.failed")}</p>`;
+    setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
   }
 }
 
@@ -837,7 +834,7 @@ function renderCompareResults(results: CompareResult[]): void {
   const majority = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   const allAgree = answering.length > 0 && answering.every((r) => sig(r) === majority);
 
-  container.innerHTML = `<p class="info-muted">${t(allAgree ? "dns.compareAllMatch" : "dns.compareMismatch")}</p>`;
+  setHtml(container, html`<p class="info-muted">${t(allAgree ? "dns.compareAllMatch" : "dns.compareMismatch")}</p>`);
   results.forEach((r) => {
     let status: "pass" | "warn" | "fail";
     let value: string;
@@ -855,7 +852,7 @@ export async function runDomainHealthCheck(): Promise<void> {
 
   const container = document.getElementById("dns-health-results")!;
   container.classList.remove("hidden");
-  container.innerHTML = `<p class="info-muted">${t("dns.healthChecking")}</p>`;
+  setHtml(container, html`<p class="info-muted">${t("dns.healthChecking")}</p>`);
 
   try {
     const [mx, txt, dmarc, dkim] = await Promise.all([
@@ -866,7 +863,7 @@ export async function runDomainHealthCheck(): Promise<void> {
     ]);
     renderHealthResults(mx, txt, dmarc, dkim, selector);
   } catch {
-    container.innerHTML = `<p class="error-message">${t("dns.failed")}</p>`;
+    setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
   }
 }
 
@@ -935,7 +932,7 @@ export async function runDnsLookup(): Promise<void> {
   const tableEl = document.getElementById("dns-lookup-table")!;
   const outputEl = document.getElementById("dns-lookup-output")!;
   resultsEl.classList.remove("hidden");
-  tableEl.innerHTML = `<p class="info-muted">${t("dns.lookupLoading")}</p>`;
+  setHtml(tableEl, html`<p class="info-muted">${t("dns.lookupLoading")}</p>`);
   outputEl.textContent = "...";
 
   let allData: Record<string, any>;
@@ -956,28 +953,22 @@ function renderLookupResults(domain: string, allData: Record<string, any>): void
   const tableEl = document.getElementById("dns-lookup-table")!;
   const outputEl = document.getElementById("dns-lookup-output")!;
 
-  let html = `<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>`;
-  let hasRecords = false;
-
-
+  const rows: Safe[] = [];
   for (const [recType, data] of Object.entries(allData)) {
     const answers = data?.Answer || [];
     for (const rec of answers) {
-      hasRecords = true;
       const typeName = RR_NAMES[rec.type] ?? recType;
-      html += `<tr><td><span class="dns-type-badge">${escapeHtml(typeName)}</span></td><td class="mono">${escapeHtml(rec.name || domain)}</td><td class="mono">${escapeHtml(rec.data)}</td><td>${escapeHtml(rec.TTL)}s</td></tr>`;
+      rows.push(html`<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${rec.name || domain}</td><td class="mono">${rec.data}</td><td>${rec.TTL}s</td></tr>`);
     }
     if (data?.error && answers.length === 0) {
-      hasRecords = true;
-      html += `<tr><td><span class="dns-type-badge">${escapeHtml(recType)}</span></td><td class="mono">${escapeHtml(domain)}</td><td colspan="2" style="color: var(--red); font-size: 13px;">${escapeHtml(data.error)}</td></tr>`;
+      rows.push(html`<tr><td><span class="dns-type-badge">${recType}</span></td><td class="mono">${domain}</td><td colspan="2" style="color: var(--red); font-size: 13px;">${data.error}</td></tr>`);
     }
   }
 
-  if (!hasRecords) {
-    html += `<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">${t("dns.noRecords")}</td></tr>`;
+  if (rows.length === 0) {
+    rows.push(html`<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">${t("dns.noRecords")}</td></tr>`);
   }
 
-  html += "</tbody></table>";
-  tableEl.innerHTML = html;
+  setHtml(tableEl, html`<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>${rows}</tbody></table>`);
   outputEl.textContent = JSON.stringify(allData, null, 2);
 }

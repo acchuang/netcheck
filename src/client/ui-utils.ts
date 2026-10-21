@@ -1,12 +1,7 @@
 import { t, tTag } from "./i18n.ts";
+import { html, raw, setHtml, type Safe } from "./html.ts";
 
-const ESCAPE_MAP: Record<string, string> = {
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-};
-
-export function escapeHtml(value: unknown): string {
-  return String(value ?? "").replace(/[&<>"']/g, (ch) => ESCAPE_MAP[ch]);
-}
+export { escapeHtml } from "./html.ts";
 
 export function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
   const start = performance.now();
@@ -40,17 +35,17 @@ export function createCheckItem(status: "pass" | "warn" | "fail" | "info", label
   }[status];
 
   const labelHtml = sublabel
-    ? `<div class="check-label-block">
-        <span class="check-label">${escapeHtml(label)}</span>
-        <span class="check-sublabel">${escapeHtml(sublabel)}</span>
+    ? html`<div class="check-label-block">
+        <span class="check-label">${label}</span>
+        <span class="check-sublabel">${sublabel}</span>
       </div>`
-    : `<span class="check-label">${escapeHtml(label)}</span>`;
+    : html`<span class="check-label">${label}</span>`;
 
-  div.innerHTML = `
-    <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPath}</svg>
+  setHtml(div, html`
+    <svg class="check-icon ${status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${raw(iconPath)}</svg>
     ${labelHtml}
-    ${value ? `<span class="check-value">${escapeHtml(value)}</span>` : ""}
-  `;
+    ${value ? html`<span class="check-value">${value}</span>` : ""}
+  `);
   return div;
 }
 
@@ -63,24 +58,24 @@ export function suggestionCardHtml(
   s: { name: string; icon: string; tags: string[]; url: string | null },
   isTop: boolean,
   noLinkKey: string
-): string {
+): Safe {
   const linkHtml = s.url
-    ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${ARROW_SVG}</a>`
-    : `<span class="suggestion-link" style="color:var(--text-quaternary)">${t(noLinkKey)}</span>`;
+    ? html`<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="suggestion-link">${t("dns.learnMore")} ${raw(ARROW_SVG)}</a>`
+    : html`<span class="suggestion-link" style="color:var(--text-quaternary)">${t(noLinkKey)}</span>`;
 
-  return `
+  return html`
   <div class="suggestion-card${isTop ? " recommended" : ""}">
     <div class="suggestion-top">
-      <div class="suggestion-icon">${s.icon}</div>
+      <div class="suggestion-icon">${raw(s.icon)}</div>
       <div class="suggestion-info">
         <div class="suggestion-name">${t(s.name + ".name")}</div>
         <div class="suggestion-type">${t(s.name + ".type")}</div>
       </div>
-      ${isTop ? `<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
+      ${isTop ? html`<span class="suggestion-badge">${t("dns.topFix")}</span>` : ""}
     </div>
     <div class="suggestion-desc">${t(s.name + ".desc")}</div>
     <div class="suggestion-tags">
-      ${s.tags.map((tag) => `<span class="suggestion-tag">${tTag(tag)}</span>`).join("")}
+      ${s.tags.map((tag) => html`<span class="suggestion-tag">${tTag(tag)}</span>`)}
     </div>
     ${linkHtml}
   </div>`;
@@ -105,15 +100,15 @@ export function renderVerdict(
 ): void {
   const el = document.getElementById(id)!;
   el.className = `verdict verdict-${level}`;
-  el.innerHTML = `
+  setHtml(el, html`
     ${grade
-      ? `<span class="verdict-grade">${escapeHtml(grade)}</span>`
-      : `<span class="verdict-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${VERDICT_ICONS[level]}</svg></span>`}
+      ? html`<span class="verdict-grade">${grade}</span>`
+      : html`<span class="verdict-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${raw(VERDICT_ICONS[level])}</svg></span>`}
     <span class="verdict-body">
-      <span class="verdict-headline">${escapeHtml(headline)}</span>
-      <span class="verdict-detail">${escapeHtml(detail)}</span>
+      <span class="verdict-headline">${headline}</span>
+      <span class="verdict-detail">${detail}</span>
     </span>
-  `;
+  `);
   el.hidden = false;
 }
 
