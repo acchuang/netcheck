@@ -21,7 +21,7 @@ interface CompareResult {
 }
 
 export async function runDnsCompare(): Promise<void> {
-  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
+  const domain = (document.getElementById("dns-compare-domain") as HTMLInputElement).value.trim();
   if (!domain) return;
 
   const container = document.getElementById("dns-compare-results")!;
@@ -60,7 +60,7 @@ function renderCompareResults(results: CompareResult[]): void {
 }
 
 export async function runDomainHealthCheck(): Promise<void> {
-  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
+  const domain = (document.getElementById("dns-health-domain") as HTMLInputElement).value.trim();
   const selector = (document.getElementById("dns-health-selector") as HTMLInputElement).value.trim();
   if (!domain) return;
 
