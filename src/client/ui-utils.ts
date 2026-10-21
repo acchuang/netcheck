@@ -1,8 +1,6 @@
 import { t, tTag } from "./i18n.ts";
 import { html, raw, setHtml, type Safe } from "./html.ts";
 
-export { escapeHtml } from "./html.ts";
-
 export function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
   const start = performance.now();
   const diff = to - from;

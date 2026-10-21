@@ -2,7 +2,7 @@ import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test.
 import { t } from "./i18n.ts";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
 import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
-import { escapeHtml } from "./ui-utils.ts";
+import { escapeHtml } from "./html.ts";
 import { getDnsReport } from "./dns-check.ts";
 import { ipFields, resolverRows, ecsView, ecsSummary, securityRows } from "./dns-report.ts";
 
