@@ -1,6 +1,7 @@
 import { initTheme } from "./theme.ts";
 import { initI18n, onLocaleChange, t } from "./i18n.ts";
-import { runDnsChecks, runDnsLookup, runDnsCompare, runDomainHealthCheck } from "./dns-check.ts";
+import { runDnsChecks } from "./dns-check.ts";
+import { runDnsLookup, runDnsCompare, runDomainHealthCheck } from "./dns-tools.ts";
 import { ReportExporter } from "./export-report.ts";
 import { initHeadersCheck } from "./headers-check.ts";
 import { initSnapshots } from "./snapshots.ts";

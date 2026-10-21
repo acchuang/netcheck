@@ -1,19 +1,19 @@
 import { t, onLocaleChange } from "./i18n.ts";
-import { html, raw, setHtml, type Safe } from "./html.ts";
-import { setBadge, createCheckItem, CF_POPS, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { setBadge, CF_POPS, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS } from "../shared/resolvers.ts";
 import {
-  blankResult, emptyReport, ipFields, resolverRows, ecsView, ecsSummary, securityRows,
+  blankResult, emptyReport,
   type DnsReport, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck, type SecurityStatus,
 } from "./dns-report.ts";
+import { renderIpv6, renderIpInfo, renderResolvers, renderEcs, renderSecurity, renderDnsSuggestions } from "./dns-view.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
-import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES, toHex } from "../shared/dns-wire.ts";
+import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wire.ts";
 import {
-  dohVerdict, forwardedClientSubnet, encryptedDnsOperator, evaluateWebRtc,
+  dohVerdict, forwardedClientSubnet, evaluateWebRtc,
   type WebRtcVerdict, type ObservedResolver,
 } from "../shared/ip-classify.ts";
 
-interface DnsResult {
+export interface DnsResult {
   Answer?: DnsAnswer[];
   Status?: number;
   error?: string;
@@ -404,6 +404,8 @@ const dnsSuggestions: Suggestion[] = [
  * two ways this has gone wrong — asserting "not encrypted" without having looked,
  * and crowning a Top Fix that doesn't fix anything — stay pinned by tests.
  */
+export type DnsPlan = ReturnType<typeof planDnsSuggestions>;
+
 export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: ResolverResult[]) {
   const ctx: DnsContext = {
     usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
@@ -452,8 +454,6 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
 // The station run's results, kept so locale switches can re-render translated
 // UI without re-running the network checks.
 let report: DnsReport = emptyReport();
-let lastLookup: { domain: string; data: Record<string, any> } | null = null;
-let lastCompare: CompareResult[] | null = null;
 
 function renderReport(r: DnsReport): void {
   if (r.ip) renderIpInfo(r.ip);
@@ -464,22 +464,19 @@ function renderReport(r: DnsReport): void {
   }
   if (r.security) renderSecurity(r.security);
   if (r.resolvers && r.security) {
-    renderDnsSuggestions({
-      securityChecks: r.security,
-      reachable: r.resolvers.filter((x) => x.reachable),
-    });
+    showSuggestions(r.security, r.resolvers);
   }
+}
+
+function showSuggestions(security: SecurityCheck[], resolvers: ResolverResult[]): void {
+  renderDnsSuggestions(planDnsSuggestions(security, resolvers.filter((r) => r.reachable)));
 }
 
 export function getDnsReport(): DnsReport {
   return report;
 }
 
-onLocaleChange(() => {
-  renderReport(report);
-  if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
-  if (lastCompare) renderCompareResults(lastCompare);
-});
+onLocaleChange(() => renderReport(report));
 
 export async function runDnsChecks(): Promise<void> {
   const runBtn = document.getElementById("dns-run-btn") as HTMLButtonElement | null;
@@ -542,7 +539,7 @@ async function runStation(): Promise<void> {
   renderSecurity(securityChecks);
   lockPathHops(securityChecks, probe);
 
-  renderDnsSuggestions({ securityChecks, reachable: resolvers.filter((r) => r.reachable) });
+  showSuggestions(securityChecks, resolvers);
 }
 
 // Only what this page can actually see gets a reading. Everything else is
@@ -582,393 +579,4 @@ function lockPathHops(checks: SecurityCheck[], probe: ProbeResult | null): void 
   setConditions(checks
     .filter((c) => c.id !== "lan")
     .map((c) => ({ label: () => t(`dns.check.${c.id}`), state: checkState(c.status) })));
-}
-
-function renderIpv6(ip: string | null): void {
-  const el = document.getElementById("ip-address-v6")!;
-  el.textContent = ip || t("dns.ipv6None");
-  el.classList.toggle("info-muted", !ip);
-}
-
-function renderIpInfo(ipData: IpData): void {
-  const ipEl = document.getElementById("ip-address")!;
-  ipEl.textContent = ipData.ip || "—";
-  if (ipData.ip) {
-    ipEl.classList.add("copyable");
-    ipEl.title = t("dns.copyHint");
-    ipEl.onclick = () => {
-      navigator.clipboard.writeText(ipData.ip!).then(() => {
-        setBadge("ip-status", "done", t("dns.copied"));
-        setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
-      });
-    };
-  }
-  const f = ipFields(ipData);
-  document.getElementById("ip-location")!.textContent = f.location;
-  document.getElementById("ip-asn")!.textContent = f.asn;
-  document.getElementById("ip-timezone")!.textContent = f.timezone;
-  document.getElementById("ip-colo")!.textContent = f.colo;
-  document.getElementById("ip-http")!.textContent = f.http;
-  document.getElementById("ip-tls")!.textContent = f.tls;
-  setBadge("ip-status", "done", t("dns.detected"));
-}
-
-// The visitor's own recursion path, kept in its own block. Mixing it into the
-// public resolver table below made eight resolvers we picked look like the
-// eight the visitor uses.
-// Four states, and they mean different things: `undefined` is still running,
-// `null` is a deployment with no probe nameserver at all — the section promises
-// "your recursive resolver" and could never deliver one — and an empty resolver
-// list means the probe ran and saw nothing, which is itself a result. A probe
-// that is configured but can't be read comes back `unreachable`, and must never
-// render as that empty result.
-function renderObservedPath(probeResult?: ProbeResult | null): void {
-  const section = document.getElementById("dns-observed-section")!;
-  const container = document.getElementById("dns-observed-results")!;
-
-  section.hidden = probeResult === null;
-  if (probeResult === null) {
-    // The public-resolver note points at "the block above" for which resolver is
-    // really yours. With no block there, it has to say the honest thing instead.
-    document.getElementById("dns-public-note")!.textContent = t("dns.publicNoteOnly");
-    return;
-  }
-
-  if (probeResult === undefined) {
-    setHtml(container, html`<p class="info-muted">${t("dns.checking")}</p>`);
-    return;
-  }
-
-  container.innerHTML = "";
-  if (probeResult.unreachable) {
-    setHtml(container, html`<p class="info-muted">${t("dns.observedUnavailable")}</p>`);
-    return;
-  }
-  if (probeResult.resolvers.length === 0) {
-    setHtml(container, html`<p class="info-muted">${t("dns.observedNone")}</p>`);
-    return;
-  }
-
-  probeResult.resolvers.forEach((obs) => {
-    const div = document.createElement("div");
-    div.className = "dns-check-item fade-in";
-    const ecsHtml = obs.ecs ? html` · ECS: ${obs.ecs}` : "";
-    const operator = encryptedDnsOperator(obs.ip);
-    const sublabel = operator ? t("dns.observedOperator", operator) : t("dns.observedByNs");
-    setHtml(div, html`
-      <svg class="check-icon pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
-      <div class="check-label-block">
-        <span class="check-label">${t("dns.actualResolver")} <span class="resolver-ip">${obs.ip}</span></span>
-        <span class="check-sublabel">${sublabel}${ecsHtml}</span>
-      </div>
-      <span class="check-value pass">${t("dns.recursionActive")}</span>
-    `);
-    container.appendChild(div);
-  });
-  if (probeResult.incomplete) {
-    container.insertAdjacentHTML("beforeend", html`<p class="info-muted">${t("dns.observedIncomplete")}</p>`.value);
-  }
-}
-
-function renderResolvers(resolvers: ResolverResult[], probeResult?: ProbeResult | null): void {
-  renderObservedPath(probeResult);
-
-  const resolverContainer = document.getElementById("dns-resolver-results")!;
-  resolverContainer.innerHTML = "";
-
-  const rows = resolverRows(resolvers);
-  const reachableCount = rows.filter((r) => r.reachable).length;
-  if (reachableCount > 0) {
-    rows.forEach((r) => {
-      if (!r.reachable) {
-        resolverContainer.appendChild(createCheckItem("fail", r.label, r.value));
-        return;
-      }
-      const badgeHtml = r.badges.map((b) => html` <span class="resolver-badge ${b.kind}">${b.text}</span>`);
-
-      const div = document.createElement("div");
-      div.className = "dns-check-item fade-in";
-      const iconSvg = r.status === "pass"
-        ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
-      const egress = r.egressIp
-        ? html`<span class="check-sublabel">${t("dns.egressVia", r.egressIp)}</span>`
-        : "";
-      setHtml(div, html`
-        <svg class="check-icon ${r.status}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
-        <div class="check-label-block">
-          <span class="check-label">${r.name} <span class="resolver-ip">${r.ip}</span>${badgeHtml}</span>
-          ${egress}
-        </div>
-        <span class="check-value">${r.value}</span>
-      `);
-      resolverContainer.appendChild(div);
-    });
-
-    setBadge("dns-resolver-status", "done", t("dns.reachableOf", reachableCount, resolvers.length));
-  } else {
-    setHtml(resolverContainer, html`<p class="info-muted">${t("dns.noResolvers")}</p>`);
-    setBadge("dns-resolver-status", "error", t("dns.nonefound"));
-  }
-}
-
-// EDNS Client Subnet: how much of your address the resolver hands to every
-// authoritative server it talks to. A /24 narrows you to ~256 addresses.
-function renderEcs(resolvers: ResolverResult[]): void {
-  const container = document.getElementById("dns-ecs-results")!;
-  const summary = document.getElementById("dns-ecs-summary")!;
-  container.innerHTML = "";
-
-  const ecs = ecsView(resolvers);
-  if (ecs.known.length === 0) {
-    summary.textContent = ecsSummary(ecs);
-    setBadge("dns-ecs-status", "error", t("dns.failed"));
-    return;
-  }
-
-  if (ecs.leakedSubnet) {
-    setHtml(summary, raw(ecsSummary(ecs, (s) => html`<span class="mono">${s}</span>`.value)));
-  } else {
-    summary.textContent = ecsSummary(ecs);
-  }
-  ecs.rows.forEach((r) => container.appendChild(createCheckItem(r.status, r.label, r.value)));
-
-  setBadge(
-    "dns-ecs-status",
-    ecs.forwarding.length === 0 ? "done" : "error",
-    t("dns.ecsForwardingOf", String(ecs.forwarding.length), String(ecs.known.length))
-  );
-}
-
-function renderSecurity(securityChecks: SecurityCheck[]): void {
-  const securityContainer = document.getElementById("dns-security-results")!;
-  securityContainer.innerHTML = "";
-
-  // "info" rows state a fact (a LAN address exists) rather than a verdict, so
-  // they must not drag the card's badge down for everyone behind a router.
-  const graded = securityChecks.filter((c) => c.status !== "info");
-  const allPass = graded.every((c) => c.status === "pass");
-  const anyFail = graded.some((c) => c.status === "fail");
-
-  securityRows(securityChecks).forEach((r) => {
-    securityContainer.appendChild(createCheckItem(r.status, r.label, r.value, r.sublabel));
-  });
-
-  if (allPass) {
-    setBadge("dns-security-status", "done", t("dns.secure"));
-  } else if (anyFail) {
-    setBadge("dns-security-status", "error", t("dns.issuesFound"));
-  } else {
-    setBadge("dns-security-status", "done", t("dns.partial"));
-  }
-}
-
-function renderDnsSuggestions({ securityChecks, reachable }: { securityChecks: SecurityCheck[]; reachable: ResolverResult[] }): void {
-  const section = document.getElementById("dns-suggestions-section")!;
-  const subtitle = document.getElementById("dns-suggestions-subtitle")!;
-  const grid = document.getElementById("dns-suggestions-grid")!;
-
-  const { issues, dohUnverified, suggestions, topFix } = planDnsSuggestions(securityChecks, reachable);
-  const labels = issues.map((i) => t(i.key));
-
-  if (labels.length === 0) {
-    subtitle.textContent = t("dns.suggestGood");
-    renderVerdict(
-      "dns-verdict",
-      "pass",
-      t("verdict.dnsPass"),
-      dohUnverified ? t("verdict.dnsPassUnverified") : t("verdict.dnsPassDetail")
-    );
-  } else {
-    subtitle.textContent = t("dns.suggestIssues", labels.join(", "));
-    renderVerdict("dns-verdict", verdictLevel(labels.length), issueHeadline(labels), labels.join("\u00a0· "));
-    // The verdict names the problem; put the one fix next to it rather than
-    // leaving it in the recommendations below the fold.
-    if (topFix) {
-      const fix = document.createElement("a");
-      fix.className = "verdict-fix";
-      fix.href = "#dns-suggestions-section";
-      setHtml(fix, html`<span class="suggestion-badge">${t("dns.topFix")}</span>${t(topFix.name + ".name")} →`);
-      document.querySelector("#dns-verdict .verdict-body")?.appendChild(fix);
-    }
-  }
-
-  setHtml(grid, html`${suggestions.map((s) => suggestionCardHtml(s, s === topFix, "dns.checkBrowser"))}`);
-
-  section.classList.add("visible");
-}
-
-// --- Resolver consistency check ---
-
-interface CompareResult {
-  name: string;
-  ok: boolean;
-  ips: string[];
-}
-
-export async function runDnsCompare(): Promise<void> {
-  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
-  if (!domain) return;
-
-  const container = document.getElementById("dns-compare-results")!;
-  container.classList.remove("hidden");
-  setHtml(container, html`<p class="info-muted">${t("dns.comparing")}</p>`);
-
-  try {
-    const res = await fetch(`/api/dns/compare?domain=${encodeURIComponent(domain)}`);
-    lastCompare = await res.json();
-    renderCompareResults(lastCompare!);
-  } catch {
-    setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
-  }
-}
-
-function renderCompareResults(results: CompareResult[]): void {
-  const container = document.getElementById("dns-compare-results")!;
-  container.classList.remove("hidden");
-
-  const sig = (r: CompareResult) => r.ips.join(",");
-  const answering = results.filter((r) => r.ok && r.ips.length > 0);
-  const counts = new Map<string, number>();
-  answering.forEach((r) => counts.set(sig(r), (counts.get(sig(r)) || 0) + 1));
-  const majority = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  const allAgree = answering.length > 0 && answering.every((r) => sig(r) === majority);
-
-  setHtml(container, html`<p class="info-muted">${t(allAgree ? "dns.compareAllMatch" : "dns.compareMismatch")}</p>`);
-  results.forEach((r) => {
-    let status: "pass" | "warn" | "fail";
-    let value: string;
-    if (!r.ok) { status = "fail"; value = t("dns.compareUnreachable"); }
-    else if (r.ips.length === 0) { status = "warn"; value = t("dns.compareNoAnswer"); }
-    else { status = sig(r) === majority ? "pass" : "warn"; value = r.ips.join(", "); }
-    container.appendChild(createCheckItem(status, r.name, value));
-  });
-}
-
-export async function runDomainHealthCheck(): Promise<void> {
-  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
-  const selector = (document.getElementById("dns-health-selector") as HTMLInputElement).value.trim();
-  if (!domain) return;
-
-  const container = document.getElementById("dns-health-results")!;
-  container.classList.remove("hidden");
-  setHtml(container, html`<p class="info-muted">${t("dns.healthChecking")}</p>`);
-
-  try {
-    const [mx, txt, dmarc, dkim] = await Promise.all([
-      DnsCheck.lookupDns(domain, "MX"),
-      DnsCheck.lookupDns(domain, "TXT"),
-      DnsCheck.lookupDns(`_dmarc.${domain}`, "TXT"),
-      selector ? DnsCheck.lookupDns(`${selector}._domainkey.${domain}`, "TXT") : Promise.resolve(null),
-    ]);
-    renderHealthResults(mx, txt, dmarc, dkim, selector);
-  } catch {
-    setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
-  }
-}
-
-function renderHealthResults(
-  mx: DnsResult,
-  txt: DnsResult,
-  dmarc: DnsResult,
-  dkim: DnsResult | null,
-  selector: string
-): void {
-  const container = document.getElementById("dns-health-results")!;
-  container.innerHTML = "";
-
-  const mxHosts = (mx.Answer || []).filter((a) => a.type === 15);
-  if (mxHosts.length === 0) {
-    container.appendChild(createCheckItem("fail", t("dns.healthMx"), t("dns.healthMxNone")));
-  } else {
-    container.appendChild(createCheckItem(
-      "pass", t("dns.healthMx"), t("dns.healthMxFound", mxHosts.length),
-      mxHosts.map((a) => a.data).join(", ")
-    ));
-  }
-
-  // TXT strings render dig-style as `"v=spf1 ..." ` — a leading quote is expected, not a parse failure.
-  const spfRecords = (txt.Answer || []).filter((a) => a.type === 16 && /^"?v=spf1\b/i.test(a.data));
-  if (spfRecords.length === 0) {
-    container.appendChild(createCheckItem("fail", t("dns.healthSpf"), t("dns.healthSpfNone")));
-  } else if (spfRecords.length > 1) {
-    container.appendChild(createCheckItem("warn", t("dns.healthSpf"), t("dns.healthSpfMultiple")));
-  } else if (/\+all\b/i.test(spfRecords[0].data)) {
-    container.appendChild(createCheckItem("warn", t("dns.healthSpf"), t("dns.healthSpfPermissive"), spfRecords[0].data));
-  } else {
-    container.appendChild(createCheckItem("pass", t("dns.healthSpf"), t("dns.healthSpfOk"), spfRecords[0].data));
-  }
-
-  const dmarcRecords = (dmarc.Answer || []).filter((a) => a.type === 16 && /v=dmarc1\b/i.test(a.data));
-  if (dmarcRecords.length === 0) {
-    container.appendChild(createCheckItem("fail", t("dns.healthDmarc"), t("dns.healthDmarcNone")));
-  } else {
-    const policy = /p=(\w+)/i.exec(dmarcRecords[0].data)?.[1] ?? "none";
-    if (policy.toLowerCase() === "none") {
-      container.appendChild(createCheckItem("warn", t("dns.healthDmarc"), t("dns.healthDmarcWeak"), dmarcRecords[0].data));
-    } else {
-      container.appendChild(createCheckItem("pass", t("dns.healthDmarc"), t("dns.healthDmarcOk", policy), dmarcRecords[0].data));
-    }
-  }
-
-  if (!selector) {
-    container.appendChild(createCheckItem("warn", t("dns.healthDkim"), t("dns.healthDkimNoSelector")));
-  } else {
-    const dkimRecords = (dkim?.Answer || []).filter((a) => a.type === 16);
-    if (dkimRecords.length === 0) {
-      container.appendChild(createCheckItem("fail", t("dns.healthDkim"), t("dns.healthDkimNone", selector)));
-    } else {
-      container.appendChild(createCheckItem("pass", t("dns.healthDkim"), t("dns.healthDkimFound", selector), dkimRecords[0].data));
-    }
-  }
-}
-
-export async function runDnsLookup(): Promise<void> {
-  const domain = (document.getElementById("dns-lookup-domain") as HTMLInputElement).value.trim();
-  const type = (document.getElementById("dns-lookup-type") as unknown as HTMLSelectElement).value;
-  if (!domain) return;
-
-  const resultsEl = document.getElementById("dns-lookup-results")!;
-  const tableEl = document.getElementById("dns-lookup-table")!;
-  const outputEl = document.getElementById("dns-lookup-output")!;
-  resultsEl.classList.remove("hidden");
-  setHtml(tableEl, html`<p class="info-muted">${t("dns.lookupLoading")}</p>`);
-  outputEl.textContent = "...";
-
-  let allData: Record<string, any>;
-  if (type === "ALL") {
-    const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
-    const results = await Promise.all(types.map((rt) => DnsCheck.lookupDns(domain, rt)));
-    allData = {};
-    types.forEach((rt, i) => { allData[rt] = results[i]; });
-  } else {
-    allData = { [type]: await DnsCheck.lookupDns(domain, type) };
-  }
-
-  lastLookup = { domain, data: allData };
-  renderLookupResults(domain, allData);
-}
-
-function renderLookupResults(domain: string, allData: Record<string, any>): void {
-  const tableEl = document.getElementById("dns-lookup-table")!;
-  const outputEl = document.getElementById("dns-lookup-output")!;
-
-  const rows: Safe[] = [];
-  for (const [recType, data] of Object.entries(allData)) {
-    const answers = data?.Answer || [];
-    for (const rec of answers) {
-      const typeName = RR_NAMES[rec.type] ?? recType;
-      rows.push(html`<tr><td><span class="dns-type-badge">${typeName}</span></td><td class="mono">${rec.name || domain}</td><td class="mono">${rec.data}</td><td>${rec.TTL}s</td></tr>`);
-    }
-    if (data?.error && answers.length === 0) {
-      rows.push(html`<tr><td><span class="dns-type-badge">${recType}</span></td><td class="mono">${domain}</td><td colspan="2" style="color: var(--red); font-size: 13px;">${data.error}</td></tr>`);
-    }
-  }
-
-  if (rows.length === 0) {
-    rows.push(html`<tr><td colspan="4" class="info-muted" style="text-align:center;padding:16px">${t("dns.noRecords")}</td></tr>`);
-  }
-
-  setHtml(tableEl, html`<table class="dns-table"><thead><tr><th>${t("dns.table.type")}</th><th>${t("dns.table.name")}</th><th>${t("dns.table.value")}</th><th>${t("dns.table.ttl")}</th></tr></thead><tbody>${rows}</tbody></table>`);
-  outputEl.textContent = JSON.stringify(allData, null, 2);
 }
