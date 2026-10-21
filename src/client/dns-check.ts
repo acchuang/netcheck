@@ -1,6 +1,10 @@
 import { t, onLocaleChange } from "./i18n.ts";
 import { setBadge, createCheckItem, CF_POPS, escapeHtml, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
-import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
+import { RESOLVERS } from "../shared/resolvers.ts";
+import {
+  blankResult, emptyReport,
+  type DnsReport, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck, type SecurityStatus,
+} from "./dns-report.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, RR_NAMES, toHex } from "../shared/dns-wire.ts";
 import {
@@ -19,73 +23,6 @@ interface DnsAnswer {
   type: number;
   TTL: number;
   data: string;
-}
-
-interface ResolverResult extends ResolverInfo {
-  reachable: boolean;
-  latency: number | null;
-  /** null when the probe couldn't reach a verdict. */
-  validatesDnssec: boolean | null;
-  /** Extended DNS Error explaining the SERVFAIL, when the resolver sends one. */
-  dnssecDetail: string | null;
-  forwardsEcs: boolean | null;
-  ecsSubnet: string | null;
-  egressIp: string | null;
-  filtering: boolean;
-  /** True once a browser-side probe replaced the Worker's numbers for this row. */
-  measuredFromBrowser?: boolean;
-}
-
-function blankResult(resolver: ResolverInfo): ResolverResult {
-  return {
-    ...resolver,
-    reachable: false,
-    latency: null,
-    validatesDnssec: null,
-    dnssecDetail: null,
-    forwardsEcs: null,
-    ecsSubnet: null,
-    egressIp: null,
-    filtering: false,
-  };
-}
-
-type SecurityStatus = "pass" | "warn" | "fail" | "info";
-type SecurityCheckId = "dnssec" | "doh" | "ecs" | "malware" | "webrtc" | "lan";
-
-// Stores identifiers + i18n keys (not display strings) so locale switches
-// can re-render the card without re-running the checks.
-interface SecurityCheck {
-  id: SecurityCheckId;
-  status: SecurityStatus;
-  detailKey: string;
-  detailArg?: string;
-}
-
-// --- Extended interfaces for UI ---
-
-interface IpData {
-  ip?: string;
-  city?: string;
-  region?: string;
-  country?: string;
-  asOrganization?: string;
-  asn?: string;
-  timezone?: string;
-  colo?: string;
-  httpProtocol?: string;
-  tlsVersion?: string;
-  tlsCipher?: string;
-  clientTcpRtt?: number;
-  error?: string;
-}
-
-interface ProbeResult {
-  resolvers: { ip: string; ecs: string | null; count: number }[];
-  /** The nameserver could not be read at all — not the same as seeing nothing. */
-  unreachable?: boolean;
-  /** Read-back failed partway; the list is what arrived before it did. */
-  incomplete?: boolean;
 }
 
 const PROBE_POLL_MS = 400;
@@ -511,30 +448,30 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
 
 // --- UI Functions ---
 
-// Last successful results, kept so locale switches can re-render translated UI
-// without re-running the network checks.
-let lastIp: IpData | null = null;
-let lastIpv6: string | null | undefined; // undefined = not yet probed
-let lastResolvers: ResolverResult[] | null = null;
-let lastProbeResult: ProbeResult | null | undefined; // undefined = probe still running
-let lastSecurity: SecurityCheck[] | null = null;
+// The station run's results, kept so locale switches can re-render translated
+// UI without re-running the network checks.
+let report: DnsReport = emptyReport();
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 let lastCompare: CompareResult[] | null = null;
 
-onLocaleChange(() => {
-  if (lastIp) renderIpInfo(lastIp);
-  if (lastIpv6 !== undefined) renderIpv6(lastIpv6);
-  if (lastResolvers) {
-    renderResolvers(lastResolvers, lastProbeResult);
-    renderEcs(lastResolvers);
+function renderReport(r: DnsReport): void {
+  if (r.ip) renderIpInfo(r.ip);
+  if (r.ipv6 !== undefined) renderIpv6(r.ipv6);
+  if (r.resolvers) {
+    renderResolvers(r.resolvers, r.probe);
+    renderEcs(r.resolvers);
   }
-  if (lastSecurity) renderSecurity(lastSecurity);
-  if (lastResolvers && lastSecurity) {
+  if (r.security) renderSecurity(r.security);
+  if (r.resolvers && r.security) {
     renderDnsSuggestions({
-      securityChecks: lastSecurity,
-      reachable: lastResolvers.filter((r) => r.reachable),
+      securityChecks: r.security,
+      reachable: r.resolvers.filter((x) => x.reachable),
     });
   }
+}
+
+onLocaleChange(() => {
+  renderReport(report);
   if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
   if (lastCompare) renderCompareResults(lastCompare);
 });
@@ -552,10 +489,11 @@ export async function runDnsChecks(): Promise<void> {
 async function runStation(): Promise<void> {
   hideVerdict("dns-verdict");
   resetStation();
+  report = emptyReport();
 
   const ipv6Promise = DnsCheck.detectIpv6();
   ipv6Promise.then((v6) => {
-    lastIpv6 = v6;
+    report.ipv6 = v6;
     renderIpv6(v6);
   });
 
@@ -564,13 +502,13 @@ async function runStation(): Promise<void> {
   probePromise.then((probe) => {
     // Record null too — "this deployment has no probe" is the state that hides
     // the block, so leaving it as undefined would spin forever.
-    lastProbeResult = probe;
-    if (lastResolvers) renderResolvers(lastResolvers, lastProbeResult);
+    report.probe = probe;
+    if (report.resolvers) renderResolvers(report.resolvers, report.probe);
   });
 
   const ipData: IpData = await DnsCheck.detectIp();
   if (!ipData.error) {
-    lastIp = ipData;
+    report.ip = ipData;
     renderIpInfo(ipData);
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
@@ -578,8 +516,8 @@ async function runStation(): Promise<void> {
   lockIpHops(ipData);
 
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
-  lastResolvers = resolvers;
-  renderResolvers(resolvers, lastProbeResult);
+  report.resolvers = resolvers;
+  renderResolvers(resolvers, report.probe);
   renderEcs(resolvers);
   const answered = resolvers.filter((r) => r.reachable && r.latency !== null);
   setFastest(answered.length
@@ -595,7 +533,7 @@ async function runStation(): Promise<void> {
     ipv4: ipData.ip ?? null,
     ipv6,
   });
-  lastSecurity = securityChecks;
+  report.security = securityChecks;
   renderSecurity(securityChecks);
   lockPathHops(securityChecks, probe);
 
