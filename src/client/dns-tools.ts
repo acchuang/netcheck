@@ -6,10 +6,12 @@ import { DnsCheck, type DnsResult } from "./dns-check.ts";
 
 let lastLookup: { domain: string; data: Record<string, any> } | null = null;
 let lastCompare: CompareResult[] | null = null;
+let lastHealth: Parameters<typeof renderHealthResults> | null = null;
 
 onLocaleChange(() => {
   if (lastLookup) renderLookupResults(lastLookup.domain, lastLookup.data);
   if (lastCompare) renderCompareResults(lastCompare);
+  if (lastHealth) renderHealthResults(...lastHealth);
 });
 
 interface CompareResult {
@@ -73,7 +75,8 @@ export async function runDomainHealthCheck(): Promise<void> {
       DnsCheck.lookupDns(`_dmarc.${domain}`, "TXT"),
       selector ? DnsCheck.lookupDns(`${selector}._domainkey.${domain}`, "TXT") : Promise.resolve(null),
     ]);
-    renderHealthResults(mx, txt, dmarc, dkim, selector);
+    lastHealth = [mx, txt, dmarc, dkim, selector];
+    renderHealthResults(...lastHealth);
   } catch {
     setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
   }
