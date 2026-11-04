@@ -43,12 +43,21 @@ export function renderIpInfo(ipData: IpData): void {
 // list means the probe ran and saw nothing, which is itself a result. A probe
 // that is configured but can't be read comes back `unreachable`, and must never
 // render as that empty result.
+//
+// The section ships hidden. `undefined` leaves it that way: running can also mean
+// "still asking whether this deployment has a probe", and a public build must not
+// flash "Your recursive resolver" for a feature it doesn't have. The caller
+// reveals it with `revealObservedPath` once a probe is confirmed.
+export function revealObservedPath(): void {
+  document.getElementById("dns-observed-section")!.hidden = false;
+}
+
 export function renderObservedPath(probeResult?: ProbeResult | null): void {
   const section = document.getElementById("dns-observed-section")!;
   const container = document.getElementById("dns-observed-results")!;
 
-  section.hidden = probeResult === null;
   if (probeResult === null) {
+    section.hidden = true;
     // The public-resolver note points at "the block above" for which resolver is
     // really yours. With no block there, it has to say the honest thing instead.
     document.getElementById("dns-public-note")!.textContent = t("dns.publicNoteOnly");
@@ -59,6 +68,8 @@ export function renderObservedPath(probeResult?: ProbeResult | null): void {
     setHtml(container, html`<p class="info-muted">${t("dns.checking")}</p>`);
     return;
   }
+
+  section.hidden = false;
 
   container.innerHTML = "";
   if (probeResult.unreachable) {

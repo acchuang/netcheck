@@ -172,7 +172,25 @@ function initTabs(): void {
       document.getElementById(tab)!.classList.add("active");
 
       history.replaceState(null, "", `#${tab}`);
+      window.scrollTo(0, 0);
       if (tab === "adblock") startAdBlock();
+    });
+  });
+
+  const keyStep: Record<string, (i: number, n: number) => number> = {
+    ArrowRight: (i, n) => (i + 1) % n,
+    ArrowLeft: (i, n) => (i - 1 + n) % n,
+    Home: () => 0,
+    End: (_, n) => n - 1,
+  };
+  links.forEach((link, i) => {
+    link.addEventListener("keydown", (e) => {
+      const step = keyStep[e.key];
+      if (!step) return;
+      e.preventDefault();
+      const next = links[step(i, links.length)];
+      next.focus();
+      next.click();
     });
   });
 

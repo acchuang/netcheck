@@ -1,11 +1,11 @@
-import { t, onLocaleChange } from "./i18n.ts";
+import { t, onLocaleChange, setProbeAvailable } from "./i18n.ts";
 import { setBadge, CF_POPS, hideVerdict } from "./ui-utils.ts";
 import { RESOLVERS } from "../shared/resolvers.ts";
 import {
   blankResult, emptyReport,
   type DnsReport, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck, type SecurityStatus,
 } from "./dns-report.ts";
-import { renderIpv6, renderIpInfo, renderResolvers, renderEcs, renderSecurity, renderDnsSuggestions } from "./dns-view.ts";
+import { renderIpv6, renderIpInfo, renderResolvers, renderObservedPath, revealObservedPath, renderEcs, renderSecurity, renderDnsSuggestions } from "./dns-view.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wire.ts";
 import {
@@ -185,12 +185,13 @@ export const DnsCheck = {
    * that isn't there. The zone comes back with the answer — the nameserver a
    * self-hoster delegates is theirs, not ours.
    */
-  async probeRecursionPath(): Promise<ProbeResult | null> {
+  async probeRecursionPath(onEnabled?: () => void): Promise<ProbeResult | null> {
     try {
       const configRes = await fetch("/api/dns/probe-result");
       if (!configRes.ok) return null;
       const config = (await configRes.json()) as { enabled: boolean; zone?: string };
       if (!config.enabled || !config.zone) return null;
+      onEnabled?.();
 
       // The label we look up is public by construction: every resolver in the
       // path sees it, and so does anyone reading the nameserver's logs. If it
@@ -500,7 +501,11 @@ async function runStation(): Promise<void> {
   });
 
   // Run recursion probe in background to catch the visitor's real recursion path
-  const probePromise = DnsCheck.probeRecursionPath();
+  const probePromise = DnsCheck.probeRecursionPath(() => {
+    setProbeAvailable();
+    revealObservedPath();
+    renderObservedPath();
+  });
   probePromise.then((probe) => {
     // Record null too — "this deployment has no probe" is the state that hides
     // the block, so leaving it as undefined would spin forever.

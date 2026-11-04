@@ -87,8 +87,10 @@ function renderFingerprint(): void {
   badge.dataset.state = summary.level === "strong" ? "pass" : summary.level === "partial" ? "warn" : "fail";
   badge.textContent = t(`fp.level.${summary.level}`);
 
-  // Unknown is a signal the page could not read, not one that failed.
-  const state = { protected: "pass", exposed: "fail", unknown: "standby" } as const;
+  // Unknown is a signal the page could not read, not one that failed. One exposed
+  // signal among protected ones is a warning; red is for a browser with nothing protected.
+  const exposedState = summary.level === "none" ? "fail" : "warn";
+  const state = { protected: "pass", exposed: exposedState, unknown: "standby" } as const;
   list.replaceChildren(...fingerprintSignals.map((signal) => {
     const li = document.createElement("li");
     li.className = "condition";

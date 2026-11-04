@@ -8,9 +8,9 @@
   <meta name="theme-color" content="#000000">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetCheck - DNS & Ad Block Tester</title>
-  <meta name="description" content="Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.">
+  <meta name="description" data-i18n-attr="content:meta.description" content="Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.">
   <meta property="og:title" content="NetCheck - DNS & Ad Block Tester">
-  <meta property="og:description" content="Check your DNS security, connection speed, ad blocker effectiveness, and any site's security headers, entirely in your browser.">
+  <meta property="og:description" content="Check your DNS security, connection speed, ad blocker effectiveness, and any site's security headers, in your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://netcheck.oilygold.xyz">
   <meta name="twitter:card" content="summary">
@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#main" data-i18n="nav.skip">Skip to content</a>
   <nav class="nav">
     <div class="nav-inner">
       <div class="nav-brand">
@@ -102,7 +103,7 @@
     </div>
   </nav>
 
-  <main class="main">
+  <main class="main" id="main" tabindex="-1">
     <!-- DNS Check Section -->
     <section id="dns" class="section active" role="tabpanel" aria-labelledby="tab-dns">
       <div class="section-header">
@@ -234,9 +235,10 @@
             <span class="status-badge" id="dns-resolver-status">detecting...</span>
           </div>
           <div class="card-body">
-            <!-- Hidden unless the deployment runs its own authoritative nameserver;
-                 without one there is no way to see the visitor's recursion path. -->
-            <div id="dns-observed-section">
+            <!-- Hidden until the deployment confirms it runs its own authoritative
+                 nameserver; without one there is no way to see the visitor's
+                 recursion path, and the block must never flash while we find out. -->
+            <div id="dns-observed-section" hidden>
               <p class="card-subhead" id="dns-observed-subhead" data-i18n="dns.observedSubhead">Your recursive resolver</p>
               <div id="dns-observed-results">
                 <p class="info-muted">Checking your DNS configuration...</p>
@@ -653,7 +655,7 @@
             <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-history" data-i18n="about.ledger.history"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
             <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-export" data-i18n="about.ledger.export"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
             <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-headers" data-i18n="about.ledger.headers"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
-            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-probe" data-i18n="about.ledger.probe"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
+            <li class="condition" data-state="seen" data-probe-only><span class="condition-label" id="about-ledger-probe" data-i18n="about.ledger.probe"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
           </ul>
           <p class="panel-note about-privacy" id="about-privacy-desc" data-i18n="about.privacy.desc"></p>
         </div>

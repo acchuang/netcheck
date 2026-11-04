@@ -6,6 +6,7 @@ let current: Locale = "en";
 
 const en = {
   // Nav
+  "nav.skip": "Skip to content",
   "nav.dns": "DNS Check",
   "nav.speed": "Speed Test",
   "nav.adblock": "Ad Block",
@@ -535,9 +536,11 @@ const en = {
   "about.title": "About NetCheck",
   "about.subtitle": "A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves",
   "about.what.title": "What is NetCheck?",
-  "about.what.desc": "NetCheck runs network and privacy diagnostics in your browser: your DNS resolver, its security posture and the real recursion path your traffic takes; download and upload speed and bufferbloat; how well your ad and tracker blocker works; how identifiable this browser is to a fingerprinter; and the security headers of any site you point it at. Your results are never collected. Two checks go through servers we run, listed under Privacy.",
+  "about.what.desc": "NetCheck runs network and privacy diagnostics in your browser: your DNS resolver and its security posture; download and upload speed and bufferbloat; how well your ad and tracker blocker works; how identifiable this browser is to a fingerprinter; and the security headers of any site you point it at. Your results are never collected. One check goes through a server we run, listed under Privacy.",
+  "about.what.desc.probe": "NetCheck runs network and privacy diagnostics in your browser: your DNS resolver, its security posture and the real recursion path your traffic takes; download and upload speed and bufferbloat; how well your ad and tracker blocker works; how identifiable this browser is to a fingerprinter; and the security headers of any site you point it at. Your results are never collected. Two checks go through servers we run, listed under Privacy.",
   "about.feat.dns.title": "DNS Check",
-  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.",
+  "about.feat.dns.desc": "Detects your IP, resolvers, and PoP, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.",
+  "about.feat.dns.desc.probe": "Detects your IP, resolvers, and PoP; traces your real recursion path via an in-site probe nameserver, probes 8 public resolvers over encrypted DNS, and flags missing DNSSEC, ECS subnet leaks, unencrypted DNS, WebRTC leaks, and malware filtering gaps, with fixes for each. The encrypted-DNS verdict follows the worst hop in the path, not the best.",
   "about.feat.speed.title": "Speed Test",
   "about.feat.speed.desc": "Measures download, upload, latency, jitter, and bufferbloat against Cloudflare's edge, Cloudflare Speed Test, Netflix Fast.com, Ookla Speedtest, or a custom server. Steps under 5 MB warm the connection up and are left out of the clock, the measured steps run four connections wide so one TCP window can't cap a fast link, and bufferbloat is reported from whichever direction queued worse.",
   "about.feat.adblock.title": "Ad Block Test",
@@ -545,7 +548,8 @@ const en = {
   "about.feat.headers.title": "Security Headers",
   "about.feat.headers.desc": "Our worker fetches the URL you enter, with multi-hop, rate-limited SSRF validation, and grades its response headers for protection against XSS, clickjacking, and MIME sniffing.",
   "about.privacy.title": "Privacy",
-  "about.privacy.desc": "The header scan sends the URL you enter to our worker, which fetches that page and returns its response headers. The recursion-path check makes your resolver look up a name on a nameserver we run. It sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.",
+  "about.privacy.desc": "The header scan sends the URL you enter to our worker, which fetches that page and returns its response headers.",
+  "about.privacy.desc.probe": "The header scan sends the URL you enter to our worker, which fetches that page and returns its response headers. The recursion-path check makes your resolver look up a name on a nameserver we run. It sees your resolver's IP and, if your resolver forwards it, a truncated prefix of your network. That is held in memory for at most 5 minutes, never written to disk, and can only be read back with a key that stays in your tab.",
   "about.ledger.title": "What leaves this browser",
   "about.ledger.fp": "Fingerprint checks",
   "about.ledger.history": "Snapshots and history",
@@ -569,10 +573,12 @@ const en = {
 
   // Footer
   "footer.text": "NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.",
+  "meta.description": "Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.",
 } as const;
 
 const zhTW: Record<keyof typeof en, string> = {
   // Nav
+  "nav.skip": "跳到主要內容",
   "nav.dns": "DNS 檢測",
   "nav.speed": "測速",
   "nav.adblock": "廣告攔截",
@@ -1096,9 +1102,11 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.title": "關於 NetCheck",
   "about.subtitle": "純瀏覽器端的網路診斷工具，免安裝、免帳號，除了檢測本身之外不會有任何資料離開您的裝置",
   "about.what.title": "NetCheck 是什麼？",
-  "about.what.desc": "NetCheck 直接在瀏覽器裡跑網路與隱私診斷：DNS 解析器、它的安全狀態和流量實際走的遞迴路徑；上下載速度與緩衝膨脹；廣告和追蹤攔截器的效果；這個瀏覽器對指紋辨識來說有多好認；還有您指定網站的安全標頭。檢測結果不會被收集。有兩項檢測會經過本站的伺服器，列在「隱私」。",
+  "about.what.desc": "NetCheck 直接在瀏覽器裡跑網路與隱私診斷：DNS 解析器與它的安全狀態；上下載速度與緩衝膨脹；廣告和追蹤攔截器的效果；這個瀏覽器對指紋辨識來說有多好認；還有您指定網站的安全標頭。檢測結果不會被收集。有一項檢測會經過本站的伺服器，列在「隱私」。",
+  "about.what.desc.probe": "NetCheck 直接在瀏覽器裡跑網路與隱私診斷：DNS 解析器、它的安全狀態和流量實際走的遞迴路徑；上下載速度與緩衝膨脹；廣告和追蹤攔截器的效果；這個瀏覽器對指紋辨識來說有多好認；還有您指定網站的安全標頭。檢測結果不會被收集。有兩項檢測會經過本站的伺服器，列在「隱私」。",
   "about.feat.dns.title": "DNS 檢測",
-  "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP；透過站內探測用名稱伺服器追蹤實際的遞迴路徑，以加密 DNS 探測 8 個公共解析器，並標示缺少 DNSSEC、ECS 子網外洩、未加密 DNS、WebRTC 外洩與惡意軟體過濾缺口，並提供各項修正建議。加密 DNS 的判定以路徑中最差的一跳為準，而非最好的一跳。",
+  "about.feat.dns.desc": "偵測您的 IP、解析器與 PoP，以加密 DNS 探測 8 個公共解析器，並標示缺少 DNSSEC、ECS 子網外洩、未加密 DNS、WebRTC 外洩與惡意軟體過濾缺口，每項都附修正建議。加密 DNS 的判定以路徑中最差的一跳為準，而非最好的一跳。",
+  "about.feat.dns.desc.probe": "偵測您的 IP、解析器與 PoP；透過站內探測用名稱伺服器追蹤實際的遞迴路徑，以加密 DNS 探測 8 個公共解析器，並標示缺少 DNSSEC、ECS 子網外洩、未加密 DNS、WebRTC 外洩與惡意軟體過濾缺口，每項都附修正建議。加密 DNS 的判定以路徑中最差的一跳為準，而非最好的一跳。",
   "about.feat.speed.title": "速度測試",
   "about.feat.speed.desc": "對 Cloudflare 邊緣、Cloudflare Speed Test、Netflix Fast.com、Ookla Speedtest 或自訂伺服器量測下載、上傳、延遲、抖動與緩衝膨脹。5 MB 以下的階段僅用於暖機並排除在計時之外，正式量測階段同時開啟四條連線，避免單一 TCP 視窗限制住高速連線；緩衝膨脹則取上下行中排隊較嚴重的方向回報。",
   "about.feat.adblock.title": "廣告攔截測試",
@@ -1106,7 +1114,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "about.feat.headers.title": "安全標頭",
   "about.feat.headers.desc": "由本站 worker 抓取您輸入的網址（多跳驗證、有速率限制的 SSRF 防護），再評估回應標頭對 XSS、點擊劫持與 MIME 嗅探的防護。",
   "about.privacy.title": "隱私",
-  "about.privacy.desc": "安全標頭掃描會把您輸入的網址送到本站的 worker，由它抓取該頁面並回傳回應標頭。遞迴路徑檢測會讓您的解析器向本站架設的名稱伺服器查詢一個名稱，伺服器會看到解析器的 IP；若解析器有轉送，也會看到您網路的截短前綴。這些資料只放在記憶體中，最多 5 分鐘，不寫入磁碟，而且只有留在您分頁裡的金鑰才能讀回。",
+  "about.privacy.desc": "安全標頭掃描會把您輸入的網址送到本站的 worker，由它抓取該頁面並回傳回應標頭。",
+  "about.privacy.desc.probe": "安全標頭掃描會把您輸入的網址送到本站的 worker，由它抓取該頁面並回傳回應標頭。遞迴路徑檢測會讓您的解析器向本站架設的名稱伺服器查詢一個名稱，伺服器會看到解析器的 IP；若解析器有轉送，也會看到您網路的截短前綴。這些資料只放在記憶體中，最多 5 分鐘，不寫入磁碟，而且只有留在您分頁裡的金鑰才能讀回。",
   "about.ledger.title": "哪些資料會離開瀏覽器",
   "about.ledger.fp": "指紋檢測",
   "about.ledger.history": "快照與歷史紀錄",
@@ -1130,6 +1139,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "verdict.headersFail": "標頭設定薄弱",
 
   "footer.text": "NetCheck - DNS 與廣告攔截診斷。測試在瀏覽器中執行，少數例外請見「關於」。",
+  "meta.description": "在瀏覽器裡做網路診斷：DNS 安全、測速（含 bufferbloat 評級）、廣告攔截分析和 HTTP 安全標頭掃描。免安裝，免註冊。",
 };
 
 const locales: Record<Locale, Record<string, string>> = { en, "zh-TW": zhTW };
@@ -1162,6 +1172,11 @@ function setLocale(locale: Locale): void {
   localeChangeListeners.forEach((cb) => cb());
 }
 
+export function setProbeAvailable(): void {
+  document.documentElement.dataset.probe = "on";
+  applyStaticTranslations();
+}
+
 export function initI18n(): void {
   const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
   if (saved && (saved === "en" || saved === "zh-TW")) current = saved;
@@ -1187,8 +1202,12 @@ function applyStaticTranslations(): void {
     if (text) text.textContent = t(`nav.${link.dataset.tab}`);
   });
 
+  // Copy that describes the recursion probe has a `<key>.probe` variant, used only
+  // once the deployment confirms it runs one. The plain key is the public-safe text.
+  const probeOn = document.documentElement.dataset.probe === "on";
   document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n!);
+    const key = el.dataset.i18n!;
+    el.textContent = t(probeOn && `${key}.probe` in locales.en ? `${key}.probe` : key);
   });
   document.querySelectorAll<HTMLElement>("[data-i18n-attr]").forEach((el) => {
     const [attr, key] = el.dataset.i18nAttr!.split(":");

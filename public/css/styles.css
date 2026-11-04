@@ -258,6 +258,18 @@ textarea {
 }
 
 /* Nav: the station strip. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: calc(var(--z-sticky) + 1);
+  padding: 8px 14px;
+  background: var(--bg-black);
+  color: inherit;
+  border: 1px solid currentColor;
+}
+.skip-link:focus { top: 8px; }
+
 .nav {
   position: sticky;
   top: 0;
@@ -672,7 +684,7 @@ textarea {
   flex: 1;
   min-width: 0;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 
@@ -2747,6 +2759,7 @@ select option {
 }
 
 .about-ledger .condition { grid-template-columns: minmax(0, 1fr) auto; }
+html:not([data-probe="on"]) [data-probe-only] { display: none; }
 
 .about-privacy {
   padding-bottom: 20px;
@@ -2779,7 +2792,7 @@ select option {
 /* --- Snapshot History --- */
 .snapshot-section { margin-top: 24px; }
 .snapshot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.snapshot-title { color: var(--text-primary); margin: 0; }
+.snapshot-title { color: var(--text-primary); font-size: 20px; font-weight: 700; margin: 0; }
 .snapshot-list { display: flex; flex-direction: column; gap: 6px; }
 .snap-row {
   display: grid;
