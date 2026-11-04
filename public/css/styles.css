@@ -592,6 +592,7 @@ textarea {
   align-items: center;
   gap: 8px;
   margin-top: 10px;
+  min-height: 24px;
   font-size: 13px;
   color: var(--text-primary);
   text-decoration: none;
@@ -2194,6 +2195,7 @@ select option {
 }
 
 .suggestion-link {
+  min-height: 24px;
   font-size: 13px;
   font-weight: 500;
   color: var(--accent);
@@ -2439,6 +2441,7 @@ select option {
   color: var(--text-quaternary);
   text-decoration: none;
   margin-top: 8px;
+  min-height: 24px;
   transition: color 0.15s;
 }
 
@@ -2468,6 +2471,16 @@ select option {
   .workstation-tab {
     flex: 1;
     text-align: center;
+  }
+
+  .nav-inner {
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .nav-title {
+    font-size: 15px;
+    letter-spacing: 0.2em;
   }
 
   .nav-links {
@@ -2580,6 +2593,33 @@ select option {
     top: auto;
     bottom: calc(64px + env(safe-area-inset-bottom));
     min-width: auto;
+  }
+}
+
+/* Small phones (WCAG reflow at 320px): the English tab labels need ~361px on one
+   line each, and the top bar needs ~342px. Let tabs shrink and wrap, tighten the bar. */
+@media (max-width: 380px) {
+  .nav-link {
+    min-width: 0;
+  }
+
+  .nav-link-text {
+    font-size: 11px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+
+  .nav-title {
+    font-size: 14px;
+    letter-spacing: 0.12em;
+  }
+
+  .nav-actions {
+    gap: 2px;
+  }
+
+  .btn-nav-action {
+    padding: 0 6px;
   }
 }
 
