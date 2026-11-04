@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-04T23:38:58.010Z",
+        "reason": "user confirmed: detector cannot resolve /css/styles.css (real file public/css/styles.css) and measured default 16px; finding absent with stylesheet loaded"
+      }
+    ]
+  }
+}
