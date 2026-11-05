@@ -40,6 +40,16 @@ interface FilterListSummary {
   acceptableAdsEnabled: boolean;
 }
 
+// Acceptable Ads is an allowlist layered on EasyList by ABP-style blockers. Its
+// probes read "allowed" whenever nothing is blocking, so with no blocker (or a
+// dead network) every probe passes and it would report ENABLED. It only means
+// something when EasyList itself was detected.
+export function gateAcceptableAds(results: FilterListResult[]): void {
+  const easyList = results.find((r) => r.name === "EasyList");
+  if (easyList?.detected) return;
+  for (const r of results) if (r.special === "acceptableAds") r.detected = false;
+}
+
 export const FilterListDetector = {
   lists: [
     {
@@ -176,6 +186,7 @@ export const FilterListDetector = {
     }
 
     container.remove();
+    gateAcceptableAds(this.results);
     return this.results;
   },
 
