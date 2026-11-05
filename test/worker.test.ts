@@ -363,13 +363,15 @@ test("an unreachable probe nameserver is reported, not passed off as an empty re
 // graded "slow" client-side. The Worker reports the warm repeat instead.
 test("check-resolvers reports warm latency, not the cold first request", async () => {
   const realFetch = globalThis.fetch;
-  const seen = new Set<string>();
+  // Idle connections per host: a request takes one if free, else pays setup.
+  // Concurrent requests therefore each open their own, as workerd does.
+  const idle = new Map<string, number>();
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const host = new URL(String(input)).host;
-    if (!seen.has(host)) {
-      seen.add(host);
-      await new Promise((r) => setTimeout(r, 150));
-    }
+    const free = idle.get(host) ?? 0;
+    if (free > 0) idle.set(host, free - 1);
+    await new Promise((r) => setTimeout(r, free > 0 ? 5 : 150));
+    idle.set(host, (idle.get(host) ?? 0) + 1);
     return new Response(new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]));
   }) as typeof fetch;
   try {
