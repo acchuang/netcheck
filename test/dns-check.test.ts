@@ -100,6 +100,22 @@ test("an unreachable probe nameserver is not reported as an empty result", async
   assert.deepEqual(await DnsCheck.probeRecursionPath(), { resolvers: [], unreachable: true });
 });
 
+// The first DoH request to a host pays for hostname lookup, TCP and TLS. Its
+// latency used to be shown as the resolver's, and anything over 100 ms was
+// graded "slow" — a cold handshake on a phone is enough to trip that.
+test("browser-measured resolver latency ignores the cold first request", async () => {
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    if (calls++ === 0) await new Promise((r) => setTimeout(r, 120));
+    // Header-only DNS response: id 0, QR+RD+RA, no sections.
+    return new Response(new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]));
+  }) as typeof fetch;
+  const rows = [{ ...resolver(true), cors: true, latency: null }];
+  await DnsCheck.refineFromBrowser(rows as unknown as Parameters<typeof DnsCheck.refineFromBrowser>[0]);
+  assert.equal(calls, 2);
+  assert.ok(rows[0].latency! < 100, `cold request leaked into latency: ${rows[0].latency}ms`);
+});
+
 type Checks = Parameters<typeof planDnsSuggestions>[0];
 const passing = (...ids: string[]) =>
   ids.map((id) => ({ id, status: "pass", detailKey: "x" })) as Checks;

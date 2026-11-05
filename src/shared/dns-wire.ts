@@ -432,12 +432,12 @@ export async function dohQuery(
   opts: QueryOptions & { timeoutMs?: number } = {}
 ): Promise<DnsMessage & { latency: number }> {
   const dns = toBase64Url(encodeQuery(name, type, opts));
-  const start = Date.now();
+  const start = performance.now();
   const res = await fetch(`https://${host}/dns-query?dns=${dns}`, {
     headers: { Accept: "application/dns-message" },
     signal: AbortSignal.timeout(opts.timeoutMs ?? 5000),
   });
-  const latency = Date.now() - start;
+  const latency = Math.round(performance.now() - start);
   if (!res.ok) throw new Error(`DoH ${host} returned HTTP ${res.status}`);
   const buf = new Uint8Array(await res.arrayBuffer());
   return { ...decodeMessage(buf), latency };

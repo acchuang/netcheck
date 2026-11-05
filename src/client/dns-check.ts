@@ -167,9 +167,13 @@ export const DnsCheck = {
       if (!row.cors) return;
       try {
         const whoami = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 });
+        // The first request also pays the DoH hostname lookup, TCP and TLS setup,
+        // which says more about the visitor's link than about the resolver. A
+        // second one rides the warm connection; keep the smaller of the two.
+        const warm = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 }).catch(() => null);
         const { egressIp, ecsSubnet } = parseWhoami(whoami);
         row.reachable = true;
-        row.latency = whoami.latency;
+        row.latency = Math.min(whoami.latency, warm?.latency ?? Infinity);
         row.egressIp = egressIp;
         row.ecsSubnet = ecsSubnet;
         row.forwardsEcs = ecsSubnet !== null;
