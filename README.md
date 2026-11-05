@@ -8,7 +8,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### DNS Check
 - Public IP detection with geolocation, ISP/ASN, and Cloudflare PoP
-- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers
+- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers. Latency is the faster of two queries on one connection, so it shows the round trip, not the TCP/TLS handshake
 - Security assessment: DNSSEC validation, DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection
 - Encrypted-DNS verdict takes the worst hop, not the best one: a router that forwards to your ISP's resolver, which forwards to Cloudflare, is reported as plaintext on the first hop rather than as encrypted because a recognised operator appeared somewhere in the chain
 - ECS leak detection — flags resolvers that forward your client subnet upstream, and (with the probe below enabled) reports the subnet a hop actually forwarded about *you*, encrypted path or not
@@ -62,7 +62,7 @@ The URL must be `https://` (localhost excepted): `PROBE_SECRET` travels in a req
 
 With any of them missing, the client is told the probe does not exist here: it skips the lookup entirely, and the DNS card drops both the encrypted-DNS row and the "your recursive resolver" block rather than showing a check it cannot answer.
 
-Running the nameserver — an always-free VM (the guide uses GCP; any host with UDP/53 works), zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
+Running the nameserver — an always-free VM (the guide uses GCP; the live site runs on Oracle Cloud; any host with UDP/53 works), zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
 
 ## Tech Stack
 
