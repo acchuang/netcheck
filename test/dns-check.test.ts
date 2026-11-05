@@ -15,9 +15,14 @@ const realFetch = globalThis.fetch;
 const CLIENT = { ipv4: "203.0.113.5", ipv6: null };
 
 // The malware probe reads success as "your resolver did NOT filter this".
-function stubFetch(mode: "resolves" | "rejects"): void {
-  globalThis.fetch = (async () => {
-    if (mode === "rejects") throw new Error("blocked");
+// "rejects" refuses only the malware host (a resolver sinkholing it); "offline"
+// and "timeout" fail everything, which is the network failing, not a filter.
+function stubFetch(mode: "resolves" | "rejects" | "offline" | "timeout"): void {
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    if (mode === "timeout") throw new DOMException("timed out", "TimeoutError");
+    if (mode === "offline" || (mode === "rejects" && String(input).includes("malware.testcategory.com"))) {
+      throw new TypeError("fetch failed");
+    }
     return new Response("", { status: 200 });
   }) as typeof fetch;
 }
@@ -76,6 +81,14 @@ test("malware filtering is inferred from the probe fetch failing, not succeeding
   stubFetch("resolves");
   const unfiltered = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
   assert.equal(statusOf(unfiltered, "malware"), "warn");
+});
+
+test("a dead link or a timeout is not read as malware filtering", async () => {
+  for (const mode of ["offline", "timeout"] as const) {
+    stubFetch(mode);
+    const checks = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
+    assert.equal(statusOf(checks, "malware"), "info", mode);
+  }
 });
 
 // A failed read-back used to return whatever the last poll saw, so a 429 or a

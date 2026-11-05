@@ -303,7 +303,10 @@ export const DnsCheck = {
     // A no-cors fetch resolves the hostname via the user's configured DNS. Filtering
     // resolvers (Quad9, Cloudflare Families, AdGuard, NextDNS) block this malware-test
     // domain (return 0.0.0.0/NXDOMAIN) so the fetch rejects => filtered. Vanilla
-    // resolvers resolve it => fetch connects => not filtered.
+    // resolvers resolve it => fetch connects => not filtered. A rejection only
+    // means "filtered" if it was a fast refusal on a link that otherwise works:
+    // a timeout or a dead connection is the network failing, not the resolver
+    // blocking, and calling that "filtered" hands an offline visitor a green row.
     try {
       await fetch("https://malware.testcategory.com/pixel.png", {
         mode: "no-cors",
@@ -314,12 +317,12 @@ export const DnsCheck = {
         status: "warn",
         detailKey: "dns.malwareNotFiltered",
       });
-    } catch {
-      checks.push({
-        id: "malware",
-        status: "pass",
-        detailKey: "dns.malwareFiltered",
-      });
+    } catch (err) {
+      const timedOut = err instanceof DOMException && err.name === "TimeoutError";
+      const linkWorks = !timedOut && (await fetch("/manifest.json", { cache: "no-store", signal: AbortSignal.timeout(3000) }).then(() => true, () => false));
+      checks.push(linkWorks
+        ? { id: "malware", status: "pass", detailKey: "dns.malwareFiltered" }
+        : { id: "malware", status: "info", detailKey: "dns.malwareUnknown" });
     }
 
     // WebRTC. A LAN address is not the leak — everyone behind NAT has one, and
