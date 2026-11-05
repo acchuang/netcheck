@@ -44,7 +44,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ## Optional: recursion-path probing (self-hosted)
 
-**Off by default, and off on [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz).** This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
+**Off by default, and on at [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)**, which delegates `p.oilygold.xyz` to a small Oracle Cloud VM. This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
 
 `probe-server/` is an authoritative nameserver for a zone you delegate to it. The browser resolves `<label>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs, and any EDNS Client Subnet forwarded. A DoH-only page can never learn this about its visitor, because it only ever talks to the one resolver it picked.
 
@@ -62,7 +62,7 @@ The URL must be `https://` (localhost excepted): `PROBE_SECRET` travels in a req
 
 With any of them missing, the client is told the probe does not exist here: it skips the lookup entirely, and the DNS card drops both the encrypted-DNS row and the "your recursive resolver" block rather than showing a check it cannot answer.
 
-Running the nameserver — GCP always-free VM, zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
+Running the nameserver — an always-free VM (the guide uses GCP; any host with UDP/53 works), zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
 
 ## Tech Stack
 
