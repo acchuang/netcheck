@@ -384,8 +384,8 @@ interface ResolverProbe extends ResolverInfo {
   filtering: boolean;
 }
 
-// 4 subrequests per resolver x 8 resolvers = 32, comfortably under the Workers
-// per-request subrequest cap. Add probes here with that ceiling in mind.
+// 5 subrequests per resolver x 8 resolvers = 40, under the 50 of the Workers
+// free plan. Add probes here with that ceiling in mind.
 async function testOneResolver(resolver: ResolverInfo): Promise<ResolverProbe> {
   const base: ResolverProbe = {
     ...resolver,
@@ -407,10 +407,12 @@ async function testOneResolver(resolver: ResolverInfo): Promise<ResolverProbe> {
   }
   if (control.Status !== 0) return base;
 
-  const [bogus, whoami, filter] = await Promise.all([
+  const [bogus, whoami, filter, warm] = await Promise.all([
     dohQuery(resolver.host, DNSSEC_BOGUS_DOMAIN, "A", { dnssecOk: true, timeoutMs: 4000 }).catch(() => null),
     dohQuery(resolver.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 }).catch(() => null),
     dohQuery(resolver.host, AD_PROBE_DOMAIN, "A", { timeoutMs: 4000 }).catch(() => null),
+    // The control query paid for connection setup; this cached repeat is the resolver.
+    dohQuery(resolver.host, "example.com", "A", { dnssecOk: true, timeoutMs: 4000 }).catch(() => null),
   ]);
 
   // SERVFAIL on the bogus zone is the validation signal. The control query
@@ -439,7 +441,7 @@ async function testOneResolver(resolver: ResolverInfo): Promise<ResolverProbe> {
   return {
     ...base,
     reachable: true,
-    latency: control.latency,
+    latency: warm ? Math.min(control.latency, warm.latency) : control.latency,
     validatesDnssec,
     dnssecDetail,
     forwardsEcs: whoami ? ecsSubnet !== null : null,

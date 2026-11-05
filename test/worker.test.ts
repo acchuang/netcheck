@@ -359,6 +359,31 @@ test("an unreachable probe nameserver is reported, not passed off as an empty re
   }
 });
 
+// The control query pays for connection setup, and a number over 100 ms is
+// graded "slow" client-side. The Worker reports the warm repeat instead.
+test("check-resolvers reports warm latency, not the cold first request", async () => {
+  const realFetch = globalThis.fetch;
+  const seen = new Set<string>();
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const host = new URL(String(input)).host;
+    if (!seen.has(host)) {
+      seen.add(host);
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return new Response(new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]));
+  }) as typeof fetch;
+  try {
+    const res = await worker.fetch(new Request("https://netcheck.internal/api/dns/check-resolvers", {
+      headers: { "cf-connecting-ip": "203.0.113.50" },
+    }));
+    const rows = (await res.json()) as { reachable: boolean; latency: number }[];
+    assert.ok(rows.length > 0 && rows.every((r) => r.reachable));
+    for (const r of rows) assert.ok(r.latency < 100, `cold request leaked into latency: ${r.latency}ms`);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("a plaintext probe URL is treated as unconfigured, not used", async () => {
   // PROBE_SECRET rides in a request header. Sending it over http:// puts a
   // replayable credential on the wire between Cloudflare and the probe box, so
