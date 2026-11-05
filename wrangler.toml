@@ -23,6 +23,6 @@ simple = { limit = 60, period = 60 }
 # The recursion-path probe is off unless all three are set. It needs an
 # authoritative nameserver you run yourself — see probe-server/README.md.
 # PROBE_SECRET is a secret: `wrangler secret put PROBE_SECRET`, never here.
-# [vars]
-# PROBE_SERVER_URL = "https://<nameserver-hostname>:8443"   # must be https: the secret rides in a header
-# PROBE_ZONE = "p.example.com"
+[vars]
+PROBE_SERVER_URL = "https://ns-probe.oilygold.xyz:8443"   # must be https: the secret rides in a header
+PROBE_ZONE = "p.oilygold.xyz"
