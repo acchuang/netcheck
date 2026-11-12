@@ -1,7 +1,7 @@
 {
-  "name": "NetCheck — DNS & Ad Block Tester",
+  "name": "NetCheck: DNS, speed, ad-block & header checks",
   "short_name": "NetCheck",
-  "description": "DNS, ad block, speed test, and browser fingerprint diagnostics.",
+  "description": "DNS, speed, ad-block, and HTTP security-header checks in your browser.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

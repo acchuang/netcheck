@@ -1221,5 +1221,5 @@ function applyStaticTranslations(): void {
   });
 
   // Page title
-  document.title = current === "zh-TW" ? "NetCheck - DNS 與廣告攔截測試" : "NetCheck - DNS & Ad Block Tester";
+  document.title = current === "zh-TW" ? "NetCheck：DNS、網速、廣告攔截與標頭檢查" : "NetCheck: DNS, speed, ad-block & header checks";
 }

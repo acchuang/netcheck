@@ -35,7 +35,7 @@ A combination, none of which neighbouring single-purpose tools (dnsleaktest, fas
 
 - Hosted on Cloudflare Workers; the public site is `netcheck.oilygold.xyz`.
 - What the public site can prove comes from the browser and Cloudflare's edge: public IP/ASN/location/PoP, reachability and DNSSEC/ECS behaviour of 8 named public resolvers probed over DoH, malware-domain filtering via the visitor's own resolver, WebRTC leaks.
-- **It cannot see the visitor's actual recursive resolver.** The recursion-path probe (`probe-server/`, a self-hosted authoritative nameserver) is an optional self-hoster extra and stays **off** on the public site. Designs must be fully meaningful without it and must not imply resolver observation when it is absent.
+- **It cannot see the visitor's actual recursive resolver.** The recursion-path probe (`probe-server/`, a self-hosted authoritative nameserver) is optional for self-hosters; the public site runs one (an Oracle Cloud VM). Designs must still be fully meaningful without it and must not imply resolver observation when it is absent.
 - Server-side fan-out (headers scan, resolver compare, DNS lookup) goes through the Worker and is per-IP rate-limited.
 - No accounts, no analytics on user results, no server-side storage of results.
 

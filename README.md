@@ -8,10 +8,10 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### DNS Check
 - Public IP detection with geolocation, ISP/ASN, and Cloudflare PoP
-- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers. Latency is the faster of two queries on one connection, so it shows the round trip, not the TCP/TLS handshake
+- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers. Resolvers that allow cross-origin DoH are timed from the browser: a cold first query (lookup + TCP + TLS) and the median of three warm queries on the same connection, with the HTTP cache bypassed. The rest are only checked from the Worker and shown untimed, since edge-to-resolver latency says nothing about yours
 - Security assessment: DNSSEC validation, DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection
 - Encrypted-DNS verdict takes the worst hop, not the best one: a router that forwards to your ISP's resolver, which forwards to Cloudflare, is reported as plaintext on the first hop rather than as encrypted because a recognised operator appeared somewhere in the chain
-- ECS leak detection — flags resolvers that forward your client subnet upstream, and (with the probe below enabled) reports the subnet a hop actually forwarded about *you*, encrypted path or not
+- ECS check — lists which public resolvers forward a client subnet (information only), and (with the probe below enabled) reports the subnet a hop actually forwarded about *you*, encrypted path or not
 - Interactive lookup tool for A, AAAA, MX, NS, TXT, CNAME, SOA, SRV records
 
 ### Speed Test
@@ -36,7 +36,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 ### Also
 - Speed and ad-block results snapshot to local storage, with color-coded deltas between runs
 - Memory-efficient streaming speed downloads via `ReadableStream`
-- PWA with offline precaching and responsive Linear-inspired dark/light theme
+- PWA with offline precaching and a black "command wall" theme plus High Contrast (see `DESIGN.md`)
 - Export a full diagnostic report as Markdown or printable PDF — nothing leaves your device
 - Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
 - Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited via Cloudflare's Rate Limiting binding, which counts across isolates; an in-worker counter is the fallback for `wrangler dev`
@@ -69,8 +69,8 @@ Running the nameserver — an always-free VM (the guide uses GCP; the live site 
 - **Runtime:** [Cloudflare Workers](https://workers.cloudflare.com/), static assets via the Workers Assets binding
 - **Frontend:** Vite + TypeScript, compiled to vanilla JS/CSS (no framework)
 - **Build:** [`@cloudflare/vite-plugin`](https://developers.cloudflare.com/workers/vite-plugin/) — Workers runtime integrated directly into Vite dev/build
-- **Design System:** [Linear](https://linear.app)-inspired dark theme — Inter Variable, `#08090a` canvas, indigo-violet accents
-- **DNS Lookups:** resolvers probed over RFC 8484 DNS wire format (DoH POST) with a hand-rolled encoder/decoder in `src/shared/dns-wire.ts`; interactive lookups via Cloudflare DNS-over-HTTPS
+- **Design System:** "Crisis Command Wall": phosphor orange on black, Chakra Petch / JetBrains Mono / DSEG7, zero radius — spec in `DESIGN.md`
+- **DNS Lookups:** resolvers probed over RFC 8484 DNS wire format (DoH GET, `cache: "no-store"`) with a hand-rolled encoder/decoder in `src/shared/dns-wire.ts`; interactive lookups via Cloudflare DNS-over-HTTPS
 
 ## Project Structure
 
@@ -93,7 +93,7 @@ netcheck-site/
 │       └── index.ts           # Worker — API routes
 └── public/
     ├── icon.svg, manifest.json, sw.js
-    └── css/styles.css         # Linear design system implementation
+    └── css/styles.css         # Command-wall design system (DESIGN.md)
 ```
 
 ## Development
