@@ -112,7 +112,22 @@
         <p class="subtitle" id="dns-subtitle" data-i18n="dns.subtitle">Detect your IP, DNS resolvers, and network configuration</p>
       </div>
 
-      <div class="station">
+      <div class="station station-dns">
+        <div class="readout-panel">
+          <div class="panel-head">
+            <h2 class="card-title" id="dns-verdict-title" data-i18n="station.verdict">Verdict</h2>
+          </div>
+          <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
+          <div class="readout">
+            <span class="readout-label" id="dns-fastest-label" data-i18n="station.fastest">Fastest public resolver</span>
+            <span class="readout-value"><span class="seg" id="dns-fastest-value">---</span><span class="seg-unit">ms</span></span>
+            <span class="readout-sub" id="dns-fastest-name"></span>
+          </div>
+          <h3 class="readout-label" id="dns-checks-title" data-i18n="station.checks">Checks</h3>
+          <ul class="conditions" id="dns-conditions"></ul>
+          <button type="button" class="btn btn-primary btn-run" id="dns-run-btn"><span id="dns-run-label" data-i18n="station.run">Run</span></button>
+        </div>
+
         <div class="schematic">
           <div class="panel-head">
             <h2 class="card-title" id="dns-path-title" data-i18n="station.path">Connection path</h2>
@@ -123,14 +138,6 @@
               <span class="hop-node" aria-hidden="true"></span>
               <div class="hop-label">
                 <span class="hop-key" id="hop-you-key" data-i18n="station.you">You</span>
-                <span class="hop-reading">—</span>
-                <span class="hop-state"></span>
-              </div>
-            </li>
-            <li class="hop" data-hop="router" data-state="standby">
-              <span class="hop-node" aria-hidden="true"></span>
-              <div class="hop-label">
-                <span class="hop-key" id="hop-router-key" data-i18n="station.router">Router</span>
                 <span class="hop-reading">—</span>
                 <span class="hop-state"></span>
               </div>
@@ -161,21 +168,6 @@
             </li>
             <li class="scan-cursor" aria-hidden="true"></li>
           </ol>
-        </div>
-
-        <div class="readout-panel">
-          <div class="panel-head">
-            <h2 class="card-title" id="dns-verdict-title" data-i18n="station.verdict">Verdict</h2>
-          </div>
-          <div class="verdict" id="dns-verdict" role="status" aria-live="polite" hidden></div>
-          <div class="readout">
-            <span class="readout-label" id="dns-fastest-label" data-i18n="station.fastest">Fastest public resolver</span>
-            <span class="readout-value"><span class="seg" id="dns-fastest-value">---</span><span class="seg-unit">ms</span></span>
-            <span class="readout-sub" id="dns-fastest-name"></span>
-          </div>
-          <h3 class="readout-label" id="dns-checks-title" data-i18n="station.checks">Checks</h3>
-          <ul class="conditions" id="dns-conditions"></ul>
-          <button type="button" class="btn btn-primary btn-run" id="dns-run-btn"><span id="dns-run-label" data-i18n="station.run">Run</span></button>
         </div>
       </div>
 

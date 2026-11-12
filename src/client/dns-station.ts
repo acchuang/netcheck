@@ -3,11 +3,11 @@ import { t, onLocaleChange } from "./i18n.ts";
 // The DNS station: the path schematic, its scan cursor, and the readout panel.
 // dns-check.ts decides what each hop and check *is*; this file only draws it.
 
-export type HopId = "you" | "router" | "isp" | "resolver" | "edge";
+export type HopId = "you" | "isp" | "resolver" | "edge";
 /** "seen" is observed but not judged; "standby" is not observable at all. */
 export type HopState = "pass" | "warn" | "fail" | "seen" | "standby";
 
-const HOPS: HopId[] = ["you", "router", "isp", "resolver", "edge"];
+const HOPS: HopId[] = ["you", "isp", "resolver", "edge"];
 // One step of the cursor. Long enough to read as travel, short enough that a
 // hop whose data is already in never feels held back.
 const STEP_MS = 280;

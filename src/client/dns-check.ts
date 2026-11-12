@@ -585,10 +585,8 @@ function checkState(status: SecurityStatus): HopState {
 }
 
 function lockPathHops(checks: SecurityCheck[], probe: ProbeResult | null): void {
-  // A web page cannot see the router. WebRTC sometimes gives away a LAN
-  // address behind it, which is a fact about the path, not a verdict.
-  const lan = checks.find((c) => c.id === "lan");
-  lockHop("router", lan ? "seen" : "standby", lan ? () => lan.detailArg ?? "" : () => t("station.routerStandby"));
+  // No router hop: a page can't see it, and the WebRTC card already reports
+  // any LAN address that leaks.
 
   // Without the self-hosted probe there is no way to see the visitor's resolver,
   // which is the normal case on the public site.
