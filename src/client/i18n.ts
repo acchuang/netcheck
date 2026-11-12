@@ -129,7 +129,7 @@ const en = {
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS Client Subnet",
   "dns.ecsNote": "ECS lets a resolver pass part of your IP to every authoritative server it queries, so they can route you to a nearby server, at the cost of revealing roughly where you are.",
-  "dns.ecsLeaking": "Public resolvers that forward ECS would share your subnet as {0}. Whether yours does is under DNS Security",
+  "dns.ecsLeaking": "Public resolvers that forward ECS would share your subnet as {0}. Check DNS Security to see whether yours does.",
   "dns.ecsForwardOnly": "{0} of {1} public resolvers forward a client subnet",
   "dns.ecsNone": "None of these public resolvers forwarded your subnet: authoritative servers only see the resolver",
   "dns.ecsUnknown": "Could not determine client subnet behaviour",
@@ -694,14 +694,14 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.observedSubhead": "我們的名稱伺服器看到的遞迴路徑",
   "dns.checking": "正在檢查您的 DNS 設定",
   "dns.publicSubhead": "公共解析器（對照用）",
-  "dns.publicNote": "允許跨來源查詢的解析器會從您的瀏覽器計時，其餘的由我們的伺服器確認能否連線，不顯示時間。除非上方區塊指出，否則它們都不是您系統實際使用的解析器。",
-  "dns.publicNoteOnly": "允許跨來源查詢的解析器會從您的瀏覽器計時，其餘的由我們的伺服器確認能否連線，不顯示時間。它們都不是您系統實際使用的解析器，本站也看不到您實際用的是哪一個。",
+  "dns.publicNote": "允許跨來源查詢的解析器由您的瀏覽器直接計時，其他的由我們的伺服器確認連得上，不計時間。除非上方區塊另有說明，這些都不是您系統實際使用的解析器。",
+  "dns.publicNoteOnly": "允許跨來源查詢的解析器由您的瀏覽器直接計時，其他的由我們的伺服器確認連得上，不計時間。這些都不是您系統實際使用的解析器，本站也看不到您實際用的是哪一個。",
   "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet
   "dns.ecsTitle": "EDNS 用戶端子網路",
   "dns.ecsNote": "ECS 讓解析器把您 IP 的一部分傳給它查詢的每一台權威伺服器，藉此為您導向較近的節點，代價是洩漏您的大致位置。",
-  "dns.ecsLeaking": "會傳送 ECS 的公共解析器，會把您的子網路以 {0} 交給權威伺服器。您自己的解析器有沒有傳，請看「DNS 安全性」",
+  "dns.ecsLeaking": "傳送 ECS 的公共解析器會把您的子網路 {0} 交給權威伺服器。您自己用的解析器有沒有傳，請看「DNS 安全性」。",
   "dns.ecsForwardOnly": "{1} 個公共解析器中有 {0} 個會傳送用戶端子網路",
   "dns.ecsNone": "這些公共解析器都沒有傳送您的子網路：權威伺服器只看得到解析器",
   "dns.ecsUnknown": "無法判斷用戶端子網路行為",
