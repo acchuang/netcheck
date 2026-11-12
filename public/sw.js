@@ -1,4 +1,4 @@
-const CACHE = "netcheck-v4";
+const CACHE = "netcheck-v5";
 const SHELL = ["/", "/index.html", "/manifest.json", "/icon.svg", "/css/styles.css"];
 
 self.addEventListener("install", (e) => {
