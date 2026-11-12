@@ -7,6 +7,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 ## Features
 
 ### DNS Check
+- Leads with a one-line verdict, then the path as a single strip: you → ISP → resolver → Cloudflare edge
 - Public IP detection with geolocation, ISP/ASN, and Cloudflare PoP
 - Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers. Resolvers that allow cross-origin DoH are timed from the browser: a cold first query (lookup + TCP + TLS) and the median of three warm queries on the same connection, with the HTTP cache bypassed. The rest are only checked from the Worker and shown untimed, since edge-to-resolver latency says nothing about yours
 - Security assessment: DNSSEC validation, DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection
@@ -16,6 +17,7 @@ Browser-based network diagnostics toolkit — DNS security, speed test, ad block
 
 ### Speed Test
 - Download/upload bandwidth, latency, and jitter against Cloudflare's edge, `speed.cloudflare.com`, Netflix's fast.com, or Ookla Speedtest servers (nearest found via your city — proxies only the tiny discovery call; speed traffic goes browser → server direct)
+- Idle latency is timed on a warm request (a warm-up fetch is drained first), so DNS, TCP and TLS setup don't inflate the number
 - Bufferbloat / loaded-latency grading — latency increase under a saturated link, taken from whichever direction queued worse, with loaded pings capped at 3s so a stalled probe counts instead of vanishing
 - Progressive chunk sizing that adapts to connection speed: steps under 5 MB are warm-up only (TCP slow start is excluded from the clock), and the measured steps run 4 connections wide so a fast link isn't bounded by a single stream's window
 - Letter grades (A+ to F) for both raw speed and bufferbloat
