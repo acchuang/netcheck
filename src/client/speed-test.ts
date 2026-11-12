@@ -385,10 +385,14 @@ async function probeServer(id: string): Promise<ServerProbeResult> {
     return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
   }
   try {
+    // First request pays DNS + TCP + TLS; time the second, which reuses the connection.
+    const first = await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    const meta = await resolveMeta(server, first);
+    if (!first.bodyUsed) await first.arrayBuffer();
     const start = performance.now();
     const res = await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    await res.arrayBuffer();
     const ms = performance.now() - start;
-    const meta = await resolveMeta(server, res);
     return { id, reachable: true, latency: Math.round(ms), colo: meta.colo, lat: meta.lat, lon: meta.lon };
   } catch {
     return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
