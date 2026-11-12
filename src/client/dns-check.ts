@@ -8,6 +8,7 @@ import {
 import { renderIpv6, renderIpInfo, renderResolvers, renderObservedPath, revealObservedPath, renderEcs, renderSecurity, renderDnsSuggestions } from "./dns-view.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wire.ts";
+import { median } from "./speed-test.ts";
 import {
   dohVerdict, forwardedClientSubnet, evaluateWebRtc,
   type WebRtcVerdict, type ObservedResolver,
@@ -60,7 +61,7 @@ async function pollProbe(readKey: string): Promise<ProbeResult | null> {
 interface DnsContext {
   usingResolver: (name: string) => boolean;
   slowestResolver: () => number;
-  fastestResolver: () => number;
+  fastestResolver: () => number | null;
   hasSecurity: (id: string) => boolean;
   hasWebRtcLeak: boolean;
   reachableCount: number;
@@ -164,16 +165,25 @@ export const DnsCheck = {
    */
   async refineFromBrowser(results: ResolverResult[]): Promise<ResolverResult[]> {
     await Promise.all(results.map(async (row) => {
+      // The Worker's latency is Cloudflare's edge to the resolver — ~1 ms to
+      // Cloudflare's own, same building. Never let it stand in for the visitor's.
+      row.latency = null;
+      row.coldLatency = null;
       if (!row.cors) return;
       try {
+        // The first request also pays the DoH hostname lookup, TCP and TLS setup:
+        // what a first page load feels like, so it's reported as "cold". Three more
+        // ride the warm connection and the median is the resolver's round trip.
         const whoami = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 });
-        // The first request also pays the DoH hostname lookup, TCP and TLS setup,
-        // which says more about the visitor's link than about the resolver. A
-        // second one rides the warm connection; keep the smaller of the two.
-        const warm = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 }).catch(() => null);
+        const warm: number[] = [];
+        for (let i = 0; i < 3; i++) {
+          const q = await dohQuery(row.host, ECS_PROBE_DOMAIN, "TXT", { timeoutMs: 4000 }).catch(() => null);
+          if (q) warm.push(q.latency);
+        }
         const { egressIp, ecsSubnet } = parseWhoami(whoami);
         row.reachable = true;
-        row.latency = Math.min(whoami.latency, warm?.latency ?? Infinity);
+        row.coldLatency = whoami.latency;
+        row.latency = median(warm) ?? whoami.latency;
         row.egressIp = egressIp;
         row.ecsSubnet = ecsSubnet;
         row.forwardsEcs = ecsSubnet !== null;
@@ -418,7 +428,11 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
   const ctx: DnsContext = {
     usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
     slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
-    fastestResolver: () => reachable.length > 0 ? Math.min(...reachable.map((r) => r.latency ?? Infinity)) : Infinity,
+    // Only browser-timed rows count; none timed means "unknown", not "slow".
+    fastestResolver: () => {
+      const timed = reachable.filter((r) => r.latency !== null).map((r) => r.latency!);
+      return timed.length > 0 ? Math.min(...timed) : null;
+    },
     hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
     hasWebRtcLeak: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
     reachableCount: reachable.length,
@@ -436,7 +450,7 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
     malware: !ctx.hasSecurity("malware"),
     doh: !dohUnverified && doh.status !== "pass",
     dnssec: !ctx.hasSecurity("dnssec"),
-    slow: ctx.fastestResolver() > 80,
+    slow: (ctx.fastestResolver() ?? 0) > 80,
     limited: ctx.reachableCount < 2,
   };
   const issues = DNS_ISSUES.filter((i) => present[i.id]);

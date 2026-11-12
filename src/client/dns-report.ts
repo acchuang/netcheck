@@ -4,7 +4,10 @@ import { CF_POPS } from "./ui-utils.ts";
 
 export interface ResolverResult extends ResolverInfo {
   reachable: boolean;
+  /** Median warm round trip from the browser; null when only the Worker reached it. */
   latency: number | null;
+  /** First browser query, including DoH lookup, TCP and TLS setup. */
+  coldLatency?: number | null;
   /** null when the probe couldn't reach a verdict. */
   validatesDnssec: boolean | null;
   /** Extended DNS Error explaining the SERVFAIL, when the resolver sends one. */
@@ -129,7 +132,8 @@ export interface ResolverRow {
 export function resolverRows(resolvers: ResolverResult[]): ResolverRow[] {
   const reachable = resolvers.filter((r) => r.reachable);
   if (reachable.length === 0) return [];
-  const fastest = reachable.reduce((a, b) => ((a.latency ?? Infinity) < (b.latency ?? Infinity) ? a : b));
+  const timed = reachable.filter((r) => r.latency !== null);
+  const fastest = timed.length ? timed.reduce((a, b) => (a.latency! <= b.latency! ? a : b)) : null;
 
   const up = reachable.map((r): ResolverRow => {
     const badges: ResolverRow["badges"] = [];
@@ -138,13 +142,17 @@ export function resolverRows(resolvers: ResolverResult[]): ResolverRow[] {
     if (r.forwardsEcs === true) badges.push({ text: "ECS", kind: "leak" });
     if (r.filtering) badges.push({ text: "Filtering", kind: "filter" });
     return {
-      status: r.name === fastest.name ? "pass" : "warn",
+      status: r === fastest ? "pass" : r.latency === null ? "info" : "warn",
       reachable: true,
       name: r.name,
       ip: r.ip,
       badges,
       egressIp: r.egressIp,
-      value: `${r.latency}ms`,
+      value: r.latency === null
+        ? t("dns.reachedFromEdge")
+        : r.coldLatency != null
+          ? t("dns.latencyWarmCold", r.latency, r.coldLatency)
+          : `${r.latency}ms`,
       label: [r.name, r.ip, ...badges.map((b) => b.text)].join(" "),
     };
   });

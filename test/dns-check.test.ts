@@ -125,8 +125,19 @@ test("browser-measured resolver latency ignores the cold first request", async (
   }) as typeof fetch;
   const rows = [{ ...resolver(true), cors: true, latency: null }];
   await DnsCheck.refineFromBrowser(rows as unknown as Parameters<typeof DnsCheck.refineFromBrowser>[0]);
-  assert.equal(calls, 2);
+  assert.equal(calls, 4);
   assert.ok(rows[0].latency! < 100, `cold request leaked into latency: ${rows[0].latency}ms`);
+  assert.ok((rows[0] as { coldLatency: number }).coldLatency >= 100, "cold request should be reported separately");
+});
+
+// Rows the browser can't reach carried the Worker's timing: ~1 ms from
+// Cloudflare's edge to Cloudflare's resolver, which then won "fastest".
+test("a resolver timed only from the Worker shows no latency", async () => {
+  globalThis.fetch = (async () => { throw new Error("should not fetch"); }) as typeof fetch;
+  const rows = [{ ...resolver(true), cors: false, latency: 1 }];
+  await DnsCheck.refineFromBrowser(rows as unknown as Parameters<typeof DnsCheck.refineFromBrowser>[0]);
+  assert.equal(rows[0].latency, null);
+  assert.equal(planDnsSuggestions([], rows as unknown as Parameters<typeof planDnsSuggestions>[1]).issues.some((i) => i.id === "slow"), false);
 });
 
 type Checks = Parameters<typeof planDnsSuggestions>[0];

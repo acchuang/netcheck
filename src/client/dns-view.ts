@@ -122,7 +122,9 @@ export function renderResolvers(resolvers: ResolverResult[], probeResult?: Probe
       div.className = "dns-check-item fade-in";
       const iconSvg = r.status === "pass"
         ? '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+        : r.status === "info"
+          ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
+          : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
       const egress = r.egressIp
         ? html`<span class="check-sublabel">${t("dns.egressVia", r.egressIp)}</span>`
         : "";

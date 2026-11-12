@@ -357,7 +357,7 @@ export function jitterOf(samplesInArrivalOrder: number[]): number {
   return Math.round((sum / (samplesInArrivalOrder.length - 1)) * 10) / 10;
 }
 
-function median(values: number[]): number | null {
+export function median(values: number[]): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)];

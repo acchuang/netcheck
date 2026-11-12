@@ -113,6 +113,8 @@ const en = {
   "dns.reachableOf": "{0} of {1} reachable",
   "dns.noResolvers": "No resolvers detected",
   "dns.egressVia": "queries authoritative servers from {0}",
+  "dns.reachedFromEdge": "reachable · not timed",
+  "dns.latencyWarmCold": "{0}ms · cold {1}ms",
   "dns.actualResolver": "Observed Recursive Resolver",
   "dns.observedByNs": "Last hop into our authoritative nameserver",
   "dns.observedOperator": "Seen by our nameserver · belongs to {0}",
@@ -122,8 +124,8 @@ const en = {
   "dns.observedSubhead": "Your recursion path, as our nameserver saw it",
   "dns.checking": "Checking your DNS configuration",
   "dns.publicSubhead": "Public resolvers, for comparison",
-  "dns.publicNote": "These are probed from your browser to compare speed and features. They are not your system resolver unless the block above says so.",
-  "dns.publicNoteOnly": "These are probed from your browser to compare speed and features. They are not your system resolver; this site cannot see which resolver you actually use.",
+  "dns.publicNote": "Resolvers that allow it are timed from your browser; the rest are checked from our server and shown untimed. None of them is your system resolver unless the block above says so.",
+  "dns.publicNoteOnly": "Resolvers that allow it are timed from your browser; the rest are checked from our server and shown untimed. None of them is your system resolver, and this site cannot see which one you actually use.",
   "dns.recursionActive": "active",
 
   // EDNS Client Subnet
@@ -685,6 +687,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.reachableOf": "{1} 個中 {0} 個可連線",
   "dns.noResolvers": "未偵測到解析器",
   "dns.egressVia": "以 {0} 查詢權威伺服器",
+  "dns.reachedFromEdge": "可連線 · 未計時",
+  "dns.latencyWarmCold": "{0}ms · 首次 {1}ms",
   "dns.actualResolver": "實際遞迴解析器",
   "dns.observedByNs": "抵達我們權威名稱伺服器的最後一跳",
   "dns.observedOperator": "由我們的名稱伺服器觀察到 · 屬於 {0}",
@@ -694,8 +698,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.observedSubhead": "我們的名稱伺服器看到的遞迴路徑",
   "dns.checking": "正在檢查您的 DNS 設定",
   "dns.publicSubhead": "公共解析器（對照用）",
-  "dns.publicNote": "以下是從您的瀏覽器測試的公共解析器，用來比較速度與功能。除非上方區塊指出，否則它們並不是您系統實際使用的解析器。",
-  "dns.publicNoteOnly": "這些公共解析器是從您的瀏覽器測的，用來比較速度和功能。它們不是您系統實際使用的解析器，本站也看不到您實際用的是哪一個。",
+  "dns.publicNote": "允許跨來源查詢的解析器會從您的瀏覽器計時，其餘的由我們的伺服器確認能否連線，不顯示時間。除非上方區塊指出，否則它們都不是您系統實際使用的解析器。",
+  "dns.publicNoteOnly": "允許跨來源查詢的解析器會從您的瀏覽器計時，其餘的由我們的伺服器確認能否連線，不顯示時間。它們都不是您系統實際使用的解析器，本站也看不到您實際用的是哪一個。",
   "dns.recursionActive": "活躍",
 
   // EDNS Client Subnet
