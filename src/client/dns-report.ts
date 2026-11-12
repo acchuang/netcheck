@@ -139,7 +139,7 @@ export function resolverRows(resolvers: ResolverResult[]): ResolverRow[] {
     const badges: ResolverRow["badges"] = [];
     if (r.validatesDnssec === true) badges.push({ text: "DNSSEC", kind: "pass" });
     if (r.validatesDnssec === false) badges.push({ text: "NO DNSSEC", kind: "leak" });
-    if (r.forwardsEcs === true) badges.push({ text: "ECS", kind: "leak" });
+    if (r.forwardsEcs === true) badges.push({ text: "ECS", kind: "filter" });
     if (r.filtering) badges.push({ text: "Filtering", kind: "filter" });
     return {
       status: r === fastest ? "pass" : r.latency === null ? "info" : "warn",
