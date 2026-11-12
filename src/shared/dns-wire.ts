@@ -433,7 +433,10 @@ export async function dohQuery(
 ): Promise<DnsMessage & { latency: number }> {
   const dns = toBase64Url(encodeQuery(name, type, opts));
   const start = performance.now();
+  // GET DoH is cacheable, and an identical repeat (the "warm" sample) came back
+  // from the browser's HTTP cache in ~1 ms, so latency measured nothing.
   const res = await fetch(`https://${host}/dns-query?dns=${dns}`, {
+    cache: "no-store",
     headers: { Accept: "application/dns-message" },
     signal: AbortSignal.timeout(opts.timeoutMs ?? 5000),
   });

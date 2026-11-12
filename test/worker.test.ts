@@ -506,3 +506,19 @@ test("understating content-length does not buy free egress", async () => {
   for (let i = 0; i < 120 && !blocked; i++) blocked = (await lie()).status === 429;
   assert.ok(blocked, "a body far larger than it declared never exhausted the budget");
 });
+
+test("dohQuery bypasses the HTTP cache so a warm sample is a real round trip", async () => {
+  const { dohQuery } = await import("../src/shared/dns-wire.ts");
+  const realFetch = globalThis.fetch;
+  let seen: RequestInit | undefined;
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    seen = init;
+    return new Response(new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]));
+  }) as typeof fetch;
+  try {
+    await dohQuery("dns.google", "example.com", "A");
+    assert.equal(seen?.cache, "no-store");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
