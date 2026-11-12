@@ -4,9 +4,12 @@ import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts"
 import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
 import { escapeHtml } from "./html.ts";
 import { getDnsReport } from "./dns-check.ts";
-import { ipFields, resolverRows, ecsView, ecsSummary, securityRows } from "./dns-report.ts";
+import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, type RowStatus } from "./dns-report.ts";
 
-type CheckStatus = "pass" | "fail" | "warn";
+type CheckStatus = RowStatus;
+
+const statusIcon = (s: CheckStatus): string =>
+  s === "pass" ? "\u2705" : s === "fail" ? "\u274C" : s === "info" ? "\u2139\uFE0F" : "\u26A0\uFE0F";
 
 interface DnsCheckItem {
   label: string;
@@ -55,9 +58,8 @@ export const ReportExporter = {
     const f = ipFields(rep.ip);
     const resolvers = rep.resolvers ?? [];
     const ecs = ecsView(resolvers);
-    // The screen never colours a row "info", so the export reads it as a warning.
-    const item = (r: { label: string; value: string; status: string }): DnsCheckItem =>
-      ({ label: r.label, value: r.value, status: r.status === "pass" || r.status === "fail" ? r.status : "warn" });
+    const item = (r: { label: string; value: string; status: RowStatus }): DnsCheckItem =>
+      ({ label: r.label, value: r.value, status: r.status });
 
     const dns: DnsData = {
       ip: f.ip,
@@ -127,7 +129,7 @@ export const ReportExporter = {
       ln("| Resolver | Latency | Status |");
       ln("|----------|---------|--------|");
       data.dns.resolvers.forEach((r) => {
-        const icon = r.status === "pass" ? "\u2705" : r.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        const icon = statusIcon(r.status);
         ln(`| ${r.label} | ${r.value} | ${icon} |`);
       });
       ln();
@@ -140,7 +142,7 @@ export const ReportExporter = {
       ln("| Resolver | Client subnet | Status |");
       ln("|----------|---------------|--------|");
       data.dns.ecs.forEach((e) => {
-        const icon = e.status === "pass" ? "\u2705" : e.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        const icon = statusIcon(e.status);
         ln(`| ${e.label} | ${e.value} | ${icon} |`);
       });
       ln();
@@ -151,7 +153,7 @@ export const ReportExporter = {
       ln("| Check | Detail | Status |");
       ln("|-------|--------|--------|");
       data.dns.security.forEach((s) => {
-        const icon = s.status === "pass" ? "\u2705" : s.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+        const icon = statusIcon(s.status);
         ln(`| ${s.label} | ${s.value} | ${icon} |`);
       });
       ln();

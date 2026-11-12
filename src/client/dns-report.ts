@@ -185,7 +185,9 @@ export function ecsView(resolvers: ResolverResult[]): EcsView {
     forwarding,
     leakedSubnet: known.find((r) => r.measuredFromBrowser && r.ecsSubnet)?.ecsSubnet ?? null,
     rows: known.map((r) => ({
-      status: r.forwardsEcs ? "warn" : "pass",
+      // A property of each public resolver, not of the visitor's own path. Only the
+      // probe's "ecs" security check can say the visitor is exposed.
+      status: r.forwardsEcs ? "info" : "pass",
       label: r.name,
       value: r.forwardsEcs
         ? (r.measuredFromBrowser && r.ecsSubnet ? r.ecsSubnet : t("dns.ecsYes"))

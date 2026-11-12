@@ -169,7 +169,7 @@ export function renderEcs(resolvers: ResolverResult[]): void {
 
   setBadge(
     "dns-ecs-status",
-    ecs.forwarding.length === 0 ? "done" : "error",
+    ecs.forwarding.length === 0 ? "done" : "",
     t("dns.ecsForwardingOf", String(ecs.forwarding.length), String(ecs.known.length))
   );
 }

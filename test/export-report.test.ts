@@ -28,7 +28,7 @@ test("export DNS section comes from the report, not the DOM", () => {
     ["Slow 9.9.9.9 ECS", "warn", "80ms"],
     ["Dead (8.8.8.8)", "fail", dns.resolvers[2].value],
   ]);
-  assert.deepEqual(dns.ecs.map((r) => [r.label, r.status]), [["Fast", "pass"], ["Slow", "warn"]]);
+  assert.deepEqual(dns.ecs.map((r) => [r.label, r.status]), [["Fast", "pass"], ["Slow", "info"]]);
   assert.equal(dns.security.length, 1);
   assert.equal(dns.security[0].status, "pass");
 
