@@ -733,27 +733,39 @@ async function handleProbeResult(request: Request, env?: Env): Promise<Response>
 
 const RDAP_CACHE_TTL = 7 * 86400;
 
-/** Registry country for one public IP, null when RDAP can't say. Cached a week: allocations rarely move. */
+/**
+ * Registry country for one public IP, null when RDAP can't say. Only a found
+ * country is cached (a week: allocations rarely move) — a miss may be a
+ * registry having a bad minute, and shouldn't stick.
+ */
 async function lookupRdapCountry(ip: string): Promise<string | null> {
-  const cacheKey = new Request(`https://rdap-cache.internal/${ip}`);
+  // v2: v1 also cached nulls.
+  const cacheKey = new Request(`https://rdap-cache.internal/v2/${ip}`);
   const cache = typeof caches !== "undefined" ? (caches as unknown as { default: Cache }).default : null;
   const hit = await cache?.match(cacheKey);
-  if (hit) return ((await hit.json()) as { country: string | null }).country;
+  if (hit) return ((await hit.json()) as { country: string }).country;
 
-  let country: string | null = null;
   try {
     const res = await fetch(`https://rdap.org/ip/${encodeURIComponent(ip)}`, {
       // rdap.org 403s a fetch with no User-Agent.
       headers: { accept: "application/rdap+json", "user-agent": "netcheck-site" },
       signal: AbortSignal.timeout(2500),
     });
-    if (!res.ok) return null;
-    country = rdapCountry(await res.json());
-  } catch {
+    if (!res.ok) {
+      console.warn(`rdap ${ip}: HTTP ${res.status} from ${res.url}`);
+      return null;
+    }
+    const country = rdapCountry(await res.json());
+    if (!country) {
+      console.warn(`rdap ${ip}: no country in ${res.url}`);
+      return null;
+    }
+    await cache?.put(cacheKey, Response.json({ country }, { headers: { "cache-control": `max-age=${RDAP_CACHE_TTL}` } }));
+    return country;
+  } catch (err) {
+    console.warn(`rdap ${ip}: ${err}`);
     return null;
   }
-  await cache?.put(cacheKey, Response.json({ country }, { headers: { "cache-control": `max-age=${RDAP_CACHE_TTL}` } }));
-  return country;
 }
 
 // Resolver IPs come from the probe the client already read back, so this only
