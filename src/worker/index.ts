@@ -745,12 +745,19 @@ async function lookupRdapCountry(ip: string): Promise<string | null> {
   const hit = await cache?.match(cacheKey);
   if (hit) return ((await hit.json()) as { country: string }).country;
 
+  // rdap.org 403s a fetch with no User-Agent.
+  const init = { headers: { accept: "application/rdap+json", "user-agent": "netcheck-site" } };
   try {
-    const res = await fetch(`https://rdap.org/ip/${encodeURIComponent(ip)}`, {
-      // rdap.org 403s a fetch with no User-Agent.
-      headers: { accept: "application/rdap+json", "user-agent": "netcheck-site" },
-      signal: AbortSignal.timeout(2500),
-    });
+    let res = await fetch(`https://rdap.org/ip/${encodeURIComponent(ip)}`, { ...init, signal: AbortSignal.timeout(2500) });
+    // ARIN fails the TLS handshake from Workers (Cloudflare 525) but answers the
+    // same path over plain HTTP. ponytail: unauthenticated, so a path attacker
+    // could spoof the country — tolerable for public data behind an advisory
+    // tell; drop this if ARIN starts accepting Workers over TLS.
+    if (res.status === 525 && new URL(res.url).hostname === "rdap.arin.net") {
+      const plain = new URL(res.url);
+      plain.protocol = "http:";
+      res = await fetch(plain, { ...init, signal: AbortSignal.timeout(2500) });
+    }
     if (!res.ok) {
       console.warn(`rdap ${ip}: HTTP ${res.status} from ${res.url}`);
       return null;

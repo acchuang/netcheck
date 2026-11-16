@@ -543,3 +543,32 @@ test("resolver-country only looks up public IPs and reads RDAP country", async (
     globalThis.fetch = realFetch;
   }
 });
+
+test("resolver-country retries ARIN over plain HTTP after a 525", async () => {
+  const realFetch = globalThis.fetch;
+  const asked: string[] = [];
+  const arin = {
+    entities: [{ roles: ["registrant"], vcardArray: ["vcard", [["adr", { label: "1600 Amphitheatre\nUnited States" }, "text", ""]]] }],
+  };
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    asked.push(String(input));
+    if (asked.length === 1) {
+      const res = new Response("", { status: 525 });
+      Object.defineProperty(res, "url", { value: "https://rdap.arin.net/registry/ip/8.8.8.8" });
+      return res;
+    }
+    return Response.json(arin);
+  }) as typeof fetch;
+  try {
+    const res = await worker.fetch(
+      new Request("https://netcheck.internal/api/dns/resolver-country?ip=8.8.8.8", {
+        headers: { "cf-connecting-ip": "203.0.113.9" },
+      }),
+      {} as never,
+    );
+    assert.deepEqual(await res.json(), { resolvers: [{ ip: "8.8.8.8", country: "US" }] });
+    assert.deepEqual(asked, ["https://rdap.org/ip/8.8.8.8", "http://rdap.arin.net/registry/ip/8.8.8.8"]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
