@@ -2870,6 +2870,7 @@ html:not([data-probe="on"]) [data-probe-only] { display: none; }
 
 /* --- Snapshot History --- */
 .snapshot-section { margin-top: 24px; }
+.snapshot-section .panel-note { padding: 0 0 10px; }
 .snapshot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .snapshot-title { color: var(--text-primary); font-size: 20px; font-weight: 700; margin: 0; }
 .snapshot-list { display: flex; flex-direction: column; gap: 6px; }
