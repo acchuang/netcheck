@@ -4,7 +4,7 @@ import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts"
 import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
 import { escapeHtml } from "./html.ts";
 import { getDnsReport } from "./dns-check.ts";
-import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, type RowStatus } from "./dns-report.ts";
+import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, tellRows, type RowStatus } from "./dns-report.ts";
 
 type CheckStatus = RowStatus;
 
@@ -25,6 +25,7 @@ interface DnsData {
   colo: string;
   resolvers: DnsCheckItem[];
   security: DnsCheckItem[];
+  tells: DnsCheckItem[];
   ecs: DnsCheckItem[];
   ecsSummary: string;
 }
@@ -69,6 +70,7 @@ export const ReportExporter = {
       colo: f.colo,
       resolvers: resolverRows(resolvers).map(item),
       security: securityRows(rep.security ?? []).map((r) => item({ ...r, value: r.sublabel ?? r.value })),
+      tells: tellRows(rep.tells ?? []).map((r) => item({ ...r, label: `${r.label} (${r.value})`, value: r.sublabel ?? "" })),
       ecs: ecs.rows.map(item),
       ecsSummary: rep.resolvers ? ecsSummary(ecs) : "",
     };
@@ -156,6 +158,14 @@ export const ReportExporter = {
         const icon = statusIcon(s.status);
         ln(`| ${s.label} | ${s.value} | ${icon} |`);
       });
+      ln();
+    }
+
+    if (data.dns.tells.length > 0) {
+      ln("### Proxy Tells");
+      ln("| Check | Detail | Status |");
+      ln("|-------|--------|--------|");
+      data.dns.tells.forEach((s) => ln(`| ${s.label} | ${s.value} | ${statusIcon(s.status)} |`));
       ln();
     }
 

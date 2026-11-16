@@ -1,4 +1,5 @@
 import type { ResolverInfo } from "../shared/resolvers.ts";
+import type { Tell } from "../shared/tells.ts";
 import { t } from "./i18n.ts";
 import { CF_POPS } from "./ui-utils.ts";
 
@@ -83,10 +84,11 @@ export interface DnsReport {
   /** undefined = probe still running, null = this deployment has no probe. */
   probe: ProbeResult | null | undefined;
   security: SecurityCheck[] | null;
+  tells: Tell[] | null;
 }
 
 export function emptyReport(): DnsReport {
-  return { ip: null, ipv6: undefined, resolvers: null, probe: undefined, security: null };
+  return { ip: null, ipv6: undefined, resolvers: null, probe: undefined, security: null, tells: null };
 }
 
 // --- Rows ---
@@ -210,5 +212,17 @@ export function securityRows(checks: SecurityCheck[]): DnsRow[] {
     label: t(`dns.check.${c.id}`),
     value: "",
     sublabel: c.detailArg !== undefined ? t(c.detailKey, c.detailArg) : t(c.detailKey),
+  }));
+}
+
+const TELL_STATUS: Record<Tell["status"], RowStatus> = { ok: "pass", warn: "warn", info: "info", unknown: "info" };
+
+export function tellRows(tells: Tell[]): DnsRow[] {
+  return tells.map((x) => ({
+    status: TELL_STATUS[x.status],
+    label: t(`tell.${x.id}`),
+    // The value slot names the layer: when a site gets to read this, not a verdict.
+    value: t(`tell.layer.${x.layer}`),
+    sublabel: t(`tell.${x.id}.${x.status}`, x.network ?? "", x.browser ?? ""),
   }));
 }

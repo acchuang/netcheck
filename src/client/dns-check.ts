@@ -5,10 +5,11 @@ import {
   blankResult, emptyReport,
   type DnsReport, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck, type SecurityStatus,
 } from "./dns-report.ts";
-import { renderIpv6, renderIpInfo, renderResolvers, renderObservedPath, revealObservedPath, renderEcs, renderSecurity, renderDnsSuggestions } from "./dns-view.ts";
+import { renderIpv6, renderIpInfo, renderResolvers, renderObservedPath, revealObservedPath, renderEcs, renderSecurity, renderTells, renderDnsSuggestions } from "./dns-view.ts";
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wire.ts";
 import { median } from "./speed-test.ts";
+import { timezoneTell, rttTell, languageTell, type Tell } from "../shared/tells.ts";
 import {
   dohVerdict, forwardedClientSubnet, evaluateWebRtc,
   type WebRtcVerdict, type ObservedResolver,
@@ -104,6 +105,31 @@ export const DnsCheck = {
     } catch {
       return { error: "Failed to detect IP" };
     }
+  },
+
+  // Same origin, same connection the edge just timed: the warm round trip is
+  // comparable to clientTcpRtt, the cold first fetch is not.
+  async warmRtt(): Promise<number | null> {
+    const times: number[] = [];
+    try {
+      for (let i = 0; i < 3; i++) {
+        const start = performance.now();
+        await (await fetch("/api/ip", { cache: "no-store" })).arrayBuffer();
+        times.push(performance.now() - start);
+      }
+    } catch {
+      return null;
+    }
+    return median(times);
+  },
+
+  // Earliest layer first, the order a site gets to read them in.
+  buildTells(ip: IpData, browserRtt: number | null): Tell[] {
+    return [
+      rttTell(browserRtt, ip.clientTcpRtt),
+      languageTell(navigator.languages ?? [navigator.language], ip.country),
+      timezoneTell(ip.timezone, Intl.DateTimeFormat().resolvedOptions().timeZone),
+    ];
   },
 
   // IPv6-only endpoint: succeeds only if the client has working IPv6.
@@ -485,6 +511,7 @@ function renderReport(r: DnsReport): void {
     renderEcs(r.resolvers);
   }
   if (r.security) renderSecurity(r.security);
+  if (r.tells) renderTells(r.tells);
   if (r.resolvers && r.security) {
     showSuggestions(r.security, r.resolvers);
   }
@@ -542,6 +569,11 @@ async function runStation(): Promise<void> {
     setBadge("ip-status", "error", t("dns.failed"));
   }
   lockIpHops(ipData);
+
+  // Before the resolver probes start: their traffic would pad the browser's
+  // round trip and fake a proxy.
+  report.tells = DnsCheck.buildTells(ipData, ipData.error ? null : await DnsCheck.warmRtt());
+  renderTells(report.tells);
 
   const resolvers: ResolverResult[] = await DnsCheck.detectResolver();
   report.resolvers = resolvers;

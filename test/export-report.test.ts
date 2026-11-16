@@ -17,6 +17,7 @@ test("export DNS section comes from the report, not the DOM", () => {
       resolver("Dead", "8.8.8.8", { reachable: false }),
     ],
     security: [{ id: "dnssec", status: "pass", detailKey: "dns.check.dnssec" }],
+    tells: [{ id: "rtt", layer: "connection", status: "warn", network: "12 ms", browser: "240 ms" }],
   });
 
   const { dns } = ReportExporter.collectData();
@@ -35,4 +36,6 @@ test("export DNS section comes from the report, not the DOM", () => {
   const md = ReportExporter.generateMarkdown(ReportExporter.collectData());
   assert.match(md, /`203\.0\.113\.9`/);
   assert.match(md, /Fast 1\.1\.1\.1 DNSSEC/);
+  assert.match(md, /### Proxy Tells/);
+  assert.match(md, /Round trip vs\. edge \(Connection\) \| Browser round trip 240 ms is far above the edge's 12 ms/);
 });

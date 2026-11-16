@@ -1,9 +1,10 @@
 import { t } from "./i18n.ts";
 import { html, raw, setHtml } from "./html.ts";
 import { setBadge, createCheckItem, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline } from "./ui-utils.ts";
-import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck } from "./dns-report.ts";
+import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, tellRows, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck } from "./dns-report.ts";
 import { encryptedDnsOperator } from "../shared/ip-classify.ts";
 import type { DnsPlan } from "./dns-check.ts";
+import type { Tell } from "../shared/tells.ts";
 
 export function renderIpv6(ip: string | null): void {
   const el = document.getElementById("ip-address-v6")!;
@@ -195,6 +196,15 @@ export function renderSecurity(securityChecks: SecurityCheck[]): void {
   } else {
     setBadge("dns-security-status", "done", t("dns.partial"));
   }
+}
+
+export function renderTells(tells: Tell[]): void {
+  const container = document.getElementById("dns-tells-results")!;
+  container.innerHTML = "";
+  tellRows(tells).forEach((r) => container.appendChild(createCheckItem(r.status, r.label, r.value, r.sublabel)));
+  // Only a warn is a tell; info and unknown are notes, not findings.
+  const found = tells.filter((x) => x.status === "warn").length;
+  setBadge("dns-tells-status", found ? "" : "done", found ? t("tell.found", found) : t("tell.none"));
 }
 
 export function renderDnsSuggestions({ issues, dohUnverified, suggestions, topFix }: DnsPlan): void {
