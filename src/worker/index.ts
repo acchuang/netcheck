@@ -3,6 +3,7 @@ import {
   dohQuery, parseWhoami, DNSSEC_BOGUS_DOMAIN, ECS_PROBE_DOMAIN, AD_PROBE_DOMAIN, type DnsMessage,
 } from "../shared/dns-wire.ts";
 import { ipScope, isIp } from "../shared/ip-classify.ts";
+import { rdapCountry } from "../shared/rdap.ts";
 import { withHttpsScheme } from "../shared/url.ts";
 
 /**
@@ -47,6 +48,11 @@ export default {
     if (url.pathname === "/api/dns/probe-result") {
       if (await isRateLimited(env, clientIp, "probe")) return rateLimitedResponse();
       return handleProbeResult(request, env);
+    }
+
+    if (url.pathname === "/api/dns/resolver-country") {
+      if (await isRateLimited(env, clientIp, "dns")) return rateLimitedResponse();
+      return handleResolverCountry(url);
     }
 
     if (url.pathname === "/api/headers") {
@@ -723,6 +729,42 @@ async function handleProbeResult(request: Request, env?: Env): Promise<Response>
   // Not the same as an empty list: that means the probe ran and nothing reached
   // the nameserver, which is a finding. A dead box is not.
   return Response.json({ resolvers: [], unreachable: true }, { headers: corsHeaders() });
+}
+
+const RDAP_CACHE_TTL = 7 * 86400;
+
+/** Registry country for one public IP, null when RDAP can't say. Cached a week: allocations rarely move. */
+async function lookupRdapCountry(ip: string): Promise<string | null> {
+  const cacheKey = new Request(`https://rdap-cache.internal/${ip}`);
+  const cache = typeof caches !== "undefined" ? (caches as unknown as { default: Cache }).default : null;
+  const hit = await cache?.match(cacheKey);
+  if (hit) return ((await hit.json()) as { country: string | null }).country;
+
+  let country: string | null = null;
+  try {
+    const res = await fetch(`https://rdap.org/ip/${encodeURIComponent(ip)}`, {
+      // rdap.org 403s a fetch with no User-Agent.
+      headers: { accept: "application/rdap+json", "user-agent": "netcheck-site" },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return null;
+    country = rdapCountry(await res.json());
+  } catch {
+    return null;
+  }
+  await cache?.put(cacheKey, Response.json({ country }, { headers: { "cache-control": `max-age=${RDAP_CACHE_TTL}` } }));
+  return country;
+}
+
+// Resolver IPs come from the probe the client already read back, so this only
+// looks up what the visitor could have looked up themselves — and only public
+// addresses, capped, so it can't be turned into a free RDAP relay.
+async function handleResolverCountry(url: URL): Promise<Response> {
+  const ips = [...new Set(url.searchParams.getAll("ip"))]
+    .filter((ip) => isIp(ip) && ipScope(ip) === "public")
+    .slice(0, 8);
+  const resolvers = await Promise.all(ips.map(async (ip) => ({ ip, country: await lookupRdapCountry(ip) })));
+  return Response.json({ resolvers }, { headers: corsHeaders() });
 }
 
 function isAllowedPort(portStr: string, protocol: string): boolean {

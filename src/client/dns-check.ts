@@ -9,7 +9,7 @@ import { renderIpv6, renderIpInfo, renderResolvers, renderObservedPath, revealOb
 import { resetStation, lockHop, setFastest, setConditions, type HopState } from "./dns-station.ts";
 import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wire.ts";
 import { median } from "./speed-test.ts";
-import { timezoneTell, rttTell, languageTell, type Tell } from "../shared/tells.ts";
+import { timezoneTell, rttTell, languageTell, resolverCountryTell, type LocatedResolver, type Tell } from "../shared/tells.ts";
 import {
   dohVerdict, forwardedClientSubnet, evaluateWebRtc,
   type WebRtcVerdict, type ObservedResolver,
@@ -130,6 +130,19 @@ export const DnsCheck = {
       languageTell(navigator.languages ?? [navigator.language], ip.country),
       timezoneTell(ip.timezone, Intl.DateTimeFormat().resolvedOptions().timeZone),
     ];
+  },
+
+  // The registry country of each resolver the probe saw. Private and encrypted-DNS
+  // addresses are dropped server-side and by the tell, so an empty list is fine.
+  async locateResolvers(probe: ProbeResult): Promise<LocatedResolver[]> {
+    const qs = probe.resolvers.map((r) => `ip=${encodeURIComponent(r.ip)}`).join("&");
+    if (!qs) return [];
+    try {
+      const res = await fetch(`/api/dns/resolver-country?${qs}`);
+      return res.ok ? ((await res.json()) as { resolvers: LocatedResolver[] }).resolvers : [];
+    } catch {
+      return [];
+    }
   },
 
   // IPv6-only endpoint: succeeds only if the client has working IPv6.
@@ -589,6 +602,17 @@ async function runStation(): Promise<void> {
   // than guessing without them.
   const [probe, ipv6] = await Promise.all([probePromise, ipv6Promise]);
   const observed = probe && !probe.unreachable ? probe.resolvers : null;
+  if (probe && observed?.length) {
+    const run = report;
+    void DnsCheck.locateResolvers(probe).then((located) => {
+      const tell = resolverCountryTell(located, ipData.country);
+      // A rerun replaces `report`; a late answer from the old run must not land on it.
+      if (tell && report === run && report.tells) {
+        report.tells = [...report.tells, tell];
+        renderTells(report.tells);
+      }
+    });
+  }
   const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observed, {
     ipv4: ipData.ip ?? null,
     ipv6,

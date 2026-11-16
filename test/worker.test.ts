@@ -522,3 +522,24 @@ test("dohQuery bypasses the HTTP cache so a warm sample is a real round trip", a
     globalThis.fetch = realFetch;
   }
 });
+
+test("resolver-country only looks up public IPs and reads RDAP country", async () => {
+  const realFetch = globalThis.fetch;
+  const asked: string[] = [];
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    asked.push(String(input));
+    return Response.json({ country: "NL" });
+  }) as typeof fetch;
+  try {
+    const res = await worker.fetch(
+      new Request("https://netcheck.internal/api/dns/resolver-country?ip=193.0.6.139&ip=192.168.1.1&ip=junk", {
+        headers: { "cf-connecting-ip": "203.0.113.9" },
+      }),
+      {} as never,
+    );
+    assert.deepEqual(await res.json(), { resolvers: [{ ip: "193.0.6.139", country: "NL" }] });
+    assert.deepEqual(asked, ["https://rdap.org/ip/193.0.6.139"]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
