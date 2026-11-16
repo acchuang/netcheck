@@ -290,10 +290,8 @@ function renderSuggestions(results: CategoryResult[]): void {
   const subtitle = document.getElementById("suggestions-subtitle")!;
   const grid = document.getElementById("suggestions-grid")!;
 
-  const weakCategories = results.filter((cat) => {
-    const blockedRatio = cat.tests.filter((ct) => ct.blocked).length / cat.tests.length;
-    return blockedRatio < 0.8;
-  });
+  const ratio = (cat: CategoryResult) => cat.tests.filter((ct) => ct.blocked).length / cat.tests.length;
+  const weakCategories = results.filter((cat) => ratio(cat) < 0.8).sort((a, b) => ratio(a) - ratio(b));
 
   if (weakCategories.length === 0) {
     subtitle.textContent = t("adblock.suggestPerfect");
@@ -307,6 +305,7 @@ function renderSuggestions(results: CategoryResult[]): void {
   subtitle.textContent = AdBlockTest.isNetworkOnlyFiltering()
     ? t("adblock.suggestNetworkOnly", weakCategories.length)
     : t("adblock.suggestGaps", weakCategories.length, results.length);
+  subtitle.textContent += " " + t(weakCategories.length > 3 ? "adblock.suggestTop" : "adblock.suggestEach");
 
   setHtml(grid, html`${weakCategories.slice(0, 3)
     .map((cat) => {

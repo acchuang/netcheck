@@ -407,8 +407,10 @@ const en = {
   "adblock.score": "Block score",
   "adblock.breakdown": "Breakdown",
   "adblock.suggestPerfect": "Your ad blocker is performing excellently across all categories. No action needed.",
-  "adblock.suggestGaps": "Found gaps in {0} of {1} categories. Here's how to fix each one:",
-  "adblock.suggestNetworkOnly": "Your network filtering is blocking the requests. The {0} gaps below are cosmetic (the elements that stay behind), which only an in-page blocker can close:",
+  "adblock.suggestGaps": "Found gaps in {0} of {1} categories.",
+  "adblock.suggestEach": "Here's how to fix each one:",
+  "adblock.suggestTop": "The 3 biggest, and how to fix them:",
+  "adblock.suggestNetworkOnly": "Your network filtering is blocking the requests. The {0} gaps left are cosmetic (the elements that stay behind), which only an in-page blocker can close.",
   "adblock.blockedOf": "{0}/{1} blocked",
 
   // Ad block categories
@@ -1001,8 +1003,10 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.score": "攔截分數",
   "adblock.breakdown": "細項",
   "adblock.suggestPerfect": "您的廣告攔截器在每個類別都擋得很好，不用再做什麼。",
-  "adblock.suggestGaps": "{1} 個類別裡有 {0} 個缺口，可以這樣補：",
-  "adblock.suggestNetworkOnly": "您的網路層過濾已經擋下這些請求。下方 {0} 個缺口屬於外觀層（被擋掉後留下的空位），只有頁面內的攔截器才補得起來：",
+  "adblock.suggestGaps": "{1} 個類別裡有 {0} 個缺口。",
+  "adblock.suggestEach": "可以這樣補：",
+  "adblock.suggestTop": "先看最大的 3 個，可以這樣補：",
+  "adblock.suggestNetworkOnly": "您的網路層過濾已經擋下這些請求。剩下的 {0} 個缺口屬於外觀層（被擋掉後留下的空位），只有頁面內的攔截器才補得起來。",
   "adblock.blockedOf": "{0}/{1} 已攔截",
 
   // Ad block categories
