@@ -1466,7 +1466,7 @@ select option {
    answer before a screen-tall path. */
 @media (max-width: 1024px) {
   .station {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .station .readout-panel { order: -1; }
@@ -2894,6 +2894,10 @@ html:not([data-probe="on"]) [data-probe-only] { display: none; }
 .snap-delta.good { color: var(--green); }
 .snap-delta.bad { color: var(--red); }
 .snap-delta.same { color: var(--text-quaternary); }
+@media (max-width: 720px) {
+  .snap-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; }
+  .snap-time { grid-column: 1 / -1; }
+}
 
 
 /* The DNS figure is a measured round trip, not a gauge: plain tabular digits. */
