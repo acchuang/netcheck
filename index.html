@@ -56,9 +56,9 @@
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span class="nav-link-text">Ad Block Test</span>
         </a>
-        <a href="#headers" id="tab-headers" class="nav-link" data-tab="headers" role="tab" aria-selected="false" aria-controls="headers">
+        <a href="#tools" id="tab-tools" class="nav-link" data-tab="tools" role="tab" aria-selected="false" aria-controls="tools">
           <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-          <span class="nav-link-text">Headers</span>
+          <span class="nav-link-text">Tools</span>
         </a>
       </div>
       <div class="nav-actions">
@@ -273,70 +273,6 @@
         </div>
       </div>
       </details>
-
-      <!-- DNS Diagnostic Workstation -->
-      <div class="card card-wide dns-workstation-card">
-        <div class="card-header workstation-header">
-          <div class="workstation-title-group">
-            <h2 class="card-title" id="dns-workstation-title" data-i18n="dns.workstationTitle">DNS Diagnostic Workstation</h2>
-          </div>
-          <div class="workstation-tabs" role="tablist" aria-label="DNS Diagnostic Tools">
-            <button type="button" class="workstation-tab active" role="tab" aria-selected="true" aria-controls="dns-panel-lookup" id="tab-tool-lookup" data-i18n="dns.tabLookup" data-tool="lookup">Record Lookup</button>
-            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-compare" id="tab-tool-compare" data-i18n="dns.tabCompare" data-tool="compare">Compare Resolvers</button>
-            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-health" id="tab-tool-health" data-i18n="dns.tabHealth" data-tool="health">Domain Email Health</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Tool 1: Record Lookup -->
-          <div class="workstation-panel active" id="dns-panel-lookup" role="tabpanel" aria-labelledby="tab-tool-lookup">
-            <div class="lookup-form">
-              <input type="text" id="dns-lookup-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to lookup">
-              <select id="dns-lookup-type" class="input select" aria-label="DNS record type">
-                <option value="A">A</option>
-                <option value="AAAA">AAAA</option>
-                <option value="MX">MX</option>
-                <option value="NS">NS</option>
-                <option value="TXT">TXT</option>
-                <option value="CNAME">CNAME</option>
-                <option value="SOA">SOA</option>
-                <option value="SRV">SRV</option>
-                <option value="PTR" id="dns-ptr-option" data-i18n="dns.ptrReverse">PTR (Reverse)</option>
-                <option value="ALL" id="dns-all-option" data-i18n="dns.allRecords">All Records</option>
-              </select>
-              <button id="dns-lookup-btn" data-i18n="dns.lookupBtn" class="btn">Lookup</button>
-            </div>
-            <div id="dns-lookup-results" class="lookup-results hidden">
-              <div id="dns-lookup-table"></div>
-              <details class="raw-toggle">
-                <summary class="raw-toggle-summary" id="dns-raw-json-summary">
-                  <span id="dns-raw-json-label" data-i18n="dns.rawJson">Raw JSON</span>
-                  <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" data-i18n="dns.copyJson" title="Copy raw JSON output">Copy JSON</button>
-                </summary>
-                <pre class="code-block"><code id="dns-lookup-output"></code></pre>
-              </details>
-            </div>
-          </div>
-
-          <!-- Tool 2: Resolver Comparison -->
-          <div class="workstation-panel" id="dns-panel-compare" role="tabpanel" aria-labelledby="tab-tool-compare" hidden>
-            <div class="lookup-form">
-              <input type="text" id="dns-compare-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to compare across resolvers">
-              <button id="dns-compare-btn" data-i18n="dns.compareBtn" class="btn">Compare Resolvers</button>
-            </div>
-            <div id="dns-compare-results" class="lookup-results hidden"></div>
-          </div>
-
-          <!-- Tool 3: Domain Email Health (SPF/DMARC/DKIM) -->
-          <div class="workstation-panel" id="dns-panel-health" role="tabpanel" aria-labelledby="tab-tool-health" hidden>
-            <div class="lookup-form">
-              <input type="text" id="dns-health-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name for email health check">
-              <input type="text" id="dns-health-selector" data-i18n-attr="placeholder:dns.healthSelectorPlaceholder" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
-              <button id="dns-health-btn" data-i18n="dns.healthBtn" class="btn">Check Domain Health</button>
-            </div>
-            <div id="dns-health-results" class="lookup-results hidden"></div>
-          </div>
-        </div>
-      </div>
 
       <!-- DNS Suggestions -->
       <div class="suggestions-section" id="dns-suggestions-section">
@@ -554,11 +490,11 @@
       </div>
     </section>
 
-    <!-- Security Headers Section -->
-    <section id="headers" class="section" role="tabpanel" aria-labelledby="tab-headers">
+    <!-- Tools: security headers + DNS workstation -->
+    <section id="tools" class="section" role="tabpanel" aria-labelledby="tab-tools">
       <div class="section-header">
-        <h1 class="display" id="headers-title" data-i18n="headers.title">Security Headers</h1>
-        <p class="subtitle" id="headers-subtitle" data-i18n="headers.subtitle">Analyze HTTP security headers of any website</p>
+        <h1 class="display" id="tools-title" data-i18n="tools.title">Tools</h1>
+        <p class="subtitle" id="tools-subtitle" data-i18n="tools.subtitle">Check any website's security headers, or dig into its DNS records</p>
       </div>
 
       <div class="station">
@@ -600,6 +536,70 @@
           </div>
         </div>
       </div>
+      <!-- DNS Diagnostic Workstation -->
+      <div class="card card-wide dns-workstation-card">
+        <div class="card-header workstation-header">
+          <div class="workstation-title-group">
+            <h2 class="card-title" id="dns-workstation-title" data-i18n="dns.workstationTitle">DNS Diagnostic Workstation</h2>
+          </div>
+          <div class="workstation-tabs" role="tablist" aria-label="DNS Diagnostic Tools">
+            <button type="button" class="workstation-tab active" role="tab" aria-selected="true" aria-controls="dns-panel-lookup" id="tab-tool-lookup" data-i18n="dns.tabLookup" data-tool="lookup">Record Lookup</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-compare" id="tab-tool-compare" data-i18n="dns.tabCompare" data-tool="compare">Compare Resolvers</button>
+            <button type="button" class="workstation-tab" role="tab" aria-selected="false" aria-controls="dns-panel-health" id="tab-tool-health" data-i18n="dns.tabHealth" data-tool="health">Domain Email Health</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Tool 1: Record Lookup -->
+          <div class="workstation-panel active" id="dns-panel-lookup" role="tabpanel" aria-labelledby="tab-tool-lookup">
+            <div class="lookup-form">
+              <input type="text" id="dns-lookup-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to lookup">
+              <select id="dns-lookup-type" class="input select" aria-label="DNS record type">
+                <option value="A">A</option>
+                <option value="AAAA">AAAA</option>
+                <option value="MX">MX</option>
+                <option value="NS">NS</option>
+                <option value="TXT">TXT</option>
+                <option value="CNAME">CNAME</option>
+                <option value="SOA">SOA</option>
+                <option value="SRV">SRV</option>
+                <option value="PTR" id="dns-ptr-option" data-i18n="dns.ptrReverse">PTR (Reverse)</option>
+                <option value="ALL" id="dns-all-option" data-i18n="dns.allRecords">All Records</option>
+              </select>
+              <button id="dns-lookup-btn" data-i18n="dns.lookupBtn" class="btn">Lookup</button>
+            </div>
+            <div id="dns-lookup-results" class="lookup-results hidden">
+              <div id="dns-lookup-table"></div>
+              <details class="raw-toggle">
+                <summary class="raw-toggle-summary" id="dns-raw-json-summary">
+                  <span id="dns-raw-json-label" data-i18n="dns.rawJson">Raw JSON</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="dns-copy-json-btn" data-i18n="dns.copyJson" title="Copy raw JSON output">Copy JSON</button>
+                </summary>
+                <pre class="code-block"><code id="dns-lookup-output"></code></pre>
+              </details>
+            </div>
+          </div>
+
+          <!-- Tool 2: Resolver Comparison -->
+          <div class="workstation-panel" id="dns-panel-compare" role="tabpanel" aria-labelledby="tab-tool-compare" hidden>
+            <div class="lookup-form">
+              <input type="text" id="dns-compare-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to compare across resolvers">
+              <button id="dns-compare-btn" data-i18n="dns.compareBtn" class="btn">Compare Resolvers</button>
+            </div>
+            <div id="dns-compare-results" class="lookup-results hidden"></div>
+          </div>
+
+          <!-- Tool 3: Domain Email Health (SPF/DMARC/DKIM) -->
+          <div class="workstation-panel" id="dns-panel-health" role="tabpanel" aria-labelledby="tab-tool-health" hidden>
+            <div class="lookup-form">
+              <input type="text" id="dns-health-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name for email health check">
+              <input type="text" id="dns-health-selector" data-i18n-attr="placeholder:dns.healthSelectorPlaceholder" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
+              <button id="dns-health-btn" data-i18n="dns.healthBtn" class="btn">Check Domain Health</button>
+            </div>
+            <div id="dns-health-results" class="lookup-results hidden"></div>
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- About Section -->

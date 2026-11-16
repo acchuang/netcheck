@@ -532,9 +532,9 @@ const en = {
   "dns.tls": "TLS Version",
 
   // Headers section
-  "nav.headers": "Headers",
-  "headers.title": "Security Headers",
-  "headers.subtitle": "Analyze HTTP security headers of any website",
+  "nav.tools": "Tools",
+  "tools.title": "Tools",
+  "tools.subtitle": "Check any website's security headers, or dig into its DNS records",
   "headers.scan": "Scan",
   "headers.scanning": "Scanning",
   "headers.detailTitle": "Header checklist",
@@ -1127,9 +1127,9 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.tls": "TLS 版本",
 
   // Headers section
-  "nav.headers": "安全標頭",
-  "headers.title": "安全標頭檢測",
-  "headers.subtitle": "分析任何網站的 HTTP 安全標頭",
+  "nav.tools": "工具",
+  "tools.title": "工具",
+  "tools.subtitle": "檢查任何網站的安全標頭，或查詢它的 DNS 紀錄",
   "headers.scan": "掃描",
   "headers.scanning": "掃描中",
   "headers.detailTitle": "標頭清單",

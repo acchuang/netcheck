@@ -127,7 +127,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // A deep link opens its tab through the same click handler, so #adblock
   // starts the probes. The browser's own jump is cancelled in CSS (.section).
-  const hash = location.hash.slice(1);
+  // #headers predates the Tools tab; old links still land there.
+  const raw = location.hash.slice(1);
+  const hash = raw === "headers" ? "tools" : raw;
   if (hash && document.getElementById(hash)?.classList.contains("section")) showTab(hash);
 
   // Idle-state texts live in the HTML in English; localize them on first load
