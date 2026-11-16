@@ -477,6 +477,7 @@ const en = {
   "snap.title": "History",
   "snap.scoreTitle": "Score History",
   "snap.clear": "Clear",
+  "snap.note": "Saved after each run, only in this browser.",
 
   // Suggestion tags
   "tag.fastest": "fastest",
@@ -1073,6 +1074,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "snap.title": "歷史紀錄",
   "snap.scoreTitle": "分數紀錄",
   "snap.clear": "清除",
+  "snap.note": "每次測完自動儲存，只存在這個瀏覽器裡。",
 
   // Suggestion tags (en falls back to the raw tag text)
   "tag.fastest": "最快",
