@@ -177,10 +177,6 @@
         <!-- IP Info Card -->
         <div class="card">
           <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-            </svg>
             <h2 class="card-title" id="dns-ip-title" data-i18n="dns.ipTitle">Your IP Address</h2>
             <span class="status-badge" id="ip-status">detecting</span>
           </div>
@@ -223,9 +219,6 @@
         <!-- DNS Resolver Card -->
         <div class="card">
           <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
             <h2 class="card-title" id="dns-resolver-title" data-i18n="dns.resolverTitle">DNS Resolver</h2>
             <span class="status-badge" id="dns-resolver-status">detecting</span>
           </div>
@@ -248,9 +241,6 @@
         <!-- DNS Security Card -->
         <div class="card">
           <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
             <h2 class="card-title" id="dns-security-title" data-i18n="dns.securityTitle">DNS Security</h2>
             <span class="status-badge" id="dns-security-status">pending</span>
           </div>
@@ -264,11 +254,6 @@
         <!-- EDNS Client Subnet Card -->
         <div class="card card-wide">
           <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
             <h2 class="card-title" id="dns-ecs-title" data-i18n="dns.ecsTitle">EDNS Client Subnet</h2>
             <span class="status-badge" id="dns-ecs-status">pending</span>
           </div>
@@ -282,10 +267,6 @@
         <!-- Proxy Tells Card -->
         <div class="card card-wide">
           <div class="card-header">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
             <h2 class="card-title" id="dns-tells-title" data-i18n="tell.title">Proxy Tells</h2>
             <span class="status-badge" id="dns-tells-status">pending</span>
           </div>
@@ -301,10 +282,6 @@
       <div class="card card-wide dns-workstation-card">
         <div class="card-header workstation-header">
           <div class="workstation-title-group">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
             <h2 class="card-title" id="dns-workstation-title" data-i18n="dns.workstationTitle">DNS Diagnostic Workstation</h2>
           </div>
           <div class="workstation-tabs" role="tablist" aria-label="DNS Diagnostic Tools">
@@ -330,7 +307,7 @@
                 <option value="PTR" id="dns-ptr-option" data-i18n="dns.ptrReverse">PTR (Reverse)</option>
                 <option value="ALL" id="dns-all-option" data-i18n="dns.allRecords">All Records</option>
               </select>
-              <button id="dns-lookup-btn" data-i18n="dns.lookupBtn" class="btn btn-primary">Lookup</button>
+              <button id="dns-lookup-btn" data-i18n="dns.lookupBtn" class="btn">Lookup</button>
             </div>
             <div id="dns-lookup-results" class="lookup-results hidden">
               <div id="dns-lookup-table"></div>
@@ -348,7 +325,7 @@
           <div class="workstation-panel" id="dns-panel-compare" role="tabpanel" aria-labelledby="tab-tool-compare" hidden>
             <div class="lookup-form">
               <input type="text" id="dns-compare-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name to compare across resolvers">
-              <button id="dns-compare-btn" data-i18n="dns.compareBtn" class="btn btn-primary">Compare Resolvers</button>
+              <button id="dns-compare-btn" data-i18n="dns.compareBtn" class="btn">Compare Resolvers</button>
             </div>
             <div id="dns-compare-results" class="lookup-results hidden"></div>
           </div>
@@ -358,7 +335,7 @@
             <div class="lookup-form">
               <input type="text" id="dns-health-domain" class="input input-wide" placeholder="example.com" value="example.com" aria-label="Domain name for email health check">
               <input type="text" id="dns-health-selector" data-i18n-attr="placeholder:dns.healthSelectorPlaceholder" class="input" placeholder="DKIM selector (optional)" aria-label="DKIM selector for domain health check">
-              <button id="dns-health-btn" data-i18n="dns.healthBtn" class="btn btn-primary">Check Domain Health</button>
+              <button id="dns-health-btn" data-i18n="dns.healthBtn" class="btn">Check Domain Health</button>
             </div>
             <div id="dns-health-results" class="lookup-results hidden"></div>
           </div>
