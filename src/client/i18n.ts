@@ -600,6 +600,7 @@ const en = {
   "verdict.headersFail": "Weak header configuration",
 
   // Footer
+  "footer.about": "About & privacy",
   "footer.text": "NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.",
   "meta.description": "Browser-based network diagnostics: DNS security, speed test with bufferbloat grading, ad blocker analysis, and HTTP security header scanning. No installs, no accounts.",
 } as const;
@@ -1194,6 +1195,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "verdict.headersWarn": "部分防護缺失",
   "verdict.headersFail": "標頭設定薄弱",
 
+  "footer.about": "關於與隱私",
   "footer.text": "NetCheck - DNS 與廣告攔截診斷。測試在瀏覽器中執行，少數例外請見「關於」。",
   "meta.description": "在瀏覽器裡做網路診斷：DNS 安全、測速（含 bufferbloat 評級）、廣告攔截分析和 HTTP 安全標頭掃描。免安裝，免註冊。",
 };

@@ -2477,6 +2477,10 @@ select option {
   transition: color 0.15s;
 }
 
+.footer-link + .footer-link {
+  margin-left: 20px;
+}
+
 .footer-link:hover {
   color: var(--text-secondary);
 }

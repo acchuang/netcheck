@@ -127,8 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // A deep link opens its tab through the same click handler, so #adblock
   // starts the probes. The browser's own jump is cancelled in CSS (.section).
-  const deepLink = document.querySelector<HTMLElement>(`.nav-link[data-tab="${CSS.escape(location.hash.slice(1))}"]`);
-  deepLink?.click();
+  const hash = location.hash.slice(1);
+  if (hash && document.getElementById(hash)?.classList.contains("section")) showTab(hash);
 
   // Idle-state texts live in the HTML in English; localize them on first load
   // and re-render all dynamic content when the locale changes.
@@ -153,27 +153,34 @@ function renderInitialSkeletons(): void {
   renderAdBlockIdle();
 }
 
+// Sections without a nav tab (About) are opened from links elsewhere, so no tab
+// is left selected while they're showing.
+function showTab(tab: string): void {
+  document.querySelectorAll<HTMLElement>(".nav-link[data-tab]").forEach((l) => {
+    const on = l.dataset.tab === tab;
+    l.classList.toggle("active", on);
+    l.setAttribute("aria-selected", String(on));
+  });
+  document.querySelectorAll(".section").forEach((s) => s.classList.toggle("active", s.id === tab));
+
+  history.replaceState(null, "", `#${tab}`);
+  window.scrollTo(0, 0);
+  if (tab === "adblock") startAdBlock();
+}
+
 // Tab navigation
 function initTabs(): void {
   const links = document.querySelectorAll<HTMLAnchorElement>(".nav-link[data-tab]");
   links.forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
-      const tab = link.dataset.tab!;
-
-      document.querySelectorAll(".nav-link").forEach((l) => {
-        l.classList.remove("active");
-        l.setAttribute("aria-selected", "false");
-      });
-      link.classList.add("active");
-      link.setAttribute("aria-selected", "true");
-
-      document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
-      document.getElementById(tab)!.classList.add("active");
-
-      history.replaceState(null, "", `#${tab}`);
-      window.scrollTo(0, 0);
-      if (tab === "adblock") startAdBlock();
+      showTab(link.dataset.tab!);
+    });
+  });
+  document.querySelectorAll<HTMLAnchorElement>("[data-show]").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      showTab(a.dataset.show!);
     });
   });
 
