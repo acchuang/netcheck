@@ -2,6 +2,7 @@
 import { AdBlockTest } from "./adblock-test.ts";
 import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
 import { html, setHtml, type Safe } from "./html.ts";
+import { onLocaleChange } from "./i18n.ts";
 
 interface AdblockSnapshot {
   ts: number;
@@ -17,6 +18,7 @@ const MAX = 20;
 export function initAdblockHistory(): void {
   document.getElementById("adblock-history-clear-btn")?.addEventListener("click", clearSnapshots);
   renderHistory();
+  onLocaleChange(renderHistory);
 }
 
 export function saveAdblockSnapshot(): void {
@@ -77,7 +79,7 @@ function renderHistory(): void {
     .reverse()
     .map((s, i) => {
       const date = new Date(s.ts);
-      const time = date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      const time = date.toLocaleString(document.documentElement.lang, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
       const prev = i < snapshots.length - 1 ? snapshots[snapshots.length - 2 - i] : undefined;
       const isLatest = i === 0;
       const scoreDelta = isLatest ? fmtDelta(s.score, prev?.score) : "";

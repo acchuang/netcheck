@@ -1,6 +1,7 @@
 import { SpeedTest } from "./speed-test.ts";
 import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
 import { html, setHtml, type Safe } from "./html.ts";
+import { onLocaleChange } from "./i18n.ts";
 
 interface Snapshot {
   ts: number;
@@ -19,6 +20,7 @@ export function initSnapshots(): void {
   clearBtn.addEventListener("click", clearSnapshots);
 
   renderSnapshotHistory();
+  onLocaleChange(renderSnapshotHistory);
 }
 
 export function saveSpeedSnapshot(): void {
@@ -72,7 +74,7 @@ function renderSnapshotHistory(): void {
     .reverse()
     .map((s, i) => {
       const date = new Date(s.ts);
-      const time = date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      const time = date.toLocaleString(document.documentElement.lang, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
       const prev = snapshots.length - 1 - i > 0 ? snapshots[snapshots.length - 2 - i] : null;
       const isLatest = i === 0;
 
