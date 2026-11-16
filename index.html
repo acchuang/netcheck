@@ -171,8 +171,8 @@
         </div>
       </div>
 
-      <details class="dns-details">
-        <summary class="dns-details-summary" data-i18n="dns.details">Details: IP, resolver, security, ECS, proxy tells</summary>
+      <details class="details-fold">
+        <summary class="details-fold-summary" data-i18n="dns.details">Details: IP, resolver, security, ECS, proxy tells</summary>
       <div class="cards-grid">
         <!-- IP Info Card -->
         <div class="card">
@@ -503,14 +503,16 @@
             <h2 class="card-title" id="adblock-cats-title" data-i18n="adblock.categories">Categories</h2>
           </div>
           <div class="test-categories" id="test-categories"></div>
+          <details class="details-fold">
+            <summary class="details-fold-summary" id="adblock-custom-title" data-i18n="adblock.customCard">Custom URL Test</summary>
           <div class="adblock-custom">
             <input type="text" id="adblock-custom-url" class="input" placeholder="example.com or https://..." aria-label="Custom test URL">
             <button type="button" class="btn btn-small" id="adblock-custom-btn" data-i18n="adblock.testUrl">Test URL</button>
           </div>
           <div class="adblock-custom-results" id="adblock-custom-card" hidden>
-            <h3 class="readout-label" id="adblock-custom-title" data-i18n="adblock.customCard">Custom URL Test</h3>
             <div id="adblock-custom-results"></div>
           </div>
+          </details>
         </div>
 
         <div class="readout-panel adblock-readouts">
@@ -538,6 +540,8 @@
         </div>
       </div>
 
+      <details class="details-fold">
+        <summary class="details-fold-summary" data-i18n="adblock.more">More: filter lists, fingerprint surface</summary>
       <div class="station adblock-lower">
         <div class="schematic" id="filter-list-section">
           <div class="panel-head">
@@ -556,6 +560,7 @@
           <ul class="conditions" id="fingerprint-signals"></ul>
         </div>
       </div>
+      </details>
 
       <!-- Suggestions -->
       <div class="suggestions-section" id="suggestions-section">

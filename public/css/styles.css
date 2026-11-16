@@ -650,12 +650,12 @@ textarea {
   pointer-events: none;
 }
 
-/* DNS detail cards: depth on demand, closed until asked for. */
-.dns-details {
+/* Secondary panels: depth on demand, closed until asked for. */
+.details-fold {
   margin-top: 24px;
 }
 
-.dns-details-summary {
+.details-fold-summary {
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 700;
@@ -667,11 +667,11 @@ textarea {
   user-select: none;
 }
 
-.dns-details-summary:hover {
+.details-fold-summary:hover {
   color: var(--text-primary);
 }
 
-.dns-details[open] > .dns-details-summary {
+.details-fold[open] > .details-fold-summary {
   margin-bottom: 12px;
 }
 
