@@ -698,7 +698,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.pending": "等待中",
   "dns.detected": "已偵測",
   "dns.copied": "已複製",
-  "dns.copyHint": "點擊複製",
+  "dns.copyHint": "點一下複製",
   "dns.failed": "失敗",
   "dns.unreachable": "無法連線",
   "dns.nonefound": "未找到",
@@ -958,7 +958,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.good": "防護良好",
   "adblock.basic": "基本防護",
   "adblock.minimal": "最低防護",
-  "adblock.scoreDetail": "在 {2} 個類別中攔截了 {1} 個追蹤器/廣告中的 {0} 個",
+  "adblock.scoreDetail": "在 {2} 個類別中攔截了 {1} 個追蹤器／廣告中的 {0} 個",
   "adblock.inconclusive": "回應的探測太少",
   "adblock.inconclusiveDetail": "有 {0} 個探測逾時，請檢查網路連線後重新測試",
   "adblock.testing": "正在測試 {0} 個項目",
@@ -1047,7 +1047,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "adblock.advice.annoyances.desc": "Cookie 同意橫幅、電子報彈窗、推播通知提示和問卷小工具沒有被隱藏，每次造訪都多一道麻煩。",
   "adblock.advice.annoyances.fix1": "在廣告攔截器中啟用 Fanboy's Annoyances 清單",
   "adblock.advice.annoyances.fix2": "啟用 uBlock Origin 內建的干擾過濾器（設定 → 過濾清單 → 干擾）",
-  "adblock.advice.annoyances.fix3": "安裝 'I don't care about cookies' 擴充功能",
+  "adblock.advice.annoyances.fix3": "安裝「I don't care about cookies」擴充功能",
   "adblock.advice.annoyances.fix4": "AdGuard 使用者：啟用干擾過濾器群組",
 
   // Filter lists
@@ -1062,8 +1062,8 @@ const zhTW: Record<keyof typeof en, string> = {
   "filter.notFound": "未找到",
 
   // Snapshot history
-  "snap.title": "歷史記錄",
-  "snap.scoreTitle": "分數記錄",
+  "snap.title": "歷史紀錄",
+  "snap.scoreTitle": "分數紀錄",
   "snap.save": "儲存快照",
   "snap.clear": "清除",
 
@@ -1118,7 +1118,7 @@ const zhTW: Record<keyof typeof en, string> = {
   "dns.table.ttl": "TTL",
 
   // Connection info
-  "dns.http": "HTTP 協議",
+  "dns.http": "HTTP 協定",
   "dns.tls": "TLS 版本",
 
   // Headers section
