@@ -468,7 +468,7 @@ function renderSpeedSuggestions(results: SpeedTestResults): void {
   const r = { download: dl, upload: ul, latency: lat, jitter: jit };
   const relevant = speedSuggestions
     .filter((s) => s.when(r))
-    .slice(0, 6);
+    .slice(0, 3);
 
   setHtml(grid, html`${relevant.map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "speed.noSetup"))}`);
 

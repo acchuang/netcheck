@@ -505,7 +505,7 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
     topFix = relevant.find((s) => s.fixes.includes(issue.id)) ?? null;
     if (topFix) break;
   }
-  const suggestions = (topFix ? [topFix, ...relevant.filter((s) => s !== topFix)] : relevant).slice(0, 6);
+  const suggestions = (topFix ? [topFix, ...relevant.filter((s) => s !== topFix)] : relevant).slice(0, 3);
 
   return { issues, dohUnverified, suggestions, topFix };
 }

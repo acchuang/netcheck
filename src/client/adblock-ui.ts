@@ -308,7 +308,7 @@ function renderSuggestions(results: CategoryResult[]): void {
     ? t("adblock.suggestNetworkOnly", weakCategories.length)
     : t("adblock.suggestGaps", weakCategories.length, results.length);
 
-  setHtml(grid, html`${weakCategories
+  setHtml(grid, html`${weakCategories.slice(0, 3)
     .map((cat) => {
       const advice = CATEGORY_ADVICE[cat.name];
       if (!advice) return "";
