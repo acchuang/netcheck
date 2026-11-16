@@ -2,7 +2,7 @@ import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPha
 import { t, onLocaleChange } from "./i18n.ts";
 import { html, setHtml } from "./html.ts";
 import { animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
-import { enableSaveButton } from "./snapshots.ts";
+import { saveSpeedSnapshot } from "./snapshots.ts";
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll<HTMLElement>(".speed-readouts [data-metric]").forEach((r) => {
@@ -347,7 +347,7 @@ async function runSpeedTest(): Promise<void> {
   // colo lookup failed this run (transient, or a non-locatable server like fast.com) — don't leave the label on "detecting..."
   if (!results.colo) document.getElementById("speed-server-value")!.textContent = serverLabel(serverId);
   drawSpeedGraph();
-  enableSaveButton();
+  saveSpeedSnapshot();
   btn.disabled = false;
   btn.textContent = t("speed.runAgain");
 }

@@ -15,17 +15,11 @@ const KEY = "netcheck-adblock-history";
 const MAX = 20;
 
 export function initAdblockHistory(): void {
-  document.getElementById("adblock-history-save-btn")?.addEventListener("click", saveSnapshot);
   document.getElementById("adblock-history-clear-btn")?.addEventListener("click", clearSnapshots);
   renderHistory();
 }
 
-export function enableAdblockSaveButton(): void {
-  const btn = document.getElementById("adblock-history-save-btn") as HTMLButtonElement | null;
-  if (btn) btn.disabled = false;
-}
-
-function saveSnapshot(): void {
+export function saveAdblockSnapshot(): void {
   const score = AdBlockTest.getScore();
   // An inconclusive run has nothing to diff against later — storing it would
   // put a network hiccup in the history as though it were a blocker change.

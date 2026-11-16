@@ -474,7 +474,6 @@ const en = {
   // Snapshot history
   "snap.title": "History",
   "snap.scoreTitle": "Score History",
-  "snap.save": "Save Snapshot",
   "snap.clear": "Clear",
 
   // Suggestion tags
@@ -1069,7 +1068,6 @@ const zhTW: Record<keyof typeof en, string> = {
   // Snapshot history
   "snap.title": "歷史紀錄",
   "snap.scoreTitle": "分數紀錄",
-  "snap.save": "儲存快照",
   "snap.clear": "清除",
 
   // Suggestion tags (en falls back to the raw tag text)

@@ -15,21 +15,13 @@ const KEY = "netcheck-snapshots";
 const MAX = 20;
 
 export function initSnapshots(): void {
-  const saveBtn = document.getElementById("snapshot-save-btn")!;
-  saveBtn.addEventListener("click", saveSnapshot);
-
   const clearBtn = document.getElementById("snapshot-clear-btn")!;
   clearBtn.addEventListener("click", clearSnapshots);
 
   renderSnapshotHistory();
 }
 
-export function enableSaveButton(): void {
-  const btn = document.getElementById("snapshot-save-btn") as HTMLButtonElement | null;
-  if (btn) btn.disabled = false;
-}
-
-function saveSnapshot(): void {
+export function saveSpeedSnapshot(): void {
   const r = SpeedTest.results;
   if (r.download === null && r.upload === null && r.latency === null) return;
   const snapshots = loadHistory<Snapshot>(KEY);

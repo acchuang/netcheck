@@ -3,7 +3,7 @@ import { t } from "./i18n.ts";
 import { ARROW_SVG } from "./ui-utils.ts";
 import { html, raw, setHtml, type Safe } from "./html.ts";
 import { probeFingerprint, summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
-import { enableAdblockSaveButton, levelFor } from "./adblock-history.ts";
+import { saveAdblockSnapshot, levelFor } from "./adblock-history.ts";
 import { runFilterListDetection } from "./filter-detect-ui.ts";
 
 // Ad block sits idle until its tab is opened — see startAdBlock. Scanning rows
@@ -112,7 +112,7 @@ async function runAdBlockTests(): Promise<void> {
   await AdBlockTest.runAll();
 
   renderAdBlockResults();
-  enableAdblockSaveButton();
+  saveAdblockSnapshot();
 }
 
 export function renderAdBlockResults(): void {
