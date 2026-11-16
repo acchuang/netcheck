@@ -30,6 +30,9 @@ export function saveAdblockSnapshot(): void {
     return { name: c.name, pct: resolved.length ? Math.round((blocked / resolved.length) * 100) : 0 };
   });
   const snapshots = loadHistory<AdblockSnapshot>(KEY);
+  const last = snapshots[snapshots.length - 1];
+  // Same result as last time: a repeat row adds nothing.
+  if (last && last.score === score.score && last.blocked === score.blocked && last.total === score.total) return;
   snapshots.push({ ts: Date.now(), score: score.score, blocked: score.blocked, total: score.total, cats });
   persistHistory(KEY, snapshots, MAX);
   renderHistory();
