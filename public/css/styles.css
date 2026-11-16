@@ -2377,6 +2377,9 @@ select option {
     padding: 12px 16px;
   }
   .test-category-importance { display: none; }
+  /* A scanning row has a state but no reading yet; the state takes the bar's room. */
+  .test-category[data-state="scan"] :is(.condition-bar, .condition-value) { display: none; }
+  .test-category[data-state="scan"] .condition-state { grid-column: 3 / -1; }
   /* Fingerprint bars are always full, so on a phone they only cost the label room. */
   #fingerprint-signals .condition-bar { display: none; }
   #fingerprint-signals .condition { grid-template-columns: minmax(0, 1fr) auto; }
