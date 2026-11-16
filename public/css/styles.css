@@ -650,6 +650,31 @@ textarea {
   pointer-events: none;
 }
 
+/* DNS detail cards: depth on demand, closed until asked for. */
+.dns-details {
+  margin-top: 24px;
+}
+
+.dns-details-summary {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 10px 0;
+  user-select: none;
+}
+
+.dns-details-summary:hover {
+  color: var(--text-primary);
+}
+
+.dns-details[open] > .dns-details-summary {
+  margin-bottom: 12px;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
