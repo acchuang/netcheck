@@ -1,10 +1,10 @@
 import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "./adblock-test.ts";
+import { detectBlocker, type BlockerFingerprint } from "./blocker-fingerprint.ts";
 import { t } from "./i18n.ts";
 import { ARROW_SVG } from "./ui-utils.ts";
 import { html, raw, setHtml, type Safe } from "./html.ts";
 import { probeFingerprint, summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
 import { saveAdblockSnapshot, levelFor } from "./adblock-history.ts";
-import { runFilterListDetection } from "./filter-detect-ui.ts";
 
 // Ad block sits idle until its tab is opened — see startAdBlock. Scanning rows
 // here would promise a run that isn't happening.
@@ -69,13 +69,21 @@ export function startAdBlock(): void {
   if (adBlockStarted) return;
   adBlockStarted = true;
   runAdBlockTests();
-  runFilterListDetection();
   renderFingerprint();
 }
 
 // Local-only and instant — no network, so it runs with the tab rather than
 // behind the "these tests contact real ad hosts" gate.
 let fingerprintSignals: FingerprintSignal[] | null = null;
+let lastBlocker: BlockerFingerprint | null = null;
+
+export function getLastBlockerFingerprint(): BlockerFingerprint | null {
+  return lastBlocker;
+}
+
+export function getLastFingerprintSignals(): FingerprintSignal[] | null {
+  return fingerprintSignals;
+}
 
 function renderFingerprint(): void {
   const list = document.getElementById("fingerprint-signals");
@@ -104,15 +112,44 @@ function renderFingerprint(): void {
   }));
 }
 
+function renderBlockerFingerprint(): void {
+  const card = document.getElementById("adblock-blocker-card")!;
+  if (!lastBlocker) {
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+  document.getElementById("adblock-blocker-name")!.textContent = t(lastBlocker.nameKey);
+  const confLabel = t(`adblock.fp.${lastBlocker.confidence}`);
+  const source = t(lastBlocker.sourceKey);
+  document.getElementById("adblock-blocker-detail")!.textContent =
+    `${t("adblock.fp.confidence", confLabel)} · ${t("adblock.fp.source", source)}`;
+}
+
 async function runAdBlockTests(): Promise<void> {
+  const rerunBtn = document.getElementById("adblock-rerun-btn") as HTMLButtonElement | null;
+  if (rerunBtn) rerunBtn.disabled = true;
+  lastBlocker = null;
+  document.getElementById("adblock-blocker-card")!.hidden = true;
+
   const categoriesEl = document.getElementById("test-categories")!;
   renderCategoriesScanning(categoriesEl);
   document.getElementById("score-summary")!.textContent = t("adblock.running");
 
-  await AdBlockTest.runAll();
-
-  renderAdBlockResults();
-  saveAdblockSnapshot();
+  try {
+    await AdBlockTest.runAll();
+    renderAdBlockResults();
+    lastBlocker = await detectBlocker({
+      score: AdBlockTest.getScore(),
+      split: AdBlockTest.getSplitScore(),
+    });
+    renderBlockerFingerprint();
+    fingerprintSignals = probeFingerprint();
+    renderFingerprint();
+    saveAdblockSnapshot();
+  } finally {
+    if (rerunBtn) rerunBtn.disabled = false;
+  }
 }
 
 export function renderAdBlockResults(): void {
@@ -169,8 +206,13 @@ function renderScoreBreakdown(): void {
     { label: t("adblock.cosmetics"), tip: t("adblock.cosmeticsTip"), ...split.cosmetics },
   ];
   for (const imp of ["high", "medium", "low"] as const) {
-    const tests = AdBlockTest.results.filter((c) => c.importance === imp).flatMap((c) => c.tests);
-    if (tests.length) rows.push({ label: t(`adblock.risk.${imp}`), blocked: tests.filter((x) => x.blocked).length, total: tests.length });
+    const resolved = AdBlockTest.results
+      .filter((c) => c.importance === imp)
+      .flatMap((c) => c.tests)
+      .filter((x) => !x.uncertain);
+    if (resolved.length) {
+      rows.push({ label: t(`adblock.risk.${imp}`), blocked: resolved.filter((x) => x.blocked).length, total: resolved.length });
+    }
   }
 
   setHtml(document.getElementById("score-breakdown")!, html`${rows
@@ -221,7 +263,7 @@ async function runCustomUrlTest(): Promise<void> {
   const card = document.getElementById("adblock-custom-card")!;
   const results = document.getElementById("adblock-custom-results")!;
   card.hidden = false;
-  setHtml(results, html`<p class="info-muted">${t("adblock.testing")}</p>`);
+  setHtml(results, html`<p class="info-muted">${t("adblock.testing", 2)}</p>`);
   lastCustomTests = await AdBlockTest.testCustomUrl(url);
   renderCustomUrlResults(lastCustomTests);
 }
@@ -290,8 +332,21 @@ function renderSuggestions(results: CategoryResult[]): void {
   const subtitle = document.getElementById("suggestions-subtitle")!;
   const grid = document.getElementById("suggestions-grid")!;
 
-  const ratio = (cat: CategoryResult) => cat.tests.filter((ct) => ct.blocked).length / cat.tests.length;
-  const weakCategories = results.filter((cat) => ratio(cat) < 0.8).sort((a, b) => ratio(a) - ratio(b));
+  if (AdBlockTest.getScore().score === null) {
+    subtitle.textContent = t("adblock.inconclusive");
+    grid.innerHTML = "";
+    section.classList.add("visible");
+    return;
+  }
+
+  const resolvedOf = (cat: CategoryResult) => cat.tests.filter((ct) => !ct.uncertain);
+  const ratio = (cat: CategoryResult) => {
+    const res = resolvedOf(cat);
+    return res.length > 0 ? res.filter((ct) => ct.blocked).length / res.length : 1;
+  };
+  const weakCategories = results
+    .filter((cat) => resolvedOf(cat).length > 0 && ratio(cat) < 0.8)
+    .sort((a, b) => ratio(a) - ratio(b));
 
   if (weakCategories.length === 0) {
     subtitle.textContent = t("adblock.suggestPerfect");
@@ -311,8 +366,9 @@ function renderSuggestions(results: CategoryResult[]): void {
     .map((cat) => {
       const advice = CATEGORY_ADVICE[cat.name];
       if (!advice) return "";
-      const blocked = cat.tests.filter((ct) => ct.blocked).length;
-      const total = cat.tests.length;
+      const resolved = resolvedOf(cat);
+      const blocked = resolved.filter((ct) => ct.blocked).length;
+      const total = resolved.length;
       const pct = Math.round((blocked / total) * 100);
       const key = `adblock.advice.${advice.i18nKey}`;
 
@@ -345,21 +401,22 @@ function renderSuggestions(results: CategoryResult[]): void {
 }
 
 function createCategoryWithResults(index: number, name: string, tests: { name: string; blocked: boolean; uncertain?: boolean; method?: string }[], importance: Importance, open: boolean): HTMLDivElement {
-  const blocked = tests.filter((tt) => tt.blocked).length;
-  const pct = Math.round((blocked / tests.length) * 100);
+  const resolved = tests.filter((tt) => !tt.uncertain);
+  const blocked = resolved.filter((tt) => tt.blocked).length;
+  const pct = resolved.length > 0 ? Math.round((blocked / resolved.length) * 100) : 0;
   // Indexed, not slugged: a zh-TW name slugs to nothing and every body collides.
   const bodyId = `adblock-cat-${index}`;
 
   const div = document.createElement("div");
   div.className = "test-category";
-  div.dataset.state = levelFor(pct);
+  div.dataset.state = resolved.length === 0 ? "standby" : levelFor(pct);
   setHtml(div, html`
     <button type="button" class="test-category-header" aria-expanded="${open}" aria-controls="${bodyId}">
       <svg class="test-category-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="test-category-name">${name}</span>
       <span class="test-category-importance imp-${importance}" data-tooltip="${importanceTip(importance)}">${importanceLabel(importance)}</span>
       ${barHtml(pct)}
-      <span class="condition-value">${blocked}/${tests.length}</span>
+      <span class="condition-value">${resolved.length > 0 ? `${blocked}/${resolved.length}` : "—"}</span>
     </button>
     <div class="test-category-body" id="${bodyId}"${open ? "" : raw(" hidden")}>${tests.map(testItemHtml)}</div>
   `);
@@ -368,6 +425,7 @@ function createCategoryWithResults(index: number, name: string, tests: { name: s
 
 export function refreshAdblockLocaleTexts(): void {
   if (fingerprintSignals) renderFingerprint();
+  renderBlockerFingerprint();
   if (AdBlockTest.results.length > 0) renderAdBlockResults();
   else renderAdBlockIdle();
   if (lastCustomTests) renderCustomUrlResults(lastCustomTests);

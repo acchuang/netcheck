@@ -1,45 +1,67 @@
-// Feature 3: deep blocker identification.
-// Reliable signals: Brave (navigator.brave), browser built-in tracking protection.
-// Best-effort: probe known extension web-accessible resources (time-boxed).
-// Falls back to inferring from filter-list detection results.
+import { isNetworkOnlyFiltering, type SplitScore } from "../shared/adblock-score.ts";
+import type { Score } from "./adblock-test.ts";
+
+// Positive-evidence-only blocker identification:
+// - If too many probes timed out (score === null), report nothing rather than guessing.
+// - If 0 probes were blocked, state "none detected" even on Brave (Shields may be down).
+// - Only identify Brave Shields when navigator.brave is true AND blocking occurred.
+// - Otherwise classify strictly by observed hosts vs. cosmetics evidence.
 export interface BlockerFingerprint {
-  name: string;
+  kind: "none" | "brave" | "dns" | "extension" | "network";
+  nameKey: string;
   confidence: "high" | "medium" | "low";
-  source: string; // how it was detected
+  sourceKey: string;
 }
 
-export async function detectBlocker(filterListNames: string[]): Promise<BlockerFingerprint> {
-  // 1. Brave Shields — reliable via navigator.brave
+export async function detectBlocker(evidence: {
+  score: Score;
+  split: SplitScore;
+}): Promise<BlockerFingerprint | null> {
+  if (evidence.score.score === null) return null;
+
+  if (evidence.score.blocked === 0) {
+    return {
+      kind: "none",
+      nameKey: "adblock.fp.none",
+      confidence: "high",
+      sourceKey: "adblock.fp.src.probes",
+    };
+  }
+
   try {
     const nav = navigator as Navigator & { brave?: { isBrave: () => Promise<boolean> } };
     if (nav.brave && await nav.brave.isBrave()) {
-      return { name: "Brave Shields", confidence: "high", source: "navigator.brave" };
+      return {
+        kind: "brave",
+        nameKey: "adblock.fp.brave",
+        confidence: "high",
+        sourceKey: "adblock.fp.src.brave",
+      };
     }
   } catch { /* ignore */ }
 
-  // 2. Best-effort extension probes — web-accessible resources (time-boxed 1.2s)
-  const probe = async (url: string): Promise<boolean> => {
-    try {
-      const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(1200), cache: "no-store" });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  };
-
-  // Known Chrome Web Store IDs (stable). uBO: cjpalhdlnbpafiamejdnhcphjbkeiagm
-  // ponytail: these may 404 across origins, hence "low" confidence; best-effort only
-  const uboOk = await probe("chrome-extension://cjpalhdlnbpafiamejdnhcphjbkeiagm/img/icon_64.png");
-  if (uboOk) return { name: "uBlock Origin", confidence: "high", source: "extension resource" };
-
-  // 3. Infer from detected filter lists
-  const has = (n: string) => filterListNames.some((f) => f.toLowerCase().includes(n.toLowerCase()));
-  if (has("uBlock Filters")) return { name: "uBlock Origin / uBlock", confidence: "medium", source: "filter list inference" };
-  if (has("AdGuard")) return { name: "AdGuard", confidence: "medium", source: "filter list inference" };
-  if (has("EasyList") && !has("uBlock") && !has("AdGuard")) {
-    return { name: "Adblock Plus / generic EasyList blocker", confidence: "medium", source: "filter list inference" };
+  if (isNetworkOnlyFiltering(evidence.split)) {
+    return {
+      kind: "dns",
+      nameKey: "adblock.fp.dns",
+      confidence: "medium",
+      sourceKey: "adblock.fp.src.split",
+    };
   }
 
-  // 4. No lists detected + tests show blocking → likely browser-native (Firefox ETP / Safari ITP)
-  return { name: "Browser-native / unknown", confidence: "low", source: "fallback" };
+  if (evidence.split.cosmetics.blocked > 0) {
+    return {
+      kind: "extension",
+      nameKey: "adblock.fp.extension",
+      confidence: "medium",
+      sourceKey: "adblock.fp.src.cosmetic",
+    };
+  }
+
+  return {
+    kind: "network",
+    nameKey: "adblock.fp.network",
+    confidence: "low",
+    sourceKey: "adblock.fp.src.network",
+  };
 }

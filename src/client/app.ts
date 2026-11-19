@@ -8,7 +8,6 @@ import { initSnapshots } from "./snapshots.ts";
 import { initAdblockHistory } from "./adblock-history.ts";
 import { renderSkeletonRows } from "./ui-utils.ts";
 import { startAdBlock, initAdblockUI, renderAdBlockIdle, refreshAdblockLocaleTexts } from "./adblock-ui.ts";
-import { refreshFilterDetectLocaleTexts } from "./filter-detect-ui.ts";
 import { initSpeedTest, startSpeedTab, refreshSpeedLocaleTexts } from "./speed-ui.ts";
 
 // i18n first: initTheme renders the theme menu through t(), and onLocaleChange
@@ -137,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshSpeedLocaleTexts();
   onLocaleChange(() => {
     refreshAdblockLocaleTexts();
-    refreshFilterDetectLocaleTexts();
     refreshSpeedLocaleTexts();
   });
 });

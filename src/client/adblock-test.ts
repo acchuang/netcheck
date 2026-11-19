@@ -90,7 +90,6 @@ export interface Score {
 // blocker, and no headline number is better than a confident wrong one.
 export const UNCERTAIN_LIMIT = 0.25;
 
-// Minimal shape shared with filter-lists.ts probes.
 interface ProbeTarget {
   type: string;
   url?: string;
@@ -109,11 +108,17 @@ export function hiddenTestContainer(): HTMLDivElement {
 
 export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<TestResult> {
   return new Promise((resolve) => {
+    let settled = false;
     const timeout = setTimeout(
-      () => resolve({ blocked: false, uncertain: true, method: "timeout" }),
+      () => settle({ blocked: false, uncertain: true, method: "timeout" }),
       3000
     );
-    const settle = (r: TestResult) => { clearTimeout(timeout); resolve(r); };
+    const settle = (r: TestResult) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(r);
+    };
 
     switch (test.type) {
       // Same script-typed request as a <script> tag — Sec-Fetch-Dest: script, so
@@ -133,14 +138,27 @@ export function probeTest(test: ProbeTarget, container: HTMLElement): Promise<Te
         container.appendChild(link);
         break;
       }
-      case "image":
       case "pixel": {
+        // Tracking pixels often answer 200 with 0 bytes of text/plain (e.g.
+        // /tr?id=0), which causes <img> decode to fire onerror even unblocked.
+        fetch(test.url!, {
+          mode: "no-cors",
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000),
+        })
+          .then(() => settle({ blocked: false, method: "loaded" }))
+          .catch((err) => {
+            if (err instanceof DOMException && err.name === "TimeoutError") {
+              settle({ blocked: false, uncertain: true, method: "timeout" });
+            } else {
+              settle({ blocked: true, method: "network" });
+            }
+          });
+        break;
+      }
+      case "image": {
         const el = document.createElement("img");
         el.src = test.url!;
-        if (test.type === "pixel") {
-          el.width = 1;
-          el.height = 1;
-        }
         el.onload = () => settle({ blocked: false, method: "loaded" });
         el.onerror = () => settle({ blocked: true, method: "network" });
         container.appendChild(el);
@@ -202,7 +220,7 @@ export const AdBlockTest = {
         { name: "Hotjar", type: "script", url: "https://static.hotjar.com/c/hotjar-0.js?sv=0" },
         { name: "Yandex Metrica", type: "script", url: "https://mc.yandex.ru/metrika/watch.js" },
         { name: "Mixpanel", type: "script", url: "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" },
-        { name: "Segment", type: "script", url: "https://cdn.segment.com/analytics.js/v1/test/analytics.min.js" },
+        { name: "Scorecard Research", type: "script", url: "https://sb.scorecardresearch.com/beacon.js" },
       ],
     },
     {
@@ -232,7 +250,7 @@ export const AdBlockTest = {
         { name: "Facebook SDK", type: "script", url: "https://connect.facebook.net/en_US/sdk.js" },
         { name: "Twitter widgets", type: "script", url: "https://platform.twitter.com/widgets.js" },
         { name: "LinkedIn Insight", type: "script", url: "https://snap.licdn.com/li.lms-analytics/insight.min.js" },
-        { name: "TikTok Pixel", type: "pixel", url: "https://analytics.tiktok.com/i18n/pixel/events.js" },
+        { name: "TikTok Pixel", type: "script", url: "https://analytics.tiktok.com/i18n/pixel/events.js" },
       ],
     },
     // No "Fingerprint Protection" category: it claimed to measure whether the
@@ -261,19 +279,19 @@ export const AdBlockTest = {
     this.results = [];
     const container = hiddenTestContainer();
 
-    for (const category of this.categories) {
-      const catResults: CategoryResult = { name: category.name, importance: category.importance, tests: [] };
-
-      for (const test of category.tests) {
-        const result = await probeTest(test, container);
-        catResults.tests.push({ ...test, ...result } as TestWithResult);
-      }
-
-      this.results.push(catResults);
+    try {
+      this.results = await Promise.all(
+        this.categories.map(async (category) => {
+          const tests = await Promise.all(
+            category.tests.map(async (test) => ({ ...test, ...(await probeTest(test, container)) }) as TestWithResult)
+          );
+          return { name: category.name, importance: category.importance, tests };
+        })
+      );
+      return this.results;
+    } finally {
+      container.remove();
     }
-
-    container.remove();
-    return this.results;
   },
 
   // Feature 1: test a user-supplied URL as script + image

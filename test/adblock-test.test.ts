@@ -4,7 +4,9 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance } from "../src/client/adblock-test.ts";
+import { AdBlockTest, IMPORTANCE_WEIGHT, type CategoryResult, type Importance, type Score } from "../src/client/adblock-test.ts";
+import { detectBlocker } from "../src/client/blocker-fingerprint.ts";
+import type { SplitScore } from "../src/shared/adblock-score.ts";
 
 function category(name: string, importance: Importance, blocked: boolean[]): CategoryResult {
   return {
@@ -107,4 +109,131 @@ test("uncertain probes leave the denominator instead of counting as passes", () 
   assert.equal(ok.score, 75);
   assert.equal(ok.total, 4);
   assert.equal(ok.uncertain, 1);
+});
+
+async function withNavigator<T>(nav: unknown, fn: () => Promise<T>): Promise<T> {
+  const desc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", {
+    value: nav,
+    configurable: true,
+    writable: true,
+  });
+  try {
+    return await fn();
+  } finally {
+    if (desc) Object.defineProperty(globalThis, "navigator", desc);
+    else delete (globalThis as Record<string, unknown>).navigator;
+  }
+}
+
+function makeScore(over: Partial<Score>): Score {
+  return {
+    score: 0,
+    total: 10,
+    blocked: 0,
+    passed: 10,
+    uncertain: 0,
+    tooUncertain: false,
+    ...over,
+  };
+}
+
+function makeSplit(hostsBlocked: number, hostsTotal: number, cosBlocked: number, cosTotal: number): SplitScore {
+  return {
+    hosts: {
+      blocked: hostsBlocked,
+      total: hostsTotal,
+      pct: hostsTotal > 0 ? Math.round((hostsBlocked / hostsTotal) * 100) : 0,
+    },
+    cosmetics: {
+      blocked: cosBlocked,
+      total: cosTotal,
+      pct: cosTotal > 0 ? Math.round((cosBlocked / cosTotal) * 100) : 0,
+    },
+  };
+}
+
+test("detectBlocker returns null when the score is inconclusive", async () => {
+  const res = await withNavigator({}, () =>
+    detectBlocker({
+      score: makeScore({ score: null, total: 0, blocked: 0, passed: 0, uncertain: 10, tooUncertain: true }),
+      split: makeSplit(0, 0, 0, 0),
+    })
+  );
+  assert.equal(res, null);
+});
+
+test("detectBlocker reports none detected when 0 probes were blocked, even on Brave", async () => {
+  const res = await withNavigator({ brave: { isBrave: async () => true } }, () =>
+    detectBlocker({
+      score: makeScore({ score: 0, total: 18, blocked: 0, passed: 18 }),
+      split: makeSplit(0, 10, 0, 8),
+    })
+  );
+  assert.deepEqual(res, {
+    kind: "none",
+    nameKey: "adblock.fp.none",
+    confidence: "high",
+    sourceKey: "adblock.fp.src.probes",
+  });
+});
+
+test("detectBlocker identifies Brave Shields only when navigator.brave is true and blocking occurred", async () => {
+  const res = await withNavigator({ brave: { isBrave: async () => true } }, () =>
+    detectBlocker({
+      score: makeScore({ score: 85, total: 18, blocked: 15, passed: 3 }),
+      split: makeSplit(9, 10, 6, 8),
+    })
+  );
+  assert.deepEqual(res, {
+    kind: "brave",
+    nameKey: "adblock.fp.brave",
+    confidence: "high",
+    sourceKey: "adblock.fp.src.brave",
+  });
+});
+
+test("detectBlocker identifies DNS/hosts filtering from network-only split", async () => {
+  const res = await withNavigator({}, () =>
+    detectBlocker({
+      score: makeScore({ score: 65, total: 18, blocked: 9, passed: 9 }),
+      split: makeSplit(9, 10, 0, 8),
+    })
+  );
+  assert.deepEqual(res, {
+    kind: "dns",
+    nameKey: "adblock.fp.dns",
+    confidence: "medium",
+    sourceKey: "adblock.fp.src.split",
+  });
+});
+
+test("detectBlocker identifies a browser extension when cosmetic hiding is observed", async () => {
+  const res = await withNavigator({}, () =>
+    detectBlocker({
+      score: makeScore({ score: 80, total: 18, blocked: 14, passed: 4 }),
+      split: makeSplit(9, 10, 5, 8),
+    })
+  );
+  assert.deepEqual(res, {
+    kind: "extension",
+    nameKey: "adblock.fp.extension",
+    confidence: "medium",
+    sourceKey: "adblock.fp.src.cosmetic",
+  });
+});
+
+test("detectBlocker falls back to low-confidence network/tracker blocker for partial network blocking", async () => {
+  const res = await withNavigator({}, () =>
+    detectBlocker({
+      score: makeScore({ score: 25, total: 18, blocked: 3, passed: 15 }),
+      split: makeSplit(3, 10, 0, 8),
+    })
+  );
+  assert.deepEqual(res, {
+    kind: "network",
+    nameKey: "adblock.fp.network",
+    confidence: "low",
+    sourceKey: "adblock.fp.src.network",
+  });
 });

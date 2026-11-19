@@ -2,7 +2,21 @@
 import { AdBlockTest } from "./adblock-test.ts";
 import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
 import { html, setHtml, type Safe } from "./html.ts";
-import { onLocaleChange } from "./i18n.ts";
+import { onLocaleChange, t } from "./i18n.ts";
+
+const CAT_SHORT_KEY: Record<string, string> = {
+  "Contextual Advertising": "adblock.catShort.contextual",
+  "Analytics & Tracking": "adblock.catShort.analytics",
+  "Banner & Display Ads": "adblock.catShort.banner",
+  "Error Monitoring & Dev Tools": "adblock.catShort.devtools",
+  "Social Media Trackers": "adblock.catShort.social",
+  "Cookie Consent & Annoyances": "adblock.catShort.annoyances",
+};
+
+function shortCatLabel(name: string): string {
+  const key = CAT_SHORT_KEY[name];
+  return key ? t(key) : name.split(" ")[0];
+}
 
 interface AdblockSnapshot {
   ts: number;
@@ -92,7 +106,7 @@ function renderHistory(): void {
         <span class="snap-time">${time}</span>
         <span class="snap-val snap-score" data-state="${levelFor(s.score)}">${s.score}/100 ${scoreDelta}</span>
         <span class="snap-val">${s.blocked}/${s.total} ${isLatest ? fmtDelta(s.blocked, prev?.blocked) : ""}</span>
-        <span class="snap-val snap-colo">${s.cats.map((c) => `${c.name.split(" ")[0]}:${c.pct}%`).join(" ")}</span>
+        <span class="snap-val snap-colo">${s.cats.map((c) => `${shortCatLabel(c.name)}:${c.pct}%`).join(" ")}</span>
       </div>`;
     })}`);
 }

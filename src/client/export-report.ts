@@ -1,7 +1,6 @@
 import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test.ts";
 import { t } from "./i18n.ts";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
-import { FilterListDetector, type FilterListResult } from "./filter-lists.ts";
 import { escapeHtml } from "./html.ts";
 import { getDnsReport } from "./dns-check.ts";
 import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, tellRows, type RowStatus } from "./dns-report.ts";
@@ -42,7 +41,6 @@ interface SpeedData {
 interface AdBlockData {
   score: Score | null;
   results: CategoryResult[];
-  filterLists: FilterListResult[];
 }
 
 interface ReportData {
@@ -87,13 +85,10 @@ export const ReportExporter = {
     };
 
     // Ad Block
-    const adblock: AdBlockData = { score: null, results: [], filterLists: [] };
+    const adblock: AdBlockData = { score: null, results: [] };
     if (AdBlockTest.results.length > 0) {
       adblock.score = AdBlockTest.getScore();
       adblock.results = AdBlockTest.results;
-    }
-    if (FilterListDetector.results.length > 0) {
-      adblock.filterLists = FilterListDetector.results;
     }
 
     return {
@@ -207,17 +202,6 @@ export const ReportExporter = {
       });
     } else {
       ln("*Ad block test results not available.*");
-    }
-
-    if (data.adblock.filterLists.length > 0) {
-      ln("### Detected Filter Lists");
-      ln("| Filter List | Status |");
-      ln("|-------------|--------|");
-      data.adblock.filterLists.forEach((fl) => {
-        const status = fl.detected ? "\u2705 Detected" : "\u2014 Not found";
-        ln(`| ${fl.name} | ${status} |`);
-      });
-      ln();
     }
 
     ln("---");
