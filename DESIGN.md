@@ -140,7 +140,7 @@ components:
 
 NetCheck is a challenger-anime command wall reading one connection. Every tab is a station: a schematic of the path on the left, a readout panel on the right, both hung in cut-corner frames on absolute black. Phosphor-orange rules draw the structure; state colour is the only other voice, and it is earned. Green means a reading passed or a station is active, yellow means warn, red means a failure that was actually observed. Anything the page cannot see sits in 待機 STANDBY: dim, hatched, never red.
 
-The wall is dense but ordered. Headline readings are seven-segment digits, labels stack zh-TW over tracked roman caps, data is monospace. Motion is an instrument's: linear steps and short ease-outs, a scan cursor that ticks hop to hop and locks each hop to its state colour on arrival, never a bounce. Under reduced motion every animation collapses to an instant.
+The wall is dense but ordered. Headline readings are seven-segment digits, labels render in the active locale only (zh-TW or tracked EN caps), and data is monospace. Motion is an instrument's: linear steps and short ease-outs, a scan cursor that ticks hop to hop and locks each hop to its state colour on arrival, never a bounce. Under reduced motion every animation collapses to an instant.
 
 It rejects the category default, a stack of rounded result cards under a score donut. There are no rounded corners anywhere in the system and no light theme.
 
@@ -176,7 +176,7 @@ A black-glass wall with one ink (phosphor orange) and three signal colours that 
 - **Standby Grey** (`standby-grey`): unobservable readings, always paired with the 135° hatch.
 
 ### High Contrast theme
-`[data-theme="contrast"]` keeps the wall and lifts it: ink tiers go to #ffffff through #dcdcdc, rules become opaque greys (#6b6b6b subtle, #b5b5b5 standard, #ffffff solid), orange brightens (brand #ff7a1a, accent #ff8a33), standby goes to #d0d0d0, panels drop to pure black, scanlines turn off and the hatch goes opaque. Green, yellow and red do not change. No other theme exists; any stored value other than `contrast` resolves to the Wall.
+`[data-theme="contrast"]` keeps the wall and lifts it: ink tiers go to #ffffff through #dcdcdc, rules become opaque greys (#6b6b6b subtle, #b5b5b5 standard, #ffffff solid), orange brightens (brand #ff7a1a, accent #ff8a33), standby goes to #d0d0d0, panels drop to pure black, scanlines turn off and the hatch turns off (`--hatch: none`), replaced by crisp dashed borders so standby text stays readable. Green, yellow and red do not change. No other theme exists; any stored value other than `contrast` resolves to the Wall.
 
 ### Named Rules
 **The Earned Red Rule.** Red appears only on a failure that was observed. Unknown is standby grey with a hatch, never red, never yellow.
@@ -186,14 +186,14 @@ A black-glass wall with one ink (phosphor orange) and three signal colours that 
 ## Typography
 
 **Display Font:** Chakra Petch 500/700 (falls back to the CJK stack)
-**CJK Title Face:** "Noto Sans TC Display" 900, a 4 KB subset of the tab-title glyphs only
+**CJK Title Face:** "Noto Sans TC Display" 900, a ~4.5 KB subset covering every zh-TW tab-title glyph (including 工具)
 **Data Font:** JetBrains Mono 400/700
 **Readout Font:** DSEG7 Classic Bold (falls back to JetBrains Mono)
 
 **Character:** A squared, techno sans for the wall's voice, a hard mono for raw data, and a seven-segment face for the numbers that matter. Chinese sets in the system CJK face, except the tab titles, which use the heavy subset.
 
 ### Hierarchy
-- **Display** (900, clamp(34px, 4.6vw, 60px), 1.05, uppercase): the tab title in the active locale. EN renders at Chakra Petch 700 in caps. The zh-TW glyphs come from the Noto Sans TC Display subset; a new character in a title falls back to the system CJK face (`--font-cjk`), so re-subset the font when a title changes.
+- **Display** (900, clamp(34px, 4.6vw, 60px), 1.05, uppercase): the tab title in the active locale. EN renders at Chakra Petch 700 in caps. The zh-TW glyphs come from the Noto Sans TC Display subset (including 工具); a new character in a title falls back to the system CJK face (`--font-cjk`), so re-subset the font when a title changes.
 - **Readout** (DSEG7 700, 52px; 28px small, 22px under 720px): headline readings such as fastest resolver latency, download, upload, grades. Placeholder is `---` in standby grey, never zeros.
 - **Title** (700, 16px, 0.06em, uppercase): frame titles. Hop and route keys use 18px, readout labels 13px, nav tabs 13px (12px on the bottom bar). One line, active locale only.
 - **Body** (Chakra Petch, 14px, 1.55, tabular and slashed-zero numerals): prose, capped at 68 to 72ch.
@@ -207,11 +207,11 @@ A black-glass wall with one ink (phosphor orange) and three signal colours that 
 
 A 1320px max container, 24px gutters (16px under 768px). Each tab opens with a title block over a subtle rule (32px below), then a station: a two-column grid, schematic 2fr and readout panel 1fr (min 300px), 16px gap. Supporting frames follow in an auto-fit grid of min 340px columns, 16px gap. Inside frames, the rhythm is 16px by 20px padding with 1px subtle dividers between sections.
 
-**DNS path.** Five hops (You, Router, ISP, Resolver, Edge) share a three-row grid: labels above, a 40px track row, labels below. Hops alternate: odd hops hang their card above the track, even hops below, each tied to its 20px node by a 36px leader line in the hop colour. The track is a 1px orange line from first node to last.
+**DNS path.** Four hops (You, ISP, Resolver, Edge) share a two-row grid: hop cards above and a 32px track row below, with 20px nodes centered on a 1px orange track line from first node to last.
 
 **Speed route.** The same grammar with two ends (You, Server): 20px nodes at either end of a 1px track, distance printed mid-track. Each end hangs a hop-style card on a 36px leader line, the You card reading ISP, AS and city, the Server card reading location and probe latency.
 
-**Responsive.** At 1024px and below the station stacks and the readout panel moves first, so the verdict and the Run button precede the path. At 1000px and below the nav tabs become a fixed bottom bar. At 720px and below the path becomes a vertical rail: nodes in a 28px left column, every hop card to the right with a left state edge, leader lines removed; the scan cursor travels vertically. Touch targets are 44px minimum under 768px.
+**Responsive.** At 1024px and below the station stacks and the readout panel moves first on DNS, Speed, and Ad Block so the verdict and Run button precede the path; Tools keeps the scan form schematic first (`order: 0`) so mobile visitors reach the URL input before the standby verdict. At 1000px and below the nav tabs become a fixed bottom bar. At 720px and below the path becomes a vertical rail: nodes in a 28px left column, every hop card to the right with a left state edge; the scan cursor travels vertically. Touch targets are 44px minimum under 768px.
 
 ## Elevation & Depth
 
@@ -275,7 +275,7 @@ The answer before the evidence: a panel whose rule, icon box and grade take the 
 
 ### Do:
 - **Do** route every state through `[data-state]` and `--hop-color`; the same six states on every tab.
-- **Do** mark anything unobservable as standby: grey, hatched, dashed, with `---` placeholders rather than zeros.
+- **Do** mark anything unobservable as standby: grey, hatched, dashed, with `---` placeholders rather than zeros (crisp dashed borders without hatching in High Contrast).
 - **Do** show every string in the active locale only via `t()`; never stack both languages.
 - **Do** write zh-TW copy with 您, without em dashes, using 解析器, 探測, 公共解析器, 觀察 and 本站.
 - **Do** keep motion to linear steps and short ease-outs, and let reduced motion collapse it.

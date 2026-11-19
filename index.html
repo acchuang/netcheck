@@ -324,6 +324,7 @@
             <input type="url" id="speed-custom-url" class="input" placeholder="https://your-worker.example.com" aria-label="Custom speed test server URL" />
             <p class="info-muted" id="speed-custom-url-hint" data-i18n="speed.customUrlHint">Must implement /api/speedtest/{ping,down,up}</p>
           </div>
+          <p class="panel-note" id="speed-privacy-note" data-i18n="speed.privacyNote">Speed traffic goes directly from your browser to the selected server (our Worker or speed.cloudflare.com).</p>
           <div class="speed-graph-card" id="speed-graph-card" data-i18n-attr="data-standby:state.standby">
             <div class="speed-graph-header">
               <h3 class="readout-label" id="speed-graph-title-text" data-i18n="speed.graphTitle">Speed Over Time</h3>
@@ -496,6 +497,7 @@
             <input type="text" id="headers-url-input" class="input input-wide" placeholder="example.com" value="" aria-label="Target website URL for security headers scan">
             <button id="headers-check-btn" data-i18n="headers.scan" class="btn btn-primary">Scan</button>
           </div>
+          <p class="panel-note" id="tools-privacy-note" data-i18n="tools.privacyNote">Scanned URLs and DNS queries are fetched via our Cloudflare Worker (rate-limited per IP, not stored).</p>
           <div class="empty-state" id="headers-empty">
             <p class="empty-state-title" id="headers-empty-title" data-i18n="headers.emptyTitle">No site scanned yet</p>
             <p class="empty-state-desc" id="headers-empty-desc" data-i18n="headers.emptyDesc">Enter a URL above to check its response headers for XSS, clickjacking, and MIME-sniffing protection. Or start with one of these:</p>
@@ -595,7 +597,7 @@
     <section id="about" class="section" aria-labelledby="about-title">
       <div class="section-header">
         <h1 class="display" id="about-title" data-i18n="about.title">About NetCheck</h1>
-        <p class="subtitle" id="about-subtitle" data-i18n="about.subtitle">A browser-based network diagnostics toolkit. No installs, no accounts, nothing leaves your device except the checks themselves</p>
+        <p class="subtitle" id="about-subtitle" data-i18n="about.subtitle">A browser-based network diagnostics toolkit. No installs, no accounts. What stays local and what leaves this browser are listed below.</p>
       </div>
 
       <div class="station">
@@ -618,7 +620,7 @@
               <dd id="about-feat-adblock-desc" data-i18n="about.feat.adblock.desc"></dd>
             </div>
             <div class="about-tool">
-              <dt class="readout-label" id="about-feat-headers-title" data-i18n="about.feat.headers.title">Security Headers</dt>
+              <dt class="readout-label" id="about-feat-headers-title" data-i18n="about.feat.headers.title">Tools</dt>
               <dd id="about-feat-headers-desc" data-i18n="about.feat.headers.desc"></dd>
             </div>
           </dl>
@@ -633,8 +635,12 @@
             <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-fp" data-i18n="about.ledger.fp"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
             <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-history" data-i18n="about.ledger.history"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
             <li class="condition" data-state="pass"><span class="condition-label" id="about-ledger-export" data-i18n="about.ledger.export"></span><span class="condition-state" data-i18n="about.ledger.local"></span></li>
-            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-headers" data-i18n="about.ledger.headers"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
-            <li class="condition" data-state="seen" data-probe-only><span class="condition-label" id="about-ledger-probe" data-i18n="about.ledger.probe"></span><span class="condition-state" data-i18n="about.ledger.sent"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-edge" data-i18n="about.ledger.edge"></span><span class="condition-state" data-i18n="about.ledger.worker"></span></li>
+            <li class="condition" data-state="seen"><span class="condition-label" id="about-ledger-tools" data-i18n="about.ledger.tools"></span><span class="condition-state" data-i18n="about.ledger.worker"></span></li>
+            <li class="condition" data-state="seen" data-probe-only><span class="condition-label" id="about-ledger-probe" data-i18n="about.ledger.probe"></span><span class="condition-state" data-i18n="about.ledger.worker"></span></li>
+            <li class="condition" data-state="warn"><span class="condition-label" id="about-ledger-dns-third" data-i18n="about.ledger.dnsThirdParty"></span><span class="condition-state" data-i18n="about.ledger.thirdParty"></span></li>
+            <li class="condition" data-state="warn"><span class="condition-label" id="about-ledger-speed-third" data-i18n="about.ledger.speedThirdParty"></span><span class="condition-state" data-i18n="about.ledger.thirdParty"></span></li>
+            <li class="condition" data-state="warn"><span class="condition-label" id="about-ledger-adblock-third" data-i18n="about.ledger.adblockThirdParty"></span><span class="condition-state" data-i18n="about.ledger.thirdParty"></span></li>
           </ul>
           <p class="panel-note about-privacy" id="about-privacy-desc" data-i18n="about.privacy.desc"></p>
         </div>
@@ -644,7 +650,7 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-text" id="footer-text" data-i18n="footer.text">NetCheck - DNS & Ad Block diagnostics. Tests run in your browser, except the few described under About.</p>
+    <p class="footer-text" id="footer-text" data-i18n="footer.text">NetCheck — browser-based DNS, speed, ad-block &amp; header diagnostics. See About for what leaves this browser.</p>
     <a href="#about" class="footer-link" data-show="about" data-i18n="footer.about">About &amp; privacy</a>
     <a href="https://github.com/acchuang/netcheck" target="_blank" rel="noopener noreferrer" class="footer-link">
       <svg class="footer-gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>

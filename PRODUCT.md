@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Privacy-minded tinkerers: people who have set up — or are about to set up — Pi-hole, NextDNS, AdGuard, a browser DoH setting, a VPN, or an ad blocker, and want evidence that the setup does what they think it does. They know or want to learn terms like ECS, DNSSEC, DoH, bufferbloat, and filter lists. They typically run the checks after changing something, compare against a previous run, and dig into a single result rather than skim a score.
+Privacy-minded tinkerers: people who have set up — or are about to set up — Pi-hole, NextDNS, AdGuard, a browser DoH setting, a VPN, or an ad blocker, and want evidence that the setup does what they think it does. They know or want to learn terms like ECS, DNSSEC, DoH, bufferbloat, and cosmetic vs. network blocking. They typically run the checks after changing something, compare against a previous run, and dig into a single result rather than skim a score.
 
 Non-technical visitors and helpdesk-style link sharing are not the primary audience; plain-language explanation is still expected alongside the jargon, not instead of it.
 
@@ -34,7 +34,7 @@ A combination, none of which neighbouring single-purpose tools (dnsleaktest, fas
 ## Capabilities and Constraints
 
 - Hosted on Cloudflare Workers; the public site is `netcheck.oilygold.xyz`.
-- What the public site can prove comes from the browser and Cloudflare's edge: public IP/ASN/location/PoP, reachability and DNSSEC/ECS behaviour of 8 named public resolvers probed over DoH, malware-domain filtering via the visitor's own resolver, WebRTC leaks.
+- What the public site can prove comes from the browser and Cloudflare's edge: dual-stack IPv4/IPv6 public addresses, ASN/location/PoP, reachability and DNSSEC/ECS behaviour of 8 named public resolvers probed over DoH, DNSSEC validation on the visitor's own resolver via paired live HTTPS probes, malware-domain filtering via the visitor's own resolver, and WebRTC leaks.
 - **It cannot see the visitor's actual recursive resolver.** The recursion-path probe (`probe-server/`, a self-hosted authoritative nameserver) is optional for self-hosters; the public site runs one (an Oracle Cloud VM). Designs must still be fully meaningful without it and must not imply resolver observation when it is absent.
 - Server-side fan-out (headers scan, resolver compare, DNS lookup) goes through the Worker and is per-IP rate-limited.
 - No accounts, no analytics on user results, no server-side storage of results.
