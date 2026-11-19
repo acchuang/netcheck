@@ -2792,6 +2792,14 @@ select option {
   color: var(--text-tertiary);
 }
 
+.header-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--hop-color, var(--text-tertiary));
+}
+
 .header-value {
   font-family: var(--font-mono);
   font-size: 12px;

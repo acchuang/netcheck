@@ -30,9 +30,26 @@ export async function runDnsCompare(): Promise<void> {
 
   try {
     const res = await fetch(`/api/dns/compare?domain=${encodeURIComponent(domain)}`);
-    lastCompare = await res.json();
-    renderCompareResults(lastCompare!);
+    if (!res.ok) {
+      lastCompare = null;
+      const msg = res.status === 429
+        ? t("dns.err.rateLimit")
+        : res.status === 400
+          ? t("dns.err.invalidInput")
+          : t("dns.failed");
+      setHtml(container, html`<p class="error-message">${msg}</p>`);
+      return;
+    }
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) {
+      lastCompare = null;
+      setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
+      return;
+    }
+    lastCompare = data as CompareResult[];
+    renderCompareResults(lastCompare);
   } catch {
+    lastCompare = null;
     setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
   }
 }
@@ -75,14 +92,22 @@ export async function runDomainHealthCheck(): Promise<void> {
       DnsCheck.lookupDns(`_dmarc.${domain}`, "TXT"),
       selector ? DnsCheck.lookupDns(`${selector}._domainkey.${domain}`, "TXT") : Promise.resolve(null),
     ]);
-    lastHealth = [mx, txt, dmarc, dkim, selector];
+    const firstErr = [mx, txt, dmarc, dkim].find((r) => r?.transportError);
+    if (firstErr) {
+      lastHealth = null;
+      setHtml(container, html`<p class="error-message">${firstErr.error || t("dns.failed")}</p>`);
+      return;
+    }
+    lastHealth = [domain, mx, txt, dmarc, dkim, selector];
     renderHealthResults(...lastHealth);
   } catch {
+    lastHealth = null;
     setHtml(container, html`<p class="error-message">${t("dns.failed")}</p>`);
   }
 }
 
 function renderHealthResults(
+  domain: string,
   mx: DnsResult,
   txt: DnsResult,
   dmarc: DnsResult,
@@ -91,6 +116,11 @@ function renderHealthResults(
 ): void {
   const container = document.getElementById("dns-health-results")!;
   container.innerHTML = "";
+
+  if (mx.Status === 3 && txt.Status === 3) {
+    container.appendChild(createCheckItem("fail", domain, t("dns.err.nxdomain", domain)));
+    return;
+  }
 
   const mxHosts = (mx.Answer || []).filter((a) => a.type === 15);
   if (mxHosts.length === 0) {
@@ -150,15 +180,9 @@ export async function runDnsLookup(): Promise<void> {
   setHtml(tableEl, html`<p class="info-muted">${t("dns.lookupLoading")}</p>`);
   outputEl.textContent = "...";
 
-  let allData: Record<string, any>;
-  if (type === "ALL") {
-    const types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
-    const results = await Promise.all(types.map((rt) => DnsCheck.lookupDns(domain, rt)));
-    allData = {};
-    types.forEach((rt, i) => { allData[rt] = results[i]; });
-  } else {
-    allData = { [type]: await DnsCheck.lookupDns(domain, type) };
-  }
+  const allData: Record<string, any> = type === "ALL"
+    ? await DnsCheck.lookupAllDns(domain)
+    : { [type]: await DnsCheck.lookupDns(domain, type) };
 
   lastLookup = { domain, data: allData };
   renderLookupResults(domain, allData);

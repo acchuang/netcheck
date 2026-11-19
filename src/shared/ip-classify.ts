@@ -88,6 +88,20 @@ export function ipFamily(ip: string): 4 | 6 | null {
   return bytes.length === 4 ? 4 : 6;
 }
 
+export function toReversePtrName(ip: string): string | null {
+  const bytes = ipBytes(ip);
+  if (!bytes) return null;
+  if (bytes.length === 4) {
+    return `${[...bytes].reverse().join(".")}.in-addr.arpa`;
+  }
+  const nibbles: string[] = [];
+  for (let i = bytes.length - 1; i >= 0; i--) {
+    nibbles.push((bytes[i] & 0x0f).toString(16));
+    nibbles.push((bytes[i] >> 4).toString(16));
+  }
+  return `${nibbles.join(".")}.ip6.arpa`;
+}
+
 export function sameIp(a: string | null | undefined, b: string | null | undefined): boolean {
   if (!a || !b) return false;
   const x = ipBytes(a);

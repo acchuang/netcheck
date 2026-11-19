@@ -1,14 +1,40 @@
 import { SpeedTest, type SpeedTestResults, type SpeedGrade } from "./speed-test.ts";
-import { t } from "./i18n.ts";
+import { t, getLocale } from "./i18n.ts";
 import { AdBlockTest, type CategoryResult, type Score } from "./adblock-test.ts";
+import { getSplitScore, type SplitScore } from "../shared/adblock-score.ts";
+import { getLastBlockerFingerprint, getLastFingerprintSignals } from "./adblock-ui.ts";
+import type { BlockerFingerprint } from "./blocker-fingerprint.ts";
+import { summarizeFingerprint, type FingerprintSignal } from "./fingerprint.ts";
+import { getLastHeadersResult, type HeadersResponse } from "./headers-check.ts";
 import { escapeHtml } from "./html.ts";
 import { getDnsReport } from "./dns-check.ts";
 import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, tellRows, type RowStatus } from "./dns-report.ts";
+import { dohVerdict, ipFamily, isIp } from "../shared/ip-classify.ts";
+
+const REPORT_URL = "https://netcheck.oilygold.xyz";
+const DASH = "—";
 
 type CheckStatus = RowStatus;
 
 const statusIcon = (s: CheckStatus): string =>
   s === "pass" ? "\u2705" : s === "fail" ? "\u274C" : s === "info" ? "\u2139\uFE0F" : "\u26A0\uFE0F";
+
+const safeCell = (s: string): string => s.replace(/\|/g, "\\|");
+
+const SERVER_LABEL_KEYS: Record<string, string> = {
+  edge: "speed.server.edge",
+  "cf-speed": "speed.server.cfSpeed",
+  custom: "speed.server.custom",
+};
+
+const CAT_KEY_MAP: Record<string, string> = {
+  "Contextual Advertising": "adblock.cat.contextual",
+  "Analytics & Tracking": "adblock.cat.analytics",
+  "Banner & Display Ads": "adblock.cat.banner",
+  "Error Monitoring & Dev Tools": "adblock.cat.devtools",
+  "Social Media Trackers": "adblock.cat.social",
+  "Cookie Consent & Annoyances": "adblock.cat.annoyances",
+};
 
 interface DnsCheckItem {
   label: string;
@@ -16,12 +42,23 @@ interface DnsCheckItem {
   status: CheckStatus;
 }
 
+interface ObservedResolverItem {
+  ip: string;
+  operator: string;
+  ecs: string;
+  status: CheckStatus;
+}
+
 interface DnsData {
   ip: string;
+  ipv6: string;
   location: string;
   asn: string;
   timezone: string;
   colo: string;
+  http: string;
+  tls: string;
+  observedResolvers: ObservedResolverItem[];
   resolvers: DnsCheckItem[];
   security: DnsCheckItem[];
   tells: DnsCheckItem[];
@@ -30,42 +67,87 @@ interface DnsData {
 }
 
 interface SpeedData {
+  server: string | null;
   download: number | null;
   upload: number | null;
   latency: number | null;
   jitter: number | null;
+  failedProbes: number | null;
+  loadedLatency: number | null;
+  bufferbloatIncrease: number | null;
+  bufferbloatGrade: SpeedGrade | null;
   grade: SpeedGrade | null;
   tested: boolean;
 }
 
 interface AdBlockData {
   score: Score | null;
+  split: SplitScore | null;
+  blocker: BlockerFingerprint | null;
+  fingerprint: { level: ReturnType<typeof summarizeFingerprint>["level"]; signals: FingerprintSignal[] } | null;
   results: CategoryResult[];
 }
 
 interface ReportData {
+  locale: string;
   timestamp: string;
   date: string;
   dns: DnsData;
   speed: SpeedData;
   adblock: AdBlockData;
+  headers: HeadersResponse | null;
 }
 
 export const ReportExporter = {
   collectData(): ReportData {
+    const locale = getLocale();
     const rep = getDnsReport();
-    const f = ipFields(rep.ip);
+    const f = ipFields(rep.ip, rep.ipv4);
     const resolvers = rep.resolvers ?? [];
     const ecs = ecsView(resolvers);
     const item = (r: { label: string; value: string; status: RowStatus }): DnsCheckItem =>
       ({ label: r.label, value: r.value, status: r.status });
 
+    const clientCtx = {
+      ipv4: rep.ipv4 ?? (rep.ip?.ip && ipFamily(rep.ip.ip) === 4 ? rep.ip.ip : null),
+      ipv6: rep.ipv6 ?? (rep.ip?.ip && ipFamily(rep.ip.ip) === 6 ? rep.ip.ip : null),
+    };
+    const observedResolvers: ObservedResolverItem[] = (rep.probe?.resolvers ?? []).map((obs) => {
+      const v = dohVerdict([obs], clientCtx);
+      const operator = v.kind === "encrypted"
+        ? v.operator
+        : v.kind === "isp"
+          ? t("station.isp")
+          : t("dns.observedByNs");
+      const status: CheckStatus = v.kind === "encrypted"
+        ? "pass"
+        : v.kind === "isp"
+          ? "fail"
+          : "warn";
+      return {
+        ip: obs.ip,
+        operator,
+        ecs: obs.ecs ?? t("dns.ecsNo"),
+        status,
+      };
+    });
+
+    const ipv6Text = rep.ipv6
+      ? rep.ipv6
+      : rep.ipv6 === null
+        ? t("dns.ipv6None")
+        : DASH;
+
     const dns: DnsData = {
       ip: f.ip,
+      ipv6: ipv6Text,
       location: f.location,
       asn: f.asn,
       timezone: f.timezone,
       colo: f.colo,
+      http: f.http,
+      tls: f.tls,
+      observedResolvers,
       resolvers: resolverRows(resolvers).map(item),
       security: securityRows(rep.security ?? []).map((r) => item({ ...r, value: r.sublabel ?? r.value })),
       tells: tellRows(rep.tells ?? []).map((r) => item({ ...r, label: `${r.label} (${r.value})`, value: r.sublabel ?? "" })),
@@ -73,30 +155,42 @@ export const ReportExporter = {
       ecsSummary: rep.resolvers ? ecsSummary(ecs) : "",
     };
 
-    // Speed
     const sr: SpeedTestResults = SpeedTest.results;
+    const serverKey = sr.serverId ? SERVER_LABEL_KEYS[sr.serverId] : undefined;
+    const baseServer = sr.serverId ? (serverKey ? t(serverKey) : sr.serverId) : null;
+    const server = baseServer ? (sr.colo ? `${baseServer} (${sr.colo})` : baseServer) : null;
+
     const speed: SpeedData = {
+      server,
       download: sr.download,
       upload: sr.upload,
       latency: sr.latency,
       jitter: sr.jitter,
+      failedProbes: sr.failedProbes,
+      loadedLatency: sr.loadedLatency,
+      bufferbloatIncrease: sr.bufferbloatIncrease,
+      bufferbloatGrade: sr.bufferbloatIncrease != null ? SpeedTest.getBufferbloatGrade(sr.bufferbloatIncrease) : null,
       grade: sr.download != null ? SpeedTest.getGrade(sr.download) : null,
-      tested: sr.download != null,
+      tested: sr.download != null || sr.upload != null || sr.latency != null,
     };
 
-    // Ad Block
-    const adblock: AdBlockData = { score: null, results: [] };
-    if (AdBlockTest.results.length > 0) {
-      adblock.score = AdBlockTest.getScore();
-      adblock.results = AdBlockTest.results;
-    }
+    const fpSignals = getLastFingerprintSignals();
+    const adblock: AdBlockData = {
+      score: AdBlockTest.results.length > 0 ? AdBlockTest.getScore() : null,
+      split: AdBlockTest.results.length > 0 ? getSplitScore(AdBlockTest.results) : null,
+      blocker: getLastBlockerFingerprint(),
+      fingerprint: fpSignals ? { level: summarizeFingerprint(fpSignals).level, signals: fpSignals } : null,
+      results: AdBlockTest.results,
+    };
 
     return {
+      locale,
       timestamp: new Date().toISOString(),
-      date: new Date().toLocaleString(),
+      date: new Date().toLocaleString(locale),
       dns,
       speed,
       adblock,
+      headers: getLastHeadersResult(),
     };
   },
 
@@ -104,108 +198,209 @@ export const ReportExporter = {
     const lines: string[] = [];
     const ln = (s: string = "") => lines.push(s);
 
-    ln("# NetCheck Report");
-    ln(`> Generated: ${data.date}`);
+    ln(`# ${t("export.title")}`);
+    ln(`> ${t("export.generated", data.date)}`);
     ln();
 
     // DNS
-    ln("## DNS & Network Check");
+    ln(`## ${t("export.dnsSection")}`);
     ln();
-    ln("### Your IP Address");
-    ln("| Property | Value |");
+    ln(`### ${t("export.ipSection")}`);
+    ln(`| ${t("export.property")} | ${t("export.value")} |`);
     ln("|----------|-------|");
-    ln(`| IPv4 | \`${data.dns.ip}\` |`);
-    ln(`| Location | ${data.dns.location} |`);
-    ln(`| ISP / ASN | ${data.dns.asn} |`);
-    ln(`| Timezone | ${data.dns.timezone} |`);
-    ln(`| Cloudflare PoP | \`${data.dns.colo}\` |`);
+    ln(`| ${t("dns.ipv4")} | ${isIp(data.dns.ip) ? `\`${data.dns.ip}\`` : safeCell(data.dns.ip)} |`);
+    ln(`| ${t("dns.ipv6")} | ${isIp(data.dns.ipv6) ? `\`${data.dns.ipv6}\`` : safeCell(data.dns.ipv6)} |`);
+    ln(`| ${t("dns.location")} | ${safeCell(data.dns.location)} |`);
+    ln(`| ${t("dns.isp")} | ${safeCell(data.dns.asn)} |`);
+    ln(`| ${t("dns.timezone")} | ${safeCell(data.dns.timezone)} |`);
+    ln(`| ${t("dns.colo")} | \`${safeCell(data.dns.colo)}\` |`);
+    ln(`| ${t("dns.http")} | ${safeCell(data.dns.http)} |`);
+    ln(`| ${t("dns.tls")} | ${safeCell(data.dns.tls)} |`);
     ln();
 
+    if (data.dns.observedResolvers.length > 0) {
+      ln(`### ${t("export.observedResolvers")}`);
+      ln(`| ${t("export.resolverIp")} | ${t("export.operator")} | ${t("export.ecsForwarded")} | ${t("export.status")} |`);
+      ln("|----------|----------|----------|--------|");
+      data.dns.observedResolvers.forEach((r) => {
+        ln(`| \`${r.ip}\` | ${safeCell(r.operator)} | ${safeCell(r.ecs)} | ${statusIcon(r.status)} |`);
+      });
+      ln();
+    }
+
     if (data.dns.resolvers.length > 0) {
-      ln("### DNS Resolvers");
-      ln("| Resolver | Latency | Status |");
+      ln(`### ${t("export.resolversSection")}`);
+      ln(`| ${t("export.resolver")} | ${t("export.latency")} | ${t("export.status")} |`);
       ln("|----------|---------|--------|");
       data.dns.resolvers.forEach((r) => {
-        const icon = statusIcon(r.status);
-        ln(`| ${r.label} | ${r.value} | ${icon} |`);
+        ln(`| ${safeCell(r.label)} | ${safeCell(r.value)} | ${statusIcon(r.status)} |`);
       });
       ln();
     }
 
     if (data.dns.ecs.length > 0) {
-      ln("### EDNS Client Subnet");
-      if (data.dns.ecsSummary) ln(`${data.dns.ecsSummary}`);
+      ln(`### ${t("export.ecsSection")}`);
+      if (data.dns.ecsSummary) ln(data.dns.ecsSummary);
       ln();
-      ln("| Resolver | Client subnet | Status |");
+      ln(`| ${t("export.resolver")} | ${t("export.clientSubnet")} | ${t("export.status")} |`);
       ln("|----------|---------------|--------|");
       data.dns.ecs.forEach((e) => {
-        const icon = statusIcon(e.status);
-        ln(`| ${e.label} | ${e.value} | ${icon} |`);
+        ln(`| ${safeCell(e.label)} | ${safeCell(e.value)} | ${statusIcon(e.status)} |`);
       });
       ln();
     }
 
     if (data.dns.security.length > 0) {
-      ln("### DNS Security");
-      ln("| Check | Detail | Status |");
+      ln(`### ${t("export.securitySection")}`);
+      ln(`| ${t("export.check")} | ${t("export.detail")} | ${t("export.status")} |`);
       ln("|-------|--------|--------|");
       data.dns.security.forEach((s) => {
-        const icon = statusIcon(s.status);
-        ln(`| ${s.label} | ${s.value} | ${icon} |`);
+        ln(`| ${safeCell(s.label)} | ${safeCell(s.value)} | ${statusIcon(s.status)} |`);
       });
       ln();
     }
 
     if (data.dns.tells.length > 0) {
-      ln("### Proxy Tells");
-      ln("| Check | Detail | Status |");
+      ln(`### ${t("export.tellsSection")}`);
+      ln(`| ${t("export.check")} | ${t("export.detail")} | ${t("export.status")} |`);
       ln("|-------|--------|--------|");
-      data.dns.tells.forEach((s) => ln(`| ${s.label} | ${s.value} | ${statusIcon(s.status)} |`));
+      data.dns.tells.forEach((s) => ln(`| ${safeCell(s.label)} | ${safeCell(s.value)} | ${statusIcon(s.status)} |`));
       ln();
     }
 
     // Speed
-    ln("## Speed Test");
+    ln(`## ${t("export.speedSection")}`);
     ln();
     if (data.speed.tested) {
-      ln("| Metric | Value |");
+      ln(`| ${t("export.metric")} | ${t("export.value")} |`);
       ln("|--------|-------|");
-      ln(`| Download | ${data.speed.download?.toFixed(1) ?? "\u2014"} Mbps |`);
-      ln(`| Upload | ${data.speed.upload?.toFixed(1) ?? "\u2014"} Mbps |`);
-      ln(`| Latency | ${data.speed.latency ?? "\u2014"} ms |`);
-      ln(`| Jitter | ${data.speed.jitter ?? "\u2014"} ms |`);
+      if (data.speed.server) {
+        ln(`| ${t("export.server")} | ${safeCell(data.speed.server)} |`);
+      }
+      ln(`| ${t("export.download")} | ${data.speed.download != null ? `${data.speed.download.toFixed(1)} Mbps` : DASH} |`);
+      ln(`| ${t("export.upload")} | ${data.speed.upload != null ? `${data.speed.upload.toFixed(1)} Mbps` : DASH} |`);
+      ln(`| ${t("export.latency")} | ${data.speed.latency != null ? `${data.speed.latency} ms` : DASH} |`);
+      ln(`| ${t("export.jitter")} | ${data.speed.jitter != null ? `${data.speed.jitter} ms` : DASH} |`);
+      if (data.speed.failedProbes != null) {
+        ln(`| ${t("export.failedProbes")} | ${data.speed.failedProbes}% |`);
+      }
+      if (data.speed.loadedLatency != null) {
+        ln(`| ${t("export.loadedLatency")} | ${data.speed.loadedLatency} ms |`);
+      }
+      if (data.speed.bufferbloatIncrease != null) {
+        const bbGrade = data.speed.bufferbloatGrade
+          ? ` (${data.speed.bufferbloatGrade.grade} · ${t(data.speed.bufferbloatGrade.labelKey)})`
+          : "";
+        ln(`| ${t("export.bufferbloat")} | +${data.speed.bufferbloatIncrease} ms${bbGrade} |`);
+      }
       if (data.speed.grade) {
-        ln(`| Grade | **${data.speed.grade.grade}** \u2014 ${t(data.speed.grade.labelKey)} |`);
+        ln(`| ${t("export.grade")} | **${data.speed.grade.grade}** · ${t(data.speed.grade.labelKey)} |`);
       }
     } else {
-      ln("*Speed test was not run.*");
+      ln(`*${t("export.speedNotRun")}*`);
     }
     ln();
 
     // Ad Block
-    ln("## Ad Block Test");
+    ln(`## ${t("export.adblockSection")}`);
     ln();
     if (data.adblock.score) {
       const s = data.adblock.score;
-      ln(`**Score: ${s.score}/100** \u2014 ${s.blocked} of ${s.total} blocked`);
+      if (s.score === null) {
+        ln(`*${t("export.inconclusive", s.uncertain)}*`);
+      } else {
+        ln(t("export.scoreSummary", s.score, s.blocked, s.total));
+      }
+      if (data.adblock.split) {
+        const sp = data.adblock.split;
+        ln();
+        ln(`| ${t("export.metric")} | ${t("export.value")} |`);
+        ln("|--------|-------|");
+        if (sp.hosts.total > 0) {
+          ln(`| ${t("export.hosts")} | ${sp.hosts.blocked}/${sp.hosts.total} (${sp.hosts.pct}%) |`);
+        }
+        if (sp.cosmetics.total > 0) {
+          ln(`| ${t("export.cosmetics")} | ${sp.cosmetics.blocked}/${sp.cosmetics.total} (${sp.cosmetics.pct}%) |`);
+        }
+        if (data.adblock.blocker) {
+          const b = data.adblock.blocker;
+          ln(`| ${t("export.blocker")} | ${t(b.nameKey)} (${t(`adblock.fp.${b.confidence}`)} · ${t(b.sourceKey)}) |`);
+        }
+      }
       ln();
 
       data.adblock.results.forEach((cat) => {
-        const blocked = cat.tests.filter((t) => t.blocked).length;
-        ln(`### ${cat.name} (${blocked}/${cat.tests.length} blocked)`);
-        cat.tests.forEach((t) => {
-          const icon = t.blocked ? "\u2705" : "\u274C";
-          const label = t.blocked ? "blocked" : "allowed";
-          ln(`- ${icon} ${t.name} \u2014 ${label}`);
+        const resolved = cat.tests.filter((item) => !item.uncertain);
+        const blocked = resolved.filter((item) => item.blocked).length;
+        const catKey = CAT_KEY_MAP[cat.name];
+        const catLabel = catKey ? t(catKey) : cat.name;
+        ln(`### ${catLabel} (${t("adblock.blockedOf", blocked, resolved.length)})`);
+        cat.tests.forEach((item) => {
+          const icon = item.uncertain ? "\u26A0\uFE0F" : item.blocked ? "\u2705" : "\u274C";
+          const label = item.uncertain ? t("adblock.uncertain") : item.blocked ? t("adblock.blocked") : t("adblock.allowed");
+          ln(`- ${icon} ${item.name} · ${label}`);
         });
         ln();
       });
     } else {
-      ln("*Ad block test results not available.*");
+      ln(`*${t("export.adblockNotRun")}*`);
+    }
+
+    if (data.adblock.fingerprint) {
+      const fp = data.adblock.fingerprint;
+      ln(`### ${t("export.fingerprintSection")} (${t(`fp.level.${fp.level}`)})`);
+      ln(`| ${t("export.check")} | ${t("export.status")} |`);
+      ln("|-------|--------|");
+      fp.signals.forEach((sig) => {
+        const stateText = sig.detail ? `${t(`fp.state.${sig.state}`)} (${sig.detail})` : t(`fp.state.${sig.state}`);
+        const icon = sig.state === "protected" ? statusIcon("pass") : sig.state === "exposed" ? statusIcon("warn") : statusIcon("info");
+        ln(`| ${safeCell(t(`fp.${sig.id}`))} | ${icon} ${safeCell(stateText)} |`);
+      });
+      ln();
+    }
+
+    // Security Headers (when a site has been scanned in this session)
+    if (data.headers) {
+      const h = data.headers;
+      ln(`## ${t("export.headersSection")}`);
+      ln();
+      ln(`| ${t("export.property")} | ${t("export.value")} |`);
+      ln("|----------|-------|");
+      ln(`| ${t("export.target")} | ${safeCell(h.url)} |`);
+      ln(`| ${t("export.httpStatus")} | ${h.statusCode} |`);
+      ln(`| ${t("export.grade")} | **${h.grade}** (${h.score.passed}/${h.score.total}) |`);
+      if (h.server) ln(`| Server | ${safeCell(h.server)} |`);
+      if (h.poweredBy) ln(`| X-Powered-By | ${safeCell(h.poweredBy)} |`);
+      ln();
+      ln(`| ${t("export.header")} | ${t("export.status")} | ${t("export.value")} |`);
+      ln("|--------|--------|-------|");
+      h.checks.forEach((c) => {
+        const st: CheckStatus = !c.graded ? "info" : c.status;
+        const icon = statusIcon(st);
+        const note = c.reasonKey
+          ? (c.reasonArg !== undefined ? t(c.reasonKey, c.reasonArg) : t(c.reasonKey))
+          : "";
+        let statusLabel: string;
+        if (!c.graded) {
+          statusLabel = c.present ? t("state.seen") : t("headers.notSet");
+        } else if (!c.present && c.status === "pass") {
+          statusLabel = t("headers.viaCsp");
+        } else if (c.status === "pass") {
+          statusLabel = t("state.pass");
+        } else if (c.status === "warn") {
+          statusLabel = t("state.warn");
+        } else {
+          statusLabel = t("headers.missing");
+        }
+        const statusCell = note ? `${icon} ${statusLabel} (${note})` : `${icon} ${statusLabel}`;
+        const valCell = c.value ? `\`${safeCell(c.value)}\`` : DASH;
+        ln(`| ${safeCell(c.name)} | ${safeCell(statusCell)} | ${valCell} |`);
+      });
+      ln();
     }
 
     ln("---");
-    ln("*Generated by [NetCheck](https://netcheck-site.oilygold.workers.dev)*");
+    ln(`*${t("export.footer", REPORT_URL)}*`);
 
     return lines.join("\n");
   },
@@ -241,12 +436,12 @@ export const ReportExporter = {
     html = html.replace(/((?:<li>.+<\/li>\n?)+)/g, "<ul>$1</ul>");
 
     // The print window is about:blank, so font URLs must be absolute.
-    const origin = location.origin;
+    const origin = typeof location !== "undefined" ? location.origin : "";
     return `<!DOCTYPE html>
-<html>
+<html lang="${escapeHtml(data.locale)}">
 <head>
 <meta charset="UTF-8">
-<title>NetCheck Report \u2014 ${escapeHtml(data.date)}</title>
+<title>${escapeHtml(t("export.printTitle", data.date))}</title>
 <style>
   @font-face { font-family: "Chakra Petch"; font-weight: 500; src: url("${origin}/fonts/chakra-petch-latin-500-normal.woff2") format("woff2"); }
   @font-face { font-family: "Chakra Petch"; font-weight: 700; src: url("${origin}/fonts/chakra-petch-latin-700-normal.woff2") format("woff2"); }

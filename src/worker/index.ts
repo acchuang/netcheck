@@ -2,7 +2,8 @@ import { RESOLVERS, type ResolverInfo } from "../shared/resolvers.ts";
 import {
   dohQuery, parseWhoami, DNSSEC_BOGUS_DOMAIN, ECS_PROBE_DOMAIN, AD_PROBE_DOMAIN, type DnsMessage,
 } from "../shared/dns-wire.ts";
-import { ipScope, isIp } from "../shared/ip-classify.ts";
+import { ipScope, isIp, toReversePtrName } from "../shared/ip-classify.ts";
+import { evaluateHeaders } from "../shared/headers-grade.ts";
 import { rdapCountry } from "../shared/rdap.ts";
 import { withHttpsScheme } from "../shared/url.ts";
 
@@ -165,16 +166,41 @@ function isValidHostname(name: string): boolean {
   return HOSTNAME_RE.test(name);
 }
 
+const SINGLE_DNS_TYPES = new Set(["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "SRV", "PTR"]);
+const ALL_DNS_TYPES = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"] as const;
+
 async function handleDnsCheck(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const domain = url.searchParams.get("domain") || "example.com";
-  const type = url.searchParams.get("type") || "A";
+  const rawDomain = (url.searchParams.get("domain") || "example.com").trim();
+  const type = (url.searchParams.get("type") || "A").trim().toUpperCase();
+
+  if (type !== "ALL" && !SINGLE_DNS_TYPES.has(type)) {
+    return Response.json({ error: "Invalid record type" }, { status: 400, headers: corsHeaders() });
+  }
+
+  let domain = rawDomain;
+  if (type === "PTR") {
+    const ptrName = toReversePtrName(rawDomain);
+    if (ptrName) domain = ptrName;
+  }
 
   if (!isValidHostname(domain)) {
     return Response.json({ error: "Invalid domain" }, { status: 400, headers: corsHeaders() });
   }
 
   try {
+    if (type === "ALL") {
+      const settled = await Promise.allSettled(
+        ALL_DNS_TYPES.map((rt) => dohQuery("cloudflare-dns.com", domain, rt, { dnssecOk: true }))
+      );
+      const records: Record<string, DnsMessage | { error: string }> = {};
+      ALL_DNS_TYPES.forEach((rt, i) => {
+        const res = settled[i];
+        records[rt] = res.status === "fulfilled" ? res.value : { error: "DNS lookup failed" };
+      });
+      return Response.json({ records }, { headers: corsHeaders() });
+    }
+
     const msg = await dohQuery("cloudflare-dns.com", domain, type, { dnssecOk: true });
     return Response.json(msg, { headers: corsHeaders() });
   } catch (err) {
@@ -376,19 +402,6 @@ async function handleDnsCompare(url: URL): Promise<Response> {
   }));
   return Response.json(results, { headers: corsHeaders() });
 }
-
-const SECURITY_HEADERS = [
-  { key: "strict-transport-security", name: "Strict-Transport-Security (HSTS)", desc: "Forces HTTPS connections, preventing downgrade attacks" },
-  { key: "content-security-policy", name: "Content-Security-Policy (CSP)", desc: "Controls which resources the browser can load, mitigating XSS" },
-  { key: "x-content-type-options", name: "X-Content-Type-Options", desc: "Prevents MIME type sniffing attacks", expected: "nosniff" },
-  { key: "x-frame-options", name: "X-Frame-Options", desc: "Prevents clickjacking by controlling iframe embedding" },
-  { key: "referrer-policy", name: "Referrer-Policy", desc: "Controls how much referrer information is sent with requests" },
-  { key: "permissions-policy", name: "Permissions-Policy", desc: "Controls which browser features the page can use" },
-  { key: "x-xss-protection", name: "X-XSS-Protection", desc: "Legacy XSS filter (mostly superseded by CSP)" },
-  { key: "cross-origin-opener-policy", name: "Cross-Origin-Opener-Policy (COOP)", desc: "Isolates browsing context from cross-origin popups" },
-  { key: "cross-origin-embedder-policy", name: "Cross-Origin-Embedder-Policy (COEP)", desc: "Requires CORS/CORP for all cross-origin resources" },
-  { key: "cross-origin-resource-policy", name: "Cross-Origin-Resource-Policy (CORP)", desc: "Controls which origins can embed this resource" },
-];
 
 // --- SSRF guard ---
 //
@@ -765,30 +778,13 @@ async function handleHeadersCheck(request: Request): Promise<Response> {
     }
     await res.body?.cancel();
 
-    const checks = SECURITY_HEADERS.map((h) => {
-      const value = headers[h.key] || null;
-      return {
-        name: h.name,
-        key: h.key,
-        desc: h.desc,
-        value,
-        present: !!value,
-      };
-    });
-
-    // X-XSS-Protection is reported but not graded: browsers removed the filter,
-    // and the current advice is to send 0 or leave it out, so its absence is
-    // not a gap.
-    const graded = checks.filter((c) => c.key !== "x-xss-protection");
-    const present = graded.filter((c) => c.present).length;
-    const total = graded.length;
-    const grade = present >= 8 ? "A" : present >= 6 ? "B" : present >= 4 ? "C" : present >= 2 ? "D" : "F";
+    const { grade, score, checks } = evaluateHeaders(headers);
 
     return Response.json({
       url: currentUrl,
       statusCode: res.status,
       grade,
-      score: { present, total },
+      score,
       checks,
       server: headers["server"] || null,
       poweredBy: headers["x-powered-by"] || null,

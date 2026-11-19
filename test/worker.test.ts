@@ -579,3 +579,62 @@ test("removed fast.com and Ookla discovery endpoints return 404", async () => {
     assert.equal(res.status, 404);
   }
 });
+
+test("/api/dns reverses bare IPv4 and IPv6 literals when type=PTR", async () => {
+  const realFetch = globalThis.fetch;
+  const dnsQueries: string[] = [];
+  const minimalOk = new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]);
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const u = new URL(String(input instanceof Request ? input.url : input));
+    dnsQueries.push(u.searchParams.get("dns") ?? "");
+    return new Response(minimalOk);
+  }) as typeof fetch;
+
+  try {
+    const v4Res = await worker.fetch(new Request("https://netcheck.internal/api/dns?domain=1.1.1.1&type=PTR", {
+      headers: { "cf-connecting-ip": "203.0.113.50" },
+    }));
+    assert.equal(v4Res.status, 200);
+    assert.equal(dnsQueries[0], toBase64Url(encodeQuery("1.1.1.1.in-addr.arpa", "PTR", { dnssecOk: true })));
+
+    const v6Res = await worker.fetch(new Request(
+      "https://netcheck.internal/api/dns?domain=" + encodeURIComponent("2001:db8::1") + "&type=PTR",
+      { headers: { "cf-connecting-ip": "203.0.113.50" } }
+    ));
+    assert.equal(v6Res.status, 200);
+    assert.equal(
+      dnsQueries[1],
+      toBase64Url(encodeQuery("1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa", "PTR", { dnssecOk: true }))
+    );
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("/api/dns type=ALL batches A..SOA in one request and rejects bogus record types", async () => {
+  const bogus = await worker.fetch(new Request("https://netcheck.internal/api/dns?domain=example.com&type=BOGUS", {
+    headers: { "cf-connecting-ip": "203.0.113.51" },
+  }));
+  assert.equal(bogus.status, 400);
+
+  const realFetch = globalThis.fetch;
+  let upstreamCalls = 0;
+  const minimalOk = new Uint8Array([0, 0, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]);
+  globalThis.fetch = (async () => {
+    upstreamCalls++;
+    return new Response(minimalOk);
+  }) as typeof fetch;
+
+  try {
+    const res = await worker.fetch(new Request("https://netcheck.internal/api/dns?domain=example.com&type=ALL", {
+      headers: { "cf-connecting-ip": "203.0.113.51" },
+    }));
+    assert.equal(res.status, 200);
+    assert.equal(upstreamCalls, 7);
+    const data = (await res.json()) as { records: Record<string, { Status: number }> };
+    assert.deepEqual(Object.keys(data.records), ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"]);
+    assert.equal(data.records.A.Status, 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

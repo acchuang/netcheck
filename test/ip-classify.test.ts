@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  ipScope, ipFamily, inCidr, sameIp, sameNetwork, encryptedDnsOperator,
+  ipScope, ipFamily, toReversePtrName, inCidr, sameIp, sameNetwork, encryptedDnsOperator,
   parseIceCandidate, evaluateWebRtc, dohVerdict, forwardedClientSubnet,
 } from "../src/shared/ip-classify.ts";
 
@@ -169,4 +169,20 @@ test("a resolver inside the visitor's own network is reported as the ISP's", () 
     { kind: "unrecognized", ip: "198.51.100.9" });
   assert.ok(sameNetwork("203.0.113.9", "203.0.113.5"));
   assert.ok(!sameNetwork("198.51.100.9", "203.0.113.5"));
+});
+
+test("toReversePtrName converts IPv4, compressed IPv6, and IPv4-mapped IPv6 to PTR names", () => {
+  assert.equal(toReversePtrName("1.1.1.1"), "1.1.1.1.in-addr.arpa");
+  assert.equal(toReversePtrName("203.0.113.9"), "9.113.0.203.in-addr.arpa");
+  assert.equal(
+    toReversePtrName("2001:db8::1"),
+    "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa"
+  );
+  assert.equal(
+    toReversePtrName("[2001:4860:4860::8888]"),
+    "8.8.8.8.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.6.8.4.0.6.8.4.1.0.0.2.ip6.arpa"
+  );
+  assert.equal(toReversePtrName("::ffff:8.8.4.4"), "4.4.8.8.in-addr.arpa");
+  assert.equal(toReversePtrName("example.com"), null);
+  assert.equal(toReversePtrName("1.1.1.1.in-addr.arpa"), null);
 });

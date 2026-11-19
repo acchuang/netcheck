@@ -22,6 +22,8 @@ export interface DnsResult {
   Answer?: DnsAnswer[];
   Status?: number;
   error?: string;
+  transportError?: boolean;
+  statusCode?: number;
 }
 
 interface DnsAnswer {
@@ -98,6 +100,33 @@ interface Suggestion {
   resolver?: string;
 }
 
+function dnsHttpError(status: number): DnsResult {
+  const error = status === 429
+    ? t("dns.err.rateLimit")
+    : status === 400
+      ? t("dns.err.invalidInput")
+      : status >= 500
+        ? t("dns.err.upstream", status)
+        : t("dns.err.http", status);
+  return { error, transportError: true, statusCode: status };
+}
+
+function dnsCatchError(err: unknown): DnsResult {
+  if (err instanceof DOMException && err.name === "TimeoutError") {
+    return { error: t("dns.err.timeout"), transportError: true };
+  }
+  return { error: t("dns.err.network"), transportError: true };
+}
+
+function annotateDnsResult(domain: string, data: DnsResult): DnsResult {
+  if (data.Status === 3) return { ...data, error: t("dns.err.nxdomain", domain) };
+  if (data.Status === 2) return { ...data, error: t("dns.err.servfail", domain) };
+  if (data.Status !== undefined && data.Status !== 0 && (!data.Answer || data.Answer.length === 0)) {
+    return { ...data, error: t("dns.err.rcode", data.Status) };
+  }
+  return data;
+}
+
 // --- Core API object ---
 
 // Exported for tests: checkDnsSecurity decides which security rows the DNS card
@@ -166,26 +195,30 @@ export const DnsCheck = {
       const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(type)}`, {
         signal: AbortSignal.timeout(8000),
       });
-      if (!res.ok) {
-        if (res.status === 429) return { error: "Rate limit reached. Please wait a moment." };
-        if (res.status === 400) return { error: "Invalid domain name or record type format." };
-        if (res.status >= 500) return { error: `Upstream DNS resolver server error (HTTP ${res.status}).` };
-        return { error: `DNS lookup failed (HTTP ${res.status}).` };
-      }
+      if (!res.ok) return dnsHttpError(res.status);
       const data = (await res.json()) as DnsResult;
-      if (data.Status === 3) {
-        return { ...data, error: `Domain not found (NXDOMAIN: ${domain}).` };
-      } else if (data.Status === 2) {
-        return { ...data, error: `DNS server failure (SERVFAIL) querying ${domain}.` };
-      } else if (data.Status !== 0 && (!data.Answer || data.Answer.length === 0)) {
-        return { ...data, error: `DNS query returned status code ${data.Status}.` };
-      }
-      return data;
+      return annotateDnsResult(domain, data);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "TimeoutError") {
-        return { error: "DNS lookup timed out after 8s." };
+      return dnsCatchError(err);
+    }
+  },
+
+  async lookupAllDns(domain: string): Promise<Record<string, DnsResult>> {
+    try {
+      const res = await fetch(`/api/dns?domain=${encodeURIComponent(domain)}&type=ALL`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return { ALL: dnsHttpError(res.status) };
+      const data = (await res.json()) as { records?: Record<string, DnsResult> };
+      const out: Record<string, DnsResult> = {};
+      for (const [rt, rec] of Object.entries(data.records ?? {})) {
+        out[rt] = rec.error
+          ? { ...rec, error: t("dns.err.upstream", 502), transportError: true }
+          : annotateDnsResult(domain, rec);
       }
-      return { error: "DNS lookup network request failed. Check your internet connection." };
+      return out;
+    } catch (err) {
+      return { ALL: dnsCatchError(err) };
     }
   },
 
