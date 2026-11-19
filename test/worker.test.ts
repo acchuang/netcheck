@@ -572,3 +572,10 @@ test("resolver-country retries ARIN over plain HTTP after a 525", async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test("removed fast.com and Ookla discovery endpoints return 404", async () => {
+  for (const path of ["/api/speedtest/fast-targets", "/api/speedtest/ookla-targets"]) {
+    const res = await worker.fetch(new Request(`https://netcheck.internal${path}`));
+    assert.equal(res.status, 404);
+  }
+});

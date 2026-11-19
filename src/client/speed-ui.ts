@@ -2,8 +2,9 @@ import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPha
 import { t, onLocaleChange } from "./i18n.ts";
 import { onThemeChange } from "./theme.ts";
 import { html, setHtml } from "./html.ts";
-import { animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
+import { animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, issueHeadline, hideVerdict, type VerdictLevel } from "./ui-utils.ts";
 import { saveSpeedSnapshot } from "./snapshots.ts";
+import { getDnsReport } from "./dns-check.ts";
 
 function setActiveGauge(phase: string): void {
   document.querySelectorAll<HTMLElement>(".speed-readouts [data-metric]").forEach((r) => {
@@ -52,8 +53,6 @@ const speedGraphData: { download: { time: number; value: number }[]; upload: { t
 const serverLabelKeys: Record<string, string> = {
   edge: "speed.server.edge",
   "cf-speed": "speed.server.cfSpeed",
-  fast: "speed.server.fast",
-  ookla: "speed.server.ookla",
   custom: "speed.server.custom",
 };
 
@@ -64,6 +63,20 @@ function serverLabel(id: string): string {
 }
 
 const serverProbeState: Record<string, ServerProbeResult> = {};
+let speedTabStarted = false;
+
+function updateServerValueLabel(): void {
+  const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
+  const customRow = document.getElementById("speed-custom-url-row");
+  if (!sel) return;
+  setRoute(serverLabel(sel.value), null);
+  customRow?.classList.toggle("hidden", sel.value !== "custom");
+
+  // show the probed location right away if we already know it for the selected server
+  const probe = serverProbeState[sel.value];
+  renderServerPing(probe);
+  if (probe?.colo) updateServerBadge(probe.colo, probe.lat, probe.lon);
+}
 
 // Appends a live latency badge to each <option> and disables ones that failed to probe.
 function renderServerOptionLabels(): void {
@@ -87,13 +100,34 @@ function renderServerOptionLabels(): void {
   });
 }
 
-export async function initSpeedTest(): Promise<void> {
+export async function startSpeedTab(): Promise<void> {
+  if (speedTabStarted) return;
+  speedTabStarted = true;
+
+  const existingIp = getDnsReport().ip;
+  if (existingIp && !existingIp.error) {
+    youIp = existingIp;
+    renderYou();
+  } else {
+    fetch("/api/ip")
+      .then((res) => res.json() as Promise<NonNullable<typeof youIp>>)
+      .catch(() => ({}))
+      .then((ip) => { youIp = ip; renderYou(); });
+  }
+
+  // Only probe the built-in targets once the Speed tab is actually opened.
+  const results = await probeServers(SERVERS.filter((s) => s.id !== "custom").map((s) => s.id));
+  results.forEach((r) => { serverProbeState[r.id] = r; });
+  updateServerValueLabel();
+  renderServerOptionLabels();
+}
+
+export function initSpeedTest(): void {
   document.getElementById("speed-start-btn")!.addEventListener("click", runSpeedTest);
   document.getElementById("speed-cancel-btn")?.addEventListener("click", () => {
     SpeedTest.abort();
   });
   const sel = document.getElementById("speed-server-select") as HTMLSelectElement | null;
-  const customRow = document.getElementById("speed-custom-url-row");
   const customInput = document.getElementById("speed-custom-url") as HTMLInputElement | null;
 
   // Options come from the SERVERS array; the static HTML options are just initial paint.
@@ -103,29 +137,7 @@ export async function initSpeedTest(): Promise<void> {
     if (Array.from(sel.options).some((o) => o.value === current)) sel.value = current;
   }
 
-  function updateServerValueLabel(): void {
-    if (!sel) return;
-    setRoute(serverLabel(sel.value), null);
-    customRow?.classList.toggle("hidden", sel.value !== "custom");
-
-    // show the probed location right away if we already know it for the selected server
-    const probe = serverProbeState[sel.value];
-    renderServerPing(probe);
-    if (probe?.colo) updateServerBadge(probe.colo, probe.lat, probe.lon);
-  }
-
-  sel?.addEventListener("change", async () => {
-    updateServerValueLabel();
-    // lazy-probe servers with async discovery (e.g. fast.com) the first time they're picked,
-    // instead of contacting every third party on every page load
-    const id = sel.value;
-    if (getServer(id).init && !serverProbeState[id]) {
-      const [result] = await probeServers([id]);
-      serverProbeState[id] = result;
-      renderServerOptionLabels();
-      if (sel.value === id) updateServerValueLabel();
-    }
-  });
+  sel?.addEventListener("change", () => updateServerValueLabel());
   updateServerValueLabel();
 
   customInput?.addEventListener("blur", async () => {
@@ -146,18 +158,6 @@ export async function initSpeedTest(): Promise<void> {
   });
 
   onThemeChange(() => drawSpeedGraph());
-
-  fetch("/api/ip")
-    .then((res) => res.json() as Promise<NonNullable<typeof youIp>>)
-    .catch(() => ({}))
-    .then((ip) => { youIp = ip; renderYou(); });
-
-  // probe-on-load: skip "custom" (probed on blur) and servers needing async init/discovery
-  // (e.g. fast.com) — those are lazy-probed only once the user actually selects them.
-  const results = await probeServers(SERVERS.filter((s) => s.id !== "custom" && !s.init).map((s) => s.id));
-  results.forEach((r) => { serverProbeState[r.id] = r; });
-  updateServerValueLabel();
-  renderServerOptionLabels();
 }
 
 function drawSpeedGraph(): void {
@@ -392,7 +392,7 @@ function renderSpeedResults(results: SpeedTestResults): void {
 export function refreshSpeedLocaleTexts(): void {
   const btn = document.getElementById("speed-start-btn") as HTMLButtonElement;
   if (btn.disabled) return;
-  if (SpeedTest.results.download !== null) {
+  if (SpeedTest.results.download !== null || SpeedTest.results.latency !== null) {
     renderSpeedResults(SpeedTest.results);
     btn.textContent = t("speed.runAgain");
   } else {
@@ -404,76 +404,120 @@ export function refreshSpeedLocaleTexts(): void {
 }
 
 // Speed suggestions
-interface SpeedSuggestion {
+export type SpeedIssue = "bufferbloat" | "failedProbes" | "download" | "upload" | "latency" | "jitter";
+
+export interface SpeedSuggestion {
   name: string; // i18n key prefix
   icon: string;
   tags: string[];
   url: string | null;
-  when: (r: { download: number; upload: number; latency: number; jitter: number }) => boolean;
+  fixes: SpeedIssue[];
+  when: (r: {
+    download: number | null;
+    upload: number | null;
+    latency: number | null;
+    jitter: number | null;
+    bufferbloat: number | null;
+    failedProbes: number | null;
+  }) => boolean;
 }
 
 const speedSuggestions: SpeedSuggestion[] = [
-  { name: "speed.sug.cf", icon: "CF", tags: ["fastest DNS", "privacy-first", "free"], url: "https://1.1.1.1",
-    when: (r) => r.latency > 15 },
-  { name: "speed.sug.warp", icon: "W+", tags: ["WireGuard", "free tier", "mobile + desktop"], url: "https://1.1.1.1",
-    when: (r) => r.latency > 30 || r.jitter > 10 },
-  { name: "speed.sug.ethernet", icon: "Eth", tags: ["zero cost", "lower latency", "stable"], url: null,
-    when: (r) => r.jitter > 5 || r.download < 100 },
-  { name: "speed.sug.wifi6e", icon: "6E", tags: ["6 GHz band", "lower latency", "more capacity"], url: null,
-    when: (r) => r.download < 200 || r.jitter > 8 },
   { name: "speed.sug.qos", icon: "QoS", tags: ["bufferbloat fix", "OpenWrt", "free"],
     url: "https://openwrt.org/docs/guide-user/network/traffic-shaping/sqm",
-    when: (r) => r.jitter > 10 || r.latency > 40 },
-  { name: "speed.sug.isp", icon: "ISP", tags: ["line check", "modem swap", "plan upgrade"], url: null,
-    when: (r) => r.download < 25 },
+    fixes: ["bufferbloat", "jitter"],
+    when: (r) => (r.bufferbloat ?? 0) >= 60 || (r.jitter ?? 0) > 10 },
+  { name: "speed.sug.ethernet", icon: "Eth", tags: ["zero cost", "lower latency", "stable"], url: null,
+    fixes: ["jitter", "download", "bufferbloat"],
+    when: (r) => (r.jitter ?? 0) > 5 || (r.download ?? Infinity) < 100 || (r.bufferbloat ?? 0) >= 60 },
   { name: "speed.sug.bg", icon: "BG", tags: ["quick win", "free", "common cause"], url: null,
-    when: (r) => r.upload < 10 || r.download < 50 },
-  { name: "speed.sug.nextdns", icon: "ND", tags: ["fast DNS", "ad blocking", "custom filters"], url: "https://nextdns.io",
-    when: () => true },
+    fixes: ["bufferbloat", "upload", "download"],
+    when: (r) => (r.upload ?? Infinity) < 10 || (r.download ?? Infinity) < 50 || (r.bufferbloat ?? 0) >= 60 },
+  { name: "speed.sug.isp", icon: "ISP", tags: ["line check", "modem swap", "plan upgrade"], url: null,
+    fixes: ["failedProbes", "download"],
+    when: (r) => (r.download ?? Infinity) < 25 || (r.failedProbes ?? 0) > 0 },
+  { name: "speed.sug.wifi6e", icon: "6E", tags: ["6 GHz band", "lower latency", "more capacity"], url: null,
+    fixes: ["download", "jitter"],
+    when: (r) => (r.download ?? Infinity) < 200 || (r.jitter ?? 0) > 8 },
+  { name: "speed.sug.warp", icon: "W+", tags: ["WireGuard", "free tier", "mobile + desktop"], url: "https://1.1.1.1",
+    fixes: ["latency"],
+    when: (r) => (r.latency ?? 0) > 40 },
 ];
+
+export type SpeedPlan = ReturnType<typeof planSpeedSuggestions>;
+
+export function planSpeedSuggestions(results: SpeedTestResults) {
+  const dl = results.download;
+  const ul = results.upload;
+  const lat = results.latency;
+  const jit = results.jitter;
+  const bb = results.bufferbloatIncrease;
+  const fp = results.failedProbes;
+
+  const issues: { id: SpeedIssue; key: string }[] = [];
+  if (bb !== null && bb >= 200) issues.push({ id: "bufferbloat", key: "speed.issueHighBb" });
+  else if (bb !== null && bb >= 60) issues.push({ id: "bufferbloat", key: "speed.issueModBb" });
+  if (fp !== null && fp > 0) issues.push({ id: "failedProbes", key: "speed.issueFailedProbes" });
+  if (dl !== null && dl < 25) issues.push({ id: "download", key: "speed.issueSlowDl" });
+  else if (dl !== null && dl < 100) issues.push({ id: "download", key: "speed.issueModDl" });
+  if (ul !== null && ul < 10) issues.push({ id: "upload", key: "speed.issueSlowUl" });
+  if (lat !== null && lat > 40) issues.push({ id: "latency", key: "speed.issueHighLat" });
+  else if (lat !== null && lat > 20) issues.push({ id: "latency", key: "speed.issueModLat" });
+  if (jit !== null && jit > 10) issues.push({ id: "jitter", key: "speed.issueHighJit" });
+  else if (jit !== null && jit > 5) issues.push({ id: "jitter", key: "speed.issueModJit" });
+
+  const level: VerdictLevel = (bb !== null && bb >= 200) || issues.length >= 3
+    ? "fail"
+    : issues.length > 0 ? "warn" : "pass";
+
+  const r = { download: dl, upload: ul, latency: lat, jitter: jit, bufferbloat: bb, failedProbes: fp };
+  const relevant = speedSuggestions.filter((s) => s.when(r));
+
+  let topFix: SpeedSuggestion | null = null;
+  for (const issue of issues) {
+    topFix = relevant.find((s) => s.fixes.includes(issue.id)) ?? null;
+    if (topFix) break;
+  }
+  const suggestions = (topFix ? [topFix, ...relevant.filter((s) => s !== topFix)] : relevant).slice(0, 3);
+
+  return { issues, level, suggestions, topFix };
+}
 
 function renderSpeedSuggestions(results: SpeedTestResults): void {
   const section = document.getElementById("speed-suggestions-section")!;
   const subtitle = document.getElementById("speed-suggestions-subtitle")!;
   const grid = document.getElementById("speed-suggestions-grid")!;
 
-  const dl = results.download || 0;
-  const ul = results.upload || 0;
-  const lat = results.latency || 0;
-  const jit = results.jitter || 0;
+  const { issues, level, suggestions, topFix } = planSpeedSuggestions(results);
+  const issueLabels = issues.map((i) => t(i.key));
 
-  const issues: string[] = [];
-  if (dl < 25) issues.push(t("speed.issueSlowDl"));
-  else if (dl < 100) issues.push(t("speed.issueModDl"));
-  if (ul < 10) issues.push(t("speed.issueSlowUl"));
-  if (lat > 40) issues.push(t("speed.issueHighLat"));
-  else if (lat > 20) issues.push(t("speed.issueModLat"));
-  if (jit > 10) issues.push(t("speed.issueHighJit"));
-  else if (jit > 5) issues.push(t("speed.issueModJit"));
-
-  if (issues.length === 0 && dl >= 100) {
-    subtitle.textContent = t("speed.suggestGreat");
-  } else if (issues.length === 0) {
-    subtitle.textContent = t("speed.suggestDecent");
+  if (issueLabels.length === 0) {
+    subtitle.textContent = suggestions.length === 0
+      ? t("speed.suggestNoAction")
+      : (results.download ?? 0) >= 100 ? t("speed.suggestGreat") : t("speed.suggestDecent");
   } else {
-    subtitle.textContent = t("speed.suggestIssues", issues.join(", "));
+    subtitle.textContent = t("speed.suggestIssues", issueLabels.join(", "));
   }
 
-  const detail = t("verdict.speedDetail", SpeedTest.formatSpeed(results.download), SpeedTest.formatSpeed(results.upload), lat, jit);
+  const baseDetail = t(
+    "verdict.speedDetail",
+    SpeedTest.formatSpeed(results.download),
+    SpeedTest.formatSpeed(results.upload),
+    results.latency ?? "—",
+    results.jitter ?? "—"
+  );
+  const detail = results.bufferbloatIncrease !== null
+    ? `${baseDetail} ${t("verdict.speedDetailBb", results.bufferbloatIncrease, SpeedTest.getBufferbloatGrade(results.bufferbloatIncrease).grade)}`
+    : baseDetail;
   renderVerdict(
     "speed-verdict",
-    verdictLevel(issues.length),
-    issues.length === 0 ? t("verdict.speedPass") : issueHeadline(issues),
+    level,
+    issueLabels.length === 0 ? t("verdict.speedPass") : issueHeadline(issueLabels),
     detail,
     SpeedTest.getGrade(results.download).grade
   );
 
-  const r = { download: dl, upload: ul, latency: lat, jitter: jit };
-  const relevant = speedSuggestions
-    .filter((s) => s.when(r))
-    .slice(0, 3);
-
-  setHtml(grid, html`${relevant.map((s, i) => suggestionCardHtml(s, i === 0 && issues.length > 0, "speed.noSetup"))}`);
+  setHtml(grid, html`${suggestions.map((s) => suggestionCardHtml(s, s === topFix, "speed.noSetup"))}`);
 
   section.classList.add("visible");
 }

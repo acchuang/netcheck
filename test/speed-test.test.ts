@@ -5,8 +5,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  SpeedTest, jitterOf, mbps, streamsFor, worseLoadedLatency, combineSignal, MEASURE_FROM_BYTES, MEASURED_STREAMS,
+  SpeedTest, SERVERS, jitterOf, mbps, streamsFor, worseLoadedLatency, combineSignal,
+  MEASURE_FROM_BYTES, MEASURED_STREAMS, type SpeedTestResults,
 } from "../src/client/speed-test.ts";
+import { planSpeedSuggestions } from "../src/client/speed-ui.ts";
 
 test("download grade bands are inclusive at their lower bound", () => {
   const cases: [number | null, string][] = [
@@ -118,5 +120,62 @@ test("combineSignal aborts when caller aborts before timeout", () => {
   ctrl.abort(new Error("aborted early"));
   assert.equal(signal.aborted, true);
   assert.equal((signal.reason as Error)?.message, "aborted early");
+});
+
+const baseResults = (over: Partial<SpeedTestResults> = {}): SpeedTestResults => ({
+  download: 500, upload: 200, latency: 10, jitter: 1, failedProbes: 0,
+  serverId: "cf-speed", colo: "MEL", userLat: null, userLon: null,
+  loadedLatency: 12, bufferbloatIncrease: 2,
+  ...over,
+});
+
+test("bufferbloat drives Speed verdict and SQM Top Fix without DNS upsells", () => {
+  const severe = planSpeedSuggestions(baseResults({ bufferbloatIncrease: 450 }));
+  assert.equal(severe.level, "fail");
+  assert.deepEqual(severe.issues.map((i) => i.id), ["bufferbloat"]);
+  assert.equal(severe.topFix?.name, "speed.sug.qos");
+  assert.ok(!severe.suggestions.some((s) => s.name === "speed.sug.cf" || s.name === "speed.sug.nextdns"));
+
+  const moderate = planSpeedSuggestions(baseResults({ download: 150, bufferbloatIncrease: 90 }));
+  assert.equal(moderate.level, "warn");
+  assert.deepEqual(moderate.issues.map((i) => i.id), ["bufferbloat"]);
+  assert.equal(moderate.topFix?.name, "speed.sug.qos");
+});
+
+test("null throughput metrics do not read as 0 Mbps issues", () => {
+  const plan = planSpeedSuggestions(baseResults({ download: null, upload: null, bufferbloatIncrease: null }));
+  assert.equal(plan.level, "pass");
+  assert.deepEqual(plan.issues, []);
+  assert.equal(plan.topFix, null);
+});
+
+test("SERVERS includes edge, cf-speed, and custom only", () => {
+  assert.deepEqual(SERVERS.map((s) => s.id), ["edge", "cf-speed", "custom"]);
+});
+
+test("SpeedTest.run uses a warm-up ping before timing idle latency", async () => {
+  const realFetch = globalThis.fetch;
+  let pingCalls = 0;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/api/speedtest/ping")) {
+      if (pingCalls++ === 0) await new Promise((r) => setTimeout(r, 120));
+      return new Response("pong", { headers: { "x-colo": "MEL", "x-lat": "-37.8", "x-lon": "144.9" } });
+    }
+    if (url.includes("/api/speedtest/down")) {
+      return new Response(new Uint8Array(64));
+    }
+    return Response.json({ bytes: 64 });
+  }) as typeof fetch;
+
+  try {
+    const res = await SpeedTest.run(undefined, "edge");
+    assert.equal(res.serverId, "edge");
+    assert.equal(res.colo, "MEL");
+    assert.ok(pingCalls >= 11, `expected 1 warm-up + 10 timed pings, got ${pingCalls}`);
+    assert.ok(res.latency !== null && res.latency < 50, `cold first ping leaked into latency: ${res.latency}ms`);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 

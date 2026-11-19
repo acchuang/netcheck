@@ -88,14 +88,6 @@ export default {
       });
     }
 
-    if (url.pathname === "/api/speedtest/fast-targets") {
-      return handleFastTargets();
-    }
-
-    if (url.pathname === "/api/speedtest/ookla-targets") {
-      return handleOoklaTargets(request);
-    }
-
     if (url.pathname === "/api/speedtest/down") {
       const asked = Math.min(Math.max(parseInt(url.searchParams.get("bytes") || "0", 10) || 0, 0), MAX_DOWNLOAD_BYTES);
       if (!chargeSpeedBudget(clientIp, asked)) return budgetExceededResponse();
@@ -233,105 +225,6 @@ export function handleSpeedDown(url: URL): Response {
       "Cache-Control": "no-store",
     },
   });
-}
-
-// api.fast.com sends no CORS headers, so the browser can't do URL discovery
-// itself; proxy only this tiny JSON call — speed traffic goes browser -> OCA direct.
-// The token is the public one embedded in fast.com's own client JS (stable for years).
-// Cached across visitors via the edge Cache API — targets stay valid for hours, so there's
-// no need to hit api.fast.com on every single page load.
-const FAST_TARGETS_CACHE_KEY = new Request("https://netcheck.internal/cache/fast-targets");
-
-async function handleFastTargets(): Promise<Response> {
-  // ponytail: DOM lib's ambient `caches` shadows workers-types' (which has `.default`), and the
-  // global only exists in the Workers runtime — cast + access lazily so `node --test` (no `caches`
-  // global) can still import this file without touching the shared tsconfig's lib/types.
-  const edgeCache = caches as unknown as { default: { match(req: Request): Promise<Response | undefined>; put(req: Request, res: Response): Promise<void> } };
-  const cached = await edgeCache.default.match(FAST_TARGETS_CACHE_KEY);
-  if (cached) return cached;
-  try {
-    const res = await fetch(
-      "https://api.fast.com/netflix/speedtest/v2?https=true&token=YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm&urlCount=3",
-      { signal: AbortSignal.timeout(5000) }
-    );
-    const data = await res.json();
-    const response = Response.json(data, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=900" } });
-    await edgeCache.default.put(FAST_TARGETS_CACHE_KEY, response.clone());
-    return response;
-  } catch (err) {
-    console.error("fast.com discovery error:", err);
-    return Response.json(
-      { error: "fast.com discovery failed" },
-      { status: 502, headers: corsHeaders() }
-    );
-  }
-}
-
-// Same pattern as fast.com: servers.php sends no CORS headers, so proxy the tiny
-// discovery call and let speed traffic go browser -> Ookla host direct. Targets
-// are rewritten to https — most Ookla hosts serve TLS on their 8080 port.
-// servers.php geolocates purely by the requesting IP (the worker's US egress,
-// useless to visitors) and ignores lat/lon params, but its `search` param is a
-// true text filter over name/country/sponsor. Search by the visitor's city from
-// request.cf, fall back to a country-name map, and key the cache per term.
-const COUNTRY_SEARCH: Record<string, string> = {
-  AU: "Australia", NZ: "New Zealand", US: "United States", CA: "Canada", GB: "United Kingdom",
-  IE: "Ireland", DE: "Germany", FR: "France", NL: "Netherlands", BE: "Belgium",
-  CH: "Switzerland", AT: "Austria", IT: "Italy", ES: "Spain", PT: "Portugal",
-  SE: "Sweden", NO: "Norway", FI: "Finland", DK: "Denmark", PL: "Poland",
-  CZ: "Czech Republic", RU: "Russia", UA: "Ukraine", RO: "Romania", GR: "Greece",
-  TR: "Turkey", IL: "Israel", AE: "United Arab Emirates", SA: "Saudi Arabia", ZA: "South Africa",
-  EG: "Egypt", NG: "Nigeria", IN: "India", PK: "Pakistan", BD: "Bangladesh",
-  LK: "Sri Lanka", TH: "Thailand", VN: "Vietnam", PH: "Philippines", ID: "Indonesia",
-  MY: "Malaysia", SG: "Singapore", HK: "Hong Kong", TW: "Taiwan", KR: "South Korea",
-  JP: "Japan", CN: "China", BR: "Brazil", MX: "Mexico", AR: "Argentina",
-  CL: "Chile", CO: "Colombia",
-};
-
-async function handleOoklaTargets(request: Request): Promise<Response> {
-  const cf = getCf(request);
-  const city = cf.city?.trim() || "";
-  const country = request.headers.get("cf-ipcountry")?.toUpperCase() || "";
-  const search = city || COUNTRY_SEARCH[country] || "";
-  const edgeCache = caches as unknown as { default: { match(req: Request): Promise<Response | undefined>; put(req: Request, res: Response): Promise<void> } };
-  const cacheKey = new Request(`https://netcheck.internal/cache/ookla-targets/${search || "any"}`);
-  const cached = await edgeCache.default.match(cacheKey);
-  if (cached) return cached;
-  try {
-    const q = search ? `&search=${encodeURIComponent(search)}` : "";
-    const res = await fetch(
-      `https://www.speedtest.net/api/js/servers.php?engine=js&limit=8${q}`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-    const servers = (await res.json()) as {
-      url?: string;
-      lat?: string;
-      lon?: string;
-      name?: string;
-      sponsor?: string;
-      id?: string;
-      https_functional?: number;
-    }[];
-    const targets = servers
-      .filter((s) => s.https_functional === 1 && s.url?.startsWith("http"))
-      .map((s) => ({
-        url: s.url!.replace("http://", "https://"),
-        name: s.name ?? "",
-        sponsor: s.sponsor ?? "",
-        id: s.id ?? "",
-        lat: s.lat != null ? parseFloat(s.lat) : null,
-        lon: s.lon != null ? parseFloat(s.lon) : null,
-      }));
-    const response = Response.json({ targets }, { headers: { ...corsHeaders(), "Cache-Control": "public, max-age=900" } });
-    await edgeCache.default.put(cacheKey, response.clone());
-    return response;
-  } catch (err) {
-    console.error("Ookla discovery error:", err);
-    return Response.json(
-      { error: "Ookla discovery failed" },
-      { status: 502, headers: corsHeaders() }
-    );
-  }
 }
 
 // The largest body the client ever sends is 5 MB (speed-test.ts ulSizes), so

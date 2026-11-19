@@ -1,7 +1,7 @@
 import { SpeedTest } from "./speed-test.ts";
 import { loadHistory, persistHistory, confirmAction } from "./ui-utils.ts";
 import { html, setHtml, type Safe } from "./html.ts";
-import { onLocaleChange } from "./i18n.ts";
+import { onLocaleChange, t } from "./i18n.ts";
 
 interface Snapshot {
   ts: number;
@@ -9,6 +9,9 @@ interface Snapshot {
   upload: number | null;
   latency: number | null;
   jitter: number | null;
+  bufferbloatIncrease?: number | null;
+  bufferbloatGrade?: string | null;
+  server?: string | null;
   colo: string | null;
 }
 
@@ -27,12 +30,18 @@ export function saveSpeedSnapshot(): void {
   const r = SpeedTest.results;
   if (r.download === null && r.upload === null && r.latency === null) return;
   const snapshots = loadHistory<Snapshot>(KEY);
+  const bufferbloatGrade = r.bufferbloatIncrease !== null
+    ? SpeedTest.getBufferbloatGrade(r.bufferbloatIncrease).grade
+    : null;
   snapshots.push({
     ts: Date.now(),
     download: r.download,
     upload: r.upload,
     latency: r.latency,
     jitter: r.jitter,
+    bufferbloatIncrease: r.bufferbloatIncrease,
+    bufferbloatGrade,
+    server: r.serverId ? String(r.serverId).slice(0, 24) : null,
     colo: r.colo ? String(r.colo).slice(0, 32) : null,
   });
   persistHistory(KEY, snapshots, MAX);
@@ -85,13 +94,21 @@ function renderSnapshotHistory(): void {
       const dlDelta = isLatest && prev ? fmtDelta(s.download, prev.download, "Mbps") : "";
       const ulDelta = isLatest && prev ? fmtDelta(s.upload, prev.upload, "Mbps") : "";
       const latDelta = isLatest && prev ? fmtDelta(s.latency, prev.latency, "ms", true) : "";
+      const bbDelta = isLatest && prev && s.bufferbloatIncrease != null && prev.bufferbloatIncrease != null
+        ? fmtDelta(s.bufferbloatIncrease, prev.bufferbloatIncrease, "ms", true)
+        : "";
+      const bbText = s.bufferbloatIncrease != null && s.bufferbloatGrade
+        ? html`${t("speed.bbShort")} ${s.bufferbloatGrade} (+${s.bufferbloatIncrease}ms) ${bbDelta}`
+        : "—";
+      const dest = [s.server, s.colo].filter(Boolean).join(" · ") || "—";
 
       return html`<div class="snap-row${isLatest ? " latest" : ""}">
         <span class="snap-time">${time}</span>
         <span class="snap-val">${SpeedTest.formatSpeed(s.download)} ${dlDelta}</span>
         <span class="snap-val">${SpeedTest.formatSpeed(s.upload)} ${ulDelta}</span>
         <span class="snap-val">${s.latency ?? "—"}ms ${latDelta}</span>
-        <span class="snap-val snap-colo">${s.colo ?? "—"}</span>
+        <span class="snap-val">${bbText}</span>
+        <span class="snap-val snap-colo">${dest}</span>
       </div>`;
     })}`);
 }

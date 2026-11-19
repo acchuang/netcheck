@@ -12,6 +12,7 @@ export interface SpeedTestResults {
    */
   failedProbes: number | null;
 
+  serverId: string | null;
   colo: string | null;
   userLat: number | null;
   userLon: number | null;
@@ -40,12 +41,10 @@ interface ServerMeta {
 
 interface SpeedServer {
   id: string;
-  // plain display name for third-party nodes; built-in servers use i18n labels in app.ts
+  // plain display name for third-party nodes; built-in servers use i18n labels in speed-ui.ts
   name?: string;
   // false if this server type never reports a colo/location (default: true)
   locatable?: boolean;
-  // async URL discovery; returns false if the node is unavailable
-  init?: () => Promise<boolean>;
   pingUrl: () => string;
   downUrl: (bytes: number) => string;
   upUrl: () => string;
@@ -83,101 +82,6 @@ function randomBody(size: number): Uint8Array<ArrayBuffer> {
 function randomBlobBody(size: number): Blob {
   return new Blob([randomBody(size)], { type: "text/plain" });
 }
-
-// Netflix OCA (fast.com) node. URL discovery goes through our worker because
-// api.fast.com sends no CORS headers; the speed traffic itself is browser -> OCA
-// direct, so measurements are unaffected. Target URLs embed an expiry (~hours);
-// re-running after that fails cleanly and a reload re-discovers.
-let fastTarget = "";
-let fastTargetSetAt = 0;
-// ponytail: conservative fixed TTL well under the URL's real (~hours) expiry, since we
-// don't parse the expiry out of the target URL itself; re-init if a real expiry check is needed
-const FAST_TARGET_TTL_MS = 20 * 60 * 1000;
-
-const fastServer: SpeedServer = {
-  id: "fast",
-  name: "Netflix (fast.com)",
-  locatable: false,
-  init: async () => {
-    if (fastTarget && Date.now() - fastTargetSetAt < FAST_TARGET_TTL_MS) return true;
-    try {
-      const res = await fetch("/api/speedtest/fast-targets", { signal: AbortSignal.timeout(5000) });
-      const data = (await res.json()) as { targets?: { url?: string }[] };
-      fastTarget = data.targets?.[0]?.url || "";
-      fastTargetSetAt = Date.now();
-      return fastTarget !== "";
-    } catch {
-      return false;
-    }
-  },
-  pingUrl: () => fastTarget.replace("/speedtest?", "/speedtest/range/0-0?"),
-  downUrl: (bytes) => fastTarget.replace("/speedtest?", `/speedtest/range/0-${bytes}?`),
-  upUrl: () => fastTarget.replace("/speedtest?", "/speedtest/range/0-0?"),
-  parseMeta: () => ({ colo: null, lat: null, lon: null }),
-  makeUploadBody: randomBlobBody,
-};
-
-let ooklaTarget = { base: "", lat: null, lon: null } as { base: string; lat: number | null; lon: number | null };
-let ooklaTargetSetAt = 0;
-
-const OOKLA_TARGET_TTL_MS = 20 * 60 * 1000;
-
-// Ookla serves fixed random{N}x{N}.jpg files; map the requested byte count to
-// the smallest file that covers it (the 4000 file covers the 25MB step).
-function ooklaFileSize(bytes: number): number {
-  if (bytes <= 100_000) return 500;
-  if (bytes <= 500_000) return 1000;
-  if (bytes <= 1_000_000) return 2000;
-  if (bytes <= 5_000_000) return 3000;
-  if (bytes <= 10_000_000) return 3500;
-  return 4000;
-}
-
-const ooklaServer: SpeedServer = {
-  id: "ookla",
-  name: "Ookla Speedtest",
-  locatable: true,
-  init: async () => {
-    if (ooklaTarget.base && Date.now() - ooklaTargetSetAt < OOKLA_TARGET_TTL_MS) return true;
-    try {
-      const res = await fetch("/api/speedtest/ookla-targets", { signal: AbortSignal.timeout(5000) });
-      const data = (await res.json()) as { targets?: { url?: string; lat?: number | null; lon?: number | null }[] };
-      for (const t of data.targets ?? []) {
-        if (!t.url) continue;
-        try {
-          // Browser fetch fails on missing CORS headers, so a 200 here also
-          // proves the host allows us; try the next target otherwise.
-          const probe = await fetch(t.url.replace("/speedtest/upload.php", "/speedtest/random500x500.jpg"), {
-            cache: "no-store",
-            signal: AbortSignal.timeout(3000),
-          });
-          if (probe.ok) {
-            ooklaTarget = {
-              base: t.url.replace("/speedtest/upload.php", ""),
-              lat: t.lat ?? null,
-              lon: t.lon ?? null,
-            };
-            ooklaTargetSetAt = Date.now();
-            return true;
-          }
-        } catch {
-          // try next target
-        }
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  },
-  pingUrl: () => `${ooklaTarget.base}/speedtest/random500x500.jpg?_=${Date.now()}`,
-  downUrl: (bytes) => {
-    const s = ooklaFileSize(bytes);
-    return `${ooklaTarget.base}/speedtest/random${s}x${s}.jpg?_=${Date.now()}`;
-  },
-  upUrl: () => `${ooklaTarget.base}/speedtest/upload.php`,
-  fetchMeta: () => Promise.resolve({ colo: null, lat: ooklaTarget.lat, lon: ooklaTarget.lon }),
-  makeUploadBody: randomBlobBody,
-};
 
 export const SERVERS: SpeedServer[] = [
   {
@@ -217,8 +121,6 @@ export const SERVERS: SpeedServer[] = [
     },
     makeUploadBody: randomBlobBody,
   },
-  fastServer,
-  ooklaServer,
   {
     id: "custom",
     pingUrl: () => `${customBaseUrl}/api/speedtest/ping?_=${Date.now()}`,
@@ -236,7 +138,8 @@ export const SERVERS: SpeedServer[] = [
 async function pingOnce(server: SpeedServer, signal?: AbortSignal): Promise<number | null> {
   try {
     const start = performance.now();
-    await fetch(server.pingUrl(), { cache: "no-store", signal: signal ?? AbortSignal.timeout(3000) });
+    const res = await fetch(server.pingUrl(), { cache: "no-store", signal: signal ?? AbortSignal.timeout(3000) });
+    if (!res.bodyUsed) await res.arrayBuffer();
     return performance.now() - start;
   } catch {
     return null;
@@ -381,9 +284,6 @@ async function probeServer(id: string): Promise<ServerProbeResult> {
     return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
   }
   const server = getServer(id);
-  if (server.init && !(await server.init())) {
-    return { id, reachable: false, latency: null, colo: null, lat: null, lon: null };
-  }
   try {
     // First request pays DNS + TCP + TLS; time the second, which reuses the connection.
     const first = await fetch(server.pingUrl(), { cache: "no-store", signal: AbortSignal.timeout(3000) });
@@ -418,6 +318,7 @@ export const SpeedTest = {
     failedProbes: null,
     loadedLatency: null,
     bufferbloatIncrease: null,
+    serverId: null,
     colo: null,
     userLat: null,
     userLon: null,
@@ -436,22 +337,35 @@ export const SpeedTest = {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
     this.results = {
-      download: null, upload: null, latency: null, jitter: null, failedProbes: null, colo: null, userLat: null, userLon: null,
+      download: null, upload: null, latency: null, jitter: null, failedProbes: null,
+      serverId, colo: null, userLat: null, userLon: null,
       loadedLatency: null, bufferbloatIncrease: null,
     };
     if (serverId === "custom" && !hasCustomServerUrl()) {
       throw new Error("No custom server URL set");
     }
     const server = getServer(serverId);
-    if (server.init && !(await server.init())) {
-      throw new Error("Server unavailable");
-    }
     const cb: ProgressCallback = onProgress || (() => {});
     const downloadPings: number[] = [];
     const uploadPings: number[] = [];
 
-    // Latency
+    // Latency: warm-up probe pays DNS, TCP, and TLS so the 10 measured pings
+    // read warm round trips rather than connection setup.
     cb("latency", 0, this.results);
+    try {
+      const warm = await fetch(server.pingUrl(), {
+        cache: "no-store",
+        signal: combineSignal(4000, signal),
+      });
+      const meta = await resolveMeta(server, warm);
+      this.results.colo = meta.colo;
+      this.results.userLat = meta.lat;
+      this.results.userLon = meta.lon;
+      if (!warm.bodyUsed) await warm.arrayBuffer();
+    } catch {
+      if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    }
+
     const pings: number[] = [];
     const PING_COUNT = 10;
     let lostPings = 0;
@@ -463,14 +377,15 @@ export const SpeedTest = {
           cache: "no-store",
           signal: combineSignal(4000, signal),
         });
+        if (!res.bodyUsed) await res.arrayBuffer();
         pings.push(performance.now() - start);
-        if (i === 0) {
+        if (!this.results.colo && i === 0) {
           const meta = await resolveMeta(server, res);
           this.results.colo = meta.colo;
           this.results.userLat = meta.lat;
           this.results.userLon = meta.lon;
         }
-      } catch (err) {
+      } catch {
         if (signal.aborted) throw new DOMException("Aborted", "AbortError");
         lostPings++;
       }

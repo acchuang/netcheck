@@ -2914,7 +2914,7 @@ html:not([data-probe="on"]) [data-probe-only] { display: none; }
 .snapshot-list { display: flex; flex-direction: column; gap: 6px; }
 .snap-row {
   display: grid;
-  grid-template-columns: 120px 1fr 1fr 1fr 80px;
+  grid-template-columns: 120px 1fr 1fr minmax(0, 1.5fr);
   gap: 12px;
   padding: 8px 12px;
   background: var(--card-bg);
@@ -2923,9 +2923,12 @@ html:not([data-probe="on"]) [data-probe-only] { display: none; }
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+#snapshot-list .snap-row {
+  grid-template-columns: 120px repeat(4, minmax(0, 1fr)) minmax(96px, auto);
+}
 .snap-row.latest { border-color: var(--accent); }
 .snap-time { color: var(--text-tertiary); }
-.snap-val { color: var(--text-secondary); }
+.snap-val { color: var(--text-secondary); min-width: 0; }
 .snap-colo { color: var(--text-quaternary); text-align: right; }
 .snap-score[data-state] { color: var(--hop-color); font-weight: 700; }
 .snap-delta { font-size: 11px; margin-left: 4px; }
@@ -2934,6 +2937,8 @@ html:not([data-probe="on"]) [data-probe-only] { display: none; }
 .snap-delta.same { color: var(--text-quaternary); }
 @media (max-width: 720px) {
   .snap-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; }
+  #snapshot-list .snap-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #snapshot-list .snap-colo { text-align: left; }
   .snap-time { grid-column: 1 / -1; }
 }
 

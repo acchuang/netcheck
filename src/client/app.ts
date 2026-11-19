@@ -9,7 +9,7 @@ import { initAdblockHistory } from "./adblock-history.ts";
 import { renderSkeletonRows } from "./ui-utils.ts";
 import { startAdBlock, initAdblockUI, renderAdBlockIdle, refreshAdblockLocaleTexts } from "./adblock-ui.ts";
 import { refreshFilterDetectLocaleTexts } from "./filter-detect-ui.ts";
-import { initSpeedTest, refreshSpeedLocaleTexts } from "./speed-ui.ts";
+import { initSpeedTest, startSpeedTab, refreshSpeedLocaleTexts } from "./speed-ui.ts";
 
 // i18n first: initTheme renders the theme menu through t(), and onLocaleChange
 // only fires on a *change*, so a saved zh-TW visitor got an English menu.
@@ -168,6 +168,7 @@ function showTab(tab: string): void {
   history.replaceState(null, "", `#${tab}`);
   window.scrollTo(0, 0);
   if (tab === "adblock") startAdBlock();
+  if (tab === "speed") startSpeedTab();
 }
 
 // Tab navigation
