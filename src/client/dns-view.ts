@@ -2,7 +2,7 @@ import { t } from "./i18n.ts";
 import { html, raw, setHtml } from "./html.ts";
 import { setBadge, createCheckItem, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline } from "./ui-utils.ts";
 import { ipFields, resolverRows, ecsView, ecsSummary, securityRows, tellRows, type IpData, type ProbeResult, type ResolverResult, type SecurityCheck } from "./dns-report.ts";
-import { encryptedDnsOperator } from "../shared/ip-classify.ts";
+import { encryptedDnsOperator, ipFamily } from "../shared/ip-classify.ts";
 import type { DnsPlan } from "./dns-check.ts";
 import type { Tell } from "../shared/tells.ts";
 
@@ -35,11 +35,15 @@ export function renderIpv6(ip: string | null): void {
   bindCopyButton(el, ip);
 }
 
-export function renderIpInfo(ipData: IpData): void {
+export function renderIpInfo(ipData: IpData, ipv4?: string | null): void {
   const ipEl = document.getElementById("ip-address") as HTMLButtonElement;
-  ipEl.textContent = ipData.ip || "—";
-  bindCopyButton(ipEl, ipData.ip);
-  const f = ipFields(ipData);
+  const v4 = ipv4 !== undefined
+    ? ipv4
+    : ipData.ip && ipFamily(ipData.ip) === 4 ? ipData.ip : null;
+  ipEl.textContent = v4 || t("dns.ipv4None");
+  ipEl.classList.toggle("info-muted", !v4);
+  bindCopyButton(ipEl, v4);
+  const f = ipFields(ipData, v4);
   document.getElementById("ip-location")!.textContent = f.location;
   document.getElementById("ip-asn")!.textContent = f.asn;
   document.getElementById("ip-timezone")!.textContent = f.timezone;

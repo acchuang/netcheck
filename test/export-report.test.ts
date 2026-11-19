@@ -26,7 +26,7 @@ test("export DNS section comes from the report, not the DOM", () => {
   assert.equal(dns.asn, "ExampleNet (AS64500)");
   assert.deepEqual(dns.resolvers.map((r) => [r.label, r.status, r.value]), [
     ["Fast 1.1.1.1 DNSSEC", "pass", "12ms"],
-    ["Slow 9.9.9.9 ECS", "warn", "80ms"],
+    ["Slow 9.9.9.9 ECS", "info", "80ms"],
     ["Dead (8.8.8.8)", "fail", dns.resolvers[2].value],
   ]);
   assert.deepEqual(dns.ecs.map((r) => [r.label, r.status]), [["Fast", "pass"], ["Slow", "info"]]);

@@ -8,45 +8,61 @@
 
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { DnsCheck, planDnsSuggestions } from "../src/client/dns-check.ts";
+import { DnsCheck, DNSSEC_OK_URL, DNSSEC_FAIL_URL, planDnsSuggestions } from "../src/client/dns-check.ts";
+import type { ResolverResult } from "../src/client/dns-report.ts";
 import { parseWhoami } from "../src/shared/dns-wire.ts";
 
 const realFetch = globalThis.fetch;
 const CLIENT = { ipv4: "203.0.113.5", ipv6: null };
 
-// The malware probe reads success as "your resolver did NOT filter this".
-// "rejects" refuses only the malware host (a resolver sinkholing it); "offline"
-// and "timeout" fail everything, which is the network failing, not a filter.
-function stubFetch(mode: "resolves" | "rejects" | "offline" | "timeout"): void {
+interface StubOpts {
+  malware?: "resolves" | "rejects" | "offline" | "timeout";
+  dnssec?: "validates" | "insecure" | "okFail" | "failTimeout";
+}
+
+function stubFetch(opts: StubOpts = {}): void {
+  const malware = opts.malware ?? "rejects";
+  const dnssec = opts.dnssec ?? "validates";
   globalThis.fetch = (async (input: RequestInfo | URL) => {
-    if (mode === "timeout") throw new DOMException("timed out", "TimeoutError");
-    if (mode === "offline" || (mode === "rejects" && String(input).includes("malware.testcategory.com"))) {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith(DNSSEC_OK_URL)) {
+      if (dnssec === "okFail" || malware === "offline") throw new TypeError("fetch failed");
+      if (malware === "timeout") throw new DOMException("timed out", "TimeoutError");
+      return new Response("", { status: 200 });
+    }
+    if (url.startsWith(DNSSEC_FAIL_URL)) {
+      if (dnssec === "insecure") return new Response("", { status: 200 });
+      if (dnssec === "failTimeout" || malware === "timeout") throw new DOMException("timed out", "TimeoutError");
+      throw new TypeError("DNSSEC SERVFAIL");
+    }
+    if (malware === "timeout") throw new DOMException("timed out", "TimeoutError");
+    if (malware === "offline" || (malware === "rejects" && url.includes("malware.testcategory.com"))) {
       throw new TypeError("fetch failed");
     }
     return new Response("", { status: 200 });
   }) as typeof fetch;
 }
 
-beforeEach(() => stubFetch("rejects"));
+beforeEach(() => stubFetch());
 afterEach(() => { globalThis.fetch = realFetch; });
 
 const resolver = (validatesDnssec: boolean | null) => ({
   name: "test", host: "example.test", cors: false,
   reachable: true, latency: 10, validatesDnssec, dnssecDetail: null,
   forwardsEcs: null, ecsSubnet: null, egressIp: null, filtering: false,
-} as unknown as Parameters<typeof DnsCheck.checkDnsSecurity>[0][number]);
+} as unknown as ResolverResult);
 
 const idsIn = (checks: { id: string }[]) => checks.map((c) => c.id);
 const statusOf = (checks: { id: string; status: string }[], id: string) =>
   checks.find((c) => c.id === id)?.status;
 
 test("no probe nameserver means no encrypted-DNS row at all", async () => {
-  const checks = await DnsCheck.checkDnsSecurity([resolver(true)], null, CLIENT);
+  const checks = await DnsCheck.checkDnsSecurity(null, CLIENT);
   assert.ok(!idsIn(checks).includes("doh"), "a check that cannot be answered must not be shown");
 });
 
 test("a probe that observed nothing reports info, not warn", async () => {
-  const checks = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
+  const checks = await DnsCheck.checkDnsSecurity([], CLIENT);
   assert.equal(statusOf(checks, "doh"), "info");
 
   // The reason it must be "info": renderSecurity grades every non-info row, so
@@ -56,38 +72,44 @@ test("a probe that observed nothing reports info, not warn", async () => {
 });
 
 test("an observed public resolver is a pass with the operator named", async () => {
-  const checks = await DnsCheck.checkDnsSecurity([resolver(true)], [{ ip: "1.1.1.1" }], CLIENT);
+  const checks = await DnsCheck.checkDnsSecurity([{ ip: "1.1.1.1" }], CLIENT);
   assert.equal(statusOf(checks, "doh"), "pass");
   assert.match(checks.find((c) => c.id === "doh")!.detailArg!, /1\.1\.1\.1/);
 });
 
-test("dnssec reports unknown, partial, or full rejection honestly", async () => {
-  const untested = await DnsCheck.checkDnsSecurity([resolver(null)], [], CLIENT);
-  assert.equal(statusOf(untested, "dnssec"), "warn");
-  assert.equal(untested.find((c) => c.id === "dnssec")!.detailKey, "dns.dnssecUnknown");
+test("visitor dnssec reports pass, warn, or info honestly", async () => {
+  stubFetch({ dnssec: "validates" });
+  const passChecks = await DnsCheck.checkDnsSecurity([], CLIENT);
+  assert.equal(statusOf(passChecks, "dnssec"), "pass");
+  assert.equal(passChecks.find((c) => c.id === "dnssec")!.detailKey, "dns.dnssecValidated");
 
-  const all = await DnsCheck.checkDnsSecurity([resolver(true), resolver(true)], [], CLIENT);
-  assert.equal(statusOf(all, "dnssec"), "pass");
+  stubFetch({ dnssec: "insecure" });
+  const warnChecks = await DnsCheck.checkDnsSecurity([], CLIENT);
+  assert.equal(statusOf(warnChecks, "dnssec"), "warn");
+  assert.equal(warnChecks.find((c) => c.id === "dnssec")!.detailKey, "dns.dnssecNotValidated");
 
-  const some = await DnsCheck.checkDnsSecurity([resolver(true), resolver(false)], [], CLIENT);
-  assert.equal(statusOf(some, "dnssec"), "warn");
-  assert.equal(some.find((c) => c.id === "dnssec")!.detailArg, "1/2");
+  for (const mode of ["okFail", "failTimeout"] as const) {
+    stubFetch({ dnssec: mode });
+    const unknownChecks = await DnsCheck.checkDnsSecurity([], CLIENT);
+    assert.equal(statusOf(unknownChecks, "dnssec"), "info", mode);
+    assert.equal(unknownChecks.find((c) => c.id === "dnssec")!.detailKey, "dns.dnssecUnknown");
+  }
 });
 
 test("malware filtering is inferred from the probe fetch failing, not succeeding", async () => {
-  const filtered = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
+  const filtered = await DnsCheck.checkDnsSecurity([], CLIENT);
   assert.equal(statusOf(filtered, "malware"), "pass");
 
-  stubFetch("resolves");
-  const unfiltered = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
+  stubFetch({ malware: "resolves" });
+  const unfiltered = await DnsCheck.checkDnsSecurity([], CLIENT);
   assert.equal(statusOf(unfiltered, "malware"), "warn");
 });
 
 test("a dead link or a timeout is not read as malware filtering", async () => {
-  for (const mode of ["offline", "timeout"] as const) {
-    stubFetch(mode);
-    const checks = await DnsCheck.checkDnsSecurity([resolver(true)], [], CLIENT);
-    assert.equal(statusOf(checks, "malware"), "info", mode);
+  for (const malware of ["offline", "timeout"] as const) {
+    stubFetch({ malware });
+    const checks = await DnsCheck.checkDnsSecurity([], CLIENT);
+    assert.equal(statusOf(checks, "malware"), "info", malware);
   }
 });
 
@@ -152,6 +174,17 @@ test("no probe nameserver never produces a 'DNS not encrypted' issue", () => {
   assert.deepEqual(plan.issues, []);
 });
 
+test("unknown (info) malware or dnssec never manufactures a verdict issue", () => {
+  const checks: Checks = [
+    { id: "dnssec", status: "info", detailKey: "dns.dnssecUnknown" },
+    { id: "malware", status: "info", detailKey: "dns.malwareUnknown" },
+    { id: "webrtc", status: "info", detailKey: "dns.webrtcUnknown" },
+  ];
+  const plan = planDnsSuggestions(checks, table);
+  assert.deepEqual(plan.issues, []);
+  assert.equal(plan.topFix, null);
+});
+
 test("an observed plaintext resolver is an issue, and Top Fix is the encryption fix", () => {
   const checks = [...passing("dnssec", "malware"), { id: "doh", status: "warn", detailKey: "x" }] as Checks;
   const plan = planDnsSuggestions(checks, table);
@@ -160,12 +193,27 @@ test("an observed plaintext resolver is an issue, and Top Fix is the encryption 
   assert.equal(plan.suggestions[0], plan.topFix);
 });
 
+test("an observed ECS leak raises an issue and skips resolvers forwarding ECS for Top Fix", () => {
+  const checks = [...passing("dnssec", "malware", "doh"), { id: "ecs", status: "warn", detailKey: "dns.ecsForwarded" }] as Checks;
+  const cfForwards = [row("Cloudflare", { forwardsEcs: true }), row("Quad9", { forwardsEcs: false })];
+  const plan = planDnsSuggestions(checks, cfForwards);
+  assert.deepEqual(plan.issues.map((i) => i.id), ["ecs"]);
+  assert.equal(plan.topFix?.name, "dns.sug.quad9");
+});
+
 test("Top Fix resolves the issue and skips resolvers our own table shows failing", () => {
   const leaky = [row("Cloudflare"), row("Quad9"), row("Cloudflare Families", { forwardsEcs: true })];
-  const plan = planDnsSuggestions(passing("dnssec"), leaky);
+  const checks = [...passing("dnssec"), { id: "malware", status: "warn", detailKey: "dns.malwareNotFiltered" }] as Checks;
+  const plan = planDnsSuggestions(checks, leaky);
   assert.deepEqual(plan.issues.map((i) => i.id), ["malware"]);
   assert.equal(plan.topFix?.name, "dns.sug.quad9", "1.1.1.1 doesn't filter malware; Families is leaking ECS");
   assert.ok(!plan.suggestions.some((s) => s.name === "dns.sug.cfFamily"));
+});
+
+test("usingResolver skips recommending the operator the probe observed", () => {
+  const observedCf = [{ ip: "172.68.24.7" }];
+  const plan = planDnsSuggestions(passing("dnssec", "malware", "doh"), table, observedCf);
+  assert.ok(!plan.suggestions.some((s) => s.name === "dns.sug.cf"));
 });
 
 test("parseWhoami accepts valid IP and drops non-IP or malicious values", () => {

@@ -11,9 +11,12 @@ import { dohQuery, parseWhoami, ECS_PROBE_DOMAIN, toHex } from "../shared/dns-wi
 import { median } from "./speed-test.ts";
 import { timezoneTell, rttTell, languageTell, resolverCountryTell, type LocatedResolver, type Tell } from "../shared/tells.ts";
 import {
-  dohVerdict, forwardedClientSubnet, evaluateWebRtc,
+  dohVerdict, forwardedClientSubnet, evaluateWebRtc, ipFamily,
   type WebRtcVerdict, type ObservedResolver,
 } from "../shared/ip-classify.ts";
+
+export const DNSSEC_OK_URL = "https://sigok.ippacket.stream/";
+export const DNSSEC_FAIL_URL = "https://sigfail.ippacket.stream/";
 
 export interface DnsResult {
   Answer?: DnsAnswer[];
@@ -64,11 +67,12 @@ interface DnsContext {
   slowestResolver: () => number;
   fastestResolver: () => number | null;
   hasSecurity: (id: string) => boolean;
+  hasIssue: (id: DnsIssue) => boolean;
   hasWebRtcLeak: boolean;
   reachableCount: number;
 }
 
-type DnsIssue = "webrtc" | "malware" | "doh" | "dnssec" | "slow" | "limited";
+type DnsIssue = "webrtc" | "malware" | "doh" | "ecs" | "dnssec" | "slow" | "limited";
 
 // Most severe first: the order issues are listed in the verdict, and the order
 // in which Top Fix looks for a suggestion that resolves one of them.
@@ -76,6 +80,7 @@ const DNS_ISSUES: { id: DnsIssue; key: string }[] = [
   { id: "webrtc", key: "dns.issueWebrtc" },
   { id: "malware", key: "dns.issueMalware" },
   { id: "doh", key: "dns.issueDoh" },
+  { id: "ecs", key: "dns.issueEcs" },
   { id: "dnssec", key: "dns.issueDnssec" },
   { id: "slow", key: "dns.issueSlow" },
   { id: "limited", key: "dns.issueLimited" },
@@ -277,37 +282,45 @@ export const DnsCheck = {
     return null;
   },
 
+  /**
+   * Tests whether the visitor's own system/browser resolver validates DNSSEC
+   * via a paired live-HTTPS canary: sigok must succeed before sigfail's failure
+   * counts as DNSSEC rejection, so an outage reads as unknown rather than PASS.
+   */
+  async checkVisitorDnssec(): Promise<SecurityCheck> {
+    const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+      await fetch(`${DNSSEC_OK_URL}?_=${nonce}`, {
+        mode: "no-cors",
+        cache: "no-store",
+        signal: AbortSignal.timeout(4000),
+      });
+    } catch {
+      return { id: "dnssec", status: "info", detailKey: "dns.dnssecUnknown" };
+    }
+    try {
+      await fetch(`${DNSSEC_FAIL_URL}?_=${nonce}`, {
+        mode: "no-cors",
+        cache: "no-store",
+        signal: AbortSignal.timeout(4000),
+      });
+      return { id: "dnssec", status: "warn", detailKey: "dns.dnssecNotValidated" };
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "TimeoutError") {
+        return { id: "dnssec", status: "info", detailKey: "dns.dnssecUnknown" };
+      }
+      return { id: "dnssec", status: "pass", detailKey: "dns.dnssecValidated" };
+    }
+  },
+
   /** `observed` is null when this deployment has no probe nameserver at all. */
   async checkDnsSecurity(
-    resolvers: ResolverResult[],
     observed: ObservedResolver[] | null,
     client: { ipv4: string | null; ipv6: string | null }
   ): Promise<SecurityCheck[]> {
     const checks: SecurityCheck[] = [];
 
-    // DNSSEC validation. The old version asked Cloudflare's DoH for the AD flag
-    // on an already-signed domain, which every resolver sets — it reported
-    // Cloudflare's posture, not the visitor's, and could never fail. The real
-    // test is whether a resolver *rejects* a deliberately broken signature.
-    const tested = resolvers.filter((r) => r.validatesDnssec !== null);
-    const validating = tested.filter((r) => r.validatesDnssec === true);
-    if (tested.length === 0) {
-      checks.push({ id: "dnssec", status: "warn", detailKey: "dns.dnssecUnknown" });
-    } else if (validating.length === tested.length) {
-      checks.push({
-        id: "dnssec",
-        status: "pass",
-        detailKey: "dns.dnssecRejects",
-        detailArg: String(tested.length),
-      });
-    } else {
-      checks.push({
-        id: "dnssec",
-        status: "warn",
-        detailKey: "dns.dnssecPartial",
-        detailArg: `${validating.length}/${tested.length}`,
-      });
-    }
+    checks.push(await DnsCheck.checkVisitorDnssec());
 
     // Encrypted DNS. This used to be an unconditional pass, which only ever
     // meant "this page fetched a DoH endpoint" — a property of our own
@@ -389,7 +402,7 @@ export const DnsCheck = {
         checks.push({ id: "lan", status: "info", detailKey: "dns.lanExposed", detailArg: lanIps.join(", ") });
       }
     } catch {
-      checks.push({ id: "webrtc", status: "warn", detailKey: "dns.webrtcUnknown" });
+      checks.push({ id: "webrtc", status: "info", detailKey: "dns.webrtcUnknown" });
     }
 
     return checks;
@@ -435,23 +448,23 @@ export const DnsCheck = {
 
 const dnsSuggestions: Suggestion[] = [
   { name: "dns.sug.cf", icon: "CF", tags: ["fastest", "DoH", "DoT", "privacy"], url: "https://1.1.1.1",
-    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.slowestResolver() > 100, fixes: ["slow", "dnssec"], resolver: "Cloudflare" },
+    when: (ctx) => !ctx.usingResolver("Cloudflare") || ctx.hasIssue("slow"), fixes: ["slow", "dnssec", "ecs"], resolver: "Cloudflare" },
   { name: "dns.sug.cfFamily", icon: "CF+", tags: ["family safe", "malware blocking", "free"], url: "https://1.1.1.1/family",
-    when: (ctx) => !ctx.hasSecurity("malware"), fixes: ["malware", "dnssec"], resolver: "Cloudflare Families" },
+    when: (ctx) => ctx.hasIssue("malware") || ctx.hasIssue("dnssec"), fixes: ["malware", "dnssec"], resolver: "Cloudflare Families" },
   { name: "dns.sug.quad9", icon: "Q9", tags: ["threat blocking", "non-profit", "DNSSEC"], url: "https://quad9.net",
-    when: (ctx) => !ctx.hasSecurity("malware") || !ctx.hasSecurity("dnssec"), fixes: ["malware", "dnssec"], resolver: "Quad9" },
+    when: (ctx) => !ctx.usingResolver("Quad9"), fixes: ["malware", "dnssec", "ecs"], resolver: "Quad9" },
   { name: "dns.sug.nextdns", icon: "ND", tags: ["customizable", "analytics", "ad blocking"], url: "https://nextdns.io",
-    when: () => true, fixes: ["malware"], resolver: "NextDNS" },
+    when: (ctx) => !ctx.usingResolver("NextDNS"), fixes: ["malware", "ecs"], resolver: "NextDNS" },
   { name: "dns.sug.doh", icon: "DoH", tags: ["encryption", "privacy", "browser setting"], url: "https://www.cloudflare.com/ssl/encrypted-sni/",
-    when: (ctx) => !ctx.hasSecurity("doh"), fixes: ["doh"] },
+    when: (ctx) => ctx.hasIssue("doh"), fixes: ["doh"] },
   { name: "dns.sug.dnssec", icon: "SEC", tags: ["anti-spoofing", "cryptographic", "validation"], url: "https://www.internetsociety.org/deploy360/dnssec/",
-    when: (ctx) => !ctx.hasSecurity("dnssec"), fixes: ["dnssec"] },
+    when: (ctx) => ctx.hasIssue("dnssec"), fixes: ["dnssec"] },
   { name: "dns.sug.pihole", icon: "Pi", tags: ["self-hosted", "network-wide", "open source"], url: "https://pi-hole.net",
-    when: (ctx) => !ctx.hasSecurity("malware"), fixes: [] },
+    when: (ctx) => ctx.hasIssue("malware"), fixes: [] },
   { name: "dns.sug.webrtc", icon: "RTC", tags: ["privacy fix", "IP leak", "browser setting"], url: null,
     when: (ctx) => ctx.hasWebRtcLeak, fixes: ["webrtc"] },
   { name: "dns.sug.adguard", icon: "AG", tags: ["ad blocking", "no install", "cross-platform"], url: "https://adguard.com/adguard-dns/overview.html",
-    when: (ctx) => !ctx.usingResolver("AdGuard DNS"), fixes: ["malware"], resolver: "AdGuard DNS" },
+    when: (ctx) => !ctx.usingResolver("AdGuard DNS"), fixes: ["malware", "ecs"], resolver: "AdGuard DNS" },
   { name: "dns.sug.multi", icon: "2x", tags: ["reliability", "redundancy", "easy setup"], url: null,
     when: (ctx) => ctx.reachableCount < 3, fixes: ["limited"] },
 ];
@@ -463,18 +476,22 @@ const dnsSuggestions: Suggestion[] = [
  */
 export type DnsPlan = ReturnType<typeof planDnsSuggestions>;
 
-export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: ResolverResult[]) {
-  const ctx: DnsContext = {
-    usingResolver: (name) => reachable.some((r) => r.name === name && (r.latency ?? Infinity) < 100),
-    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
-    // Only browser-timed rows count; none timed means "unknown", not "slow".
-    fastestResolver: () => {
-      const timed = reachable.filter((r) => r.latency !== null).map((r) => r.latency!);
-      return timed.length > 0 ? Math.min(...timed) : null;
-    },
-    hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
-    hasWebRtcLeak: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
-    reachableCount: reachable.length,
+export function planDnsSuggestions(
+  securityChecks: SecurityCheck[],
+  reachable: ResolverResult[],
+  observed: ObservedResolver[] | null = null
+) {
+  const observedOperator = observed && observed.length > 0
+    ? (() => {
+        const v = dohVerdict(observed);
+        return v.kind === "encrypted" ? v.operator : null;
+      })()
+    : null;
+
+  // Only browser-timed rows count; none timed means "unknown", not "slow".
+  const fastestResolver = () => {
+    const timed = reachable.filter((r) => r.latency !== null).map((r) => r.latency!);
+    return timed.length > 0 ? Math.min(...timed) : null;
   };
 
   // "DNS not encrypted" is only defensible when the probe actually saw the
@@ -485,14 +502,26 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
   const dohUnverified = !doh || doh.status === "info";
 
   const present: Record<DnsIssue, boolean> = {
-    webrtc: ctx.hasWebRtcLeak,
-    malware: !ctx.hasSecurity("malware"),
+    webrtc: securityChecks.some((c) => c.id === "webrtc" && c.status === "fail"),
+    malware: securityChecks.some((c) => c.id === "malware" && c.status === "warn"),
     doh: !dohUnverified && doh.status !== "pass",
-    dnssec: !ctx.hasSecurity("dnssec"),
-    slow: (ctx.fastestResolver() ?? 0) > 80,
-    limited: ctx.reachableCount < 2,
+    ecs: securityChecks.some((c) => c.id === "ecs" && c.status === "warn"),
+    dnssec: securityChecks.some((c) => c.id === "dnssec" && c.status === "warn"),
+    slow: (fastestResolver() ?? 0) > 80,
+    limited: reachable.length < 2,
   };
   const issues = DNS_ISSUES.filter((i) => present[i.id]);
+
+  const ctx: DnsContext = {
+    usingResolver: (name) =>
+      observedOperator !== null && name.toLowerCase().startsWith(observedOperator.toLowerCase()),
+    slowestResolver: () => reachable.length > 0 ? Math.max(...reachable.map((r) => r.latency ?? 0)) : Infinity,
+    fastestResolver,
+    hasSecurity: (id) => securityChecks.some((c) => c.id === id && c.status === "pass"),
+    hasIssue: (id) => present[id],
+    hasWebRtcLeak: present.webrtc,
+    reachableCount: reachable.length,
+  };
 
   // Never recommend a resolver our own table just showed leaking the visitor's
   // subnet or failing DNSSEC.
@@ -517,7 +546,7 @@ export function planDnsSuggestions(securityChecks: SecurityCheck[], reachable: R
 let report: DnsReport = emptyReport();
 
 function renderReport(r: DnsReport): void {
-  if (r.ip) renderIpInfo(r.ip);
+  if (r.ip) renderIpInfo(r.ip, r.ipv4);
   if (r.ipv6 !== undefined) renderIpv6(r.ipv6);
   if (r.resolvers) {
     renderResolvers(r.resolvers, r.probe);
@@ -526,12 +555,17 @@ function renderReport(r: DnsReport): void {
   if (r.security) renderSecurity(r.security);
   if (r.tells) renderTells(r.tells);
   if (r.resolvers && r.security) {
-    showSuggestions(r.security, r.resolvers);
+    showSuggestions(r.security, r.resolvers, r.probe);
   }
 }
 
-function showSuggestions(security: SecurityCheck[], resolvers: ResolverResult[]): void {
-  renderDnsSuggestions(planDnsSuggestions(security, resolvers.filter((r) => r.reachable)));
+function showSuggestions(
+  security: SecurityCheck[],
+  resolvers: ResolverResult[],
+  probe?: ProbeResult | null
+): void {
+  const observed = probe && !probe.unreachable ? probe.resolvers : null;
+  renderDnsSuggestions(planDnsSuggestions(security, resolvers.filter((r) => r.reachable), observed));
 }
 
 export function getDnsReport(): DnsReport {
@@ -555,12 +589,6 @@ async function runStation(): Promise<void> {
   resetStation();
   report = emptyReport();
 
-  const ipv6Promise = DnsCheck.detectIpv6();
-  ipv6Promise.then((v6) => {
-    report.ipv6 = v6;
-    renderIpv6(v6);
-  });
-
   // Run recursion probe in background to catch the visitor's real recursion path
   const probePromise = DnsCheck.probeRecursionPath(() => {
     setProbeAvailable();
@@ -575,9 +603,21 @@ async function runStation(): Promise<void> {
   });
 
   const ipData: IpData = await DnsCheck.detectIp();
+  const family = !ipData.error && ipData.ip ? ipFamily(ipData.ip) : null;
+  report.ipv4 = family === 4 ? ipData.ip! : null;
+  // Only query api6.ipify.org if /api/ip came in over IPv4; an IPv6 connection
+  // already told us the visitor's IPv6 address with zero extra third-party call.
+  const ipv6Promise = family === 4
+    ? DnsCheck.detectIpv6()
+    : Promise.resolve(family === 6 ? ipData.ip! : null);
+  ipv6Promise.then((v6) => {
+    report.ipv6 = v6;
+    renderIpv6(v6);
+  });
+
   if (!ipData.error) {
     report.ip = ipData;
-    renderIpInfo(ipData);
+    renderIpInfo(ipData, report.ipv4);
   } else {
     setBadge("ip-status", "error", t("dns.failed"));
   }
@@ -613,15 +653,15 @@ async function runStation(): Promise<void> {
       }
     });
   }
-  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(resolvers, observed, {
-    ipv4: ipData.ip ?? null,
+  const securityChecks: SecurityCheck[] = await DnsCheck.checkDnsSecurity(observed, {
+    ipv4: report.ipv4 ?? null,
     ipv6,
   });
   report.security = securityChecks;
   renderSecurity(securityChecks);
   lockPathHops(securityChecks, probe);
 
-  showSuggestions(securityChecks, resolvers);
+  showSuggestions(securityChecks, resolvers, probe);
 }
 
 // Only what this page can actually see gets a reading. Everything else is

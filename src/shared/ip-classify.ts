@@ -82,6 +82,12 @@ export function isIp(text: string): boolean {
   return ipBytes(text) !== null;
 }
 
+export function ipFamily(ip: string): 4 | 6 | null {
+  const bytes = ipBytes(ip);
+  if (!bytes) return null;
+  return bytes.length === 4 ? 4 : 6;
+}
+
 export function sameIp(a: string | null | undefined, b: string | null | undefined): boolean {
   if (!a || !b) return false;
   const x = ipBytes(a);
@@ -231,7 +237,7 @@ export function evaluateWebRtc(
 
     const isV4 = ipBytes(candidate.ip)!.length === 4;
     const mine = isV4 ? reported.ipv4 : reported.ipv6;
-    if (!mine || ipScope(mine) !== "public") continue;
+    if (!mine || ipFamily(mine) !== (isV4 ? 4 : 6) || ipScope(mine) !== "public") continue;
     if (!sameEgressPool(mine, candidate.ip)) leak = candidate.ip;
   }
 

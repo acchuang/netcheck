@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  ipScope, inCidr, sameIp, sameNetwork, encryptedDnsOperator,
+  ipScope, ipFamily, inCidr, sameIp, sameNetwork, encryptedDnsOperator,
   parseIceCandidate, evaluateWebRtc, dohVerdict, forwardedClientSubnet,
 } from "../src/shared/ip-classify.ts";
 
@@ -107,6 +107,21 @@ test("a different network is still a leak", () => {
 
 test("a loopback reported address is treated as unknown, not as a mismatch", () => {
   const verdict = evaluateWebRtc([candidate("198.51.100.9", "srflx")], { ipv4: "127.0.0.1", ipv6: null });
+  assert.equal(verdict.leak, null);
+});
+
+test("ipFamily identifies IPv4, IPv6, and rejects mismatched family in WebRTC", () => {
+  assert.equal(ipFamily("203.0.113.5"), 4);
+  assert.equal(ipFamily("2001:db8::1"), 6);
+  assert.equal(ipFamily("::ffff:203.0.113.5"), 4);
+  assert.equal(ipFamily("not-an-ip"), null);
+
+  // Dual-stack regression: an IPv6 address erroneously placed in reported.ipv4
+  // must not cause an IPv4 srflx candidate to read as a WebRTC leak.
+  const verdict = evaluateWebRtc(
+    [candidate("203.0.113.5", "srflx")],
+    { ipv4: "2001:db8::1", ipv6: "2001:db8::1" }
+  );
   assert.equal(verdict.leak, null);
 });
 

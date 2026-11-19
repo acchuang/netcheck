@@ -1,5 +1,6 @@
 import type { ResolverInfo } from "../shared/resolvers.ts";
 import type { Tell } from "../shared/tells.ts";
+import { ipFamily } from "../shared/ip-classify.ts";
 import { t } from "./i18n.ts";
 import { CF_POPS } from "./ui-utils.ts";
 
@@ -79,6 +80,8 @@ export interface ProbeResult {
 export interface DnsReport {
   ip: IpData | null;
   /** undefined = not yet probed. */
+  ipv4: string | null | undefined;
+  /** undefined = not yet probed. */
   ipv6: string | null | undefined;
   resolvers: ResolverResult[] | null;
   /** undefined = probe still running, null = this deployment has no probe. */
@@ -88,7 +91,7 @@ export interface DnsReport {
 }
 
 export function emptyReport(): DnsReport {
-  return { ip: null, ipv6: undefined, resolvers: null, probe: undefined, security: null, tells: null };
+  return { ip: null, ipv4: undefined, ipv6: undefined, resolvers: null, probe: undefined, security: null, tells: null };
 }
 
 // --- Rows ---
@@ -106,10 +109,13 @@ export interface DnsRow {
 
 const DASH = "—";
 
-export function ipFields(ip: IpData | null) {
+export function ipFields(ip: IpData | null, ipv4?: string | null) {
   const pop = ip?.colo ? CF_POPS[ip.colo] : null;
+  const resolvedV4 = ipv4 !== undefined
+    ? ipv4
+    : ip?.ip && ipFamily(ip.ip) === 4 ? ip.ip : null;
   return {
-    ip: ip?.ip || DASH,
+    ip: resolvedV4 || DASH,
     location: [ip?.city, ip?.region, ip?.country].filter(Boolean).join(", ") || DASH,
     asn: ip?.asOrganization ? `${ip.asOrganization} (AS${ip.asn})` : DASH,
     timezone: ip?.timezone || DASH,
@@ -144,7 +150,7 @@ export function resolverRows(resolvers: ResolverResult[]): ResolverRow[] {
     if (r.forwardsEcs === true) badges.push({ text: "ECS", kind: "filter" });
     if (r.filtering) badges.push({ text: "Filtering", kind: "filter" });
     return {
-      status: r === fastest ? "pass" : r.latency === null ? "info" : "warn",
+      status: r === fastest ? "pass" : "info",
       reachable: true,
       name: r.name,
       ip: r.ip,
