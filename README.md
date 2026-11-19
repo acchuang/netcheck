@@ -1,52 +1,57 @@
 # NetCheck
 
-Browser-based network diagnostics toolkit — DNS security, speed & bufferbloat test, ad blocker analysis, HTTP security header grading, and DNS lookup tools. No installs, no accounts; runs in your browser alongside a Cloudflare Worker (plus an optional recursion-path nameserver) with full privacy disclosure under About.
+Browser-based network diagnostics toolkit — DNS path and security, speed and bufferbloat grading, ad blocker and fingerprint analysis, HTTP security header value grading, and DNS lookup tools. No installs, no accounts; runs in your browser alongside a Cloudflare Worker (plus an optional recursion-path nameserver) with explicit privacy disclosure under **About**.
 
 **Live:** [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)
+
+## Privacy: what leaves the browser
+
+| Handling | What is covered |
+| --- | --- |
+| **Stays local** | Fingerprint surface checks, browser history snapshots (`localStorage`), and Markdown / printable PDF report exports |
+| **Sent to our Worker** | IP / connection metadata & edge speed test (`Worker` option), Security Header scan URLs & DNS tool queries (`lookup`, `compare`, `health`), and optional recursion probe (resolver IP + truncated ECS prefix held in memory `<= 5 min` behind a per-tab key) |
+| **Direct to third parties** | Public DoH resolvers, live DNSSEC canary (`ippacket.stream`) & IPv6-only probe (`api6.ipify.org`, skipped if already on IPv6); `speed.cloudflare.com` or custom speed server (only when Speed opens); real ad & tracker hosts (only when Ad Block opens) |
 
 ## Features
 
 ### DNS Check
-- Leads with a one-line verdict, then the path as a single strip: you → ISP → resolver → Cloudflare edge
-- Dual-stack IPv4/IPv6 detection with geolocation, ISP/ASN, HTTP/TLS versions, and Cloudflare PoP
-- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad), probed over RFC 8484 DoH wire format so every resolver that supports DoH answers. Resolvers that allow cross-origin DoH are timed from the browser: a cold first query (lookup + TCP + TLS) and the median of three warm queries on the same connection, with the HTTP cache bypassed. The rest are only checked from the Worker and shown untimed, since edge-to-resolver latency says nothing about yours
-- Security assessment: live paired-HTTPS DNSSEC validation test on the visitor's own resolver (`sigok`/`sigfail`), DNS-over-HTTPS, malware/tracker filtering, WebRTC IP leak detection (family-matched), and ECS subnet leak detection
-- Encrypted-DNS verdict takes the worst hop, not the best one: a router that forwards to your ISP's resolver, which forwards to Cloudflare, is reported as plaintext on the first hop rather than as encrypted because a recognised operator appeared somewhere in the chain
-- ECS check — lists which public resolvers forward a client subnet (informational), and reports when a hop on your path forwarded your subnet (raising a verdict issue whose Top Fix skips ECS-forwarding resolvers)
+- Leads with a one-line Verdict, then the 4-hop path strip: **You → ISP → Resolver → Edge**
+- Dual-stack IPv4/IPv6 detection (skipping `api6.ipify.org` when already connected over IPv6) with geolocation, ISP/ASN, HTTP/TLS versions, and Cloudflare PoP
+- Reachability and latency testing across 8 public resolvers (Cloudflare, Google, Quad9, OpenDNS, AdGuard DNS, Cloudflare Families, NextDNS, Mullvad) over RFC 8484 DoH wire format (`cache: "no-store"`): CORS-enabled resolvers report cold first-query and warm median latency from your browser; others are checked from the Worker without misleading edge latency
+- Security checks: live paired-HTTPS DNSSEC validation test on your own resolver (`sigok.ippacket.stream` / `sigfail.ippacket.stream`), worst-hop encrypted-DNS verdict, family-matched WebRTC IP leak detection, malware/tracker filtering, and ECS subnet leak detection (raising a Verdict issue whose Top Fix skips ECS-forwarding resolvers)
+- **Proxy Tells**: browser vs. edge round-trip time, browser languages vs. IP country, browser vs. IP timezone offset, and RDAP resolver country lookup (skipped for recognized public encrypted-DNS operators)
+- **ECS breakdown**: lists which public resolvers forward a client subnet (informational) separately from whether a hop on your real path forwarded your subnet
 
 ### Speed Test
-- Download/upload bandwidth, latency, jitter, and bufferbloat against our Cloudflare Worker (`edge`), `speed.cloudflare.com`, or a custom worker URL; servers are probed lazily only when the Speed tab opens
-- Idle latency is timed on a warm request (a warm-up fetch is drained first), so DNS, TCP and TLS setup don't inflate the number
-- Bufferbloat / loaded-latency grading — latency increase under a saturated link, taken from whichever direction queued worse, promoted to co-verdict (`>=200ms` fail, `>=60ms` warn, with SQM Top Fix), with loaded pings capped at 3s so a stalled probe counts instead of vanishing
-- Progressive chunk sizing that adapts to connection speed: steps under 5 MB are warm-up only (TCP slow start is excluded from the clock), and the measured steps run 4 connections wide so a fast link isn't bounded by a single stream's window
-- Letter grades (A+ to F) for both raw speed and bufferbloat
+- Measures download, upload, idle latency, jitter, and bufferbloat against our Cloudflare Worker (`edge`), `speed.cloudflare.com`, or a custom worker URL; server probing waits lazily until the Speed tab opens
+- Idle latency drains a warm-up fetch before sampling so DNS, TCP, and TLS setup do not inflate latency
+- Bufferbloat / loaded-latency grading tracks the worse direction under load (capped at 3s so stalled probes count) and drives a co-verdict with Throughput (`>=200ms` fail, `>=60ms` warn, recommending SQM)
+- Progressive multi-stream transfers: warm-up steps under 5 MB are excluded from timing, measured steps run 4 connections wide, and A+ to F grades cover both throughput and bufferbloat
 
 ### Ad Block Test
-- 25+ parallel probes across 6 categories with importance weighting (high/medium/low), splitting Hosts/network filtering from Cosmetic element hiding
-- Positive-evidence-only blocker classification (None detected, Brave Shields, DNS/hosts-level, Browser extension, or partial Network/tracker blocker) plus custom URL testing
+- 25+ parallel probes across 6 weighted categories (`high` / `medium` / `low`), splitting Hosts/network request blocking from Cosmetic element hiding
+- Positive-evidence-only blocker classification (`No blocker detected`, `Brave Shields`, `DNS / hosts-level blocker`, `Browser extension`, or low-confidence `Network / tracker blocker`), plus custom URL script + image testing
 - Uncertain timeouts leave the denominator cleanly (reporting inconclusive rather than inflating a pass/fail score on offline or flaky links)
-- Fingerprint surface reported separately in its own collapsible panel, outside the score: clock precision, canvas readback stability, unmasked GPU model, core count, device memory and time zone
+- **Fingerprint surface** in its own collapsible panel outside the score: timer precision, canvas readback stability, unmasked WebGL renderer, CPU concurrency, device memory, and timezone
 
 ### Tools (Security Headers & DNS Workstation)
-- Scans any URL's HTTP response through the Worker (multi-hop SSRF guard + per-IP rate limiting) and grades 7 core security headers by directive quality (`A`–`F`), recognizing CSP `frame-ancestors` for clickjacking protection, alongside 3 ungraded informational headers (`COEP`, `CORP`, `X-XSS-Protection`)
-- DNS Diagnostic Workstation: Record Lookup (`A`, `AAAA`, `MX`, `NS`, `TXT`, `CNAME`, `SOA`, `SRV`, bare-IP auto-reversed `PTR`, and single-request batched `ALL`), multi-resolver comparison, and domain email health (`MX` / `SPF` / `DMARC` / `DKIM`)
+- **Security Headers**: Worker fetches the target URL (multi-hop SSRF guard blocking private/loopback/link-local/CGNAT/multicast IPs, standard web ports only, per-IP rate limiting) and grades 7 core headers (`HSTS`, `CSP`, `XCTO`, `XFO` with restrictive CSP `frame-ancestors` credit, `Referrer-Policy`, `Permissions-Policy`, `COOP`) `A`–`F`, alongside 3 ungraded informational headers (`COEP`, `CORP`, `X-XSS-Protection`)
+- **DNS Workstation**: Record Lookup (`A`, `AAAA`, `MX`, `NS`, `TXT`, `CNAME`, `SOA`, `SRV`, bare-IP auto-reversed `PTR`, and single-request batched `ALL`), multi-resolver comparison, and Domain Email Health (`MX` / `SPF` / `DMARC` / `DKIM`)
 
 ### Also
-- Speed (including bufferbloat & server) and ad-block snapshots saved locally in browser storage with color-coded deltas between runs
-- Memory-efficient streaming speed downloads via `ReadableStream`
-- Vite-hashed CSS (`src/client/styles.css`), stale-while-revalidate Service Worker (`netcheck-v6`), and a black "command wall" theme plus High Contrast (see `DESIGN.md`)
-- Localized Markdown and printable PDF export covering DNS, observed resolvers, Speed/Bufferbloat, Ad Block/Fingerprint, and Tools Security Headers — generated locally in your browser
-- Bilingual UI (English / Traditional Chinese) with full keyboard accessibility
-- Worker API endpoints that fan out server-side (headers scan, resolver checks, DNS compare) are per-IP rate-limited via Cloudflare's Rate Limiting binding, which counts across isolates; an in-worker counter is the fallback for `wrangler dev`
-- Speed-test endpoints are limited by bytes moved per IP per minute, not by request count — egress is the cost there
+- Local snapshots (`localStorage`) for Speed (with bufferbloat & server) and Ad Block runs, with color-coded deltas
+- Streaming speed downloads via `ReadableStream`
+- Vite-hashed CSS (`src/client/styles.css`), stale-while-revalidate Service Worker (`netcheck-v6`), and Crisis Command Wall + High Contrast themes (`DESIGN.md`)
+- Bilingual UI (`en` / `zh-TW`) with keyboard-accessible controls and localized Markdown / printable PDF report export
+- Per-IP rate limiting on Worker fan-out endpoints (Cloudflare Rate Limiting binding + local fallback) and byte-based throttling on speed endpoints
 
 ## Optional: recursion-path probing (self-hosted)
 
-**Off by default, and on at [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)**, which delegates `p.oilygold.xyz` to a small Oracle Cloud VM. This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
+**Off by default, and on at [netcheck.oilygold.xyz](https://netcheck.oilygold.xyz)**, which delegates `p.oilygold.xyz` to an Oracle Cloud VM. This is the one check that needs a server outside Cloudflare, because Workers cannot serve UDP/53.
 
-`probe-server/` is an authoritative nameserver for a zone you delegate to it. The browser resolves `<label>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs, and any EDNS Client Subnet forwarded. A DoH-only page can never learn this about its visitor, because it only ever talks to the one resolver it picked.
+`probe-server/` is an authoritative nameserver for a delegated zone. The browser resolves `<label>.<your-zone>`, which forces every recursive resolver in the visitor's real path to query that nameserver directly — so it sees their actual resolver IPs and any EDNS Client Subnet forwarded.
 
-The label is the SHA-256 of a read key the visitor's tab keeps to itself. Every resolver in the path sees the label, and so do the nameserver's own logs, so observing a query must not be enough to read the result back: only the key names the session, and it never travels in a DNS query. The Worker presents the key over TLS to fetch the result.
+The label is the SHA-256 of a per-tab read key. Only the read key retrieves the session over TLS from the Worker, while the queried DNS label stays safe to cross resolvers and logs.
 
 Enable it by setting all three on the Worker:
 
@@ -56,44 +61,37 @@ Enable it by setting all three on the Worker:
 | `PROBE_ZONE` | `wrangler.toml` `[vars]` | `p.example.com` |
 | `PROBE_SECRET` | `wrangler secret put` | — |
 
-The URL must be `https://` (localhost excepted): `PROBE_SECRET` travels in a request header, so a plaintext URL is refused and reported as unconfigured rather than sent in the clear.
+The URL must be `https://` (`localhost` excepted). When any variable is missing, the UI hides probe-dependent controls cleanly instead of guessing.
 
-With any of them missing, the client is told the probe does not exist here: it skips the lookup entirely, and the DNS card drops both the encrypted-DNS row and the "your recursive resolver" block rather than showing a check it cannot answer.
-
-Running the nameserver — an always-free VM (the guide uses GCP; the live site runs on Oracle Cloud; any host with UDP/53 works), zone delegation, systemd unit, and the reflection-hardening notes — is documented in [`probe-server/README.md`](probe-server/README.md).
+Nameserver setup, zone delegation, systemd unit, and reflection hardening live in [`probe-server/README.md`](probe-server/README.md).
 
 ## Tech Stack
 
-- **Runtime:** [Cloudflare Workers](https://workers.cloudflare.com/), static assets via the Workers Assets binding
-- **Frontend:** Vite + TypeScript, compiled to vanilla JS/CSS (no framework)
-- **Build:** [`@cloudflare/vite-plugin`](https://developers.cloudflare.com/workers/vite-plugin/) — Workers runtime integrated directly into Vite dev/build
-- **Design System:** "Crisis Command Wall": phosphor orange on black, Chakra Petch / JetBrains Mono / DSEG7, zero radius — spec in `DESIGN.md`
-- **DNS Lookups:** resolvers probed over RFC 8484 DNS wire format (DoH GET, `cache: "no-store"`) with a hand-rolled encoder/decoder in `src/shared/dns-wire.ts`; interactive lookups via Cloudflare DNS-over-HTTPS
+- **Runtime:** [Cloudflare Workers](https://workers.cloudflare.com/) + Workers Assets binding
+- **Frontend:** Vite + TypeScript + vanilla DOM/CSS (no framework)
+- **Build:** [`@cloudflare/vite-plugin`](https://developers.cloudflare.com/workers/vite-plugin/)
+- **Design System:** Crisis Command Wall (`DESIGN.md`) — phosphor orange on black, High Contrast mode, Chakra Petch / JetBrains Mono / DSEG7 / Noto Sans TC Display subset, zero radius
+- **DNS Lookups:** RFC 8484 DoH wire-format encoder/decoder (`src/shared/dns-wire.ts`) for resolver probing + Worker DoH lookups
 
 ## Project Structure
 
-```
+```text
 netcheck-site/
-├── wrangler.toml              # Cloudflare Worker config
+├── wrangler.toml              # Cloudflare Worker config & rate limits
 ├── vite.config.ts             # Vite build configuration (Cloudflare plugin)
-├── tsconfig.json              # TypeScript configuration
+├── tsconfig.json              # Strict TypeScript configuration
 ├── index.html                 # Single-page app shell
-├── probe-server/              # Authoritative nameserver for recursion-path probing
+├── DESIGN.md                  # Visual system, tokens, and copy rules
+├── PRODUCT.md                 # Product principles and boundaries
+├── probe-server/              # Optional authoritative nameserver for recursion-path probing
 ├── src/
-│   ├── client/                # Frontend logic & stylesheet (TypeScript + CSS)
-│   │   ├── app.ts             # Entry point — tab routing, UI orchestration
-│   │   ├── i18n.ts            # Bilingual (en/zh-TW) translation strings
-│   │   ├── styles.css         # Command-wall design system, hashed by Vite (DESIGN.md)
-│   │   └── ...                # Domain-specific logic (dns-check, speed-test, adblock-test, etc.)
-│   ├── shared/                # Code shared between client, worker and probe server
-│   │   ├── dns-wire.ts        # RFC 8484 wire-format encoder/decoder
-│   │   ├── headers-grade.ts   # Security header value grading rules
-│   │   └── resolvers.ts       # Public DNS resolver list
-│   └── worker/                # Backend logic (TypeScript)
-│       └── index.ts           # Worker — API routes
-└── public/
-    ├── fonts/                 # Self-hosted WOFF2 fonts (incl. Noto Sans TC Display subset)
-    └── icon.svg, manifest.json, sw.js
+│   ├── client/                # Frontend modules & Command Wall stylesheet (styles.css)
+│   ├── shared/                # Pure shared logic (adblock-score, dns-wire, headers-grade, ip-classify, rdap, resolvers, tells, url)
+│   └── worker/                # Cloudflare Worker API routes & SSRF guard (index.ts)
+├── public/
+│   ├── fonts/                 # Self-hosted WOFF2 fonts (incl. Noto Sans TC Display subset)
+│   └── icon.svg, manifest.json, sw.js
+└── test/                      # Offline unit test suite (`node --test`)
 ```
 
 ## Development
@@ -102,13 +100,10 @@ netcheck-site/
 npm install
 npm run dev        # Vite dev server with the Cloudflare Workers runtime
 npm run typecheck  # tsc --noEmit
-npm test           # node --test — no framework, no browser, no network
+npm test           # node --test test/*.test.ts (offline, no browser required)
 ```
 
-To exercise the recursion probe locally, put the three variables in a gitignored
-`.dev.vars` and run the nameserver alongside the dev server — see
-[`probe-server/README.md`](probe-server/README.md) for the local port to use
-(5354; mDNS holds 5353 on macOS).
+To exercise the recursion probe locally, add `PROBE_SERVER_URL`, `PROBE_ZONE`, and `PROBE_SECRET` in a gitignored `.dev.vars` and run `probe-server/` (port 5354 on macOS — see [`probe-server/README.md`](probe-server/README.md)).
 
 ## Deployment
 
