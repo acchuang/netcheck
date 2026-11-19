@@ -150,7 +150,8 @@
 }
 
 /* High contrast: the same wall with every dim tier lifted to near-white and
-   every rule opaque. Scanlines and hatch keep their shape but lose their fade. */
+   every rule opaque. Drop diagonal hatching behind text so white type on
+   pure black stays crisp; standby relies on dashed rules and --standby tone. */
 [data-theme="contrast"] {
   --text-primary: #ffffff;
   --text-secondary: #ffffff;
@@ -174,8 +175,18 @@
 
   --surface-1: #000000;
 
-  --hatch: repeating-linear-gradient(135deg, #9a9a9a 0 2px, transparent 2px 7px);
+  --hatch: none;
   --scanlines: none;
+}
+
+[data-theme="contrast"] .readout[data-state="standby"],
+[data-theme="contrast"] .readout.standby {
+  border-bottom: 1px dashed var(--standby);
+}
+
+[data-theme="contrast"] .btn:disabled {
+  border-style: dashed;
+  border-color: var(--standby);
 }
 
 *,
@@ -777,6 +788,17 @@ textarea {
   font-size: 13px;
 }
 
+.info-value-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+
+.info-value-btn:not(:disabled) {
+  cursor: pointer;
+}
+
 .info-muted {
   font-size: 13px;
   color: var(--text-tertiary);
@@ -802,7 +824,7 @@ textarea {
   cursor: pointer;
 }
 
-.copyable:hover {
+.copyable:not(:disabled):hover {
   color: var(--accent);
 }
 
@@ -1470,6 +1492,7 @@ select option {
   }
 
   .station .readout-panel { order: -1; }
+  .tools-station .readout-panel { order: 0; }
 }
 
 /* Narrow screens: the path turns into a single vertical axis, nodes on the
@@ -2080,6 +2103,21 @@ select option {
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--hop-color, var(--text-tertiary));
+}
+
+.schematic > .details-fold {
+  margin-top: 0;
+  border-top: 1px solid var(--border-subtle);
+  padding: 4px 20px 14px;
+}
+
+.schematic > .details-fold .adblock-custom {
+  padding: 12px 0 0;
+  border-top: 0;
+}
+
+.schematic > .details-fold .adblock-custom-results {
+  padding: 12px 0 0;
 }
 
 .adblock-custom {

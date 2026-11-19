@@ -41,7 +41,11 @@ export function saveSpeedSnapshot(): void {
 
 function clearSnapshots(): void {
   confirmAction(document.getElementById("snapshot-clear-btn") as HTMLButtonElement | null, () => {
-    localStorage.removeItem(KEY);
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* private mode */
+    }
     renderSnapshotHistory();
   });
 }

@@ -6,25 +6,39 @@ import { encryptedDnsOperator } from "../shared/ip-classify.ts";
 import type { DnsPlan } from "./dns-check.ts";
 import type { Tell } from "../shared/tells.ts";
 
+function bindCopyButton(btn: HTMLButtonElement, value: string | null | undefined): void {
+  if (!value) {
+    btn.disabled = true;
+    btn.classList.remove("copyable");
+    btn.removeAttribute("title");
+    btn.removeAttribute("aria-label");
+    btn.onclick = null;
+    return;
+  }
+  btn.disabled = false;
+  btn.classList.add("copyable");
+  const hint = t("dns.copyHint");
+  btn.title = hint;
+  btn.setAttribute("aria-label", `${value} — ${hint}`);
+  btn.onclick = () => {
+    navigator.clipboard?.writeText(value).then(() => {
+      setBadge("ip-status", "done", t("dns.copied"));
+      setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
+    }).catch(() => {});
+  };
+}
+
 export function renderIpv6(ip: string | null): void {
-  const el = document.getElementById("ip-address-v6")!;
+  const el = document.getElementById("ip-address-v6") as HTMLButtonElement;
   el.textContent = ip || t("dns.ipv6None");
   el.classList.toggle("info-muted", !ip);
+  bindCopyButton(el, ip);
 }
 
 export function renderIpInfo(ipData: IpData): void {
-  const ipEl = document.getElementById("ip-address")!;
+  const ipEl = document.getElementById("ip-address") as HTMLButtonElement;
   ipEl.textContent = ipData.ip || "—";
-  if (ipData.ip) {
-    ipEl.classList.add("copyable");
-    ipEl.title = t("dns.copyHint");
-    ipEl.onclick = () => {
-      navigator.clipboard.writeText(ipData.ip!).then(() => {
-        setBadge("ip-status", "done", t("dns.copied"));
-        setTimeout(() => setBadge("ip-status", "done", t("dns.detected")), 1500);
-      });
-    };
-  }
+  bindCopyButton(ipEl, ipData.ip);
   const f = ipFields(ipData);
   document.getElementById("ip-location")!.textContent = f.location;
   document.getElementById("ip-asn")!.textContent = f.asn;

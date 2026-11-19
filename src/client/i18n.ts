@@ -1228,7 +1228,11 @@ export function onLocaleChange(cb: () => void): void {
 
 function setLocale(locale: Locale): void {
   current = locale;
-  localStorage.setItem(STORAGE_KEY, locale);
+  try {
+    localStorage.setItem(STORAGE_KEY, locale);
+  } catch {
+    /* private mode */
+  }
   document.documentElement.lang = locale === "zh-TW" ? "zh-TW" : "en";
   applyStaticTranslations();
   localeChangeListeners.forEach((cb) => cb());
@@ -1240,8 +1244,12 @@ export function setProbeAvailable(): void {
 }
 
 export function initI18n(): void {
-  const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
-  if (saved && (saved === "en" || saved === "zh-TW")) current = saved;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
+    if (saved && (saved === "en" || saved === "zh-TW")) current = saved;
+  } catch {
+    /* private mode */
+  }
   document.documentElement.lang = current === "zh-TW" ? "zh-TW" : "en";
   applyStaticTranslations();
 

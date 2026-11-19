@@ -1,5 +1,6 @@
 import { SpeedTest, SERVERS, getServer, type SpeedTestResults, type SpeedTestPhase, type ServerProbeResult, setCustomServerUrl, probeServers } from "./speed-test.ts";
 import { t, onLocaleChange } from "./i18n.ts";
+import { onThemeChange } from "./theme.ts";
 import { html, setHtml } from "./html.ts";
 import { animateNumber, CF_POPS, haversineKm, suggestionCardHtml, renderVerdict, verdictLevel, issueHeadline, hideVerdict } from "./ui-utils.ts";
 import { saveSpeedSnapshot } from "./snapshots.ts";
@@ -143,6 +144,8 @@ export async function initSpeedTest(): Promise<void> {
     updateServerValueLabel();
     renderYou();
   });
+
+  onThemeChange(() => drawSpeedGraph());
 
   fetch("/api/ip")
     .then((res) => res.json() as Promise<NonNullable<typeof youIp>>)

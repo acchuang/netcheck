@@ -1,21 +1,33 @@
 import { t, tTag } from "./i18n.ts";
 import { html, raw, setHtml, type Safe } from "./html.ts";
 
+const numberAnimFrames = new WeakMap<HTMLElement, number>();
+
 export function animateNumber(el: HTMLElement, from: number, to: number, duration: number, formatter: (v: number) => string): void {
+  const prev = numberAnimFrames.get(el);
+  if (prev !== undefined) {
+    cancelAnimationFrame(prev);
+    numberAnimFrames.delete(el);
+  }
+  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const start = performance.now();
   const diff = to - from;
-  if (Math.abs(diff) < 0.1) {
+  if (reduced || Math.abs(diff) < 0.1) {
     el.textContent = formatter(to);
     return;
   }
   function tick(now: number): void {
     const elapsed = now - start;
     const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - (1 - progress) * (1 - progress); 
+    const eased = 1 - (1 - progress) * (1 - progress);
     el.textContent = formatter(from + diff * eased);
-    if (progress < 1) requestAnimationFrame(tick);
+    if (progress < 1) {
+      numberAnimFrames.set(el, requestAnimationFrame(tick));
+    } else {
+      numberAnimFrames.delete(el);
+    }
   }
-  requestAnimationFrame(tick);
+  numberAnimFrames.set(el, requestAnimationFrame(tick));
 }
 
 // "info" is deliberately not a grade: it states something observed that is
@@ -183,7 +195,11 @@ export function loadHistory<T>(key: string): T[] {
 }
 
 export function persistHistory<T>(key: string, items: T[], max: number): void {
-  localStorage.setItem(key, JSON.stringify(items.slice(-max)));
+  try {
+    localStorage.setItem(key, JSON.stringify(items.slice(-max)));
+  } catch {
+    /* private mode or quota exceeded */
+  }
 }
 
 const confirmTimers = new WeakMap<HTMLButtonElement, number>();

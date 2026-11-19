@@ -8,6 +8,11 @@ type ThemeId = "wall" | "contrast";
 const STORAGE_KEY = "netcheck-theme";
 
 let current: ThemeId = "wall";
+const themeChangeListeners: (() => void)[] = [];
+
+export function onThemeChange(cb: () => void): void {
+  themeChangeListeners.push(cb);
+}
 
 function apply(): void {
   document.documentElement.setAttribute("data-theme", current);
@@ -19,13 +24,22 @@ function apply(): void {
 }
 
 export function initTheme(): void {
-  if (localStorage.getItem(STORAGE_KEY) === "contrast") current = "contrast";
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === "contrast") current = "contrast";
+  } catch {
+    /* private mode */
+  }
   apply();
 
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
     current = current === "contrast" ? "wall" : "contrast";
-    localStorage.setItem(STORAGE_KEY, current);
+    try {
+      localStorage.setItem(STORAGE_KEY, current);
+    } catch {
+      /* private mode */
+    }
     apply();
+    themeChangeListeners.forEach((cb) => cb());
   });
 
   onLocaleChange(apply);

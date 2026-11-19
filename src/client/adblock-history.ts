@@ -42,7 +42,11 @@ export function saveAdblockSnapshot(): void {
 
 function clearSnapshots(): void {
   confirmAction(document.getElementById("adblock-history-clear-btn") as HTMLButtonElement | null, () => {
-    localStorage.removeItem(KEY);
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* private mode */
+    }
     renderHistory();
   });
 }
